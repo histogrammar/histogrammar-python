@@ -14,5 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from defs import *
-from primitives.count import *
+from histogrammar.defs import *
+
+class Counting(Aggregator):
+    def __init__(self):
+        self._entries = 0.0

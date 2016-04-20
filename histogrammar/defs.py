@@ -87,8 +87,4 @@ class Aggregator(Container):
     def entries(self, value):
         self._entries = value
 
-class Counting(Aggregator):
-    def __init__(self):
-        self._entries = 0.0
-
 
