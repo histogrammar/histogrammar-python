@@ -16,6 +16,13 @@
 
 from histogrammar.defs import *
 
+class Count(Factory):
+    pass
+
 class Counting(Aggregator):
     def __init__(self):
         self._entries = 0.0
+
+
+
+Factory.register(Count)

@@ -87,4 +87,5 @@ class Aggregator(Container):
     def entries(self, value):
         self._entries = value
 
-
+def help():
+    
