@@ -15,8 +15,17 @@
 # limitations under the License.
 
 from distutils.core import setup
+from distutils.cmd import Command
 
 import histogrammar.version
+
+class TestCommand(Command):
+    user_options = []
+    def initialize_options(self): pass
+    def finalize_options(self): pass
+    def run(self):
+        import sys, subprocess
+        raise SystemExit(subprocess.call([sys.executable, "-m", "unittest", "-v", "test.test"]))
 
 setup(name="Histogrammar",
       version=histogrammar.version.__version__,
@@ -24,4 +33,5 @@ setup(name="Histogrammar",
       author="Jim Pivarski",
       author_email="pivarski@fnal.gov",
       url="https://github.com/diana-hep/histogrammar",
+      cmdclass={"test": TestCommand},
       )
