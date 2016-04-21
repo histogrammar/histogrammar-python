@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
+import json as jsonlib
 
 class ContainerException(Exception):
     pass
@@ -28,64 +28,46 @@ class JsonFormatException(Exception):
         super(JsonFormatException, self).__init__("wrong JSON format for {}: {}".format(context, json.dumps(x)))
 
 class Factory(object):
-    @property
-    def name(self): raise NotImplementedError
-    @property
-    def help(self): raise NotImplementedError
-    @property
-    def detailedHelp(self): raise NotImplementedError
-
-    def fromJsonFragment(x): raise NotImplementedError
-
     registered = {}
+    
+    @staticmethod
+    def register(factory):
+        Factory.registered[factory.__name__] = factory
 
-    @classmethod
-    def register(cls, factory):
-        cls.registered[factory.name] = factory
+    @staticmethod
+    def fromJson(json):
+        if isinstance(json, basestring):
+            json = jsonlib.loads(json)
 
-    @classmethod
-    def get(cls, name):
-        try:
-            return cls.registered[name]
-        except KeyError:
-            raise InvalidJsonException("unrecognized container (is it a custom container that hasn't been registered?): " + name)
-
-    @classmethod
-    def fromJson(x):
-        if isinstance(x, basestring):
-            x = json.loads(x)
-
-        if isinstance(x, dict) and set(x.keys()) == set(["type", "data"]):
-            if isinstance(x["type"], basestring):
-                name = x["type"]
+        if isinstance(json, dict) and set(json.keys()) == set(["type", "data"]):
+            if isinstance(json["type"], basestring):
+                name = json["type"]
             else:
-                raise JsonFormatException(x["type"], "Factory.type")
+                raise JsonFormatException(json["type"], "Factory.type")
 
-            return Factory.get(name).fromJsonFormat(x["data"])
+            if name not in Factory.registered:
+                raise JsonFormatException(json, "unrecognized container (is it a custom container that hasn't been registered?): {}".format(name))
+
+            return Factory.registered[name].fromJsonFragment(json["data"])
 
         else:
-            raise JsonFormatException(x, "Factory")
+            raise JsonFormatException(json, "Factory")
         
 class Container(object):
     @property
-    def factory(self): raise NotImplementedError
+    def name(self): return self.__class__.__name__
     @property
-    def entries(self): return self._entries
+    def factory(self): return self.__class__
+
     @property
     def zero(self): raise NotImplementedError
-    @property
     def __add__(self, other): raise NotImplementedError
+    def fill(datum, weight=1.0): raise NotImplementedError
 
     def copy(self): return self + self.zero
-    def toJson(self): return {"type": self.factory.name, "data": self.toJsonFragment()}
+
+    def toJson(self): return {"type": self.name, "data": self.toJsonFragment()}
     def toJsonFragment(self): raise NotImplementedError
+    def __repr__(self): raise NotImplementedError
 
-class Aggregator(Container):
-    @property
-    def entries(self): return self._entries
-    @entries.setter
-    def entries(self, value):
-        self._entries = value
-
-def help():
-    
+def unweighted(datum): return 1.0

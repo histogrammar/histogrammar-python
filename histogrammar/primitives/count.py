@@ -16,13 +16,39 @@
 
 from histogrammar.defs import *
 
-class Count(Factory):
-    pass
+class Count(Factory, Container):
+    def __init__(self, entries=0.0):
+        self.entries = float(entries)
 
-class Counting(Aggregator):
-    def __init__(self):
-        self._entries = 0.0
+    @property
+    def zero(self): return Count(0.0)
 
+    def __add__(self, other):
+        if isinstance(other, Count):
+            return Count(self.entries + other.entries)
+        else:
+            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    def fill(datum, weight=1.0):
+        if weight > 0.0:
+            self.entries += weight
+
+    def toJsonFragment(self): return self.entries
+
+    @staticmethod
+    def fromJsonFragment(json):
+        if isinstance(json, (int, long, float)):
+            return Count(json)
+        else:
+            raise JsonFormatException(json, self.name)
+        
+    def __repr__(self):
+        return "Count({})".format(self.entries)
+
+    def __eq__(self, other):
+        return isinstance(other, Count) and self.entries == other.entries
+
+    def __hash__(self):
+        return hash(self.entries)
 
 Factory.register(Count)
