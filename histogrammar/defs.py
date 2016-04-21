@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
+
 import json as jsonlib
 
 class ContainerException(Exception):
@@ -62,7 +64,7 @@ class Container(object):
     @property
     def zero(self): raise NotImplementedError
     def __add__(self, other): raise NotImplementedError
-    def fill(datum, weight=1.0): raise NotImplementedError
+    def fill(self, datum, weight=1.0): raise NotImplementedError
 
     def copy(self): return self + self.zero
 
@@ -71,3 +73,6 @@ class Container(object):
     def __repr__(self): raise NotImplementedError
 
 def unweighted(datum): return 1.0
+
+def exact(x, y):
+    return (math.isnan(x) and math.isnan(y)) or x == y

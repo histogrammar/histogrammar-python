@@ -17,19 +17,33 @@
 from histogrammar.defs import *
 
 class Count(Factory, Container):
-    def __init__(self, entries=0.0):
-        self.entries = float(entries)
+    @staticmethod
+    def ed(entries):
+        if entries < 0.0:
+            raise ContainerException("entries ($entries) cannot be negative")
+        out = Count()
+        out.entries = float(entries)
+        return out
+
+    @staticmethod
+    def ing():
+        return Count()
+
+    def __init__(self):
+        self.entries = 0.0
 
     @property
-    def zero(self): return Count(0.0)
+    def zero(self): return Count()
 
     def __add__(self, other):
         if isinstance(other, Count):
-            return Count(self.entries + other.entries)
+            out = Count()
+            out.entries = self.entries + other.entries
+            return out
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
-    def fill(datum, weight=1.0):
+    def fill(self, datum, weight=1.0):
         if weight > 0.0:
             self.entries += weight
 
@@ -38,15 +52,15 @@ class Count(Factory, Container):
     @staticmethod
     def fromJsonFragment(json):
         if isinstance(json, (int, long, float)):
-            return Count(json)
+            return Count.ed(json)
         else:
             raise JsonFormatException(json, self.name)
         
     def __repr__(self):
-        return "Count({})".format(self.entries)
+        return "Count[{}]".format(self.entries)
 
     def __eq__(self, other):
-        return isinstance(other, Count) and self.entries == other.entries
+        return isinstance(other, Count) and exact(self.entries, other.entries)
 
     def __hash__(self):
         return hash(self.entries)
