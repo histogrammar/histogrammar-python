@@ -114,3 +114,122 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftCounting)
 
+    ################################################################ Sum
+
+    # def testSum(self):
+    #     pass
+
+    ################################################################ Average
+
+    # def testAverage(self):
+    #     pass
+
+    ################################################################ Deviate
+
+    # def testDeviate(self):
+    #     pass
+
+    ################################################################ AbsoluteErr
+
+    # def testAbsoluteErr(self):
+    #     pass
+
+    ################################################################ Minimize
+
+    # def testMinimize(self):
+    #     pass
+
+    ################################################################ Maximize
+
+    # def testMaximize(self):
+    #     pass
+
+    ################################################################ Quantile
+
+    # def testQuantile(self):
+    #     pass
+
+    ################################################################ Bag
+
+    # def testBag(self):
+    #     pass
+
+    ################################################################ Bin
+
+    def testBin(self):
+        one = Bin(5, -3.0, 7.0, lambda x: x)
+        for _ in self.simple: one.fill(_)
+        self.assertEqual(map(lambda _: _.entries, one.values), [3.0, 2.0, 2.0, 1.0, 0.0])
+        self.assertEqual(one.underflow.entries, 1.0)
+        self.assertEqual(one.overflow.entries, 1.0)
+        self.assertEqual(one.nanflow.entries, 0.0)
+
+        two = Bin(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
+        for _ in self.struct: two.fill(_)
+        self.assertEqual(map(lambda _: _.entries, two.values), [2.0, 1.0, 1.0, 1.0, 0.0])
+        self.assertEqual(two.underflow.entries, 0.0)
+        self.assertEqual(two.overflow.entries, 0.0)
+        self.assertEqual(two.nanflow.entries, 0.0)
+
+        self.checkJson(one)
+        self.checkJson(two)
+
+    ################################################################ SparselyBin
+
+    # def testSparselyBin(self):
+    #     pass
+
+    ################################################################ CentrallyBin
+
+    # def testCentrallyBin(self):
+    #     pass
+
+    ################################################################ AdaptivelyBin
+
+    # def testAdaptivelyBin(self):
+    #     pass
+
+    ################################################################ Fraction
+
+    # def testFraction(self):
+    #     pass
+
+    ################################################################ Stack
+
+    # def testStack(self):
+    #     pass
+
+    ################################################################ Partition
+
+    # def testPartition(self):
+    #     pass
+
+    ################################################################ Categorize
+
+    # def testCategorize(self):
+    #     pass
+
+    ################################################################ Label
+
+    # def testLabel(self):
+    #     pass
+
+    ################################################################ UntypedLabel
+
+    # def testUntypedLabel(self):
+    #     pass
+
+    ################################################################ Index
+
+    # def testIndex(self):
+    #     pass
+
+    ################################################################ Branch
+
+    # def testBranch(self):
+    #     pass
+
+    ################################################################ Usability in fold/aggregate
+
+    # def testAggregate(self):
+    #     pass

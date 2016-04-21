@@ -49,9 +49,9 @@ class Bin(Factory, Container):
             self.values = [None] * num
         else:
             self.values = [value.copy() for i in xrange(num)]
-        self.underflow = underflow
-        self.overflow = overflow
-        self.nanflow = nanflow
+        self.underflow = underflow.copy()
+        self.overflow = overflow.copy()
+        self.nanflow = nanflow.copy()
 
     @property
     def zero(self): return Bin(len(self.values), self.low, self.high, self.quantity, self.selection, self.values[0].zero(), self.underflow.zero(), self.overflow.zero(), self.nanflow.zero())
@@ -96,6 +96,7 @@ class Bin(Factory, Container):
             raise RuntimeException("attempting to fill a container that has no fill rule")
 
         w = weight * self.selection(datum)
+
         if w > 0.0:
             q = self.quantity(datum)
 
@@ -108,7 +109,7 @@ class Bin(Factory, Container):
                 self.nanflow.fill(datum, w)
             else:
                 self.values[self.bin(q)].fill(datum, w)
-            
+
     def toJsonFragment(self): return {
         "low": self.low,
         "high": self.high,
