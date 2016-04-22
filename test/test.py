@@ -352,8 +352,17 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Bag
 
-    # def testBag(self):
-    #     pass
+    def testBag(self):
+        one = Bag(lambda x: x)
+        for _ in self.simple: one.fill(_)
+        self.assertEqual(one.values, {(7.3,): 1.0, (2.2,): 1.0, (-1.7,): 1.0, (-4.7,): 1.0, (0.0,): 2.0, (-1.8,): 1.0, (-3.0,): 1.0, (1.6,): 1.0, (3.4,): 1.0})
+
+        two = Bag(lambda x: x, limit = 5)
+        for _ in self.simple: two.fill(_)
+        self.assertEqual(two.values, None)
+
+        self.checkJson(one)
+        self.checkJson(two)
 
     ################################################################ Bin
 

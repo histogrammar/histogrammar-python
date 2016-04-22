@@ -27,7 +27,7 @@ class InvalidJsonException(Exception):
 
 class JsonFormatException(Exception):
     def __init__(self, x, context):
-        super(JsonFormatException, self).__init__("wrong JSON format for {}: {}".format(context, json.dumps(x)))
+        super(JsonFormatException, self).__init__("wrong JSON format for {}: {}".format(context, jsonlib.dumps(x)))
 
 class Factory(object):
     registered = {}

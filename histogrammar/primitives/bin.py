@@ -130,43 +130,43 @@ class Bin(Factory, Container):
             if isinstance(json["low"], (int, long, float)):
                 low = json["low"]
             else:
-                raise JsonFormatException(json, self.name + ".low")
+                raise JsonFormatException(json, "Bin.low")
 
             if isinstance(json["high"], (int, long, float)):
                 high = json["high"]
             else:
-                raise JsonFormatException(json, self.name + ".high")
+                raise JsonFormatException(json, "Bin.high")
 
             if isinstance(json["entries"], (int, long, float)):
                 entries = json["entries"]
             else:
-                raise JsonFormatException(json, self.name + ".entries")
+                raise JsonFormatException(json, "Bin.entries")
 
             if isinstance(json["values:type"], basestring):
                 valuesFactory = Factory.registered[json["values:type"]]
             else:
-                raise JsonFormatException(json, self.name + ".values:type")
+                raise JsonFormatException(json, "Bin.values:type")
             if isinstance(json["values"], list):
                 values = [valuesFactory.fromJsonFragment(x) for x in json["values"]]
             else:
-                raise JsonFormatException(json, self.name + ".values")
+                raise JsonFormatException(json, "Bin.values")
 
             if isinstance(json["underflow:type"], basestring):
                 underflowFactory = Factory.registered[json["underflow:type"]]
             else:
-                raise JsonFormatException(json, self.name + ".underflow:type")
+                raise JsonFormatException(json, "Bin.underflow:type")
             underflow = underflowFactory.fromJsonFragment(json["underflow"])
 
             if isinstance(json["overflow:type"], basestring):
                 overflowFactory = Factory.registered[json["overflow:type"]]
             else:
-                raise JsonFormatException(json, self.name + ".overflow:type")
+                raise JsonFormatException(json, "Bin.overflow:type")
             overflow = overflowFactory.fromJsonFragment(json["overflow"])
 
             if isinstance(json["nanflow:type"], basestring):
                 nanflowFactory = Factory.registered[json["nanflow:type"]]
             else:
-                raise JsonFormatException(json, self.name + ".nanflow:type")
+                raise JsonFormatException(json, "Bin.nanflow:type")
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"])
 
             return Bin.ed(low, high, entries, values, underflow, overflow, nanflow)

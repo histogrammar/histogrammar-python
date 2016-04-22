@@ -54,7 +54,7 @@ class Count(Factory, Container):
         if isinstance(json, (int, long, float)):
             return Count.ed(json)
         else:
-            raise JsonFormatException(json, self.name)
+            raise JsonFormatException(json, "Count")
         
     def __repr__(self):
         return "Count[{}]".format(self.entries)
