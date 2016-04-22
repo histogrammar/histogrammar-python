@@ -60,7 +60,7 @@ class TestEverything(unittest.TestCase):
         if not any(_ > 0.0 for _ in w):
             return 0.0
         else:
-            return sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ > 0.0 for _ in w)
+            return sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0)
 
     @staticmethod
     def variance(x):
@@ -74,7 +74,7 @@ class TestEverything(unittest.TestCase):
         if not any(_ > 0.0 for _ in w):
             return 0.0
         else:
-            return sum(xi**2 * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ > 0.0 for _ in w) - math.pow(sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ > 0.0 for _ in w), 2)
+            return sum(xi**2 * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0) - math.pow(sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0), 2)
 
     @staticmethod
     def mae(x):
@@ -116,8 +116,62 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Sum
 
-    # def testSum(self):
-    #     pass
+    def testSum(self):
+        for i in xrange(11):
+            left, right = self.simple[:i], self.simple[i:]
+
+            leftSumming = Sum(lambda x: x)
+            rightSumming = Sum(lambda x: x)
+
+            for _ in left: leftSumming.fill(_)
+            for _ in right: rightSumming.fill(_)
+
+            self.assertAlmostEqual(leftSumming.sum, sum(left))
+            self.assertAlmostEqual(rightSumming.sum, sum(right))
+
+            finalResult = leftSumming + rightSumming
+
+            self.assertAlmostEqual(finalResult.sum, sum(self.simple))
+
+            self.checkJson(leftSumming)
+       
+    def testSumWithFilter(self):
+        for i in xrange(11):
+            left, right = self.struct[:i], self.struct[i:]
+
+            leftSumming = Sum(lambda x: x.double, lambda x: x.bool)
+            rightSumming = Sum(lambda x: x.double, lambda x: x.bool)
+
+            for _ in left: leftSumming.fill(_)
+            for _ in right: rightSumming.fill(_)
+
+            self.assertAlmostEqual(leftSumming.sum, sum(_.double for _ in left if _.bool))
+            self.assertAlmostEqual(rightSumming.sum, sum(_.double for _ in right if _.bool))
+
+            finalResult = leftSumming + rightSumming
+
+            self.assertAlmostEqual(finalResult.sum, sum(_.double for _ in self.struct if _.bool))
+
+            self.checkJson(leftSumming)
+
+    def testSumWithWeightingFactor(self):
+        for i in xrange(11):
+            left, right = self.struct[:i], self.struct[i:]
+
+            leftSumming = Sum(lambda x: x.double, lambda x: x.int)
+            rightSumming = Sum(lambda x: x.double, lambda x: x.int)
+
+            for _ in left: leftSumming.fill(_)
+            for _ in right: rightSumming.fill(_)
+
+            self.assertAlmostEqual(leftSumming.sum, sum(_.double * _.int for _ in left if _.int > 0))
+            self.assertAlmostEqual(rightSumming.sum, sum(_.double * _.int for _ in right if _.int > 0))
+
+            finalResult = leftSumming + rightSumming
+
+            self.assertAlmostEqual(finalResult.sum, sum(_.double * _.int for _ in self.struct if _.int > 0))
+
+            self.checkJson(leftSumming)
 
     ################################################################ Average
 
@@ -137,6 +191,44 @@ class TestEverything(unittest.TestCase):
             finalResult = leftAveraging + rightAveraging
 
             self.assertAlmostEqual(finalResult.mean, self.mean(self.simple))
+
+            self.checkJson(leftAveraging)
+
+    def testAverageWithFilter(self):
+        for i in xrange(11):
+            left, right = self.struct[:i], self.struct[i:]
+
+            leftAveraging = Average(lambda x: x.double, lambda x: x.bool)
+            rightAveraging = Average(lambda x: x.double, lambda x: x.bool)
+
+            for _ in left: leftAveraging.fill(_)
+            for _ in right: rightAveraging.fill(_)
+
+            self.assertAlmostEqual(leftAveraging.mean, self.mean([_.double for _ in left if _.bool]))
+            self.assertAlmostEqual(rightAveraging.mean, self.mean([_.double for _ in right if _.bool]))
+
+            finalResult = leftAveraging + rightAveraging
+
+            self.assertAlmostEqual(finalResult.mean, self.mean([_.double for _ in self.struct if _.bool]))
+
+            self.checkJson(leftAveraging)
+
+    def testAverageWithWeightingFactor(self):
+        for i in xrange(11):
+            left, right = self.struct[:i], self.struct[i:]
+
+            leftAveraging = Average(lambda x: x.double, lambda x: x.int)
+            rightAveraging = Average(lambda x: x.double, lambda x: x.int)
+
+            for _ in left: leftAveraging.fill(_)
+            for _ in right: rightAveraging.fill(_)
+
+            self.assertAlmostEqual(leftAveraging.mean, self.meanWeighted(map(lambda _: _.double, left), map(lambda _: _.int, left)))
+            self.assertAlmostEqual(rightAveraging.mean, self.meanWeighted(map(lambda _: _.double, right), map(lambda _: _.int, right)))
+
+            finalResult = leftAveraging + rightAveraging
+
+            self.assertAlmostEqual(finalResult.mean, self.meanWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
 
             self.checkJson(leftAveraging)
 
@@ -160,7 +252,45 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.variance, self.variance(self.simple))
 
             self.checkJson(leftDeviating)
-        
+
+    def testDeviateWithFilter(self):
+        for i in xrange(11):
+            left, right = self.struct[:i], self.struct[i:]
+
+            leftDeviating = Deviate(lambda x: x.double, lambda x: x.bool)
+            rightDeviating = Deviate(lambda x: x.double, lambda x: x.bool)
+
+            for _ in left: leftDeviating.fill(_)
+            for _ in right: rightDeviating.fill(_)
+
+            self.assertAlmostEqual(leftDeviating.variance, self.variance([_.double for _ in left if _.bool]))
+            self.assertAlmostEqual(rightDeviating.variance, self.variance([_.double for _ in right if _.bool]))
+
+            finalResult = leftDeviating + rightDeviating
+
+            self.assertAlmostEqual(finalResult.variance, self.variance([_.double for _ in self.struct if _.bool]))
+
+            self.checkJson(leftDeviating)
+
+    def testDeviateWithWeightingFactor(self):
+        for i in xrange(11):
+            left, right = self.struct[:i], self.struct[i:]
+
+            leftDeviating = Deviate(lambda x: x.double, lambda x: x.int)
+            rightDeviating = Deviate(lambda x: x.double, lambda x: x.int)
+
+            for _ in left: leftDeviating.fill(_)
+            for _ in right: rightDeviating.fill(_)
+
+            self.assertAlmostEqual(leftDeviating.variance, self.varianceWeighted(map(lambda _: _.double, left), map(lambda _: _.int, left)))
+            self.assertAlmostEqual(rightDeviating.variance, self.varianceWeighted(map(lambda _: _.double, right), map(lambda _: _.int, right)))
+
+            finalResult = leftDeviating + rightDeviating
+
+            self.assertAlmostEqual(finalResult.variance, self.varianceWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
+
+            self.checkJson(leftDeviating)
+
     ################################################################ AbsoluteErr
 
     def testAbsoluteErr(self):
