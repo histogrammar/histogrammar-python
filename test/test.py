@@ -314,8 +314,31 @@ class TestEverything(unittest.TestCase):
         
     ################################################################ Minimize
 
-    # def testMinimize(self):
-    #     pass
+    def testMinimize(self):
+        for i in xrange(11):
+            left, right = self.simple[:i], self.simple[i:]
+
+            leftMinimizing = Minimize(lambda x: x)
+            rightMinimizing = Minimize(lambda x: x)
+
+            for _ in left: leftMinimizing.fill(_)
+            for _ in right: rightMinimizing.fill(_)
+
+            if len(left) > 0:
+                self.assertAlmostEqual(leftMinimizing.min, min(left))
+            else:
+                self.assertTrue(math.isnan(leftMinimizing.min))
+
+            if len(right) > 0:
+                self.assertAlmostEqual(rightMinimizing.min, min(right))
+            else:
+                self.assertTrue(math.isnan(rightMinimizing.min))
+
+            finalResult = leftMinimizing + rightMinimizing
+
+            self.assertAlmostEqual(finalResult.min, min(self.simple))
+
+            self.checkJson(leftMinimizing)
 
     ################################################################ Maximize
 

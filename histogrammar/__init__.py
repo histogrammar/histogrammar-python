@@ -20,4 +20,5 @@ from histogrammar.primitives.average import *
 from histogrammar.primitives.count import *
 from histogrammar.primitives.bin import *
 from histogrammar.primitives.deviate import *
+from histogrammar.primitives.minmax import *
 from histogrammar.primitives.sum import *
