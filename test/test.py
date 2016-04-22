@@ -142,9 +142,25 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Deviate
 
-    # def testDeviate(self):
-    #     pass
+    def testDeviate(self):
+        for i in xrange(11):
+            left, right = self.simple[:i], self.simple[i:]
 
+            leftDeviating = Deviate(lambda x: x)
+            rightDeviating = Deviate(lambda x: x)
+
+            for _ in left: leftDeviating.fill(_)
+            for _ in right: rightDeviating.fill(_)
+
+            self.assertAlmostEqual(leftDeviating.variance, self.variance(left))
+            self.assertAlmostEqual(rightDeviating.variance, self.variance(right))
+
+            finalResult = leftDeviating + rightDeviating
+
+            self.assertAlmostEqual(finalResult.variance, self.variance(self.simple))
+
+            self.checkJson(leftDeviating)
+        
     ################################################################ AbsoluteErr
 
     def testAbsoluteErr(self):
