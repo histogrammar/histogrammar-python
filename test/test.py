@@ -121,8 +121,24 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Average
 
-    # def testAverage(self):
-    #     pass
+    def testAverage(self):
+        for i in xrange(11):
+            left, right = self.simple[:i], self.simple[i:]
+
+            leftAveraging = Average(lambda x: x)
+            rightAveraging = Average(lambda x: x)
+
+            for _ in left: leftAveraging.fill(_)
+            for _ in right: rightAveraging.fill(_)
+
+            self.assertAlmostEqual(leftAveraging.mean, self.mean(left))
+            self.assertAlmostEqual(rightAveraging.mean, self.mean(right))
+
+            finalResult = leftAveraging + rightAveraging
+
+            self.assertAlmostEqual(finalResult.mean, self.mean(self.simple))
+
+            self.checkJson(leftAveraging)
 
     ################################################################ Deviate
 
