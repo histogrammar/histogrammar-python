@@ -386,8 +386,17 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ SparselyBin
 
-    # def testSparselyBin(self):
-    #     pass
+    def testSparselyBin(self):
+        one = SparselyBin(1.0, lambda x: x)
+        for _ in self.simple: one.fill(_)
+        self.assertEqual([(i, v.entries) for i, v in sorted(one.bins.items())], [(-5, 1.0), (-3, 1.0), (-2, 2.0), (0, 2.0), (1, 1.0), (2, 1.0), (3, 1.0), (7, 1.0)])
+
+        self.assertEqual(one.numFilled, 8)
+        self.assertEqual(one.num, 13)
+        self.assertEqual(one.low, -5.0)
+        self.assertEqual(one.high, 8.0)
+
+        self.checkJson(one)
 
     ################################################################ CentrallyBin
 

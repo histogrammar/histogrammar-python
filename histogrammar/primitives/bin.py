@@ -68,6 +68,7 @@ class Bin(Factory, Container):
                 raise ContainerException("cannot add Bins because number of values is zero")
 
             out = Bin(len(self.values), self.low, self.high, self.quantity, self.selection, self.values[0], self.underflow + other.underflow, self.overflow + other.overflow, self.nanflow + other.nanflow)
+            out.entries = self.entries + other.entries
             out.values = [x + y for x, y in zip(self.values, other.values)]
             return out
 
@@ -172,7 +173,7 @@ class Bin(Factory, Container):
             return Bin.ed(low, high, entries, values, underflow, overflow, nanflow)
 
         else:
-            raise JsonFormatException(json, self.name)
+            raise JsonFormatException(json, "Bin")
         
     def __repr__(self):
         return "Bin[low={}, high={}, values=[{}..., size={}], underflow={}, overflow={}, nanflow={}]".format(self.low, self.high, repr(self.values[0]), len(self.values), repr(self.underflow), repr(self.overflow), repr(self.nanflow))

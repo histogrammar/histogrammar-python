@@ -18,6 +18,8 @@ import math
 
 import json as jsonlib
 
+MIN_LONG = -9223372036854775808
+
 class ContainerException(Exception):
     pass
 
