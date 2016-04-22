@@ -131,9 +131,25 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ AbsoluteErr
 
-    # def testAbsoluteErr(self):
-    #     pass
+    def testAbsoluteErr(self):
+        for i in xrange(11):
+            left, right = self.simple[:i], self.simple[i:]
 
+            leftAbsoluteErring = AbsoluteErr(lambda x: x)
+            rightAbsoluteErring = AbsoluteErr(lambda x: x)
+
+            for _ in left: leftAbsoluteErring.fill(_)
+            for _ in right: rightAbsoluteErring.fill(_)
+
+            self.assertAlmostEqual(leftAbsoluteErring.mae, self.mae(left))
+            self.assertAlmostEqual(rightAbsoluteErring.mae, self.mae(right))
+
+            finalResult = leftAbsoluteErring + rightAbsoluteErring
+
+            self.assertAlmostEqual(finalResult.mae, self.mae(self.simple))
+
+            self.checkJson(leftAbsoluteErring)
+        
     ################################################################ Minimize
 
     # def testMinimize(self):
