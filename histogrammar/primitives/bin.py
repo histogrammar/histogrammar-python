@@ -17,6 +17,7 @@
 import math
 
 from histogrammar.defs import *
+from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class Bin(Factory, Container):
@@ -43,8 +44,8 @@ class Bin(Factory, Container):
         self.entries = 0.0
         self.low = float(low)
         self.high = float(high)
-        self.quantity = quantity
-        self.selection = selection
+        self.quantity = serializable(quantity)
+        self.selection = serializable(selection)
         if value is None:
             self.values = [None] * num
         else:

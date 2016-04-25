@@ -15,14 +15,15 @@
 # limitations under the License.
 
 from histogrammar.defs import unweighted
+from histogrammar.util import serializable
 from histogrammar.primitives.bin import Bin
 from histogrammar.primitives.count import Count
 
 def Histogram(num, low, high, quantity, selection=unweighted):
     return Bin(num, low, high, quantity, selection, Count(), Count(), Count(), Count())
 
-## Histogram.ed = lambda low, high, entries, values, underflow, overflow, nanflow: \
-##     Bin(len(values), low, high, None, None, None, underflow, overflow, nanflow)
+Histogram.ed = serializable(lambda low, high, entries, values, underflow, overflow, nanflow:
+    Bin(len(values), low, high, None, None, None, underflow, overflow, nanflow))
 
 class HistogramMethods(Bin):
     @property

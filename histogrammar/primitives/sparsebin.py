@@ -17,6 +17,7 @@
 import math
 
 from histogrammar.defs import *
+from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class SparselyBin(Factory, Container):
@@ -41,8 +42,8 @@ class SparselyBin(Factory, Container):
 
         self.binWidth = binWidth
         self.entries = 0.0
-        self.quantity = quantity
-        self.selection = selection
+        self.quantity = serializable(quantity)
+        self.selection = serializable(selection)
         self.value = value
         self.bins = {}
         self.nanflow = nanflow.copy()

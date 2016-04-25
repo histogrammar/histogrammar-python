@@ -17,6 +17,7 @@
 import math
 
 from histogrammar.defs import *
+from histogrammar.util import *
 
 class Bag(Factory, Container):
     @staticmethod
@@ -37,8 +38,8 @@ class Bag(Factory, Container):
         return Bag(quantity, selection, limit)
 
     def __init__(self, quantity, selection=unweighted, limit=None):
-        self.quantity = quantity
-        self.selection = selection
+        self.quantity = serializable(quantity)
+        self.selection = serializable(selection)
         self.entries = 0.0
         self.values = {}
         self.limit = limit

@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from histogrammar.defs import *
+from histogrammar.util import *
 
 class Sum(Factory, Container):
     @staticmethod
@@ -31,8 +32,8 @@ class Sum(Factory, Container):
         return Sum(quantity, selection)
 
     def __init__(self, quantity, selection=unweighted):
-        self.quantity = quantity
-        self.selection = selection
+        self.quantity = serializable(quantity)
+        self.selection = serializable(selection)
         self.entries = 0.0
         self.sum = 0.0
         super(Sum, self).__init__()

@@ -14,9 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json as jsonlib
 import math
 
-import json as jsonlib
+from histogrammar.util import *
 
 MIN_LONG = -9223372036854775808
 
@@ -81,7 +82,7 @@ class Container(object):
     def toJsonFragment(self): raise NotImplementedError
     def __repr__(self): raise NotImplementedError
 
-def unweighted(datum): return 1.0
+unweighted = Fcn(lambda datum: 1.0)
 
 def exact(x, y):
     return (math.isnan(x) and math.isnan(y)) or x == y

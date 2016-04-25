@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from histogrammar.defs import *
+from histogrammar.util import *
 
 class Average(Factory, Container):
     @staticmethod
@@ -31,8 +32,8 @@ class Average(Factory, Container):
         return Average(quantity, selection)
 
     def __init__(self, quantity, selection=unweighted):
-        self.quantity = quantity
-        self.selection = selection
+        self.quantity = serializable(quantity)
+        self.selection = serializable(selection)
         self.entries = 0.0
         self.mean = 0.0
         super(Average, self).__init__()

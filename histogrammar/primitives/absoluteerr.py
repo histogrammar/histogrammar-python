@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from histogrammar.defs import *
+from histogrammar.util import *
 
 class AbsoluteErr(Factory, Container):
     @staticmethod
@@ -31,8 +32,8 @@ class AbsoluteErr(Factory, Container):
         return AbsoluteErr(quantity, selection)
 
     def __init__(self, quantity, selection=unweighted):
-        self.quantity = quantity
-        self.selection = selection
+        self.quantity = serializable(quantity)
+        self.selection = serializable(selection)
         self.entries = 0.0
         self.absoluteSum = 0.0
         super(AbsoluteErr, self).__init__()

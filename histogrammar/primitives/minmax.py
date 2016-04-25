@@ -17,6 +17,7 @@
 import math
 
 from histogrammar.defs import *
+from histogrammar.util import *
 
 class Minimize(Factory, Container):
     @staticmethod
@@ -33,8 +34,8 @@ class Minimize(Factory, Container):
         return Minimize(quantity, selection)
 
     def __init__(self, quantity, selection=unweighted):
-        self.quantity = quantity
-        self.selection = selection
+        self.quantity = serializable(quantity)
+        self.selection = serializable(selection)
         self.entries = 0.0
         self.min = float("nan")
         super(Minimize, self).__init__()
@@ -118,8 +119,8 @@ class Maximize(Factory, Container):
         return Maximize(quantity, selection)
 
     def __init__(self, quantity, selection=unweighted):
-        self.quantity = quantity
-        self.selection = selection
+        self.quantity = serializable(quantity)
+        self.selection = serializable(selection)
         self.entries = 0.0
         self.max = float("nan")
         super(Maximize, self).__init__()
