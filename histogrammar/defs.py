@@ -38,6 +38,13 @@ class Factory(object):
     def register(factory):
         Factory.registered[factory.__name__] = factory
 
+    def __init__(self):
+        try:
+            import histogrammar.histogram
+            histogrammar.histogram.addImplicitMethods(self)
+        except ImportError:
+            pass
+
     @staticmethod
     def fromJson(json):
         if isinstance(json, basestring):
@@ -78,3 +85,10 @@ def unweighted(datum): return 1.0
 
 def exact(x, y):
     return (math.isnan(x) and math.isnan(y)) or x == y
+
+def increment(container, datum):
+    container.fill(datum)
+    return container
+
+def combine(container1, container2):
+    return container1 + container2

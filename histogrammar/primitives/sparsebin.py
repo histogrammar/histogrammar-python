@@ -47,6 +47,7 @@ class SparselyBin(Factory, Container):
         self.bins = {}
         self.nanflow = nanflow.copy()
         self.origin = origin
+        super(SparselyBin, self).__init__()
 
     @property
     def zero(self): return SparselyBin(self.binWidth, self.quantity, self.selection, self.value, self.nanflow.zero(), self.origin)

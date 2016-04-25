@@ -35,6 +35,7 @@ class AbsoluteErr(Factory, Container):
         self.selection = selection
         self.entries = 0.0
         self.absoluteSum = 0.0
+        super(AbsoluteErr, self).__init__()
 
     @property
     def mae(self):

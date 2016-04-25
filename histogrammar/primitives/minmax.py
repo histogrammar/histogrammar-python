@@ -37,6 +37,7 @@ class Minimize(Factory, Container):
         self.selection = selection
         self.entries = 0.0
         self.min = float("nan")
+        super(Minimize, self).__init__()
 
     @property
     def zero(self): return Minimize(self.quantity, self.selection)
@@ -121,6 +122,7 @@ class Maximize(Factory, Container):
         self.selection = selection
         self.entries = 0.0
         self.max = float("nan")
+        super(Maximize, self).__init__()
 
     @property
     def zero(self): return Maximize(self.quantity, self.selection)

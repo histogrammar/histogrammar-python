@@ -18,6 +18,7 @@ import math
 import unittest
 
 from histogrammar import *
+from histogrammar.histogram import Histogram
 
 class TestEverything(unittest.TestCase):
     simple = [3.4, 2.2, -1.8, 0.0, 7.3, -4.7, 1.6, 0.0, -3.0, -1.7]
@@ -375,6 +376,26 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(one.nanflow.entries, 0.0)
 
         two = Bin(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
+        for _ in self.struct: two.fill(_)
+        self.assertEqual(map(lambda _: _.entries, two.values), [2.0, 1.0, 1.0, 1.0, 0.0])
+        self.assertEqual(two.underflow.entries, 0.0)
+        self.assertEqual(two.overflow.entries, 0.0)
+        self.assertEqual(two.nanflow.entries, 0.0)
+
+        self.checkJson(one)
+        self.checkJson(two)
+
+    def testHistogram(self):
+        one = Histogram(5, -3.0, 7.0, lambda x: x)
+        print one.name, one.factory, one
+
+        for _ in self.simple: one.fill(_)
+        self.assertEqual(map(lambda _: _.entries, one.values), [3.0, 2.0, 2.0, 1.0, 0.0])
+        self.assertEqual(one.underflow.entries, 1.0)
+        self.assertEqual(one.overflow.entries, 1.0)
+        self.assertEqual(one.nanflow.entries, 0.0)
+
+        two = Histogram(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
         for _ in self.struct: two.fill(_)
         self.assertEqual(map(lambda _: _.entries, two.values), [2.0, 1.0, 1.0, 1.0, 0.0])
         self.assertEqual(two.underflow.entries, 0.0)

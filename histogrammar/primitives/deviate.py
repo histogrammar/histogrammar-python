@@ -37,6 +37,7 @@ class Deviate(Factory, Container):
         self.entries = 0.0
         self.mean = 0.0
         self.varianceTimesEntries = 0.0
+        super(Deviate, self).__init__()
 
     @property
     def variance(self):

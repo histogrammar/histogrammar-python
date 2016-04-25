@@ -31,6 +31,7 @@ class Count(Factory, Container):
 
     def __init__(self):
         self.entries = 0.0
+        super(Count, self).__init__()
 
     @property
     def zero(self): return Count()

@@ -35,6 +35,7 @@ class Average(Factory, Container):
         self.selection = selection
         self.entries = 0.0
         self.mean = 0.0
+        super(Average, self).__init__()
 
     @property
     def zero(self): return Average(self.quantity, self.selection)

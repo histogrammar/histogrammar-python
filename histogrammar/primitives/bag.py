@@ -42,6 +42,7 @@ class Bag(Factory, Container):
         self.entries = 0.0
         self.values = {}
         self.limit = limit
+        super(Bag, self).__init__()
 
     @property
     def zero(self): return Bag(self.quantity, self.selection, self.limit)
