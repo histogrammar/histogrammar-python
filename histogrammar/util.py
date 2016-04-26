@@ -18,14 +18,15 @@ import marshal
 import types
 
 class Fcn(object):
-    def __init__(self, fcn):
+    def __init__(self, fcn, varname="datum"):
         if isinstance(fcn, basestring):
             c = compile(fcn, "<string>", "eval")
             def function(datum):
+                context = dict(globals(), **{varname: datum})
                 try:
-                    context = dict(globals(), **datum.__dict__)
+                    context.update(datum.__dict__)
                 except AttributeError:
-                    context = dict(globals(), **{"_": datum})
+                    pass
                 return eval(c, context)
             fcn = function
 
