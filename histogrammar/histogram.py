@@ -28,11 +28,11 @@ Histogram.ed = serializable(lambda low, high, entries, values, underflow, overfl
 class HistogramMethods(Bin):
     @property
     def name(self):
-        return super(Bin, self).name
+        return "Bin"
 
     @property
     def factory(self):
-        return super(Bin, self).factory
+        return Bin
 
     @property
     def numericalValues(self):

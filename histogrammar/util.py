@@ -19,8 +19,18 @@ import types
 
 class Fcn(object):
     def __init__(self, fcn):
+        if isinstance(fcn, basestring):
+            c = compile(fcn, "<string>", "eval")
+            def function(datum):
+                try:
+                    context = dict(globals(), **datum.__dict__)
+                except AttributeError:
+                    context = dict(globals(), **{"_": datum})
+                return eval(c, context)
+            fcn = function
+
         if not isinstance(fcn, types.FunctionType):
-            raise TypeError("quantity or selection function must be a types.FunctionType")
+            raise TypeError("quantity or selection function must be a function or string expression")
         self.fcn = fcn
 
     def __call__(self, *args, **kwds):
@@ -53,7 +63,9 @@ def deserializeFcn(cls, func_code, func_name, func_defaults, func_closure, refs)
     return out
 
 def serializable(fcn):
-    if isinstance(fcn, Fcn):
+    if fcn is None:
+        return None
+    elif isinstance(fcn, Fcn):
         return fcn
     else:
         return Fcn(fcn)

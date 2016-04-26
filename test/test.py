@@ -174,6 +174,63 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftSumming)
 
+    def testSumStringFunctions(self):
+        for i in xrange(11):
+            left, right = self.simple[:i], self.simple[i:]
+
+            leftSumming = Sum("_ + 1")
+            rightSumming = Sum("_ + 1")
+
+            for _ in left: leftSumming.fill(_)
+            for _ in right: rightSumming.fill(_)
+
+            self.assertAlmostEqual(leftSumming.sum, sum(left) + len(left))
+            self.assertAlmostEqual(rightSumming.sum, sum(right) + len(right))
+
+            finalResult = leftSumming + rightSumming
+
+            self.assertAlmostEqual(finalResult.sum, sum(self.simple) + len(self.simple))
+
+            self.checkJson(leftSumming)
+       
+    def testSumWithFilterStringFunctions(self):
+        for i in xrange(11):
+            left, right = self.struct[:i], self.struct[i:]
+
+            leftSumming = Sum("double + 1", "not bool")
+            rightSumming = Sum("double + 1", "not bool")
+
+            for _ in left: leftSumming.fill(_)
+            for _ in right: rightSumming.fill(_)
+
+            self.assertAlmostEqual(leftSumming.sum, sum(_.double + 1 for _ in left if not _.bool))
+            self.assertAlmostEqual(rightSumming.sum, sum(_.double + 1 for _ in right if not _.bool))
+
+            finalResult = leftSumming + rightSumming
+
+            self.assertAlmostEqual(finalResult.sum, sum(_.double + 1 for _ in self.struct if not _.bool))
+
+            self.checkJson(leftSumming)
+
+    def testSumWithWeightingFactorStringFunctions(self):
+        for i in xrange(11):
+            left, right = self.struct[:i], self.struct[i:]
+
+            leftSumming = Sum("double * 2", "int")
+            rightSumming = Sum("double * 2", "int")
+
+            for _ in left: leftSumming.fill(_)
+            for _ in right: rightSumming.fill(_)
+
+            self.assertAlmostEqual(leftSumming.sum, sum(_.double * 2 * _.int for _ in left if _.int > 0))
+            self.assertAlmostEqual(rightSumming.sum, sum(_.double * 2 * _.int for _ in right if _.int > 0))
+
+            finalResult = leftSumming + rightSumming
+
+            self.assertAlmostEqual(finalResult.sum, sum(_.double * 2 * _.int for _ in self.struct if _.int > 0))
+
+            self.checkJson(leftSumming)
+
     ################################################################ Average
 
     def testAverage(self):
@@ -387,7 +444,6 @@ class TestEverything(unittest.TestCase):
 
     def testHistogram(self):
         one = Histogram(5, -3.0, 7.0, lambda x: x)
-        print one.name, one.factory, one
 
         for _ in self.simple: one.fill(_)
         self.assertEqual(map(lambda _: _.entries, one.values), [3.0, 2.0, 2.0, 1.0, 0.0])
