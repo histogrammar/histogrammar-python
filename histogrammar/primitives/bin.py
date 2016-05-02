@@ -56,7 +56,7 @@ class Bin(Factory, Container):
         super(Bin, self).__init__()
 
     @property
-    def zero(self): return Bin(len(self.values), self.low, self.high, self.quantity, self.selection, self.values[0].zero(), self.underflow.zero(), self.overflow.zero(), self.nanflow.zero())
+    def zero(self): return Bin(len(self.values), self.low, self.high, self.quantity, self.selection, self.values[0].zero, self.underflow.zero, self.overflow.zero, self.nanflow.zero)
 
     def __add__(self, other):
         if isinstance(other, Bin):
