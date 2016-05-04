@@ -569,10 +569,54 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(labeling)
         
+    def testUntypedLabelMultipleTypes(self):
+        one = Histogram(5, -3.0, 7.0, lambda x: x)
+        two = Sum(lambda x: 1.0)
+        three = Deviate(lambda x: x + 100.0)
+
+        mapping = UntypedLabel(one=one, two=two, three=three)
+
+        for _ in self.simple: mapping.fill(_)
+
+        self.assertEqual(mapping("one").numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0])
+        self.assertEqual(mapping("two").sum, 10.0)
+        self.assertAlmostEqual(mapping("three").entries, 10.0)
+        self.assertAlmostEqual(mapping("three").mean, 100.33)
+        self.assertAlmostEqual(mapping("three").variance, 10.8381)
+
+        self.checkJson(mapping)
+
     ################################################################ Index
 
-    # def testIndex(self):
-    #     pass
+    def testIndex(self):
+        one = Histogram(5, -3.0, 7.0, lambda x: x)
+        two = Histogram(10, 0.0, 10.0, lambda x: x)
+        three = Histogram(5, -3.0, 7.0, lambda x: 2*x)
+
+        indexing = Index(one, two, three)
+
+        for _ in self.simple: indexing.fill(_)
+
+        self.assertEqual(indexing(0).numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0])
+        self.assertEqual(indexing(1).numericalValues, [2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0])
+        self.assertEqual(indexing(2).numericalValues, [0.0, 2.0, 0.0, 2.0, 1.0])
+
+        self.checkJson(indexing)
+
+    def testIndexDifferentCuts(self):
+        one = Histogram(10, -10, 10, lambda x: x, lambda x: x > 0)
+        two = Histogram(10, -10, 10, lambda x: x, lambda x: x > 5)
+        three = Histogram(10, -10, 10, lambda x: x, lambda x: x < 5)
+
+        indexing = Index(one, two, three)
+
+        for _ in self.simple: indexing.fill(_)
+
+        self.assertEqual(indexing(0).numericalValues, [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 0.0, 1.0, 0.0])
+        self.assertEqual(indexing(1).numericalValues, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0])
+        self.assertEqual(indexing(2).numericalValues, [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 0.0, 0.0, 0.0])
+
+        self.checkJson(indexing)
 
     ################################################################ Branch
 

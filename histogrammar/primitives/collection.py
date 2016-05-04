@@ -216,3 +216,102 @@ class UntypedLabel(Factory, Container):
         return hash((self.entries, tuple(sorted(self.pairs.items()))))
 
 Factory.register(UntypedLabel)
+
+class Index(Factory, Container):
+    @staticmethod
+    def ed(entries, *values):
+        if entries < 0.0:
+            raise ContainerException("entries ({}) cannot be negative".format(entries))
+
+        out = Index(*values)
+        out.entries = float(entries)
+        return out
+
+    @staticmethod
+    def ing(*values):
+        return Index(*values)
+
+    def __init__(self, *values):
+        if len(values) < 1:
+            raise ContainerException("at least one value required")
+        contentType = values[0].name
+        if any(x.name != contentType for x in values):
+            raise ContainerException("all Index values must have the same type")
+
+        self.entries = 0
+        self.values = values
+
+        super(Index, self).__init__()
+
+    @property
+    def size(self): return len(self.values)
+
+    def __call__(self, i): return self.values[i]
+
+    def get(self, i):
+        if i < 0 or i >= len(self.values):
+            return None
+        else:
+            return self.values[i]
+
+    def getOrElse(self, x, default):
+        if i < 0 or i >= len(self.values):
+            return default
+        else:
+            return self.values[i]
+
+    @property
+    def zero(self): return Index(*[x.zero for x in self.values])
+
+    def __add__(self, other):
+        if isinstance(other, Index):
+            if self.size != other.size:
+                raise ContainerException("cannot add Indexes because they have different sizes: ({} vs {})".format(self.size, other.size))
+
+            out = Index(*[x + y for x, y in zip(self.values, other.values)])
+            out.entries = self.entries + other.entries
+            return out
+
+        else:
+            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+
+    def fill(self, datum, weight=1.0):
+        for x in self.values:
+            x.fill(datum, weight)
+
+    def toJsonFragment(self): return {
+        "entries": self.entries,
+        "type": self.values[0].name,
+        "data": [x.toJsonFragment() for x in self.values],
+        }
+
+    @staticmethod
+    def fromJsonFragment(json):
+        if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "data"]):
+            if isinstance(json["entries"], (int, long, float)):
+                entries = json["entries"]
+            else:
+                raise JsonFormatException(json, "Index.entries")
+
+            if isinstance(json["type"], basestring):
+                factory = Factory.registered[json["type"]]
+            else:
+                raise JsonFormatException(json, "Index.type")
+
+            if isinstance(json["data"], list):
+                values = [factory.fromJsonFragment(x) for x in json["data"]]
+            else:
+                raise JsonFormatException(json, "Index.data")
+
+            return Index.ed(entries, *values)
+
+    def __repr__(self):
+        return "Index[{}..., size={}]".format(repr(self.values[0]), self.size)
+
+    def __eq__(self, other):
+        return isinstance(other, Index) and exact(self.entries, other.entries) and self.values == other.values
+
+    def __hash__(self):
+        return hash((self.entries, tuple(sorted(self.values))))
+
+Factory.register(Index)
