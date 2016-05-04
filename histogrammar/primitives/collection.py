@@ -114,3 +114,105 @@ class Label(Factory, Container):
         return hash((self.entries, tuple(sorted(self.pairs.items()))))
 
 Factory.register(Label)
+
+class UntypedLabel(Factory, Container):
+    @staticmethod
+    def ed(entries, **pairs):
+        if entries < 0.0:
+            raise ContainerException("entries ({}) cannot be negative".format(entries))
+
+        out = UntypedLabel(**pairs)
+        out.entries = float(entries)
+        return out
+
+    @staticmethod
+    def ing(**pairs):
+        return UntypedLabel(**pairs)
+
+    def __init__(self, **pairs):
+        if any(not isinstance(x, basestring) for x in pairs.keys()):
+            raise ContainerException("all UntypedLabel keys must be strings")
+
+        self.entries = 0
+        self.pairs = pairs
+
+        super(UntypedLabel, self).__init__()
+
+    @property
+    def pairsMap(self): return self.pairs
+    @property
+    def size(self): return len(self.pairs)
+    @property
+    def keys(self): return self.pairs.keys()
+    @property
+    def values(self): return self.pairs.values()
+    @property
+    def keySet(self): return set(self.pairs.keys())
+
+    def __call__(self, x): return self.pairs[x]
+    def get(self, x): return self.pairs.get(x, None)
+    def getOrElse(self, x, default): return self.pairs.get(x, default)
+
+    @property
+    def zero(self): return UntypedLabel(**{k: v.zero for k, v in self.pairs.items()})
+
+    def __add__(self, other):
+        if isinstance(other, UntypedLabel):
+            if self.keySet != other.keySet:
+                raise ContainerException("cannot add UntypedLabels because keys differ:\n    {}\n    {}".format(", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))))
+
+            out = UntypedLabel(**{k: self(k) + other(k) for k in self.keys})
+            out.entries = self.entries + other.entries
+            return out
+
+        else:
+            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+
+    def fill(self, datum, weight=1.0):
+        for x in self.values:
+            x.fill(datum, weight)
+
+    def toJsonFragment(self): return {
+        "entries": self.entries,
+        "data": {k: {"type": v.name, "data": v.toJsonFragment()} for k, v in self.pairs.items()},
+        }
+
+    @staticmethod
+    def fromJsonFragment(json):
+        if isinstance(json, dict) and set(json.keys()) == set(["entries", "data"]):
+            if isinstance(json["entries"], (int, long, float)):
+                entries = json["entries"]
+            else:
+                raise JsonFormatException(json, "UntypedLabel.entries")
+
+            if isinstance(json["data"], dict):
+                pairs = {}
+                for k, v in json["data"].items():
+                    if isinstance(v, dict) and set(v.keys()) == set(["type", "data"]):
+                        factory = Factory.registered[v["type"]]
+                        pairs[k] = factory.fromJsonFragment(v["data"])
+
+                    else:
+                        raise JsonFormatException(k, "UntypedLabel.data {}".format(v))
+
+            else:
+                raise JsonFormatException(json, "UntypedLabel.data")
+
+            return UntypedLabel.ed(entries, **pairs)
+
+        else:
+            raise JsonFormatException(json, "UntypedLabel")
+
+    def __repr__(self):
+        if self.size == 0:
+            return "UntypedLabel[size={}]".format(self.size)
+        else:
+            return "UntypedLabel[{}..., size={}]".format(repr(self.values[0]), self.size)
+
+    def __eq__(self, other):
+        return isinstance(other, UntypedLabel) and exact(self.entries, other.entries) and self.pairs == other.pairs
+
+    def __hash__(self):
+        return hash((self.entries, tuple(sorted(self.pairs.items()))))
+
+Factory.register(UntypedLabel)

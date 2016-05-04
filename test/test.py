@@ -522,11 +522,53 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(labeling)
 
+    def testLabelDifferentCuts(self):
+        one = Histogram(10, -10, 10, lambda x: x, lambda x: x > 0)
+        two = Histogram(10, -10, 10, lambda x: x, lambda x: x > 5)
+        three = Histogram(10, -10, 10, lambda x: x, lambda x: x < 5)
+
+        labeling = Label(one=one, two=two, three=three)
+
+        for _ in self.simple: labeling.fill(_)
+
+        self.assertEqual(labeling("one").numericalValues, [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 0.0, 1.0, 0.0])
+        self.assertEqual(labeling("two").numericalValues, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0])
+        self.assertEqual(labeling("three").numericalValues, [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 0.0, 0.0, 0.0])
+
+        self.checkJson(labeling)
+
     ################################################################ UntypedLabel
 
-    # def testUntypedLabel(self):
-    #     pass
+    def testUntypedLabel(self):
+        one = Histogram(5, -3.0, 7.0, lambda x: x)
+        two = Histogram(10, 0.0, 10.0, lambda x: x)
+        three = Histogram(5, -3.0, 7.0, lambda x: 2*x)
 
+        labeling = UntypedLabel(one=one, two=two, three=three)
+
+        for _ in self.simple: labeling.fill(_)
+
+        self.assertEqual(labeling("one").numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0])
+        self.assertEqual(labeling("two").numericalValues, [2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0])
+        self.assertEqual(labeling("three").numericalValues, [0.0, 2.0, 0.0, 2.0, 1.0])
+
+        self.checkJson(labeling)
+
+    def testUntypedLabelDifferenCuts(self):
+        one = Histogram(10, -10, 10, lambda x: x, lambda x: x > 0)
+        two = Histogram(10, -10, 10, lambda x: x, lambda x: x > 5)
+        three = Histogram(10, -10, 10, lambda x: x, lambda x: x < 5)
+
+        labeling = UntypedLabel(one=one, two=two, three=three)
+
+        for _ in self.simple: labeling.fill(_)
+
+        self.assertEqual(labeling("one").numericalValues, [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 0.0, 1.0, 0.0])
+        self.assertEqual(labeling("two").numericalValues, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0])
+        self.assertEqual(labeling("three").numericalValues, [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 0.0, 0.0, 0.0])
+
+        self.checkJson(labeling)
+        
     ################################################################ Index
 
     # def testIndex(self):
