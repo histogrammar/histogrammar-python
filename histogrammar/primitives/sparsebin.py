@@ -50,8 +50,7 @@ class SparselyBin(Factory, Container):
         self.origin = origin
         super(SparselyBin, self).__init__()
 
-    @property
-    def zero(self): return SparselyBin(self.binWidth, self.quantity, self.selection, self.value, self.nanflow.zero, self.origin)
+    def zero(self): return SparselyBin(self.binWidth, self.quantity, self.selection, self.value, self.nanflow.zero(), self.origin)
 
     def __add__(self, other):
         if isinstance(other, SparselyBin):

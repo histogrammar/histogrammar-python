@@ -47,7 +47,6 @@ class Deviate(Factory, Container):
         else:
             return self.varianceTimesEntries/self.entries
 
-    @property
     def zero(self): return Deviate(self.quantity, self.selection)
 
     def __add__(self, other):

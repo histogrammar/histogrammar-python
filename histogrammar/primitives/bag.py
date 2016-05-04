@@ -45,7 +45,6 @@ class Bag(Factory, Container):
         self.limit = limit
         super(Bag, self).__init__()
 
-    @property
     def zero(self): return Bag(self.quantity, self.selection, self.limit)
 
     def __add__(self, other):

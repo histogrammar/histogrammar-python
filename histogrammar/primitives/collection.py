@@ -59,8 +59,7 @@ class Label(Factory, Container):
     def get(self, x): return self.pairs.get(x, None)
     def getOrElse(self, x, default): return self.pairs.get(x, default)
 
-    @property
-    def zero(self): return Label(**{k: v.zero for k, v in self.pairs.items()})
+    def zero(self): return Label(**{k: v.zero() for k, v in self.pairs.items()})
 
     def __add__(self, other):
         if isinstance(other, Label):
@@ -153,8 +152,7 @@ class UntypedLabel(Factory, Container):
     def get(self, x): return self.pairs.get(x, None)
     def getOrElse(self, x, default): return self.pairs.get(x, default)
 
-    @property
-    def zero(self): return UntypedLabel(**{k: v.zero for k, v in self.pairs.items()})
+    def zero(self): return UntypedLabel(**{k: v.zero() for k, v in self.pairs.items()})
 
     def __add__(self, other):
         if isinstance(other, UntypedLabel):
@@ -260,8 +258,7 @@ class Index(Factory, Container):
         else:
             return self.values[i]
 
-    @property
-    def zero(self): return Index(*[x.zero for x in self.values])
+    def zero(self): return Index(*[x.zero() for x in self.values])
 
     def __add__(self, other):
         if isinstance(other, Index):

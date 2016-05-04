@@ -45,7 +45,6 @@ class AbsoluteErr(Factory, Container):
         else:
             return self.absoluteSum/self.entries
 
-    @property
     def zero(self): return AbsoluteErr(self.quantity, self.selection)
 
     def __add__(self, other):

@@ -38,7 +38,6 @@ class Sum(Factory, Container):
         self.sum = 0.0
         super(Sum, self).__init__()
 
-    @property
     def zero(self): return Sum(self.quantity, self.selection)
 
     def __add__(self, other):

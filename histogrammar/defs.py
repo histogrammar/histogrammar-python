@@ -71,12 +71,11 @@ class Container(object):
     @property
     def factory(self): return self.__class__
 
-    @property
     def zero(self): raise NotImplementedError
     def __add__(self, other): raise NotImplementedError
     def fill(self, datum, weight=1.0): raise NotImplementedError
 
-    def copy(self): return self + self.zero
+    def copy(self): return self + self.zero()
 
     def toJson(self): return {"type": self.name, "data": self.toJsonFragment()}
     def toJsonFragment(self): raise NotImplementedError

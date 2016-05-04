@@ -40,7 +40,6 @@ class Minimize(Factory, Container):
         self.min = float("nan")
         super(Minimize, self).__init__()
 
-    @property
     def zero(self): return Minimize(self.quantity, self.selection)
 
     def __add__(self, other):
@@ -125,7 +124,6 @@ class Maximize(Factory, Container):
         self.max = float("nan")
         super(Maximize, self).__init__()
 
-    @property
     def zero(self): return Maximize(self.quantity, self.selection)
 
     def __add__(self, other):

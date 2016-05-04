@@ -38,7 +38,6 @@ class Average(Factory, Container):
         self.mean = 0.0
         super(Average, self).__init__()
 
-    @property
     def zero(self): return Average(self.quantity, self.selection)
 
     def __add__(self, other):
