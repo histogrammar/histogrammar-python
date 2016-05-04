@@ -507,8 +507,20 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Label
 
-    # def testLabel(self):
-    #     pass
+    def testLabel(self):
+        one = Histogram(5, -3.0, 7.0, lambda x: x)
+        two = Histogram(10, 0.0, 10.0, lambda x: x)
+        three = Histogram(5, -3.0, 7.0, lambda x: 2*x)
+
+        labeling = Label(one=one, two=two, three=three)
+
+        for _ in self.simple: labeling.fill(_)
+
+        self.assertEqual(labeling("one").numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0])
+        self.assertEqual(labeling("two").numericalValues, [2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0])
+        self.assertEqual(labeling("three").numericalValues, [0.0, 2.0, 0.0, 2.0, 1.0])
+
+        self.checkJson(labeling)
 
     ################################################################ UntypedLabel
 
