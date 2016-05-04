@@ -16,6 +16,8 @@
 
 from histogrammar.defs import *
 
+################################################################ Label
+
 class Label(Factory, Container):
     @staticmethod
     def ed(entries, **pairs):
@@ -39,7 +41,7 @@ class Label(Factory, Container):
         if any(x.name != contentType for x in pairs.values()):
             raise ContainerException("all Label values must have the same type")
 
-        self.entries = 0
+        self.entries = 0.0
         self.pairs = pairs
 
         super(Label, self).__init__()
@@ -103,6 +105,9 @@ class Label(Factory, Container):
 
             return Label.ed(entries, **pairs)
 
+        else:
+            raise JsonFormatException(json, "Label")
+
     def __repr__(self):
         return "Label[{}..., size={}]".format(repr(self.values[0]), self.size)
 
@@ -113,6 +118,8 @@ class Label(Factory, Container):
         return hash((self.entries, tuple(sorted(self.pairs.items()))))
 
 Factory.register(Label)
+
+################################################################ UntypedLabel
 
 class UntypedLabel(Factory, Container):
     @staticmethod
@@ -132,7 +139,7 @@ class UntypedLabel(Factory, Container):
         if any(not isinstance(x, basestring) for x in pairs.keys()):
             raise ContainerException("all UntypedLabel keys must be strings")
 
-        self.entries = 0
+        self.entries = 0.0
         self.pairs = pairs
 
         super(UntypedLabel, self).__init__()
@@ -215,6 +222,8 @@ class UntypedLabel(Factory, Container):
 
 Factory.register(UntypedLabel)
 
+################################################################ Index
+
 class Index(Factory, Container):
     @staticmethod
     def ed(entries, *values):
@@ -236,7 +245,7 @@ class Index(Factory, Container):
         if any(x.name != contentType for x in values):
             raise ContainerException("all Index values must have the same type")
 
-        self.entries = 0
+        self.entries = 0.0
         self.values = values
 
         super(Index, self).__init__()
@@ -302,6 +311,9 @@ class Index(Factory, Container):
 
             return Index.ed(entries, *values)
 
+        else:
+            raise JsonFormatException(json, "Index")
+
     def __repr__(self):
         return "Index[{}..., size={}]".format(repr(self.values[0]), self.size)
 
@@ -309,6 +321,111 @@ class Index(Factory, Container):
         return isinstance(other, Index) and exact(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
-        return hash((self.entries, tuple(sorted(self.values))))
+        return hash((self.entries, tuple(self.values)))
 
 Factory.register(Index)
+
+################################################################ Branch
+
+class Branch(Factory, Container):
+    @staticmethod
+    def ed(entries, *values):
+        if entries < 0.0:
+            raise ContainerException("entries ({}) cannot be negative".format(entries))
+
+        out = Branch(*values)
+        out.entries = float(entries)
+        return out
+
+    @staticmethod
+    def ing(*values):
+        return Branch(*values)
+
+    def __init__(self, *values):
+        if len(values) < 1:
+            raise ContainerException("at least one value required")
+
+        self.entries = 0.0
+        self.values = values
+
+        for i, x in enumerate(values):
+            setattr(self, "i" + str(i), x)
+
+        super(Branch, self).__init__()
+
+    @property
+    def size(self): return len(self.values)
+
+    def __call__(self, i): return self.values[i]
+
+    def get(self, i):
+        if i < 0 or i >= len(self.values):
+            return None
+        else:
+            return self.values[i]
+
+    def getOrElse(self, x, default):
+        if i < 0 or i >= len(self.values):
+            return default
+        else:
+            return self.values[i]
+
+    def zero(self): return Branch(*[x.zero() for x in self.values])
+
+    def __add__(self, other):
+        if isinstance(other, Branch):
+            if self.size != other.size:
+                raise ContainerException("cannot add Branches because they have different sizes: ({} vs {})".format(self.size, other.size))
+
+            out = Branch(*[x + y for x, y in zip(self.values, other.values)])
+            out.entries = self.entries + other.entries
+            return out
+
+        else:
+            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+
+    def fill(self, datum, weight=1.0):
+        for x in self.values:
+            x.fill(datum, weight)
+
+    def toJsonFragment(self): return {
+        "entries": self.entries,
+        "data": [{x.name: x.toJsonFragment()} for x in self.values],
+        }
+
+    @staticmethod
+    def fromJsonFragment(json):
+        if isinstance(json, dict) and set(json.keys()) == set(["entries", "data"]):
+            if isinstance(json["entries"], (int, long, float)):
+                entries = json["entries"]
+            else:
+                raise JsonFormatException(json, "Branch.entries")
+
+            if isinstance(json["data"], list):
+                values = []
+                for i, x in enumerate(json["data"]):
+                    if isinstance(x, dict) and len(x) == 1:
+                        (k, v), = x.items()
+                        factory = Factory.registered[k]
+                        values.append(factory.fromJsonFragment(v))
+                    else:
+                        raise JsonFormatException(v, "Branch.data {}".format(i))
+
+            else:
+                raise JsonFormatException(json, "Branch.data")
+
+            return Branch.ed(entries, *values)
+
+        else:
+            raise JsonFormatException(json, "Branch")
+        
+    def __repr__(self):
+        return "Branch[{}]".format(", ".join(map(repr, self.values)))
+
+    def __eq__(self, other):
+        return isinstance(other, Branch) and exact(self.entries, other.entries) and self.values == other.values
+
+    def __hash__(self):
+        return hash((self.entries, tuple(self.values)))
+
+Factory.register(Branch)

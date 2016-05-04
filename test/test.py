@@ -620,9 +620,28 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Branch
 
-    # def testBranch(self):
-    #     pass
+    def testBranch(self):
+        one = Histogram(5, -3.0, 7.0, lambda x: x)
+        two = Count()
+        three = Deviate(lambda x: x + 100.0)
 
+        branching = Branch(one, two, three)
+
+        for _ in self.simple: branching.fill(_)
+
+        self.assertEqual(branching.i0.numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0])
+        self.assertEqual(branching.i0.underflow.entries, 1.0)
+        self.assertEqual(branching.i0.overflow.entries, 1.0)
+        self.assertEqual(branching.i0.nanflow.entries, 0.0)
+
+        self.assertEqual(branching.i1.entries, 10.0)
+
+        self.assertAlmostEqual(branching.i2.entries, 10.0)
+        self.assertAlmostEqual(branching.i2.mean, 100.33)
+        self.assertAlmostEqual(branching.i2.variance, 10.8381)
+
+        self.checkJson(branching)
+        
     ################################################################ Usability in fold/aggregate
 
     # def testAggregate(self):
