@@ -527,8 +527,22 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Partition
 
-    # def testPartition(self):
-    #     pass
+    def testPartition(self):
+        partitioning = Partition(Count(), lambda x: x, 0.0, 2.0, 4.0, 6.0, 8.0)
+        for _ in self.simple: partitioning.fill(_)
+
+        self.assertEqual([(k, v.entries) for k, v in partitioning.cuts], [(float("-inf"), 4.0), (0.0, 3.0), (2.0, 2.0), (4.0, 0.0), (6.0, 1.0), (8.0, 0.0)])
+
+        self.checkJson(partitioning)
+
+    def testPartitionSum(self):
+        partitioning = Partition(Sum(lambda x: x), lambda x: x, 0.0, 2.0, 4.0, 6.0, 8.0)
+        for _ in self.simple: partitioning.fill(_)
+
+        self.assertAlmostEqual(partitioning.cuts[0][1].sum, -11.2)
+        self.assertAlmostEqual(partitioning.cuts[1][1].sum, 1.6)
+
+        self.checkJson(partitioning)
 
     ################################################################ Categorize
 
