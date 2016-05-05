@@ -434,6 +434,7 @@ class TestEverything(unittest.TestCase):
 
         two = Bin(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
         for _ in self.struct: two.fill(_)
+
         self.assertEqual(map(lambda _: _.entries, two.values), [2.0, 1.0, 1.0, 1.0, 0.0])
         self.assertEqual(two.underflow.entries, 0.0)
         self.assertEqual(two.overflow.entries, 0.0)
@@ -502,8 +503,14 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Categorize
 
-    # def testCategorize(self):
-    #     pass
+    def testCategorize(self):
+        categorizing = Categorize(lambda x: x.string[0])
+
+        for _ in self.struct: categorizing.fill(_)
+
+        self.assertEqual({k: v.entries for k, v in categorizing.pairsMap.items()}, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
+
+        self.checkJson(categorizing)
 
     ################################################################ Label
 

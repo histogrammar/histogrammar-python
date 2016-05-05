@@ -24,7 +24,7 @@ class Bin(Factory, Container):
     @staticmethod
     def ed(low, high, entries, values, underflow, overflow, nanflow):
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ContainerException("entries ({}) cannot be negative".format(entries))
 
         out = Bin(len(values), low, high, None, None, None, underflow, overflow, nanflow)
         out.entries = float(entries)
@@ -49,7 +49,7 @@ class Bin(Factory, Container):
         if value is None:
             self.values = [None] * num
         else:
-            self.values = [value.copy() for i in xrange(num)]
+            self.values = [value.zero() for i in xrange(num)]
         self.underflow = underflow.copy()
         self.overflow = overflow.copy()
         self.nanflow = nanflow.copy()

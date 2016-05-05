@@ -43,7 +43,7 @@ class Factory(object):
         try:
             import histogrammar.histogram
             histogrammar.histogram.addImplicitMethods(self)
-        except ImportError:
+        except (ImportError, AttributeError):
             pass
 
     @staticmethod

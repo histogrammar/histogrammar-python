@@ -18,6 +18,7 @@ from histogrammar.defs import *
 
 from histogrammar.primitives.absoluteerr import *
 from histogrammar.primitives.average import *
+from histogrammar.primitives.categorize import *
 from histogrammar.primitives.collection import *
 from histogrammar.primitives.count import *
 from histogrammar.primitives.bag import *
