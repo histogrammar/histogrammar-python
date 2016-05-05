@@ -400,13 +400,103 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Maximize
 
-    # def testMaximize(self):
-    #     pass
+    def testMaximize(self):
+        for i in xrange(11):
+            left, right = self.simple[:i], self.simple[i:]
+
+            leftMaximizing = Maximize(lambda x: x)
+            rightMaximizing = Maximize(lambda x: x)
+
+            for _ in left: leftMaximizing.fill(_)
+            for _ in right: rightMaximizing.fill(_)
+
+            if len(left) > 0:
+                self.assertAlmostEqual(leftMaximizing.max, max(left))
+            else:
+                self.assertTrue(math.isnan(leftMaximizing.max))
+
+            if len(right) > 0:
+                self.assertAlmostEqual(rightMaximizing.max, max(right))
+            else:
+                self.assertTrue(math.isnan(rightMaximizing.max))
+
+            finalResult = leftMaximizing + rightMaximizing
+
+            self.assertAlmostEqual(finalResult.max, max(self.simple))
+
+            self.checkJson(leftMaximizing)
 
     ################################################################ Quantile
 
-    # def testQuantile(self):
-    #     pass
+    def testQuantile(self):
+        answers = [
+            [float("nan"), -0.481328271104, -0.481328271104],
+            [3.4, -0.69120847042, -0.282087623378],
+            [-0.675, -0.736543753016, -0.724235002413],
+            [-0.58125, -0.958145383329, -0.84507676833],
+            [0.13623046875, -1.53190059408, -0.864648168945],
+            [0.302100585937, -0.819002197266, -0.258450805664],
+            [-0.942007507324, -0.629296875, -0.816923254395],
+            [0.269603994253, -0.753125, -0.0372147040231],
+            [-0.628724939722, 0.24375, -0.454229951778],
+            [-0.562639074418, -1.7, -0.676375166976],
+            [-0.481328271104, float("nan"), -0.481328271104],
+            [float("nan"), -0.329460938614, -0.329460938614],
+            [3.4, -0.457521896462, -0.0717697068155],
+            [-0.45, -0.511698266503, -0.499358613202],
+            [-0.425, -0.706904919683, -0.622333443778],
+            [0.27890625, -0.937865017361, -0.451156510417],
+            [0.599765625, -0.65764453125, -0.028939453125],
+            [-0.637327473958, -0.471875, -0.571146484375],
+            [0.536730209662, -0.595833333333, 0.196961146763],
+            [-0.423513681061, 0.4875, -0.241310944849],
+            [-0.382340803288, -1.7, -0.514106722959],
+            [-0.329460938614, float("nan"), -0.329460938614],
+            [float("nan"), -0.168649887325, -0.168649887325],
+            [3.4, -0.227037303799, 0.135666426581],
+            [-0.225, -0.265185561995, -0.257148449596],
+            [-0.23125, -0.386842979665, -0.340165085765],
+            [0.42275390625, -0.477651570638, -0.117489379883],
+            [0.889514648438, -0.394795166016, 0.247359741211],
+            [-0.322354390462, -0.264453125, -0.299193884277],
+            [0.798766766295, -0.344791666667, 0.455699236407],
+            [-0.213212483191, 0.73125, -0.0243199865526],
+            [-0.194267772368, -1.7, -0.344840995131],
+            [-0.168649887325, float("nan"), -0.168649887325],
+            ]
+
+        line = 0
+        for p in 0.25, 0.5, 0.75:
+            for i in xrange(11):
+                left, right = self.simple[:i], self.simple[i:]
+
+                leftQuantiling = Quantile(p, lambda x: x)
+                rightQuantiling = Quantile(p, lambda x: x)
+
+                for _ in left: leftQuantiling.fill(_)
+                for _ in right: rightQuantiling.fill(_)
+
+                finalResult = leftQuantiling + rightQuantiling
+
+                leftAnswer, rightAnswer, finalAnswer = answers[line]
+                line += 1
+
+                if math.isnan(leftAnswer):
+                    self.assertTrue(math.isnan(leftQuantiling.estimate))
+                else:
+                    self.assertAlmostEqual(leftQuantiling.estimate, leftAnswer)
+
+                if math.isnan(rightAnswer):
+                    self.assertTrue(math.isnan(rightQuantiling.estimate))
+                else:
+                    self.assertAlmostEqual(rightQuantiling.estimate, rightAnswer)
+
+                if math.isnan(finalAnswer):
+                    self.assertTrue(math.isnan(finalResult.estimate))
+                else:
+                    self.assertAlmostEqual(finalResult.estimate, finalAnswer)
+
+                self.checkJson(leftQuantiling)
 
     ################################################################ Bag
 
