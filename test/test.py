@@ -517,8 +517,13 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Stack
 
-    # def testStack(self):
-    #     pass
+    def testStack(self):
+        stacking = Stack(Count(), lambda x: x, 0.0, 2.0, 4.0, 6.0, 8.0)
+        for _ in self.simple: stacking.fill(_)        
+
+        self.assertEqual([(k, v.entries) for k, v in stacking.cuts], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
+
+        self.checkJson(stacking)
 
     ################################################################ Partition
 
@@ -529,7 +534,6 @@ class TestEverything(unittest.TestCase):
 
     def testCategorize(self):
         categorizing = Categorize(lambda x: x.string[0])
-
         for _ in self.struct: categorizing.fill(_)
 
         self.assertEqual({k: v.entries for k, v in categorizing.pairsMap.items()}, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})

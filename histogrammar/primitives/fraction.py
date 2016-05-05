@@ -24,7 +24,7 @@ class Fraction(Factory, Container):
             raise ContainerException("entries ({}) cannot be negative".format(entries))
 
         out = Fraction(None, None)
-        out.entries = entries
+        out.entries = float(entries)
         out.numerator = numerator
         out.denominator = denominator
         return out

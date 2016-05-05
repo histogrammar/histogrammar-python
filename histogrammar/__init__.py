@@ -27,4 +27,5 @@ from histogrammar.primitives.deviate import *
 from histogrammar.primitives.fraction import *
 from histogrammar.primitives.minmax import *
 from histogrammar.primitives.sparsebin import *
+from histogrammar.primitives.stack import *
 from histogrammar.primitives.sum import *
