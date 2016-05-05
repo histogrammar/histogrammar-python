@@ -24,6 +24,7 @@ from histogrammar.primitives.count import *
 from histogrammar.primitives.bag import *
 from histogrammar.primitives.bin import *
 from histogrammar.primitives.deviate import *
+from histogrammar.primitives.fraction import *
 from histogrammar.primitives.minmax import *
 from histogrammar.primitives.sparsebin import *
 from histogrammar.primitives.sum import *

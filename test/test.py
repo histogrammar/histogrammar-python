@@ -488,8 +488,32 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Fraction
 
-    # def testFraction(self):
-    #     pass
+    def testFraction(self):
+        fracking = Fraction(lambda x: x > 0.0, Count())
+        for _ in self.simple: fracking.fill(_)
+
+        self.assertEqual(fracking.numerator.entries, 4.0)
+        self.assertEqual(fracking.denominator.entries, 10.0)
+
+        self.checkJson(fracking)
+
+    def testFractionSum(self):
+        fracking = Fraction(lambda x: x > 0.0, Sum(lambda x: x))
+        for _ in self.simple: fracking.fill(_)
+
+        self.assertAlmostEqual(fracking.numerator.sum, 14.5)
+        self.assertAlmostEqual(fracking.denominator.sum, 3.3)
+
+        self.checkJson(fracking)
+
+    def testFractionHistogram(self):
+        fracking = Fraction(lambda x: x > 0.0, Histogram(5, -3.0, 7.0, lambda x: x))
+        for _ in self.simple: fracking.fill(_)
+
+        self.assertEqual(fracking.numerator.numericalValues, [0.0, 0.0, 2.0, 1.0, 0.0])
+        self.assertEqual(fracking.denominator.numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0])
+
+        self.checkJson(fracking)
 
     ################################################################ Stack
 
