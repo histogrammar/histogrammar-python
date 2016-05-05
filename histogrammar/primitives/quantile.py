@@ -48,17 +48,17 @@ from histogrammar.util import *
 ##             yield x
 ##             yield x
 
-## stuff = [(random.choice([random.gauss(10, 1), random.gauss(6, 2), random.gauss(0, 2)]), float(random.randint(0, 3))) for i in xrange(1000)]
+## stuff = [(random.choice([random.gauss(10, 1), random.gauss(6, 2), random.gauss(0, 2)]), float(random.randint(0, 3))) for i in xrange(10000)]
 
 ## plotme = open("/tmp/plotme.dat", "w")
 
 ## for i in xrange(100):
 ##     p = i / 100.0
-##     entries1, cumulativeDeviation1, estimate1 = attempt(p, stuff[:10])
-##     entries2, cumulativeDeviation2, estimate2 = attempt(p, stuff[10:20])
-##     entries3, cumulativeDeviation3, estimate3 = attempt(p, stuff[20:100])
-##     entries4, cumulativeDeviation4, estimate4 = attempt(p, stuff[100:800])
-##     entries5, cumulativeDeviation5, estimate5 = attempt(p, stuff[800:])
+##     entries1, cumulativeDeviation1, estimate1 = attempt(p, stuff[:100])
+##     entries2, cumulativeDeviation2, estimate2 = attempt(p, stuff[100:200])
+##     entries3, cumulativeDeviation3, estimate3 = attempt(p, stuff[200:1000])
+##     entries4, cumulativeDeviation4, estimate4 = attempt(p, stuff[1000:8000])
+##     entries5, cumulativeDeviation5, estimate5 = attempt(p, stuff[8000:])
 
 ##     entries, cumulativeDeviation, estimate = entries1, cumulativeDeviation1, estimate1
 
