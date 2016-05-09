@@ -63,20 +63,20 @@ class Average(Factory, Container):
             self.mean += shift
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
-        "mean": self.mean,
+        "entries": floatToJson(self.entries),
+        "mean": floatToJson(self.mean),
         }
 
     @staticmethod
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "mean"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Average.entries")
 
             if isinstance(json["mean"], (int, long, float)):
-                mean = json["mean"]
+                mean = float(json["mean"])
             else:
                 raise JsonFormatException(json["mean"], "Average.mean")
 

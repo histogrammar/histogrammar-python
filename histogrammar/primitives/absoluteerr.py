@@ -67,20 +67,20 @@ class AbsoluteErr(Factory, Container):
             self.absoluteSum += abs(q)
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
-        "mae": self.mae,
+        "entries": floatToJson(self.entries),
+        "mae": floatToJson(self.mae),
         }
 
     @staticmethod
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "mae"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "AbsoluteErr.entries")
 
             if isinstance(json["mae"], (int, long, float)):
-                mae = json["mae"]
+                mae = float(json["mae"])
             else:
                 raise JsonFormatException(json["mae"], "AbsoluteErr.mae")
 

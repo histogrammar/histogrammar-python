@@ -159,26 +159,26 @@ class Quantile(Factory, Container):
                 self.estimate = w * learningRate * (sgn + 2.0*self.target - 1.0)
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
-        "target": self.target,
-        "estimate": self.estimate,
+        "entries": floatToJson(self.entries),
+        "target": floatToJson(self.target),
+        "estimate": floatToJson(self.estimate),
         }
 
     @staticmethod
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "target", "estimate"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Quantile.entries")
 
             if isinstance(json["target"], (int, long, float)):
-                target = json["target"]
+                target = float(json["target"])
             else:
                 raise JsonFormatException(json["target"], "Quantile.target")
 
-            if isinstance(json["estimate"], (int, long, float)):
-                estimate = json["estimate"]
+            if json["estimate"] in ("nan", "inf", "-inf") or isinstance(json["estimate"], (int, long, float)):
+                estimate = float(json["estimate"])
             else:
                 raise JsonFormatException(json["estimate"], "Quantile.estimate")
 

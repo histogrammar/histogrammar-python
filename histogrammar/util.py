@@ -20,8 +20,46 @@ import marshal
 import math
 import types
 
+################################################################ NaN handling
+
 def exact(x, y):
     return (math.isnan(x) and math.isnan(y)) or x == y
+
+def minplus(x, y):
+    if math.isnan(x) and math.isnan(y):
+        return float("nan")
+    elif math.isnan(x):
+        return y
+    elif math.isnan(y):
+        return x
+    elif x < y:
+        return x
+    else:
+        return y
+
+def maxplus(x, y):
+    if math.isnan(x) and math.isnan(y):
+        return float("nan")
+    elif math.isnan(x):
+        return y
+    elif math.isnan(y):
+        return x
+    elif x > y:
+        return x
+    else:
+        return y
+
+def floatToJson(x):
+    if math.isnan(x):
+        return "nan"
+    elif math.isinf(x) and x > 0.0:
+        return "inf"
+    elif math.isinf(x):
+        return "-inf"
+    else:
+        return x
+
+################################################################ function tools
 
 class Fcn(object):
     def __init__(self, fcn, varname="datum"):
@@ -87,16 +125,14 @@ def cache(fcn):
 
 ################################################################ 1D clustering algorithm (used by AdaptivelyBin)
 
+@functools.total_ordering
+class LessThanEverything(object):
+    def __le__(self, other):
+        return True
+    def __eq__(self, other):
+        return self is other
+
 class Clustering1D(object):
-    @functools.total_ordering
-    class LessThanEverything(object):
-        def __le__(self, other):
-            return True
-        def __eq__(self, other):
-            return self is other
-
-    lte = LessThanEverything()
-
     def __init__(self, num, tailDetail, value, values, min, max, entries):
         self.num = num
         self.tailDetail = tailDetail
@@ -134,7 +170,7 @@ class Clustering1D(object):
             
     def update(self, x, datum, weight):
         if weight > 0.0:
-            index = bisect.bisect_left(self.values, (x, self.lte))
+            index = bisect.bisect_left(self.values, (x, LessThanEverything()))
             if len(self.values) > index and self.values[index][0] == x:
                 self.values[index][1].fill(datum, weight)
             else:
@@ -162,29 +198,7 @@ class Clustering1D(object):
             else:
                 bins[x] = v.copy()      # replace them; don't update them in-place
 
-        if math.isnan(self.min) and math.isnan(other.min):
-            min = float("nan")
-        elif math.isnan(self.min):
-            min = other.min
-        elif math.isnan(other.min):
-            min = self.min
-        elif self.min < other.min:
-            min = self.min
-        else:
-            min = other.min
-
-        if math.isnan(self.max) and math.isnan(other.max):
-            max = float("nan")
-        elif math.isnan(self.max):
-            max = other.max
-        elif math.isnan(other.max):
-            max = self.max
-        elif self.max > other.max:
-            max = self.max
-        else:
-            max = other.max
-
-        return Clustering1D(self.num, self.tailDetail, self.value, sorted(bins.items()), min, max, self.entries + other.entries)
+        return Clustering1D(self.num, self.tailDetail, self.value, sorted(bins.items()), minplus(self.min, other.min), maxplus(self.max, other.max), self.entries + other.entries)
 
     def __eq__(self, other):
         return self.num == other.num and exact(self.tailDetail, other.tailDetail) and self.values == other.values and exact(self.min, other.min) and exact(self.max, other.max) and exact(self.entries, other.entries)
@@ -272,18 +286,18 @@ class CentralBinsDistribution(object):
                 else:
                     right = self.max
 
-            entries = self.bins[i][1].entries
+                entries = self.bins[i][1].entries
+
+                for j, x in enumerate(xs):
+                    if left <= x and x < right:
+                        out[j] = cumulative + entries * (x - left)/(right - left)
+
+                left = right
+                cumulative += entries
 
             for j, x in enumerate(xs):
-                if left <= x and x < right:
-                    out[j] = cumulative + entries * (x - left)/(right - left)
-
-            left = right
-            cumulative += entries
-
-        for j, x in enumerate(xs):
-            if x >= self.max:
-                out[j] = cumulative
+                if x >= self.max:
+                    out[j] = cumulative
 
         if len(xs) == 1:
             return out[0]
@@ -320,11 +334,11 @@ class CentralBinsDistribution(object):
                         out[j] = left + (right - left)*(y - low)/(high - low)
 
                 left = right
-                cumulative = entries
+                cumulative += entries
 
-        for j, y in enumerate(ys):
-            if y >= cumulative:
-                out[j] = self.max
+            for j, y in enumerate(ys):
+                if y >= cumulative:
+                    out[j] = self.max
 
         if len(ys) == 1:
             return out[0]

@@ -89,7 +89,7 @@ class Categorize(Factory, Container):
             self.pairs[q].fill(datum, w)
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
+        "entries": floatToJson(self.entries),
         "type": self.value.name if isinstance(self.value, Container) else self.value,
         "data": {k: v.toJsonFragment() for k, v in self.pairs.items()},
         }
@@ -98,7 +98,7 @@ class Categorize(Factory, Container):
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Categorize.entries")
 

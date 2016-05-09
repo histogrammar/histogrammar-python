@@ -113,9 +113,9 @@ class Bin(Factory, Container):
                 self.values[self.bin(q)].fill(datum, w)
 
     def toJsonFragment(self): return {
-        "low": self.low,
-        "high": self.high,
-        "entries": self.entries,
+        "low": floatToJson(self.low),
+        "high": floatToJson(self.high),
+        "entries": floatToJson(self.entries),
         "values:type": self.values[0].name,
         "values": [x.toJsonFragment() for x in self.values],
         "underflow:type": self.underflow.name,
@@ -130,17 +130,17 @@ class Bin(Factory, Container):
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["low", "high", "entries", "values:type", "values", "underflow:type", "underflow", "overflow:type", "overflow", "nanflow:type", "nanflow"]):
             if isinstance(json["low"], (int, long, float)):
-                low = json["low"]
+                low = float(json["low"])
             else:
                 raise JsonFormatException(json, "Bin.low")
 
             if isinstance(json["high"], (int, long, float)):
-                high = json["high"]
+                high = float(json["high"])
             else:
                 raise JsonFormatException(json, "Bin.high")
 
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Bin.entries")
 

@@ -14,199 +14,188 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import bisect
 import math
 
 from histogrammar.defs import *
 from histogrammar.util import *
 from histogrammar.primitives.count import *
 
-# class SparselyBin(Factory, Container):
-#     @staticmethod
-#     def ed(binWidth, entries, contentType, bins, nanflow, origin):
-#         if entries < 0.0:
-#             raise ContainerException("entries ($entries) cannot be negative")
+class CentrallyBin(Factory, Container, CentralBinsDistribution):
+    @staticmethod
+    def ed(entries, bins, min, max, nanflow):
+        if entries < 0.0:
+            raise ContainerException("entries ({}) cannot be negative".format(entries))
+        out = CentrallyBin(bins, None, None, None, nanflow)
+        out.entries = entries
+        out.bins = bins
+        out.min = min
+        out.max = max
+        return out
 
-#         out = SparselyBin(binWidth, None, None, None, nanflow, origin)
-#         out.entries = entries
-#         out.contentType = contentType
-#         out.bins = bins
-#         return out
+    @staticmethod
+    def ing(bins, quantity, selection=unweighted, value=Count(), nanflow=Count()):
+        return CentrallyBin(bins, quantity, selection, value, nanflow)
 
-#     @staticmethod
-#     def ing(binWidth, quantity, selection=unweighted, value=Count(), nanflow=Count(), origin=0.0):
-#         return SparselyBin(binWidth, quantity, selection, value, nanflow, origin)
+    def __init__(self, bins, quantity, selection=unweighted, value=Count(), nanflow=Count()):
+        if len(bins) < 2:
+            raise ContainerException("number of bins ({}) must be at least two".format(len(bins)))
 
-#     def __init__(self, binWidth, quantity, selection=unweighted, value=Count(), nanflow=Count(), origin=0.0):
-#         if binWidth <= 0.0:
-#             raise ContainerException("binWidth ({}) must be greater than zero".format(binWidth))
+        self.entries = 0.0
+        if value is None:
+            self.bins = None
+        else:
+            self.bins = [(x, value.zero()) for x in sorted(bins)]
+        self.min = float("nan")
+        self.max = float("nan")
 
-#         self.binWidth = binWidth
-#         self.entries = 0.0
-#         self.quantity = serializable(quantity)
-#         self.selection = serializable(selection)
-#         self.value = value
-#         self.bins = {}
-#         self.nanflow = nanflow.copy()
-#         self.origin = origin
-#         super(SparselyBin, self).__init__()
+        self.quantity = quantity
+        self.selection = selection
+        self.value = value
+        self.nanflow = nanflow
 
-#     def zero(self): return SparselyBin(self.binWidth, self.quantity, self.selection, self.value, self.nanflow.zero(), self.origin)
+    @property
+    def centersSet(self): return set(self.centers)
+    @property
+    def centers(self): return map(lambda (x, v): x, self.bins)
+    @property
+    def values(self): return map(lambda (x, v): v, self.bins)
 
-#     def __add__(self, other):
-#         if isinstance(other, SparselyBin):
-#             if self.binWidth != other.binWidth:
-#                 raise ContainerException("cannot add SparselyBins because binWidth differs ({} vs {})".format(self.binWidth, other.binWidth))
-#             if self.origin != other.origin:
-#                 raise ContainerException("cannot add SparselyBins because origin differs ({} vs {})".format(self.origin, other.origin))
+    def index(self, x):
+        closestIndex = bisect.bisect_left(self.bins, (x, LessThanEverything()))
+        if closestIndex == len(self.bins):
+            closestIndex = len(self.bins) - 1
+        elif closestIndex > 0:
+            x1 = self.bins[closestIndex - 1][0]
+            x2 = self.bins[closestIndex][0]
+            if abs(x - x1) < abs(x - x2):
+                closestIndex = closestIndex - 1
+        return closestIndex
 
-#             out = SparselyBin(self.binWidth, self.quantity, self.selection, self.value, self.nanflow + other.nanflow)
-#             out.entries = self.entries + other.entries
-#             out.bins = self.bins
-#             for i, v in other.bins.items():
-#                 if i in out.bins:
-#                     out.bins[i] += v
-#                 else:
-#                     out.bins[i] = v
-#             return out
+    def center(self, x):
+        return self.bins[self.index(x)][0]
 
-#         else:
-#             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+    def value(self, x):
+        return self.bins[self.index(x)][1]
 
-#     @property
-#     def numFilled(self):
-#         return len(self.bins)
-#     @property
-#     def num(self):
-#         if len(self.bins) == 0:
-#             return 0
-#         else:
-#             return 1 + self.maxBin - self.minBin
-#     @property
-#     def minBin(self):
-#         if len(self.bins) == 0:
-#             return None
-#         else:
-#             return min(*self.bins.keys())
-#     @property
-#     def maxBin(self):
-#         if len(self.bins) == 0:
-#             return None
-#         else:
-#             return max(*self.bins.keys())
-#     @property
-#     def low(self):
-#         if len(self.bins) == 0:
-#             return None
-#         else:
-#             return self.minBin * self.binWidth + self.origin
-#     @property
-#     def high(self):
-#         if len(self.bins) == 0:
-#             return None
-#         else:
-#             return (self.maxBin + 1) * self.binWidth + self.origin
-#     def at(index):
-#         return self.bins.get(index, None)
-#     @property
-#     def indexes(self):
-#         return sorted(self.keys)
-#     def range(index):
-#         return (index * self.binWidth + self.origin, (index + 1) * self.binWidth + self.origin)
-    
-#     def bin(self, x):
-#         if self.nan(x):
-#             return MIN_LONG
-#         else:
-#             return int(math.floor((x - self.origin) / self.binWidth))
+    def nan(self, x):
+        return math.isnan(x)
 
-#     def nan(self, x): return math.isnan(x)
+    def neighbors(self, center):
+        closestIndex = self.index(center)
+        if self.bins[closestIndex][0] != center:
+            raise TypeError("position {} is not the exact center of a bin".format(center))
+        elif closestIndex == 0:
+            return None, self.bins[closestIndex + 1][0]
+        elif closestIndex == len(self.bins) - 1:
+            return self.bins[closestIndex - 1][0], None
+        else:
+            return self.bins[closestIndex - 1][0], self.bins[closestIndex + 1][0]
 
-#     def fill(self, datum, weight=1.0):
-#         if self.quantity is None or self.selection is None:
-#             raise RuntimeException("attempting to fill a container that has no fill rule")
+    def range(self, center):
+        below, above = self.neighbors(center)    # is never None, None
+        if below is None:
+            return float("-inf"), (center + above)/2.0
+        elif above is None:
+            return (below + center)/2.0, float("inf")
+        else:
+            return (below + center)/2.0, (above + center)/2.0
 
-#         w = weight * self.selection(datum)
+    def zero(self):
+        return CentrallyBin(map(lambda (x, v): x, self.bins), self.quantity, self.selection, self.value, self.nanflow.zero())
 
-#         if w > 0.0:
-#             q = self.quantity(datum)
+    def __add__(self, other):
+        if self.centers != other.centers:
+            raise ContainerException("cannot add CentrallyBin because centers are different:\n    {}\nvs\n    {}".format(self.centers, other.centers))
 
-#             self.entries += w
-#             if self.nan(q):
-#                 self.nanflow.fill(datum, w)
-#             else:
-#                 b = self.bin(q)
-#                 if b not in self.bins:
-#                     self.bins[b] = self.value.copy()
-#                 self.bins[b].fill(datum, w)
+        newbins = [(c1, v1 + v2) for (c1, v1), (_, v2) in zip(self.bins, other.bins)]
 
-#     def toJsonFragment(self): return {
-#         "binWidth": self.binWidth,
-#         "entries": self.entries,
-#         "bins:type": self.value.name if self.value is not None else self.contentType,
-#         "bins": {str(i): v.toJsonFragment() for i, v in self.bins.items()},
-#         "nanflow:type": self.nanflow.name,
-#         "nanflow": self.nanflow.toJsonFragment(),
-#         "origin": self.origin,
-#         }
+        return CentrallyBin.ed(self.entries + other.entries, newbins, minplus(self.min, other.min), maxplus(self.max, other.max), self.nanflow + other.nanflow)
 
-#     @staticmethod
-#     def fromJsonFragment(json):
-#         if isinstance(json, dict) and set(json.keys()) == set(["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"]):
-#             if isinstance(json["binWidth"], (int, long, float)):
-#                 binWidth = json["binWidth"]
-#             else:
-#                 raise JsonFormatException(json, "SparselyBin.binWidth")
+    def fill(self, datum, weight=1.0):
+        if self.quantity is None or self.selection is None:
+            raise RuntimeException("attempting to fill a container that has no fill rule")
 
-#             if isinstance(json["entries"], (int, long, float)):
-#                 entries = json["entries"]
-#             else:
-#                 raise JsonFormatException(json, "SparselyBin.entries")
+        w = weight * self.selection(datum)
 
-#             if isinstance(json["bins:type"], basestring):
-#                 binsFactory = Factory.registered[json["bins:type"]]
-#             else:
-#                 raise JsonFormatException(json, "SparselyBin.bins:type")
-#             if isinstance(json["bins"], dict):
-#                 for i in json["bins"]:
-#                     try:
-#                         int(i)
-#                     except ValueError:
-#                         raise JsonFormatException(i, "SparselyBin.bins key must be an integer")
+        if w > 0.0:
+            q = self.quantity(datum)
 
-#                 bins = {int(i): binsFactory.fromJsonFragment(v) for i, v in json["bins"].items()}
+            self.entries += w
+            if self.nan(q):
+                self.nanflow.fill(datum, w)
+            else:
+                self.bins[self.index(q)][1].fill(datum, weight)
 
-#             else:
-#                 raise JsonFormatException(json, "SparselyBin.bins")
+            if math.isnan(self.min) or q < self.min:
+                self.min = q
+            if math.isnan(self.max) or q > self.max:
+                self.max = q
 
-#             if isinstance(json["nanflow:type"], basestring):
-#                 nanflowFactory = Factory.registered[json["nanflow:type"]]
-#             else:
-#                 raise JsonFormatException(json, "Bin.nanflow:type")
-#             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"])
+    def toJsonFragment(self): return {
+        "entries": floatToJson(self.entries),
+        "bins:type": self.bins[0][1].name,
+        "bins": [{"center": floatToJson(c), "value": v.toJsonFragment()} for c, v in self.bins],
+        "min": floatToJson(self.min),
+        "max": floatToJson(self.max),
+        "nanflow:type": self.nanflow.name,
+        "nanflow": self.nanflow.toJsonFragment(),
+        }
 
-#             if isinstance(json["origin"], (int, long, float)):
-#                 origin = json["origin"]
-#             else:
-#                 raise JsonFormatException(json, "SparselyBin.origin")
+    @staticmethod
+    def fromJsonFragment(json):
+        if isinstance(json, dict) and set(json.keys()) == set(["entries", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow"]):
+            if isinstance(json["entries"], (int, long, float)):
+                entries = float(json["entries"])
+            else:
+                raise JsonFormatException(json, "CentrallyBin.entries")
 
-#             return SparselyBin.ed(binWidth, entries, json["bins:type"], bins, nanflow, origin)
+            if isinstance(json["bins:type"], basestring):
+                factory = Factory.registered[json["bins:type"]]
+            else:
+                raise JsonFormatException(json, "CentrallyBin.bins:type")
+            if isinstance(json["bins"], list):
+                bins = []
+                for i, binpair in enumerate(json["bins"]):
+                    if isinstance(binpair, dict) and set(binpair.keys()) == set(["center", "value"]):
+                        if isinstance(binpair["center"], (int, long, float)):
+                            center = float(binpair["center"])
+                        else:
+                            JsonFormatException(binpair["center"], "CentrallyBin.bins {} center".format(i))
+                        
+                        bins.append((center, factory.fromJsonFragment(binpair["value"])))
 
-#         else:
-#             raise JsonFormatException(json, "SparselyBin")
-        
-#     def __repr__(self):
-#         if self.bins is None:
-#             contentType = self.contentType
-#         elif len(self.bins) == 0:
-#             contentType = self.value.name
-#         else:
-#             contentType = repr(min(self.bins.items())[1])
-#         return "SparselyBin[binWidth={}, bins=[{}, size={}], nanflow={}, origin={}]".format(self.binWidth, contentType, len(self.bins), self.nanflow, self.origin)
+                    else:
+                        raise JsonFormatException(binpair, "CentrallyBin.bins {}".format(i))
 
-#     def __eq__(self, other):
-#         return isinstance(other, SparselyBin) and exact(self.binWidth, other.binWidth) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and self.bins == other.bins and self.nanflow == other.nanflow and self.origin == other.origin
+            if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], (int, long, float)):
+                min = float(json["min"])
+            else:
+                raise JsonFormatException(json, "CentrallyBin.min")
 
-#     def __hash__(self):
-#         return hash((self.binWidth, self.quantity, self.selection, self.entries, tuple(sorted(self.bins.items())), self.nanflow, self.origin))
+            if json["max"] in ("nan", "inf", "-inf") or isinstance(json["max"], (int, long, float)):
+                max = float(json["max"])
+            else:
+                raise JsonFormatException(json, "CentrallyBin.max")
 
-# Factory.register(SparselyBin)
+            if isinstance(json["nanflow:type"], basestring):
+                nanflowFactory = Factory.registered[json["nanflow:type"]]
+            else:
+                raise JsonFormatException(json, "CentrallyBin.nanflow:type")
+            nanflow = nanflowFactory.fromJsonFragment(json["nanflow"])
+
+            return CentrallyBin.ed(entries, bins, min, max, nanflow)
+
+        else:
+            raise JsonFormatException(json, "CentrallyBin")
+
+    def __repr__(self):
+        return "CentrallyBin[bins=[{}..., size={}], nanflow={}]".format(self.bins[0][1], len(self.bins), self.nanflow)
+
+    def __eq__(self):
+        return isinstance(other, CentrallyBin) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and self.bins == other.bins and exact(self.min, other.min) and exact(self.max, other.max) and self.nanflow == other.nanflow
+
+    def __hash__(self):
+        return hash((self.quantity, self.selection, self.entries, self.bins, self.min, self.max, self.nanflow))
+
+Factory.register(CentrallyBin)

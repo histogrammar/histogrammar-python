@@ -72,16 +72,16 @@ class Partition(Factory, Container):
                     break
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
+        "entries": floatToJson(self.entries),
         "type": self.cuts[0][1].name,
-        "data": [{"atleast": atleast, "data": sub.toJsonFragment()} for atleast, sub in self.cuts],
+        "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment()} for atleast, sub in self.cuts],
         }
 
     @staticmethod
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Partition.entries")
 
@@ -94,7 +94,7 @@ class Partition(Factory, Container):
                 cuts = []
                 for i, elementPair in enumerate(json["data"]):
                     if isinstance(elementPair, dict) and set(elementPair.keys()) == set(["atleast", "data"]):
-                        if not isinstance(elementPair["atleast"], (int, long, float)):
+                        if elementPair["atleast"] not in ("nan", "inf", "-inf") and not isinstance(elementPair["atleast"], (int, long, float)):
                             raise JsonFormatException(json, "Partition.data {} atleast".format(i))
 
                         cuts.append((float(elementPair["atleast"]), factory.fromJsonFragment(elementPair["data"])))

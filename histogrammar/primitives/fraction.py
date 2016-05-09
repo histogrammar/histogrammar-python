@@ -68,7 +68,7 @@ class Fraction(Factory, Container):
             self.numerator.fill(datum, w)
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
+        "entries": floatToJson(self.entries),
         "type": self.numerator.name,
         "numerator": self.numerator.toJsonFragment(),
         "denominator": self.denominator.toJsonFragment(),
@@ -78,7 +78,7 @@ class Fraction(Factory, Container):
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "numerator", "denominator"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Fraction.entries")
 

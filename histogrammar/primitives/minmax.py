@@ -46,14 +46,7 @@ class Minimize(Factory, Container):
         if isinstance(other, Minimize):
             out = Minimize(self.quantity, self.selection)
             out.entries = self.entries + other.entries
-            if math.isnan(self.min):
-                out.min = other.min
-            elif math.isnan(other.min):
-                out.min = self.min
-            elif self.min < other.min:
-                out.min = self.min
-            else:
-                out.min = other.min
+            out.min = minplus(self.min, other.min)
             return out
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -70,20 +63,20 @@ class Minimize(Factory, Container):
                 self.min = q
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
-        "min": self.min,
+        "entries": floatToJson(self.entries),
+        "min": floatToJson(self.min),
         }
 
     @staticmethod
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "min"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Minimize.entries")
 
-            if isinstance(json["min"], (int, long, float)):
-                min = json["min"]
+            if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], (int, long, float)):
+                min = float(json["min"])
             else:
                 raise JsonFormatException(json["min"], "Minimize.min")
 
@@ -130,14 +123,7 @@ class Maximize(Factory, Container):
         if isinstance(other, Maximize):
             out = Maximize(self.quantity, self.selection)
             out.entries = self.entries + other.entries
-            if math.isnan(self.max):
-                out.max = other.max
-            elif math.isnan(other.max):
-                out.max = self.max
-            elif self.max > other.max:
-                out.max = self.max
-            else:
-                out.max = other.max
+            out.max = maxplus(self.max, other.max)
             return out
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -154,20 +140,20 @@ class Maximize(Factory, Container):
                 self.max = q
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
-        "max": self.max,
+        "entries": floatToJson(self.entries),
+        "max": floatToJson(self.max),
         }
 
     @staticmethod
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "max"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Maximize.entries")
 
-            if isinstance(json["max"], (int, long, float)):
-                max = json["max"]
+            if json["max"] in ("nan", "inf", "-inf") or isinstance(json["max"], (int, long, float)):
+                max = float(json["max"])
             else:
                 raise JsonFormatException(json["max"], "Maximize.max")
 

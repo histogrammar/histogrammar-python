@@ -74,26 +74,26 @@ class Deviate(Factory, Container):
             self.varianceTimesEntries += w * delta * (q - self.mean)
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
-        "mean": self.mean,
-        "variance": self.variance,
+        "entries": floatToJson(self.entries),
+        "mean": floatToJson(self.mean),
+        "variance": floatToJson(self.variance),
         }
 
     @staticmethod
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "mean", "variance"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Deviate.entries")
 
             if isinstance(json["mean"], (int, long, float)):
-                mean = json["mean"]
+                mean = float(json["mean"])
             else:
                 raise JsonFormatException(json["mean"], "Deviate.mean")
 
             if isinstance(json["variance"], (int, long, float)):
-                variance = json["variance"]
+                variance = float(json["variance"])
             else:
                 raise JsonFormatException(json["variance"], "Deviate.variance")
 

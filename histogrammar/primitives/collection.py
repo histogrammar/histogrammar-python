@@ -80,7 +80,7 @@ class Label(Factory, Container):
             x.fill(datum, weight)
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
+        "entries": floatToJson(self.entries),
         "type": self.values[0].name,
         "data": {k: v.toJsonFragment() for k, v in self.pairs.items()},
         }
@@ -89,7 +89,7 @@ class Label(Factory, Container):
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Label.entries")
 
@@ -178,7 +178,7 @@ class UntypedLabel(Factory, Container):
             x.fill(datum, weight)
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
+        "entries": floatToJson(self.entries),
         "data": {k: {"type": v.name, "data": v.toJsonFragment()} for k, v in self.pairs.items()},
         }
 
@@ -186,7 +186,7 @@ class UntypedLabel(Factory, Container):
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "data"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "UntypedLabel.entries")
 
@@ -286,7 +286,7 @@ class Index(Factory, Container):
             x.fill(datum, weight)
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
+        "entries": floatToJson(self.entries),
         "type": self.values[0].name,
         "data": [x.toJsonFragment() for x in self.values],
         }
@@ -295,7 +295,7 @@ class Index(Factory, Container):
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Index.entries")
 
@@ -389,7 +389,7 @@ class Branch(Factory, Container):
             x.fill(datum, weight)
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
+        "entries": floatToJson(self.entries),
         "data": [{x.name: x.toJsonFragment()} for x in self.values],
         }
 
@@ -397,7 +397,7 @@ class Branch(Factory, Container):
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["entries", "data"]):
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Branch.entries")
 

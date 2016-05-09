@@ -47,12 +47,12 @@ class Count(Factory, Container):
         if weight > 0.0:
             self.entries += weight
 
-    def toJsonFragment(self): return self.entries
+    def toJsonFragment(self): return floatToJson(self.entries)
 
     @staticmethod
     def fromJsonFragment(json):
         if isinstance(json, (int, long, float)):
-            return Count.ed(json)
+            return Count.ed(float(json))
         else:
             raise JsonFormatException(json, "Count")
         

@@ -24,7 +24,7 @@ class SparselyBin(Factory, Container):
     @staticmethod
     def ed(binWidth, entries, contentType, bins, nanflow, origin):
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ContainerException("entries ({}) cannot be negative".format(entries))
 
         out = SparselyBin(binWidth, None, None, None, nanflow, origin)
         out.entries = entries
@@ -140,8 +140,8 @@ class SparselyBin(Factory, Container):
                 self.bins[b].fill(datum, w)
 
     def toJsonFragment(self): return {
-        "binWidth": self.binWidth,
-        "entries": self.entries,
+        "binWidth": floatToJson(self.binWidth),
+        "entries": floatToJson(self.entries),
         "bins:type": self.value.name if self.value is not None else self.contentType,
         "bins": {str(i): v.toJsonFragment() for i, v in self.bins.items()},
         "nanflow:type": self.nanflow.name,
@@ -153,12 +153,12 @@ class SparselyBin(Factory, Container):
     def fromJsonFragment(json):
         if isinstance(json, dict) and set(json.keys()) == set(["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"]):
             if isinstance(json["binWidth"], (int, long, float)):
-                binWidth = json["binWidth"]
+                binWidth = float(json["binWidth"])
             else:
                 raise JsonFormatException(json, "SparselyBin.binWidth")
 
             if isinstance(json["entries"], (int, long, float)):
-                entries = json["entries"]
+                entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "SparselyBin.entries")
 

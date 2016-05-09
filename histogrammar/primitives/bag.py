@@ -76,9 +76,9 @@ class Bag(Factory, Container):
         if w > 0.0:
             q = self.quantity(datum)
             if isinstance(q, (int, long, float)):
-                q = (q,)
+                q = (float(q),)
             elif isinstance(q, list):
-                q = tuple(q)
+                q = tuple(map(float, q))
 
             self.entries += w
 
@@ -91,9 +91,9 @@ class Bag(Factory, Container):
                     self.values[q] = w
 
     def toJsonFragment(self): return {
-        "entries": self.entries,
-        "limit": self.limit,
-        "values": None if self.values is None else [{"n": n, "v": v} for v, n in sorted(self.values.items())],
+        "entries": floatToJson(self.entries),
+        "limit": None if self.limit is None else floatToJson(self.limit),
+        "values": None if self.values is None else [{"n": n, "v": map(floatToJson, v)} for v, n in sorted(self.values.items())],
         }
 
     @staticmethod
@@ -120,7 +120,7 @@ class Bag(Factory, Container):
                             for j, d in enumerate(nv["v"]):
                                 if not isinstance(d, (int, long, float)):
                                     raise JsonFormatException(d, "Bag.values {} v {}".format(i, j))
-                            v = tuple(nv["v"])
+                            v = tuple(map(float, nv["v"]))
                         else:
                             raise JsonFormatException(nv["v"], "Bag.values {} v".format(i))
 

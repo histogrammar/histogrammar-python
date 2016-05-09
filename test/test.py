@@ -568,8 +568,25 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ CentrallyBin
 
-    # def testCentrallyBin(self):
-    #     pass
+    def testCentrallyBin(self):
+        one = CentrallyBin([-3.0, -1.0, 0.0, 1.0, 3.0, 10.0], lambda x: x)
+        self.assertEqual(one.center(1.5), 1.0)
+        self.assertEqual(one.neighbors(1.0), (0.0, 3.0))
+        self.assertEqual(one.neighbors(10.0), (3.0, None))
+        self.assertEqual(one.range(-3.0), (float("-inf"), -2.0))
+        self.assertEqual(one.range(-1.0), (-2.0, -0.5))
+        self.assertEqual(one.range(0.0), (-0.5, 0.5))
+        self.assertEqual(one.range(10.0), (6.5, float("inf")))
+
+        for _ in self.simple: one.fill(_)
+
+        self.assertEqual([(c, v.entries) for c, v in one.bins], [(-3.0,2.0), (-1.0,2.0), (0.0,2.0), (1.0,1.0), (3.0,2.0), (10.0,1.0)])
+
+        self.assertEqual(one.pdfTimesEntries(-3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0), [0.7407407407407407, 1.3333333333333333, 1.3333333333333333, 2.0, 0.6666666666666666, 0.4444444444444444, 0.4444444444444444, 0.4444444444444444, 0.4444444444444444, 0.4444444444444444, 1.2500000000000002, 0.0, 0.0, 0.0])
+        self.assertEqual(one.cdfTimesEntries(-3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0), [1.2592592592592593, 2.0, 3.333333333333333, 5.0, 6.333333333333333, 7.0, 7.444444444444445, 7.888888888888889, 8.333333333333334, 8.777777777777779, 9.625, 10.0, 10.0, 10.0])
+        self.assertEqual(one.qfTimesEntries(-1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0), [-4.7, -4.7, -3.35, -2.0, -1.25, -0.5, 0.0, 0.5, 2.0, 4.25, 6.5, 7.3, 7.3])
+
+        self.checkJson(one)
 
     ################################################################ AdaptivelyBin
 
