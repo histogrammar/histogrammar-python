@@ -590,8 +590,14 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ AdaptivelyBin
 
-    # def testAdaptivelyBin(self):
-    #     pass
+    def testAdaptivelyBin(self):
+        one = AdaptivelyBin(lambda x: x, num=5)
+
+        for _ in self.simple: one.fill(_)
+
+        self.assertEqual(map(lambda (x, c): (x, c.entries), one.bins), [(-3.85, 2.0), (-1.1666666666666667, 3.0), (0.8, 2.0), (2.8, 2.0), (7.3, 1.0)])
+
+        self.checkJson(one)
 
     ################################################################ Fraction
 

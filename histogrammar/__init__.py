@@ -17,6 +17,7 @@
 from histogrammar.defs import *
 
 from histogrammar.primitives.absoluteerr import *
+from histogrammar.primitives.adaptivebin import *
 from histogrammar.primitives.average import *
 from histogrammar.primitives.categorize import *
 from histogrammar.primitives.centralbin import *

@@ -21,7 +21,7 @@ from histogrammar.defs import *
 from histogrammar.util import *
 from histogrammar.primitives.count import *
 
-class CentrallyBin(Factory, Container, CentralBinsDistribution):
+class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMethods):
     @staticmethod
     def ed(entries, bins, min, max, nanflow):
         if entries < 0.0:
@@ -54,53 +54,6 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution):
         self.value = value
         self.nanflow = nanflow
 
-    @property
-    def centersSet(self): return set(self.centers)
-    @property
-    def centers(self): return map(lambda (x, v): x, self.bins)
-    @property
-    def values(self): return map(lambda (x, v): v, self.bins)
-
-    def index(self, x):
-        closestIndex = bisect.bisect_left(self.bins, (x, LessThanEverything()))
-        if closestIndex == len(self.bins):
-            closestIndex = len(self.bins) - 1
-        elif closestIndex > 0:
-            x1 = self.bins[closestIndex - 1][0]
-            x2 = self.bins[closestIndex][0]
-            if abs(x - x1) < abs(x - x2):
-                closestIndex = closestIndex - 1
-        return closestIndex
-
-    def center(self, x):
-        return self.bins[self.index(x)][0]
-
-    def value(self, x):
-        return self.bins[self.index(x)][1]
-
-    def nan(self, x):
-        return math.isnan(x)
-
-    def neighbors(self, center):
-        closestIndex = self.index(center)
-        if self.bins[closestIndex][0] != center:
-            raise TypeError("position {} is not the exact center of a bin".format(center))
-        elif closestIndex == 0:
-            return None, self.bins[closestIndex + 1][0]
-        elif closestIndex == len(self.bins) - 1:
-            return self.bins[closestIndex - 1][0], None
-        else:
-            return self.bins[closestIndex - 1][0], self.bins[closestIndex + 1][0]
-
-    def range(self, center):
-        below, above = self.neighbors(center)    # is never None, None
-        if below is None:
-            return float("-inf"), (center + above)/2.0
-        elif above is None:
-            return (below + center)/2.0, float("inf")
-        else:
-            return (below + center)/2.0, (above + center)/2.0
-
     def zero(self):
         return CentrallyBin(map(lambda (x, v): x, self.bins), self.quantity, self.selection, self.value, self.nanflow.zero())
 
@@ -110,7 +63,12 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution):
 
         newbins = [(c1, v1 + v2) for (c1, v1), (_, v2) in zip(self.bins, other.bins)]
 
-        return CentrallyBin.ed(self.entries + other.entries, newbins, minplus(self.min, other.min), maxplus(self.max, other.max), self.nanflow + other.nanflow)
+        out = CentrallyBin(map(lambda (x, v): x, self.bins), self.quantity, self.selection, self.value, self.nanflow + other.nanflow)
+        out.entries = self.entries + other.entries
+        out.bins = newbins
+        out.min = minplus(self.min, other.min)
+        out.max = maxplus(self.max, other.max)
+        return out
 
     def fill(self, datum, weight=1.0):
         if self.quantity is None or self.selection is None:

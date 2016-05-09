@@ -149,11 +149,12 @@ class Clustering1D(object):
             smallestDistance = None
             nearestNeighbors = None
             lowIndex = None
+
             for index in xrange(len(self.values) - 1):
                 x1, v1 = self.values[index]
                 x2, v2 = self.values[index + 1]
 
-                distanceMetric = (self.tailDetail  * (x2 - x1)/(self.max - self.min) -
+                distanceMetric = (self.tailDetail  * (x2 - x1)/(self.max - self.min) +
                            (1.0 - self.tailDetail) * (v1.entries + v2.entries)/self.entries)
 
                 if smallestDistance is None or distanceMetric < smallestDistance:
@@ -344,3 +345,51 @@ class CentralBinsDistribution(object):
             return out[0]
         else:
             return out
+
+class CentrallyBinMethods(object):
+    @property
+    def centersSet(self): return set(self.centers)
+    @property
+    def centers(self): return map(lambda (x, v): x, self.bins)
+    @property
+    def values(self): return map(lambda (x, v): v, self.bins)
+
+    def index(self, x):
+        closestIndex = bisect.bisect_left(self.bins, (x, LessThanEverything()))
+        if closestIndex == len(self.bins):
+            closestIndex = len(self.bins) - 1
+        elif closestIndex > 0:
+            x1 = self.bins[closestIndex - 1][0]
+            x2 = self.bins[closestIndex][0]
+            if abs(x - x1) < abs(x - x2):
+                closestIndex = closestIndex - 1
+        return closestIndex
+
+    def center(self, x):
+        return self.bins[self.index(x)][0]
+
+    def value(self, x):
+        return self.bins[self.index(x)][1]
+
+    def nan(self, x):
+        return math.isnan(x)
+
+    def neighbors(self, center):
+        closestIndex = self.index(center)
+        if self.bins[closestIndex][0] != center:
+            raise TypeError("position {} is not the exact center of a bin".format(center))
+        elif closestIndex == 0:
+            return None, self.bins[closestIndex + 1][0]
+        elif closestIndex == len(self.bins) - 1:
+            return self.bins[closestIndex - 1][0], None
+        else:
+            return self.bins[closestIndex - 1][0], self.bins[closestIndex + 1][0]
+
+    def range(self, center):
+        below, above = self.neighbors(center)    # is never None, None
+        if below is None:
+            return float("-inf"), (center + above)/2.0
+        elif above is None:
+            return (below + center)/2.0, float("inf")
+        else:
+            return (below + center)/2.0, (above + center)/2.0
