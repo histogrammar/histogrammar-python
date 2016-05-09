@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import json as jsonlib
-import math
 
 from histogrammar.util import *
 
@@ -82,9 +81,6 @@ class Container(object):
     def __repr__(self): raise NotImplementedError
 
 unweighted = Fcn(lambda datum: 1.0)
-
-def exact(x, y):
-    return (math.isnan(x) and math.isnan(y)) or x == y
 
 def increment(container, datum):
     container.fill(datum)

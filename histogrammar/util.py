@@ -14,8 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import bisect
+import functools
 import marshal
+import math
 import types
+
+def exact(x, y):
+    return (math.isnan(x) and math.isnan(y)) or x == y
 
 class Fcn(object):
     def __init__(self, fcn, varname="datum"):
@@ -78,3 +84,249 @@ def cache(fcn):
         return CachedFcn(fcn.fcn)
     else:
         return CachedFcn(fcn)
+
+################################################################ 1D clustering algorithm (used by AdaptivelyBin)
+
+class Clustering1D(object):
+    @functools.total_ordering
+    class LessThanEverything(object):
+        def __le__(self, other):
+            return True
+        def __eq__(self, other):
+            return self is other
+
+    lte = LessThanEverything()
+
+    def __init__(self, num, tailDetail, value, values, min, max, entries):
+        self.num = num
+        self.tailDetail = tailDetail
+        self.value = value
+        self.values = values
+        self.min = min
+        self.max = max
+        self.entries = entries
+
+        self._mergeClusters()
+
+    def _mergeClusters(self):
+        while len(self.values) > self.num:
+            smallestDistance = None
+            nearestNeighbors = None
+            lowIndex = None
+            for index in xrange(len(self.values) - 1):
+                x1, v1 = self.values[index]
+                x2, v2 = self.values[index + 1]
+
+                distanceMetric = (self.tailDetail  * (x2 - x1)/(self.max - self.min) -
+                           (1.0 - self.tailDetail) * (v1.entries + v2.entries)/self.entries)
+
+                if smallestDistance is None or distanceMetric < smallestDistance:
+                    smallestDistance = distanceMetric
+                    nearestNeighbors = (x1, v1), (x2, v2)
+                    lowIndex = index
+
+            (x1, v1), (x2, v2) = nearestNeighbors
+            replacement = (x1 * v1.entries + x2 * v2.entries) / (v1.entries + v2.entries), v1 + v2
+
+            del self.values[lowIndex]
+            del self.values[lowIndex]
+            self.values.insert(lowIndex, replacement)
+            
+    def update(self, x, datum, weight):
+        if weight > 0.0:
+            index = bisect.bisect_left(self.values, (x, self.lte))
+            if len(self.values) > index and self.values[index][0] == x:
+                self.values[index][1].fill(datum, weight)
+            else:
+                v = self.value.zero()
+                v.fill(datum, weight)
+                self.values.insert(index, (x, v))
+                self._mergeClusters()
+
+        if math.isnan(self.min) or x < self.min:
+            self.min = x
+        if math.isnan(self.max) or x > self.max:
+            self.max = x
+
+        self.entries += weight
+
+    def merge(self, other):
+        bins = {}
+
+        for x, v in self.values:
+            bins[x] = v.copy()          # replace them; don't update them in-place
+
+        for x, v in other.values:
+            if x in bins:
+                bins[x] = bins[x] + v   # replace them; don't update them in-place
+            else:
+                bins[x] = v.copy()      # replace them; don't update them in-place
+
+        if math.isnan(self.min) and math.isnan(other.min):
+            min = float("nan")
+        elif math.isnan(self.min):
+            min = other.min
+        elif math.isnan(other.min):
+            min = self.min
+        elif self.min < other.min:
+            min = self.min
+        else:
+            min = other.min
+
+        if math.isnan(self.max) and math.isnan(other.max):
+            max = float("nan")
+        elif math.isnan(self.max):
+            max = other.max
+        elif math.isnan(other.max):
+            max = self.max
+        elif self.max > other.max:
+            max = self.max
+        else:
+            max = other.max
+
+        return Clustering1D(self.num, self.tailDetail, self.value, sorted(bins.items()), min, max, self.entries + other.entries)
+
+    def __eq__(self, other):
+        return self.num == other.num and exact(self.tailDetail, other.tailDetail) and self.values == other.values and exact(self.min, other.min) and exact(self.max, other.max) and exact(self.entries, other.entries)
+
+    def __hash__(self):
+        return hash((self.num, self.tailDetail, self.values, self.min, self.max, self.entries))
+
+################################################################ interpretation of central bins as a distribution
+
+class CentralBinsDistribution(object):
+    def pdf(self, *xs):
+        if len(xs) == 0:
+            return self.pdfTimesEntries(xs[0]) / self.entries
+        else:
+            return [x / self.entries for x in self.pdfTimesEntries(*xs)]
+
+    def cdf(self, *xs):
+        if len(xs) == 0:
+            return self.cdfTimesEntries(xs[0]) / self.entries
+        else:
+            return [x / self.entries for x in self.cdfTimesEntries(*xs)]
+
+    def qf(self, *xs):
+        if len(xs) == 0:
+            return self.qfTimesEntries(xs[0]) * self.entries
+        else:
+            return [x * self.entries for x in self.qfTimesEntries(*xs)]
+
+    def pdfTimesEntries(self, x, *xs):
+        xs = [x] + list(xs)
+
+        if len(self.bins) == 0 or math.isnan(self.min) or math.isnan(self.max):
+            out = [0.0] * len(xs)
+
+        elif len(self.bins) == 1:
+            out = [float("inf") if x == bins[0][0] else 0.0 for x in xs]
+
+        else:
+            out = [0.0] * len(xs)
+
+            left = self.min
+            for i in xrange(len(self.bins)):
+                if i < len(self.bins) - 1:
+                    right = (self.bins[i][0] + self.bins[i + 1][0]) / 2.0
+                else:
+                    right = self.max
+
+                entries = self.bins[i][1].entries
+
+                for j, x in enumerate(xs):
+                    if left <= x and x < right:
+                        out[j] = entries / (right - left)
+
+                left = right
+            
+        if len(xs) == 1:
+            return out[0]
+        else:
+            return out
+
+    def cdfTimesEntries(self, x, *xs):
+        xs = [x] + list(xs)
+
+        if len(self.bins) == 0 or math.isnan(self.min) or math.isnan(self.max):
+            out = [0.0] * len(xs)
+
+        elif len(self.bins) == 1:
+            out = []
+            for x in xs:
+                if x < self.bins[0][0]:
+                    out.append(0.0)
+                elif x == self.bins[0][0]:
+                    out.append(self.bins[0][1].entries / 2.0)
+                else:
+                    out.append(self.bins[0][1].entries)
+
+        else:
+            out = [0.0] * len(xs)
+
+            left = self.min
+            cumulative = 0.0
+            for i in xrange(len(self.bins)):
+                if i < len(self.bins) - 1:
+                    right = (self.bins[i][0] + self.bins[i + 1][0]) / 2.0
+                else:
+                    right = self.max
+
+            entries = self.bins[i][1].entries
+
+            for j, x in enumerate(xs):
+                if left <= x and x < right:
+                    out[j] = cumulative + entries * (x - left)/(right - left)
+
+            left = right
+            cumulative += entries
+
+        for j, x in enumerate(xs):
+            if x >= self.max:
+                out[j] = cumulative
+
+        if len(xs) == 1:
+            return out[0]
+        else:
+            return out
+
+    def qfTimesEntries(self, y, *ys):
+        ys = [y] + list(ys)
+
+        if len(self.bins) == 0 or math.isnan(self.min) or math.isnan(self.max):
+            out = [float("nan")] * len(ys)
+
+        elif len(self.bins) == 1:
+            out = [self.bins[0][0]] * len(ys)
+
+        else:
+            out = [self.min] * len(ys)
+
+            left = self.min
+            cumulative = 0.0
+            for i in xrange(len(self.bins)):
+                if i < len(self.bins) - 1:
+                    right = (self.bins[i][0] + self.bins[i + 1][0]) / 2.0
+                else:
+                    right = self.max
+
+                entries = self.bins[i][1].entries
+
+                low = cumulative
+                high = cumulative + entries
+
+                for j, y in enumerate(ys):
+                    if low <= y and y < high:
+                        out[j] = left + (right - left)*(y - low)/(high - low)
+
+                left = right
+                cumulative = entries
+
+        for j, y in enumerate(ys):
+            if y >= cumulative:
+                out[j] = self.max
+
+        if len(ys) == 1:
+            return out[0]
+        else:
+            return out
