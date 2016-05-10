@@ -517,6 +517,18 @@ class TestEverything(unittest.TestCase):
         self.checkJson(two)
         self.checkJson(three)
 
+    def testBagWithLimit(self):
+        one = Limit(Bag(lambda x: x.string), 20)
+        for _ in self.struct: one.fill(_)
+        self.assertEqual(one.get.values, {"one": 1.0, "two": 1.0, "three": 1.0, "four": 1.0, "five": 1.0, "six": 1.0, "seven": 1.0, "eight": 1.0, "nine": 1.0, "ten": 1.0})
+
+        two = Limit(Bag(lambda x: x.string), 9)
+        for _ in self.struct: two.fill(_)
+        self.assertTrue(two.saturated)
+
+        self.checkJson(one)
+        self.checkJson(two)
+
     ################################################################ Bin
 
     def testBin(self):
