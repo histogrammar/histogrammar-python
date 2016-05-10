@@ -21,47 +21,39 @@ from histogrammar.util import *
 
 class Bag(Factory, Container):
     @staticmethod
-    def ed(entries, limit, values):
+    def ed(entries, values):
         if entries < 0.0:
             raise ContainerException("entries ($entries) cannot be negative")
-        out = Bag(None, None, limit)
+        out = Bag(None, None)
         out.entries = float(entries)
-        if out.limit is None:
-            out.limit = None
-        else:
-            out.limit = float(limit)
         out.values = values
         return out
 
     @staticmethod
-    def ing(quantity, selection=unweighted, limit=None):
-        return Bag(quantity, selection, limit)
+    def ing(quantity, selection=unweighted):
+        return Bag(quantity, selection)
 
-    def __init__(self, quantity, selection=unweighted, limit=None):
+    def __init__(self, quantity, selection=unweighted):
         self.quantity = serializable(quantity)
         self.selection = serializable(selection)
         self.entries = 0.0
         self.values = {}
-        self.limit = limit
         super(Bag, self).__init__()
 
-    def zero(self): return Bag(self.quantity, self.selection, self.limit)
+    def zero(self): return Bag(self.quantity, self.selection)
 
     def __add__(self, other):
         if isinstance(other, Bag):
-            out = Bag(self.quantity, self.selection, self.limit)
+            out = Bag(self.quantity, self.selection)
 
             out.entries = self.entries + other.entries
 
-            if self.limit is not None and self.limit < out.entries:
-                out.values = None
-            else:
-                out.values = dict(self.values)
-                for value, count in other.values.items():
-                    if value in out.values:
-                        out.values[value] += count
-                    else:
-                        out.values[value] = count
+            out.values = dict(self.values)
+            for value, count in other.values.items():
+                if value in out.values:
+                    out.values[value] += count
+                else:
+                    out.values[value] = count
 
             return out
 
@@ -75,30 +67,26 @@ class Bag(Factory, Container):
         w = weight * self.selection(datum)
         if w > 0.0:
             q = self.quantity(datum)
-            if isinstance(q, (int, long, float)):
-                q = (float(q),)
-            elif isinstance(q, list):
+            if isinstance(q, list):
                 q = tuple(map(float, q))
+            elif not isinstance(q, (int, long, float, basestring, tuple)):
+                raise ContainerException("fill rule for Bag must return a number, vector of numbers, or a string, not {}".format(q))
 
             self.entries += w
 
-            if self.limit is not None and self.limit < self.entries:
-                self.values = None
+            if q in self.values:
+                self.values[q] += w
             else:
-                if q in self.values:
-                    self.values[q] += w
-                else:
-                    self.values[q] = w
+                self.values[q] = w
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
-        "limit": None if self.limit is None else floatToJson(self.limit),
-        "values": None if self.values is None else [{"n": n, "v": map(floatToJson, v)} for v, n in sorted(self.values.items())],
+        "values": [{"n": n, "v": v} for v, n in sorted(self.values.items())],
         }
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "values", "limit"]):
+        if isinstance(json, dict) and set(json.keys()) == set(["entries", "values"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = json["entries"]
             else:
@@ -116,7 +104,9 @@ class Bag(Factory, Container):
                         else:
                             raise JsonFormatException(n, "Bag.values {} n".format(i))
 
-                        if isinstance(nv["v"], (list, tuple)):
+                        if isinstance(nv["v"], (basestring, int, long, float)):
+                            v = nv["v"]
+                        elif isinstance(nv["v"], (list, tuple)):
                             for j, d in enumerate(nv["v"]):
                                 if not isinstance(d, (int, long, float)):
                                     raise JsonFormatException(d, "Bag.values {} v {}".format(i, j))
@@ -135,23 +125,18 @@ class Bag(Factory, Container):
             else:
                 raise JsonFormatException(json["values"], "Bag.values")
 
-            if json["limit"] is None or isinstance(json["limit"], (int, long, float)):
-                limit = json["limit"]
-            else:
-                raise JsonFormatException(json["limit"], "Bag.limit")
-
-            return Bag.ed(entries, limit, values)
+            return Bag.ed(entries, values)
 
         else:
             raise JsonFormatException(json, self.name)
         
     def __repr__(self):
-        return "Bag[{}]".format("saturated" if self.limit is not None and self.limit < self.entries else "size=" + len(self.values))
+        return "Bag[{}]".format("size=0" if len(self.values) == 0 else repr(self.values[0]) + "..., size=" + str(len(self.values)))
 
     def __eq__(self, other):
-        return isinstance(other, Bag) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and self.limit == other.limit and self.values == other.values
+        return isinstance(other, Bag) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
-        return hash((self.quantity, self.selection, self.entries, self.limit, self.values))
+        return hash((self.quantity, self.selection, self.entries, self.values))
 
 Factory.register(Bag)

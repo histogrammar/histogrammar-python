@@ -503,14 +503,19 @@ class TestEverything(unittest.TestCase):
     def testBag(self):
         one = Bag(lambda x: x)
         for _ in self.simple: one.fill(_)
-        self.assertEqual(one.values, {(7.3,): 1.0, (2.2,): 1.0, (-1.7,): 1.0, (-4.7,): 1.0, (0.0,): 2.0, (-1.8,): 1.0, (-3.0,): 1.0, (1.6,): 1.0, (3.4,): 1.0})
+        self.assertEqual(one.values, {7.3: 1.0, 2.2: 1.0, -1.7: 1.0, -4.7: 1.0, 0.0: 2.0, -1.8: 1.0, -3.0: 1.0, 1.6: 1.0, 3.4: 1.0})
 
-        two = Bag(lambda x: x, limit = 5)
+        two = Bag(lambda x: (x, x))
         for _ in self.simple: two.fill(_)
-        self.assertEqual(two.values, None)
+        self.assertEqual(two.values, {(7.3, 7.3): 1.0, (2.2, 2.2): 1.0, (-1.7, -1.7): 1.0, (-4.7, -4.7): 1.0, (0.0, 0.0): 2.0, (-1.8, -1.8): 1.0, (-3.0, -3.0): 1.0, (1.6, 1.6): 1.0, (3.4, 3.4): 1.0})
+
+        three = Bag(lambda x: x.string[0])
+        for _ in self.struct: three.fill(_)
+        self.assertEqual(three.values, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
 
         self.checkJson(one)
         self.checkJson(two)
+        self.checkJson(three)
 
     ################################################################ Bin
 
