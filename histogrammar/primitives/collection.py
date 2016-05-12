@@ -16,6 +16,81 @@
 
 from histogrammar.defs import *
 
+################################################################ Cut
+
+class Cut(Factory, Container):
+    @staticmethod
+    def ed(entries, value):
+        if entries < 0.0:
+            raise ContainerException("entries ({}) cannot be negative".format(entries))
+        out = Cut(None, value)
+        out.entries = entries
+        return out
+
+    @staticmethod
+    def ing(selection, value):
+        return Cut(selection, value)
+
+    def __init__(self, selection, value):
+        self.entries = 0.0
+        self.selection = selection
+        self.value = value
+
+    def zero(self):
+        return Cut(self.selection, self.value.zero())
+
+    def __add__(self, other):
+        if isinstance(other, Cut):
+            return Cut(self.selection, self.value + other.value)
+        else:
+            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+
+    def fill(self, datum, weight=1.0):
+        if self.selection is None:
+            raise RuntimeException("attempting to fill a container that has no fill rule")
+
+        w = weight * self.selection(datum)
+        if w > 0.0:
+            self.value.fill(datum, w)
+        self.entries += weight
+
+    def toJsonFragment(self): return {
+        "entries": floatToJson(self.entries),
+        "type": self.value.name,
+        "data": self.value.toJsonFragment(),
+        }
+
+    @staticmethod
+    def fromJsonFragment(json):
+        if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "data"]):
+            if isinstance(json["entries"], (int, long, float)):
+                entries = float(json["entries"])
+            else:
+                raise JsonFormatException(json, "Cut.entries")
+
+            if isinstance(json["type"], basestring):
+                factory = Factory.registered[json["type"]]
+            else:
+                raise JsonFormatException(json, "Cut.type")
+
+            value = factory.fromJsonFragment(json["data"])
+
+            return Cut.ed(entries, value)
+
+        else:
+            raise JsonFormatException(json, "Cut")
+
+    def __repr__(self):
+        return "Cutting[{}]".format(self.value)
+
+    def __eq__(self, other):
+        return isinstance(other, Cut) and exact(self.entries, other.entries) and self.value == other.value
+
+    def __hash__(self):
+        return hash((self.entries, self.value))
+
+Factory.register(Cut)
+
 ################################################################ Limit
 
 class Limit(Factory, Container):
