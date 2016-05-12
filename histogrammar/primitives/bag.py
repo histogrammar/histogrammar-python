@@ -23,7 +23,7 @@ class Bag(Factory, Container):
     @staticmethod
     def ed(entries, values):
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ContainerException("entries ({}) cannot be negative".format(entries))
         out = Bag(None, None)
         out.entries = float(entries)
         out.values = values
@@ -102,10 +102,12 @@ class Bag(Factory, Container):
                         if isinstance(nv["n"], (int, long, float)):
                             n = float(nv["n"])
                         else:
-                            raise JsonFormatException(n, "Bag.values {} n".format(i))
+                            raise JsonFormatException(nv["n"], "Bag.values {} n".format(i))
 
-                        if isinstance(nv["v"], (basestring, int, long, float)):
+                        if isinstance(nv["v"], basestring):
                             v = nv["v"]
+                        elif isinstance(nv["v"], (int, long, float)):
+                            v = float(nv["v"])
                         elif isinstance(nv["v"], (list, tuple)):
                             for j, d in enumerate(nv["v"]):
                                 if not isinstance(d, (int, long, float)):

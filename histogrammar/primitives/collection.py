@@ -41,7 +41,9 @@ class Cut(Factory, Container):
 
     def __add__(self, other):
         if isinstance(other, Cut):
-            return Cut(self.selection, self.value + other.value)
+            out = Cut(self.selection, self.value + other.value)
+            out.entries = self.entries + other.entries
+            return out
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 

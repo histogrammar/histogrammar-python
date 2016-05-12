@@ -18,7 +18,49 @@ import bisect
 import functools
 import marshal
 import math
+import random
 import types
+
+@functools.total_ordering
+class LessThanEverything(object):
+    def __le__(self, other):
+        return True
+    def __eq__(self, other):
+        return self is other
+
+################################################################ random sampling
+
+class Reservoir(object):
+    def __init__(self, limit, *initial):
+        self.limit = limit
+        self.numObserved = 0
+        self.keyvalues = []
+        for y, weight in initial:
+            self.update(y, weight)
+
+    def update(self, y, weight=1.0):
+        self.numObserved += 1
+
+        r = random.uniform(0.0, 1.0)**(1.0/weight)
+
+        if self.numObserved <= self.limit:
+            # insert this item in the list, keeping the list sorted, letting it grow
+            index = bisect.bisect_left(self.keyvalues, (r, LessThanEverything()))
+            self.keyvalues.insert(index, (r, (y, weight)))
+
+        elif self.keyvalues[0][0] < r:
+            # insert this item in the list, keeping the list sorted, keeping its size fixed by shifting the lowest values down
+            index = max(bisect.bisect_left(self.keyvalues, (r, LessThanEverything())) - 1, 0)
+            for i in xrange(index):
+                self.keyvalues[i] = self.keyvalues[i + 1]
+            self.keyvalues[index] = (r, (y, weight))
+
+    @property
+    def values(self): return [pair for r, pair in self.keyvalues]
+    @property
+    def size(self): return len(self.keyvalues)
+    @property
+    def isEmpty(self): return self.size == 0
 
 ################################################################ NaN handling
 
@@ -124,13 +166,6 @@ def cache(fcn):
         return CachedFcn(fcn)
 
 ################################################################ 1D clustering algorithm (used by AdaptivelyBin)
-
-@functools.total_ordering
-class LessThanEverything(object):
-    def __le__(self, other):
-        return True
-    def __eq__(self, other):
-        return self is other
 
 class Clustering1D(object):
     def __init__(self, num, tailDetail, value, values, min, max, entries):

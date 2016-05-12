@@ -548,6 +548,36 @@ class TestEverything(unittest.TestCase):
         self.checkJson(one)
         self.checkJson(two)
 
+    ################################################################ Sample
+
+    def testSample(self):
+        one = Sample(100, lambda x: x)
+        for _ in self.simple: one.fill(_)
+        self.assertEqual(set(one.values), set([(3.4, 1.0), (2.2, 1.0), (-1.8, 1.0), (0.0, 1.0), (7.3, 1.0), (-4.7, 1.0), (1.6, 1.0), (0.0, 1.0), (-3.0, 1.0), (-1.7, 1.0)]))
+
+        two = Sample(3, lambda x: x)
+        for _ in self.simple: two.fill(_)
+        self.assertEqual(len(two.values), 3)
+        self.assertEqual(two.size, 3)
+
+        three = Sample(100, lambda x: (x, x))
+        for _ in self.simple: three.fill(_)
+        self.assertEqual(set(three.values), set([((3.4, 3.4), 1.0), ((2.2, 2.2), 1.0), ((-1.8, -1.8), 1.0), ((0.0, 0.0), 1.0), ((7.3, 7.3), 1.0), ((-4.7, -4.7), 1.0), ((1.6, 1.6), 1.0), ((0.0, 0.0), 1.0), ((-3.0, -3.0), 1.0), ((-1.7, -1.7), 1.0)]))        
+
+        four = Sample(100, lambda x: x.string[0])
+        for _ in self.struct: four.fill(_)
+        self.assertEqual(sorted(four.values), [("e", 1.0), ("f", 1.0), ("f", 1.0), ("n", 1.0), ("o", 1.0), ("s", 1.0), ("s", 1.0), ("t", 1.0), ("t", 1.0), ("t", 1.0)])
+
+        five = Sample(100, lambda x: x.string)
+        for _ in self.struct: five.fill(_)
+        self.assertEqual(sorted(five.values), [("eight", 1.0), ("five", 1.0), ("four", 1.0), ("nine", 1.0), ("one", 1.0), ("seven", 1.0), ("six", 1.0), ("ten", 1.0), ("three", 1.0), ("two", 1.0)])
+
+        self.checkJson(one)
+        self.checkJson(two)
+        self.checkJson(three)
+        self.checkJson(four)
+        self.checkJson(five)
+
     ################################################################ Bin
 
     def testBin(self):
