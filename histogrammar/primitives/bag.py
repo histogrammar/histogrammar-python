@@ -86,7 +86,7 @@ class Bag(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "values"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "values"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = json["entries"]
             else:
@@ -98,7 +98,7 @@ class Bag(Factory, Container):
             elif json["values"] is None or isinstance(json["values"], list):
                 values = {}
                 for i, nv in enumerate(json["values"]):
-                    if isinstance(nv, dict) and set(nv.keys()) == set(["n", "v"]):
+                    if isinstance(nv, dict) and hasKeys(nv.keys(), ["n", "v"]):
                         if isinstance(nv["n"], (int, long, float)):
                             n = float(nv["n"])
                         else:

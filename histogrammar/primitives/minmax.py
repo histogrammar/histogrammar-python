@@ -69,7 +69,7 @@ class Minimize(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "min"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "min"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -146,7 +146,7 @@ class Maximize(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "max"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "max"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:

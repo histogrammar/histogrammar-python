@@ -108,7 +108,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "num", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow", "tailDetail"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "num", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow", "tailDetail"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -127,7 +127,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
             if isinstance(json["bins"], list):
                 bins = []
                 for i, binpair in enumerate(json["bins"]):
-                    if isinstance(binpair, dict) and set(binpair.keys()) == set(["center", "value"]):
+                    if isinstance(binpair, dict) and hasKeys(binpair.keys(), ["center", "value"]):
                         if isinstance(binpair["center"], (int, long, float)):
                             center = float(binpair["center"])
                         else:

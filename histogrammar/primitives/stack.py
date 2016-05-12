@@ -78,7 +78,7 @@ class Stack(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -92,7 +92,7 @@ class Stack(Factory, Container):
             if isinstance(json["data"], list):
                 cuts = []
                 for i, elementPair in enumerate(json["data"]):
-                    if isinstance(elementPair, dict) and set(elementPair.keys()) == set(["atleast", "data"]):
+                    if isinstance(elementPair, dict) and hasKeys(elementPair.keys(), ["atleast", "data"]):
                         if elementPair["atleast"] not in ("nan", "inf", "-inf") and not isinstance(elementPair["atleast"], (int, long, float)):
                             raise JsonFormatException(json, "Stack.data {} atleast".format(i))
 

@@ -96,7 +96,7 @@ class Categorize(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:

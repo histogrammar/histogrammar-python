@@ -28,6 +28,27 @@ class LessThanEverything(object):
     def __eq__(self, other):
         return self is other
 
+################################################################ handling key set comparisons with optional keys
+
+def hasKeys(test, required, optional=set()):
+    if not isinstance(test, set):
+        test = set(test)
+    if not isinstance(required, set):
+        required = set(required)
+    if not isinstance(optional, set):
+        optional = set(optional)
+    return required.issubset(test) and test.issubset(required.union(optional))
+
+def maybeAdd(json, **pairs):
+    if len(pairs) == 0:
+        return json
+    else:
+        out = dict(json)
+        for k, v in pairs.items():
+            if v is not None:
+                out[k] = v
+        return out
+
 ################################################################ random sampling
 
 class Reservoir(object):

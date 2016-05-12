@@ -111,7 +111,7 @@ class Sample(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "limit", "values"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "values"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = json["entries"]
             else:
@@ -125,7 +125,7 @@ class Sample(Factory, Container):
             if isinstance(json["values"], list):
                 values = []
                 for i, wv in enumerate(json["values"]):
-                    if isinstance(wv, dict) and set(wv.keys()) == set(["w", "v"]):
+                    if isinstance(wv, dict) and hasKeys(wv.keys(), ["w", "v"]):
                         if isinstance(wv["w"], (int, long, float)):
                             w = float(wv["w"])
                         else:

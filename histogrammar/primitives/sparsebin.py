@@ -151,7 +151,7 @@ class SparselyBin(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"]):
             if isinstance(json["binWidth"], (int, long, float)):
                 binWidth = float(json["binWidth"])
             else:

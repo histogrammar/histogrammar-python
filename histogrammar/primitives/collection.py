@@ -64,7 +64,7 @@ class Cut(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -166,7 +166,7 @@ class Limit(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "limit", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -275,7 +275,7 @@ class Label(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -372,7 +372,7 @@ class UntypedLabel(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -381,7 +381,7 @@ class UntypedLabel(Factory, Container):
             if isinstance(json["data"], dict):
                 pairs = {}
                 for k, v in json["data"].items():
-                    if isinstance(v, dict) and set(v.keys()) == set(["type", "data"]):
+                    if isinstance(v, dict) and hasKeys(v.keys(), ["type", "data"]):
                         factory = Factory.registered[v["type"]]
                         pairs[k] = factory.fromJsonFragment(v["data"])
 
@@ -481,7 +481,7 @@ class Index(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -583,7 +583,7 @@ class Branch(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:

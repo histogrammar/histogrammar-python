@@ -95,7 +95,7 @@ class Quantile(Factory, Container):
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and set(json.keys()) == set(["entries", "target", "estimate"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "target", "estimate"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
