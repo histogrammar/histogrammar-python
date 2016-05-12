@@ -115,6 +115,25 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftCounting)
 
+    def testCountWithFilter(self):
+        for i in xrange(11):
+            left, right = self.simple[:i], self.simple[i:]
+
+            leftCounting = Cut(lambda x: x > 0.0, Count())
+            rightCounting = Cut(lambda x: x > 0.0, Count())
+
+            for _ in left: leftCounting.fill(_)
+            for _ in right: rightCounting.fill(_)
+
+            self.assertEqual(leftCounting.value.entries, len(filter(lambda x: x > 0.0, left)))
+            self.assertEqual(rightCounting.value.entries, len(filter(lambda x: x > 0.0, right)))
+
+            finalResult = leftCounting + rightCounting
+
+            self.assertEqual(finalResult.value.entries, len(filter(lambda x: x > 0.0, self.simple)))
+
+            self.checkJson(leftCounting)
+
     ################################################################ Sum
 
     def testSum(self):
