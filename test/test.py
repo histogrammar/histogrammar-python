@@ -697,7 +697,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Stack
 
     def testStack(self):
-        stacking = Stack(Count(), lambda x: x, 0.0, 2.0, 4.0, 6.0, 8.0)
+        stacking = Stack(lambda x: x, Count(), 0.0, 2.0, 4.0, 6.0, 8.0)
         for _ in self.simple: stacking.fill(_)        
 
         self.assertEqual([(k, v.entries) for k, v in stacking.cuts], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
@@ -707,7 +707,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Partition
 
     def testPartition(self):
-        partitioning = Partition(Count(), lambda x: x, 0.0, 2.0, 4.0, 6.0, 8.0)
+        partitioning = Partition(lambda x: x, Count(), 0.0, 2.0, 4.0, 6.0, 8.0)
         for _ in self.simple: partitioning.fill(_)
 
         self.assertEqual([(k, v.entries) for k, v in partitioning.cuts], [(float("-inf"), 4.0), (0.0, 3.0), (2.0, 2.0), (4.0, 0.0), (6.0, 1.0), (8.0, 0.0)])
@@ -715,7 +715,7 @@ class TestEverything(unittest.TestCase):
         self.checkJson(partitioning)
 
     def testPartitionSum(self):
-        partitioning = Partition(Sum(lambda x: x), lambda x: x, 0.0, 2.0, 4.0, 6.0, 8.0)
+        partitioning = Partition(lambda x: x, Sum(lambda x: x), 0.0, 2.0, 4.0, 6.0, 8.0)
         for _ in self.simple: partitioning.fill(_)
 
         self.assertAlmostEqual(partitioning.cuts[0][1].sum, -11.2)

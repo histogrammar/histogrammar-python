@@ -29,10 +29,10 @@ class Partition(Factory, Container):
         return out
 
     @staticmethod
-    def ing(value, expression, *cuts):
-        return Partition(value, expression, *cuts)
+    def ing(expression, value, *cuts):
+        return Partition(expression, value, *cuts)
 
-    def __init__(self, value, expression, *cuts):
+    def __init__(self, expression, value, *cuts):
         self.entries = 0.0
         self.expression = expression
         if value is None:
@@ -46,14 +46,14 @@ class Partition(Factory, Container):
     def values(self): return [v for k, v in self.cuts]
 
     def zero(self):
-        return Partition(None, self.expression, *[(x, x.zero()) for x in cuts])
+        return Partition(self.expression, None, *[(x, x.zero()) for x in cuts])
 
     def __add__(self, other):
         if isinstance(other, Partition):
             if self.thresholds != other.thresholds:
                 raise ContainerException("cannot add Partition because cut thresholds differ")
 
-            out = Partition(None, self.expression, *[(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)])
+            out = Partition(self.expression, None, *[(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)])
             out.entries = self.entries + other.entries
             return out
 
