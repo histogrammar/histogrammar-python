@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from histogrammar.defs import *
+from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class Fraction(Factory, Container):

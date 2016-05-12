@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from histogrammar.defs import *
+from histogrammar.util import *
 
 class Count(Factory, Container):
     @staticmethod
