@@ -22,18 +22,17 @@ class AbsoluteErr(Factory, Container):
     def ed(entries, mae):
         if entries < 0.0:
             raise ContainerException("entries ($entries) cannot be negative")
-        out = AbsoluteErr(None, None)
+        out = AbsoluteErr(None)
         out.entries = float(entries)
         out.absoluteSum = float(mae)*float(entries)
         return out
 
     @staticmethod
-    def ing(quantity, selection=unweighted):
-        return AbsoluteErr(quantity, selection)
+    def ing(quantity):
+        return AbsoluteErr(quantity)
 
-    def __init__(self, quantity, selection=unweighted):
+    def __init__(self, quantity):
         self.quantity = serializable(quantity)
-        self.selection = serializable(selection)
         self.entries = 0.0
         self.absoluteSum = 0.0
         super(AbsoluteErr, self).__init__()
@@ -45,11 +44,11 @@ class AbsoluteErr(Factory, Container):
         else:
             return self.absoluteSum/self.entries
 
-    def zero(self): return AbsoluteErr(self.quantity, self.selection)
+    def zero(self): return AbsoluteErr(self.quantity)
 
     def __add__(self, other):
         if isinstance(other, AbsoluteErr):
-            out = AbsoluteErr(self.quantity, self.selection)
+            out = AbsoluteErr(self.quantity)
             out.entries = self.entries + other.entries
             out.absoluteSum = self.entries*self.mae + other.entries*other.mae
             return out
@@ -57,14 +56,12 @@ class AbsoluteErr(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
-            self.entries += w
             self.absoluteSum += abs(q)
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -93,9 +90,9 @@ class AbsoluteErr(Factory, Container):
         return "AbsoluteErr[{}]".format(self.mae)
 
     def __eq__(self, other):
-        return isinstance(other, AbsoluteErr) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and exact(self.mae, other.mae)
+        return isinstance(other, AbsoluteErr) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.mae, other.mae)
 
     def __hash__(self):
-        return hash((self.quantity, self.selection, self.entries, self.mae))
+        return hash((self.quantity, self.entries, self.mae))
 
 Factory.register(AbsoluteErr)

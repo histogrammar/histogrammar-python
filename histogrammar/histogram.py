@@ -16,81 +16,92 @@
 
 from histogrammar.defs import unweighted
 from histogrammar.util import serializable
+from histogrammar.primitives.collection import Cut
 from histogrammar.primitives.bin import Bin
 from histogrammar.primitives.count import Count
 
 def Histogram(num, low, high, quantity, selection=unweighted):
-    return Bin(num, low, high, quantity, selection, Count(), Count(), Count(), Count())
+    return Cut(selection, Bin(num, low, high, quantity, Count(), Count(), Count(), Count()))
 
-Histogram.ed = serializable(lambda low, high, entries, values, underflow, overflow, nanflow:
-    Bin(len(values), low, high, None, None, None, underflow, overflow, nanflow))
-
-class HistogramMethods(Bin):
+class HistogramMethods(Cut):
     @property
     def name(self):
-        return "Bin"
+        return "Cut"
 
     @property
     def factory(self):
-        return Bin
+        return Cut
+
+    @property
+    def entriesBeforeCut(self):
+        return self.entries
+
+    @property
+    def entriesAfterCut(self):
+        return self.value.entries
+
+    @property
+    def fractionPassingCut(self):
+        return self.value.entries / self.entries
 
     @property
     def numericalValues(self):
-        return [v.entries for v in self.values]
+        return [v.entries for v in self.value.values]
 
     @property
     def numericalOverflow(self):
-        return self.overflow.entries
+        return self.value.overflow.entries
 
     @property
     def numericalUnderflow(self):
-        return self.underflow.entries
+        return self.value.underflow.entries
 
     @property
     def numericalNanflow(self):
-        return self.nanflow.entries
+        return self.value.nanflow.entries
 
     def __setTH1(self, th1):
-        th1.SetBinContent(0, self.underflow.entries)
-        for i, v in enumerate(self.values):
+        th1.SetBinContent(0, self.value.underflow.entries)
+        for i, v in enumerate(self.value.values):
             th1.SetBinContent(i + 1, v.entries)
-        th1.SetBinContent(len(self.values), self.overflow.entries)
-        th1.SetEntries(self.entries)
+        th1.SetBinContent(len(self.value.values), self.value.overflow.entries)
+        th1.SetEntries(self.value.entries)
 
     def TH1C(self, name, title):
         import ROOT
-        th1 = ROOT.TH1C(name, title, len(self.values), self.low, self.high)
-        self.__setTH1(th1)
+        th1 = ROOT.TH1C(name, title, len(self.value.values), self.value.low, self.value.high)
+        self.value.__setTH1(th1)
         return th1
 
     def TH1S(self, name, title):
         import ROOT
-        th1 = ROOT.TH1S(name, title, len(self.values), self.low, self.high)
-        self.__setTH1(th1)
+        th1 = ROOT.TH1S(name, title, len(self.value.values), self.value.low, self.value.high)
+        self.value.__setTH1(th1)
         return th1
 
     def TH1I(self, name, title):
         import ROOT
-        th1 = ROOT.TH1I(name, title, len(self.values), self.low, self.high)
-        self.__setTH1(th1)
+        th1 = ROOT.TH1I(name, title, len(self.value.values), self.value.low, self.value.high)
+        self.value.__setTH1(th1)
         return th1
 
     def TH1F(self, name, title):
         import ROOT
-        th1 = ROOT.TH1F(name, title, len(self.values), self.low, self.high)
-        self.__setTH1(th1)
+        th1 = ROOT.TH1F(name, title, len(self.value.values), self.value.low, self.value.high)
+        self.value.__setTH1(th1)
         return th1
 
     def TH1D(self, name, title):
         import ROOT
-        th1 = ROOT.TH1D(name, title, len(self.values), self.low, self.high)
-        self.__setTH1(th1)
+        th1 = ROOT.TH1D(name, title, len(self.value.values), self.value.low, self.value.high)
+        self.value.__setTH1(th1)
         return th1
 
 def addImplicitMethods(container):
-    if isinstance(container, Bin) and \
-       all(isinstance(v, Count) for v in container.values) and \
-       isinstance(container.underflow, Count) and \
-       isinstance(container.overflow, Count) and \
-       isinstance(container.nanflow, Count):
+    if isinstance(container, Cut) and \
+           isinstance(container.value, Bin) and \
+           all(isinstance(v, Count) for v in container.value.values) and \
+           isinstance(container.value.underflow, Count) and \
+           isinstance(container.value.overflow, Count) and \
+           isinstance(container.value.nanflow, Count):
         container.__class__ = HistogramMethods

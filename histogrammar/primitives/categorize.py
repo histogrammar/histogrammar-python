@@ -24,19 +24,18 @@ class Categorize(Factory, Container):
         if entries < 0.0:
             raise ContainerException("entries ({}) cannot be negative".format(entries))
 
-        out = Categorize(None, None, contentType)
+        out = Categorize(None, contentType)
         out.entries = float(entries)
         out.pairs = pairs
         return out
 
     @staticmethod
-    def ing(quantity, selection=unweighted, value=Count()):
-        return Categorize(quantity, selection, value)
+    def ing(quantity, value=Count()):
+        return Categorize(quantity, value)
 
-    def __init__(self, quantity, selection=unweighted, value=Count()):
+    def __init__(self, quantity, value=Count()):
         self.entries = 0.0
         self.quantity = quantity
-        self.selection = selection
         self.value = value
         self.pairs = {}
         super(Categorize, self).__init__()
@@ -56,11 +55,11 @@ class Categorize(Factory, Container):
     def get(self, x): return self.pairs.get(x)
     def getOrElse(self, x, default): return self.pairs.get(x, default)
 
-    def zero(self): return Categorize(self.quantity, self.selection, self.value)
+    def zero(self): return Categorize(self.quantity, self.value)
 
     def __add__(self, other):
         if isinstance(other, Categorize):
-            out = Categorize(self.quantity, self.selection, self.value)
+            out = Categorize(self.quantity, self.value)
             out.entries = self.entries + other.entries
             out.pairs = {}
             for k in self.keySet.union(other.keySet):
@@ -76,18 +75,15 @@ class Categorize(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
 
-            self.entries += w
             if q not in self.pairs:
                 self.pairs[q] = self.value.zero()
-            self.pairs[q].fill(datum, w)
+            self.pairs[q].fill(datum, weight)
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -123,9 +119,9 @@ class Categorize(Factory, Container):
         return "Categorize[{}..., size={}]".format(self.values[0] if self.size > 0 else self.value, self.size)
 
     def __eq__(self, other):
-        return isinstance(other, Categorize) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.selection == other.selection and self.pairs == other.pairs
+        return isinstance(other, Categorize) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.pairs == other.pairs
 
     def __hash__(self):
-        return hash((self.entries, self.quantity, self.selection, tuple(sorted(self.pairs.items()))))
+        return hash((self.entries, self.quantity, tuple(sorted(self.pairs.items()))))
 
 Factory.register(Categorize)

@@ -26,16 +26,16 @@ class Bin(Factory, Container):
         if entries < 0.0:
             raise ContainerException("entries ({}) cannot be negative".format(entries))
 
-        out = Bin(len(values), low, high, None, None, None, underflow, overflow, nanflow)
+        out = Bin(len(values), low, high, None, None, underflow, overflow, nanflow)
         out.entries = float(entries)
         out.values = values
         return out
 
     @staticmethod
-    def ing(num, low, high, quantity, selection=unweighted, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
-        return Bin(num, low, high, quantity, selection, value, underflow, overflow, nanflow)
+    def ing(num, low, high, quantity, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
+        return Bin(num, low, high, quantity, value, underflow, overflow, nanflow)
 
-    def __init__(self, num, low, high, quantity, selection=unweighted, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
+    def __init__(self, num, low, high, quantity, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
         if low >= high:
             raise ContainerException("low ({}) must be less than high ({})".format(low, high))
         if num < 1:
@@ -45,7 +45,6 @@ class Bin(Factory, Container):
         self.low = float(low)
         self.high = float(high)
         self.quantity = serializable(quantity)
-        self.selection = serializable(selection)
         if value is None:
             self.values = [None] * num
         else:
@@ -55,7 +54,7 @@ class Bin(Factory, Container):
         self.nanflow = nanflow.copy()
         super(Bin, self).__init__()
 
-    def zero(self): return Bin(len(self.values), self.low, self.high, self.quantity, self.selection, self.values[0].zero(), self.underflow.zero(), self.overflow.zero(), self.nanflow.zero())
+    def zero(self): return Bin(len(self.values), self.low, self.high, self.quantity, self.values[0].zero(), self.underflow.zero(), self.overflow.zero(), self.nanflow.zero())
 
     def __add__(self, other):
         if isinstance(other, Bin):
@@ -68,7 +67,7 @@ class Bin(Factory, Container):
             if len(self.values) == 0:
                 raise ContainerException("cannot add Bins because number of values is zero")
 
-            out = Bin(len(self.values), self.low, self.high, self.quantity, self.selection, self.values[0], self.underflow + other.underflow, self.overflow + other.overflow, self.nanflow + other.nanflow)
+            out = Bin(len(self.values), self.low, self.high, self.quantity, self.values[0], self.underflow + other.underflow, self.overflow + other.overflow, self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
             out.values = [x + y for x, y in zip(self.values, other.values)]
             return out
@@ -94,23 +93,20 @@ class Bin(Factory, Container):
     def range(self, index): ((self.high - self.low) * index / self.num + self.low, (self.high - self.low) * (index + 1) / self.num + self.low)
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
 
-            self.entries += w
             if self.under(q):
-                self.underflow.fill(datum, w)
+                self.underflow.fill(datum, weight)
             elif self.over(q):
-                self.overflow.fill(datum, w)
+                self.overflow.fill(datum, weight)
             elif self.nan(q):
-                self.nanflow.fill(datum, w)
+                self.nanflow.fill(datum, weight)
             else:
-                self.values[self.bin(q)].fill(datum, w)
+                self.values[self.bin(q)].fill(datum, weight)
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
 
     def toJsonFragment(self): return {
         "low": floatToJson(self.low),
@@ -180,9 +176,9 @@ class Bin(Factory, Container):
         return "Bin[low={}, high={}, values=[{}..., size={}], underflow={}, overflow={}, nanflow={}]".format(self.low, self.high, repr(self.values[0]), len(self.values), repr(self.underflow), repr(self.overflow), repr(self.nanflow))
 
     def __eq__(self, other):
-        return isinstance(other, Bin) and exact(self.low, other.low) and exact(self.high, other.high) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and self.values == other.values and self.underflow == other.underflow and self.overflow == other.overflow and self.nanflow == other.nanflow
+        return isinstance(other, Bin) and exact(self.low, other.low) and exact(self.high, other.high) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.values == other.values and self.underflow == other.underflow and self.overflow == other.overflow and self.nanflow == other.nanflow
 
     def __hash__(self):
-        return hash((self.low, self.high, self.quantity, self.selection, self.entries, self.values, self.underflow, self.overflow, self.nanflow))
+        return hash((self.low, self.high, self.quantity, self.entries, self.values, self.underflow, self.overflow, self.nanflow))
 
 Factory.register(Bin)

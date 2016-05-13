@@ -22,19 +22,18 @@ class Deviate(Factory, Container):
     def ed(entries, mean, variance):
         if entries < 0.0:
             raise ContainerException("entries ($entries) cannot be negative")
-        out = Deviate(None, None)
+        out = Deviate(None)
         out.entries = float(entries)
         out.mean = float(mean)
         out.varianceTimesEntries = float(variance)*float(entries)
         return out
 
     @staticmethod
-    def ing(quantity, selection=unweighted):
-        return Deviate(quantity, selection)
+    def ing(quantity):
+        return Deviate(quantity)
 
-    def __init__(self, quantity, selection=unweighted):
+    def __init__(self, quantity):
         self.quantity = serializable(quantity)
-        self.selection = serializable(selection)
         self.entries = 0.0
         self.mean = 0.0
         self.varianceTimesEntries = 0.0
@@ -47,11 +46,11 @@ class Deviate(Factory, Container):
         else:
             return self.varianceTimesEntries/self.entries
 
-    def zero(self): return Deviate(self.quantity, self.selection)
+    def zero(self): return Deviate(self.quantity)
 
     def __add__(self, other):
         if isinstance(other, Deviate):
-            out = Deviate(self.quantity, self.selection)
+            out = Deviate(self.quantity)
             out.entries = self.entries + other.entries
             out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
             out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + self.entries*self.mean**2 + other.entries*other.mean**2 - 2.0*out.mean*(self.entries*self.mean + other.entries*other.mean) + out.mean*out.mean*out.entries
@@ -60,18 +59,15 @@ class Deviate(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
 
-            self.entries += w
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
             delta = q - self.mean
-            shift = delta * w / self.entries
+            shift = delta * weight / (self.entries)
             self.mean += shift
-            self.varianceTimesEntries += w * delta * (q - self.mean)
+            self.varianceTimesEntries += weight * delta * (q - self.mean)
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -106,9 +102,9 @@ class Deviate(Factory, Container):
         return "Deviate[{}, {}]".format(self.mean, self.variance)
 
     def __eq__(self, other):
-        return isinstance(other, Deviate) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and exact(self.mean, other.mean) and exact(self.variance, other.variance)
+        return isinstance(other, Deviate) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.mean, other.mean) and exact(self.variance, other.variance)
 
     def __hash__(self):
-        return hash((self.quantity, self.selection, self.entries, self.mean, self.variance))
+        return hash((self.quantity, self.entries, self.mean, self.variance))
 
 Factory.register(Deviate)

@@ -39,6 +39,7 @@ class Stack(Factory, Container):
             self.cuts = cuts
         else:
             self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + cuts)
+        super(Stack, self).__init__()
 
     @property
     def thresholds(self): return [k for k, v in self.cuts]

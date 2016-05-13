@@ -22,27 +22,26 @@ class Average(Factory, Container):
     def ed(entries, mean):
         if entries < 0.0:
             raise ContainerException("entries ($entries) cannot be negative")
-        out = Average(None, None)
+        out = Average(None)
         out.entries = float(entries)
         out.mean = float(mean)
         return out
 
     @staticmethod
-    def ing(quantity, selection=unweighted):
-        return Average(quantity, selection)
+    def ing(quantity):
+        return Average(quantity)
 
-    def __init__(self, quantity, selection=unweighted):
+    def __init__(self, quantity):
         self.quantity = serializable(quantity)
-        self.selection = serializable(selection)
         self.entries = 0.0
         self.mean = 0.0
         super(Average, self).__init__()
 
-    def zero(self): return Average(self.quantity, self.selection)
+    def zero(self): return Average(self.quantity)
 
     def __add__(self, other):
         if isinstance(other, Average):
-            out = Average(self.quantity, self.selection)
+            out = Average(self.quantity)
             out.entries = self.entries + other.entries
             out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
             return out
@@ -50,16 +49,13 @@ class Average(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
 
-            self.entries += w
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
             delta = q - self.mean
-            shift = delta * w / self.entries
+            shift = delta * weight / self.entries
             self.mean += shift
 
     def toJsonFragment(self): return {
@@ -89,9 +85,9 @@ class Average(Factory, Container):
         return "Average[{}]".format(self.mean)
 
     def __eq__(self, other):
-        return isinstance(other, Average) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and exact(self.mean, other.mean)
+        return isinstance(other, Average) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.mean, other.mean)
 
     def __hash__(self):
-        return hash((self.quantity, self.selection, self.entries, self.mean))
+        return hash((self.quantity, self.entries, self.mean))
 
 Factory.register(Average)

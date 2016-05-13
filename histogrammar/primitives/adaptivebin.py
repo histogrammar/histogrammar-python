@@ -27,7 +27,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         if entries < 0.0:
             raise ContainerException("entries ({}) cannot be negative".format(entries))
 
-        out = AdaptivelyBin(None, None, num, tailDetail, None, nanflow)
+        out = AdaptivelyBin(None, num, tailDetail, None, nanflow)
         out.clustering.entries = entries
         out.clustering.values = bins
         out.clustering.min = min
@@ -36,19 +36,19 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         return out
 
     @staticmethod
-    def ing(quantity, selection=unweighted, num=100, tailDetail=0.2, value=Count(), nanflow=Count()):
-        return AdaptivelyBin(quantity, selection, num, tailDetail, value, nanflow)
+    def ing(quantity, num=100, tailDetail=0.2, value=Count(), nanflow=Count()):
+        return AdaptivelyBin(quantity, num, tailDetail, value, nanflow)
 
-    def __init__(self, quantity, selection=unweighted, num=100, tailDetail=0.2, value=Count(), nanflow=Count()):
+    def __init__(self, quantity, num=100, tailDetail=0.2, value=Count(), nanflow=Count()):
         if num < 2:
             raise ContainerException("number of bins ({}) must be at least two".format(num))
         if tailDetail < 0.0 or tailDetail > 1.0:
             raise ContainerException("tailDetail parameter ({}) must be between 0.0 and 1.0 inclusive".format(tailDetail))
 
         self.quantity = quantity
-        self.selection = selection
         self.clustering = Clustering1D(num, tailDetail, value, [], float("nan"), float("nan"), 0.0)
         self.nanflow = nanflow
+        super(AdaptivelyBin, self).__init__()
 
     @property
     def num(self): return self.clustering.num
@@ -73,7 +73,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         self.clustering.max = max
 
     def zero(self):
-        return AdaptivelyBin(self.quantity, self.selection, self.num, self.tailDetail, self.clustering.value, self.nanflow.zero())
+        return AdaptivelyBin(self.quantity, self.num, self.tailDetail, self.clustering.value, self.nanflow.zero())
 
     def __add__(self, other):
         if self.num != other.num:
@@ -81,18 +81,14 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         if self.tailDetail != other.tailDetail:
             raise ContainerException("cannot add AdaptivelyBin because tailDetail parameter is different ({} vs {})".format(self.num, other.num))
 
-        out = AdaptivelyBin(self.quantity, self.selection, self.num, self.tailDetail, self.clustering.value, self.nanflow + other.nanflow)
+        out = AdaptivelyBin(self.quantity, self.num, self.tailDetail, self.clustering.value, self.nanflow + other.nanflow)
         out.clustering = self.clustering.merge(other.clustering)
         return out
         
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
-            self.clustering.update(q, datum, w)
+            self.clustering.update(q, datum, weight)
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -174,9 +170,9 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         return "AdaptivelyBin[bins=[{}..., size={}], nanflow={}]".format(v, len(self.bins), self.nanflow)
 
     def __eq__(self):
-        return isinstance(other, AdaptivelyBin) and self.quantity == other.quantity and self.selection == other.selection and self.clustering == other.clustering
+        return isinstance(other, AdaptivelyBin) and self.quantity == other.quantity and self.clustering == other.clustering
 
     def __hash__(self):
-        return hash((self.quantity, self.selection, self.clustering))
+        return hash((self.quantity, self.clustering))
 
 Factory.register(AdaptivelyBin)

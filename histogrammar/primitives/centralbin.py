@@ -26,7 +26,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
     def ed(entries, bins, min, max, nanflow):
         if entries < 0.0:
             raise ContainerException("entries ({}) cannot be negative".format(entries))
-        out = CentrallyBin(bins, None, None, None, nanflow)
+        out = CentrallyBin(bins, None, None, nanflow)
         out.entries = entries
         out.bins = bins
         out.min = min
@@ -34,10 +34,10 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         return out
 
     @staticmethod
-    def ing(bins, quantity, selection=unweighted, value=Count(), nanflow=Count()):
-        return CentrallyBin(bins, quantity, selection, value, nanflow)
+    def ing(bins, quantity, value=Count(), nanflow=Count()):
+        return CentrallyBin(bins, quantity, value, nanflow)
 
-    def __init__(self, bins, quantity, selection=unweighted, value=Count(), nanflow=Count()):
+    def __init__(self, bins, quantity, value=Count(), nanflow=Count()):
         if len(bins) < 2:
             raise ContainerException("number of bins ({}) must be at least two".format(len(bins)))
 
@@ -50,12 +50,13 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         self.max = float("nan")
 
         self.quantity = quantity
-        self.selection = selection
         self.value = value
         self.nanflow = nanflow
 
+        super(CentrallyBin, self).__init__()
+
     def zero(self):
-        return CentrallyBin(map(lambda (x, v): x, self.bins), self.quantity, self.selection, self.value, self.nanflow.zero())
+        return CentrallyBin(map(lambda (x, v): x, self.bins), self.quantity, self.value, self.nanflow.zero())
 
     def __add__(self, other):
         if self.centers != other.centers:
@@ -63,7 +64,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
         newbins = [(c1, v1 + v2) for (c1, v1), (_, v2) in zip(self.bins, other.bins)]
 
-        out = CentrallyBin(map(lambda (x, v): x, self.bins), self.quantity, self.selection, self.value, self.nanflow + other.nanflow)
+        out = CentrallyBin(map(lambda (x, v): x, self.bins), self.quantity, self.value, self.nanflow + other.nanflow)
         out.entries = self.entries + other.entries
         out.bins = newbins
         out.min = minplus(self.min, other.min)
@@ -71,17 +72,11 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         return out
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
 
-            self.entries += w
             if self.nan(q):
-                self.nanflow.fill(datum, w)
+                self.nanflow.fill(datum, weight)
             else:
                 self.bins[self.index(q)][1].fill(datum, weight)
 
@@ -89,6 +84,9 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
                 self.min = q
             if math.isnan(self.max) or q > self.max:
                 self.max = q
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -151,9 +149,9 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         return "CentrallyBin[bins=[{}..., size={}], nanflow={}]".format(self.bins[0][1], len(self.bins), self.nanflow)
 
     def __eq__(self):
-        return isinstance(other, CentrallyBin) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and self.bins == other.bins and exact(self.min, other.min) and exact(self.max, other.max) and self.nanflow == other.nanflow
+        return isinstance(other, CentrallyBin) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.bins == other.bins and exact(self.min, other.min) and exact(self.max, other.max) and self.nanflow == other.nanflow
 
     def __hash__(self):
-        return hash((self.quantity, self.selection, self.entries, self.bins, self.min, self.max, self.nanflow))
+        return hash((self.quantity, self.entries, self.bins, self.min, self.max, self.nanflow))
 
 Factory.register(CentrallyBin)

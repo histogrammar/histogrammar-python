@@ -26,31 +26,30 @@ class SparselyBin(Factory, Container):
         if entries < 0.0:
             raise ContainerException("entries ({}) cannot be negative".format(entries))
 
-        out = SparselyBin(binWidth, None, None, None, nanflow, origin)
+        out = SparselyBin(binWidth, None, None, nanflow, origin)
         out.entries = entries
         out.contentType = contentType
         out.bins = bins
         return out
 
     @staticmethod
-    def ing(binWidth, quantity, selection=unweighted, value=Count(), nanflow=Count(), origin=0.0):
-        return SparselyBin(binWidth, quantity, selection, value, nanflow, origin)
+    def ing(binWidth, quantity, value=Count(), nanflow=Count(), origin=0.0):
+        return SparselyBin(binWidth, quantity, value, nanflow, origin)
 
-    def __init__(self, binWidth, quantity, selection=unweighted, value=Count(), nanflow=Count(), origin=0.0):
+    def __init__(self, binWidth, quantity, value=Count(), nanflow=Count(), origin=0.0):
         if binWidth <= 0.0:
             raise ContainerException("binWidth ({}) must be greater than zero".format(binWidth))
 
         self.binWidth = binWidth
         self.entries = 0.0
         self.quantity = serializable(quantity)
-        self.selection = serializable(selection)
         self.value = value
         self.bins = {}
         self.nanflow = nanflow.copy()
         self.origin = origin
         super(SparselyBin, self).__init__()
 
-    def zero(self): return SparselyBin(self.binWidth, self.quantity, self.selection, self.value, self.nanflow.zero(), self.origin)
+    def zero(self): return SparselyBin(self.binWidth, self.quantity, self.value, self.nanflow.zero(), self.origin)
 
     def __add__(self, other):
         if isinstance(other, SparselyBin):
@@ -59,7 +58,7 @@ class SparselyBin(Factory, Container):
             if self.origin != other.origin:
                 raise ContainerException("cannot add SparselyBins because origin differs ({} vs {})".format(self.origin, other.origin))
 
-            out = SparselyBin(self.binWidth, self.quantity, self.selection, self.value, self.nanflow + other.nanflow)
+            out = SparselyBin(self.binWidth, self.quantity, self.value, self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
             out.bins = self.bins
             for i, v in other.bins.items():
@@ -122,22 +121,19 @@ class SparselyBin(Factory, Container):
     def nan(self, x): return math.isnan(x)
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
 
-            self.entries += w
             if self.nan(q):
-                self.nanflow.fill(datum, w)
+                self.nanflow.fill(datum, weight)
             else:
                 b = self.bin(q)
                 if b not in self.bins:
                     self.bins[b] = self.value.copy()
-                self.bins[b].fill(datum, w)
+                self.bins[b].fill(datum, weight)
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
 
     def toJsonFragment(self): return {
         "binWidth": floatToJson(self.binWidth),
@@ -204,9 +200,9 @@ class SparselyBin(Factory, Container):
         return "SparselyBin[binWidth={}, bins=[{}, size={}], nanflow={}, origin={}]".format(self.binWidth, contentType, len(self.bins), self.nanflow, self.origin)
 
     def __eq__(self, other):
-        return isinstance(other, SparselyBin) and exact(self.binWidth, other.binWidth) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and self.bins == other.bins and self.nanflow == other.nanflow and self.origin == other.origin
+        return isinstance(other, SparselyBin) and exact(self.binWidth, other.binWidth) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.bins == other.bins and self.nanflow == other.nanflow and self.origin == other.origin
 
     def __hash__(self):
-        return hash((self.binWidth, self.quantity, self.selection, self.entries, tuple(sorted(self.bins.items())), self.nanflow, self.origin))
+        return hash((self.binWidth, self.quantity, self.entries, tuple(sorted(self.bins.items())), self.nanflow, self.origin))
 
 Factory.register(SparselyBin)

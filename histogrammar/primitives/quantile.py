@@ -24,32 +24,31 @@ class Quantile(Factory, Container):
     def ed(entries, target, estimate):
         if entries < 0.0:
             raise ContainerException("entries ($entries) cannot be negative")
-        out = Quantile(target, None, None)
+        out = Quantile(target, None)
         out.entries = float(entries)
         out.estimate = float(estimate)
         return out
 
     @staticmethod
-    def ing(target, quantity, selection=unweighted):
-        return Quantile(target, quantity, selection)
+    def ing(target, quantity):
+        return Quantile(target, quantity)
 
-    def __init__(self, target, quantity, selection=unweighted):
+    def __init__(self, target, quantity):
         if target < 0.0 or target > 1.0:
             raise ContainerException("target ({}) must be between 0 and 1, inclusive".format(target))
         self.target = target
         self.quantity = quantity
-        self.selection = selection
         self.entries = 0.0
         self.estimate = float("nan")
         self.cumulativeDeviation = 0.0
         super(Quantile, self).__init__()
 
-    def zero(self): return Quantile(self.target, self.quantity, self.selection)
+    def zero(self): return Quantile(self.target, self.quantity)
 
     def __add__(self, other):
         if isinstance(other, Quantile):
             if self.target == other.target:
-                out = Quantile(self.target, self.quantity, self.selection)
+                out = Quantile(self.target, self.quantity)
                 out.entries = self.entries + other.entries
                 if math.isnan(self.estimate) and math.isnan(other.estimate):
                     out.estimate = float("nan")
@@ -66,14 +65,11 @@ class Quantile(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
-            self.entries += w
 
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
             if math.isnan(self.estimate):
                 self.estimate = q
             else:
@@ -85,7 +81,7 @@ class Quantile(Factory, Container):
                     sgn = 1
                 else:
                     sgn = 0
-                self.estimate = w * learningRate * (sgn + 2.0*self.target - 1.0)
+                self.estimate = weight * learningRate * (sgn + 2.0*self.target - 1.0)
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -120,9 +116,9 @@ class Quantile(Factory, Container):
         return "Quantile[{}, {}]".format(self.target, self.estimate)
 
     def __eq__(self, other):
-        return isinstance(other, Quantile) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and exact(self.target, other.target) and exact(self.estimate, other.estimate)
+        return isinstance(other, Quantile) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.target, other.target) and exact(self.estimate, other.estimate)
 
     def __hash__(self):
-        return hash((self.quantity, self.selection, self.entries, self.target, self.estimate))
+        return hash((self.quantity, self.entries, self.target, self.estimate))
 
 Factory.register(Quantile)

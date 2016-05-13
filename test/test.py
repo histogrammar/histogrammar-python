@@ -159,18 +159,18 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftSumming = Sum(lambda x: x.double, lambda x: x.bool)
-            rightSumming = Sum(lambda x: x.double, lambda x: x.bool)
+            leftSumming = Cut(lambda x: x.bool, Sum(lambda x: x.double))
+            rightSumming = Cut(lambda x: x.bool, Sum(lambda x: x.double))
 
             for _ in left: leftSumming.fill(_)
             for _ in right: rightSumming.fill(_)
 
-            self.assertAlmostEqual(leftSumming.sum, sum(_.double for _ in left if _.bool))
-            self.assertAlmostEqual(rightSumming.sum, sum(_.double for _ in right if _.bool))
+            self.assertAlmostEqual(leftSumming.value.sum, sum(_.double for _ in left if _.bool))
+            self.assertAlmostEqual(rightSumming.value.sum, sum(_.double for _ in right if _.bool))
 
             finalResult = leftSumming + rightSumming
 
-            self.assertAlmostEqual(finalResult.sum, sum(_.double for _ in self.struct if _.bool))
+            self.assertAlmostEqual(finalResult.value.sum, sum(_.double for _ in self.struct if _.bool))
 
             self.checkJson(leftSumming)
 
@@ -178,18 +178,18 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftSumming = Sum(lambda x: x.double, lambda x: x.int)
-            rightSumming = Sum(lambda x: x.double, lambda x: x.int)
+            leftSumming = Cut(lambda x: x.int, Sum(lambda x: x.double))
+            rightSumming = Cut(lambda x: x.int, Sum(lambda x: x.double))
 
             for _ in left: leftSumming.fill(_)
             for _ in right: rightSumming.fill(_)
 
-            self.assertAlmostEqual(leftSumming.sum, sum(_.double * _.int for _ in left if _.int > 0))
-            self.assertAlmostEqual(rightSumming.sum, sum(_.double * _.int for _ in right if _.int > 0))
+            self.assertAlmostEqual(leftSumming.value.sum, sum(_.double * _.int for _ in left if _.int > 0))
+            self.assertAlmostEqual(rightSumming.value.sum, sum(_.double * _.int for _ in right if _.int > 0))
 
             finalResult = leftSumming + rightSumming
 
-            self.assertAlmostEqual(finalResult.sum, sum(_.double * _.int for _ in self.struct if _.int > 0))
+            self.assertAlmostEqual(finalResult.value.sum, sum(_.double * _.int for _ in self.struct if _.int > 0))
 
             self.checkJson(leftSumming)
 
@@ -216,18 +216,18 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftSumming = Sum("double + 1", "not bool")
-            rightSumming = Sum("double + 1", "not bool")
+            leftSumming = Cut("not bool", Sum("double + 1"))
+            rightSumming = Cut("not bool", Sum("double + 1"))
 
             for _ in left: leftSumming.fill(_)
             for _ in right: rightSumming.fill(_)
 
-            self.assertAlmostEqual(leftSumming.sum, sum(_.double + 1 for _ in left if not _.bool))
-            self.assertAlmostEqual(rightSumming.sum, sum(_.double + 1 for _ in right if not _.bool))
+            self.assertAlmostEqual(leftSumming.value.sum, sum(_.double + 1 for _ in left if not _.bool))
+            self.assertAlmostEqual(rightSumming.value.sum, sum(_.double + 1 for _ in right if not _.bool))
 
             finalResult = leftSumming + rightSumming
 
-            self.assertAlmostEqual(finalResult.sum, sum(_.double + 1 for _ in self.struct if not _.bool))
+            self.assertAlmostEqual(finalResult.value.sum, sum(_.double + 1 for _ in self.struct if not _.bool))
 
             self.checkJson(leftSumming)
 
@@ -235,18 +235,18 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftSumming = Sum("double * 2", "int")
-            rightSumming = Sum("double * 2", "int")
+            leftSumming = Cut("int", Sum("double * 2"))
+            rightSumming = Cut("int", Sum("double * 2"))
 
             for _ in left: leftSumming.fill(_)
             for _ in right: rightSumming.fill(_)
 
-            self.assertAlmostEqual(leftSumming.sum, sum(_.double * 2 * _.int for _ in left if _.int > 0))
-            self.assertAlmostEqual(rightSumming.sum, sum(_.double * 2 * _.int for _ in right if _.int > 0))
+            self.assertAlmostEqual(leftSumming.value.sum, sum(_.double * 2 * _.int for _ in left if _.int > 0))
+            self.assertAlmostEqual(rightSumming.value.sum, sum(_.double * 2 * _.int for _ in right if _.int > 0))
 
             finalResult = leftSumming + rightSumming
 
-            self.assertAlmostEqual(finalResult.sum, sum(_.double * 2 * _.int for _ in self.struct if _.int > 0))
+            self.assertAlmostEqual(finalResult.value.sum, sum(_.double * 2 * _.int for _ in self.struct if _.int > 0))
 
             self.checkJson(leftSumming)
 
@@ -275,18 +275,18 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftAveraging = Average(lambda x: x.double, lambda x: x.bool)
-            rightAveraging = Average(lambda x: x.double, lambda x: x.bool)
+            leftAveraging = Cut(lambda x: x.bool, Average(lambda x: x.double))
+            rightAveraging = Cut(lambda x: x.bool, Average(lambda x: x.double))
 
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
 
-            self.assertAlmostEqual(leftAveraging.mean, self.mean([_.double for _ in left if _.bool]))
-            self.assertAlmostEqual(rightAveraging.mean, self.mean([_.double for _ in right if _.bool]))
+            self.assertAlmostEqual(leftAveraging.value.mean, self.mean([_.double for _ in left if _.bool]))
+            self.assertAlmostEqual(rightAveraging.value.mean, self.mean([_.double for _ in right if _.bool]))
 
             finalResult = leftAveraging + rightAveraging
 
-            self.assertAlmostEqual(finalResult.mean, self.mean([_.double for _ in self.struct if _.bool]))
+            self.assertAlmostEqual(finalResult.value.mean, self.mean([_.double for _ in self.struct if _.bool]))
 
             self.checkJson(leftAveraging)
 
@@ -294,18 +294,18 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftAveraging = Average(lambda x: x.double, lambda x: x.int)
-            rightAveraging = Average(lambda x: x.double, lambda x: x.int)
+            leftAveraging = Cut(lambda x: x.int, Average(lambda x: x.double))
+            rightAveraging = Cut(lambda x: x.int, Average(lambda x: x.double))
 
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
 
-            self.assertAlmostEqual(leftAveraging.mean, self.meanWeighted(map(lambda _: _.double, left), map(lambda _: _.int, left)))
-            self.assertAlmostEqual(rightAveraging.mean, self.meanWeighted(map(lambda _: _.double, right), map(lambda _: _.int, right)))
+            self.assertAlmostEqual(leftAveraging.value.mean, self.meanWeighted(map(lambda _: _.double, left), map(lambda _: _.int, left)))
+            self.assertAlmostEqual(rightAveraging.value.mean, self.meanWeighted(map(lambda _: _.double, right), map(lambda _: _.int, right)))
 
             finalResult = leftAveraging + rightAveraging
 
-            self.assertAlmostEqual(finalResult.mean, self.meanWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
+            self.assertAlmostEqual(finalResult.value.mean, self.meanWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
 
             self.checkJson(leftAveraging)
 
@@ -334,18 +334,18 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftDeviating = Deviate(lambda x: x.double, lambda x: x.bool)
-            rightDeviating = Deviate(lambda x: x.double, lambda x: x.bool)
+            leftDeviating = Cut(lambda x: x.bool, Deviate(lambda x: x.double))
+            rightDeviating = Cut(lambda x: x.bool, Deviate(lambda x: x.double))
 
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
 
-            self.assertAlmostEqual(leftDeviating.variance, self.variance([_.double for _ in left if _.bool]))
-            self.assertAlmostEqual(rightDeviating.variance, self.variance([_.double for _ in right if _.bool]))
+            self.assertAlmostEqual(leftDeviating.value.variance, self.variance([_.double for _ in left if _.bool]))
+            self.assertAlmostEqual(rightDeviating.value.variance, self.variance([_.double for _ in right if _.bool]))
 
             finalResult = leftDeviating + rightDeviating
 
-            self.assertAlmostEqual(finalResult.variance, self.variance([_.double for _ in self.struct if _.bool]))
+            self.assertAlmostEqual(finalResult.value.variance, self.variance([_.double for _ in self.struct if _.bool]))
 
             self.checkJson(leftDeviating)
 
@@ -353,18 +353,18 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftDeviating = Deviate(lambda x: x.double, lambda x: x.int)
-            rightDeviating = Deviate(lambda x: x.double, lambda x: x.int)
+            leftDeviating = Cut(lambda x: x.int, Deviate(lambda x: x.double))
+            rightDeviating = Cut(lambda x: x.int, Deviate(lambda x: x.double))
 
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
 
-            self.assertAlmostEqual(leftDeviating.variance, self.varianceWeighted(map(lambda _: _.double, left), map(lambda _: _.int, left)))
-            self.assertAlmostEqual(rightDeviating.variance, self.varianceWeighted(map(lambda _: _.double, right), map(lambda _: _.int, right)))
+            self.assertAlmostEqual(leftDeviating.value.variance, self.varianceWeighted(map(lambda _: _.double, left), map(lambda _: _.int, left)))
+            self.assertAlmostEqual(rightDeviating.value.variance, self.varianceWeighted(map(lambda _: _.double, right), map(lambda _: _.int, right)))
 
             finalResult = leftDeviating + rightDeviating
 
-            self.assertAlmostEqual(finalResult.variance, self.varianceWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
+            self.assertAlmostEqual(finalResult.value.variance, self.varianceWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
 
             self.checkJson(leftDeviating)
 
@@ -588,13 +588,13 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(one.overflow.entries, 1.0)
         self.assertEqual(one.nanflow.entries, 0.0)
 
-        two = Bin(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
+        two = Cut(lambda x: x.bool, Bin(5, -3.0, 7.0, lambda x: x.double))
         for _ in self.struct: two.fill(_)
 
-        self.assertEqual(map(lambda _: _.entries, two.values), [2.0, 1.0, 1.0, 1.0, 0.0])
-        self.assertEqual(two.underflow.entries, 0.0)
-        self.assertEqual(two.overflow.entries, 0.0)
-        self.assertEqual(two.nanflow.entries, 0.0)
+        self.assertEqual(map(lambda _: _.entries, two.value.values), [2.0, 1.0, 1.0, 1.0, 0.0])
+        self.assertEqual(two.value.underflow.entries, 0.0)
+        self.assertEqual(two.value.overflow.entries, 0.0)
+        self.assertEqual(two.value.nanflow.entries, 0.0)
 
         self.checkJson(one)
         self.checkJson(two)
@@ -603,17 +603,17 @@ class TestEverything(unittest.TestCase):
         one = Histogram(5, -3.0, 7.0, lambda x: x)
 
         for _ in self.simple: one.fill(_)
-        self.assertEqual(map(lambda _: _.entries, one.values), [3.0, 2.0, 2.0, 1.0, 0.0])
-        self.assertEqual(one.underflow.entries, 1.0)
-        self.assertEqual(one.overflow.entries, 1.0)
-        self.assertEqual(one.nanflow.entries, 0.0)
+        self.assertEqual(one.numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0])
+        self.assertEqual(one.numericalUnderflow, 1.0)
+        self.assertEqual(one.numericalOverflow, 1.0)
+        self.assertEqual(one.numericalNanflow, 0.0)
 
         two = Histogram(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
         for _ in self.struct: two.fill(_)
-        self.assertEqual(map(lambda _: _.entries, two.values), [2.0, 1.0, 1.0, 1.0, 0.0])
-        self.assertEqual(two.underflow.entries, 0.0)
-        self.assertEqual(two.overflow.entries, 0.0)
-        self.assertEqual(two.nanflow.entries, 0.0)
+        self.assertEqual(two.numericalValues, [2.0, 1.0, 1.0, 1.0, 0.0])
+        self.assertEqual(two.numericalUnderflow, 0.0)
+        self.assertEqual(two.numericalOverflow, 0.0)
+        self.assertEqual(two.numericalNanflow, 0.0)
 
         self.checkJson(one)
         self.checkJson(two)
@@ -858,9 +858,9 @@ class TestEverything(unittest.TestCase):
         for _ in self.simple: branching.fill(_)
 
         self.assertEqual(branching.i0.numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0])
-        self.assertEqual(branching.i0.underflow.entries, 1.0)
-        self.assertEqual(branching.i0.overflow.entries, 1.0)
-        self.assertEqual(branching.i0.nanflow.entries, 0.0)
+        self.assertEqual(branching.i0.numericalUnderflow, 1.0)
+        self.assertEqual(branching.i0.numericalOverflow, 1.0)
+        self.assertEqual(branching.i0.numericalNanflow, 0.0)
 
         self.assertEqual(branching.i1.entries, 10.0)
 

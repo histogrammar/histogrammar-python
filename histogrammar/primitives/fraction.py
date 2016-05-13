@@ -31,25 +31,26 @@ class Fraction(Factory, Container):
         return out
 
     @staticmethod
-    def ing(numeratorSelection, value):
-        return Fraction(numeratorSelection, value)
+    def ing(selection, value):
+        return Fraction(selection, value)
 
-    def __init__(self, numeratorSelection, value):
+    def __init__(self, selection, value):
         self.entries = 0.0
-        self.numeratorSelection = numeratorSelection
+        self.selection = selection
         if value is not None:
             self.numerator = value.zero()
             self.denominator = value.zero()
+        super(Fraction, self).__init__()
         
     def zero(self):
-        out = Fraction(self.numeratorSelection, None)
+        out = Fraction(self.selection, None)
         out.numerator = self.numerator.zero()
         out.denominator = self.denominator.zero()
         return out
 
     def __add__(self, other):
         if isinstance(other, Fraction):
-            out = Fraction(self.numeratorSelection, None)
+            out = Fraction(self.selection, None)
             out.numerator = self.numerator + other.numerator
             out.denominator = self.denominator + other.denominator
             return out
@@ -57,16 +58,15 @@ class Fraction(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.numeratorSelection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
+        w = weight * self.selection(datum)
 
-        w = weight * self.numeratorSelection(datum)
-
-        self.entries += weight
         if weight > 0.0:
             self.denominator.fill(datum, weight)
         if w > 0.0:
             self.numerator.fill(datum, w)
+
+        # no possibility of exception from here on out (for rollback)
+        self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -100,9 +100,9 @@ class Fraction(Factory, Container):
         return "Fraction[{}, {}]".format(self.numerator, self.denominator)
 
     def __eq__(self, other):
-        return isinstance(other, Fraction) and exact(self.entries, other.entries) and self.numeratorSelection == other.numeratorSelection and self.numerator == other.numerator and self.denominator == other.denominator
+        return isinstance(other, Fraction) and exact(self.entries, other.entries) and self.selection == other.selection and self.numerator == other.numerator and self.denominator == other.denominator
 
     def __hash__(self):
-        return hash((self.entries, self.numeratorSelection, self.numerator, self.denominator))
+        return hash((self.entries, self.selection, self.numerator, self.denominator))
 
 Factory.register(Fraction)

@@ -39,6 +39,7 @@ class Partition(Factory, Container):
             self.cuts = cuts
         else:
             self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + cuts)
+        super(Partition, self).__init__()
 
     @property
     def thresholds(self): return [k for k, v in self.cuts]

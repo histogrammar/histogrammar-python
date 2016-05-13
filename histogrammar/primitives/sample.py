@@ -41,6 +41,7 @@ class Sample(Factory, Container):
         self.entries = 0.0
         self.quantity = quantity
         self.reservoir = Reservoir(limit)
+        super(Sample, self).__init__()
 
     @property
     def limit(self):

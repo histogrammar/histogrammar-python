@@ -24,27 +24,26 @@ class Minimize(Factory, Container):
     def ed(entries, min):
         if entries < 0.0:
             raise ContainerException("entries ($entries) cannot be negative")
-        out = Minimize(None, None)
+        out = Minimize(None)
         out.entries = float(entries)
         out.min = float(min)
         return out
 
     @staticmethod
-    def ing(quantity, selection=unweighted):
-        return Minimize(quantity, selection)
+    def ing(quantity):
+        return Minimize(quantity)
 
-    def __init__(self, quantity, selection=unweighted):
+    def __init__(self, quantity):
         self.quantity = serializable(quantity)
-        self.selection = serializable(selection)
         self.entries = 0.0
         self.min = float("nan")
         super(Minimize, self).__init__()
 
-    def zero(self): return Minimize(self.quantity, self.selection)
+    def zero(self): return Minimize(self.quantity)
 
     def __add__(self, other):
         if isinstance(other, Minimize):
-            out = Minimize(self.quantity, self.selection)
+            out = Minimize(self.quantity)
             out.entries = self.entries + other.entries
             out.min = minplus(self.min, other.min)
             return out
@@ -52,15 +51,13 @@ class Minimize(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
-            self.entries += w
             if math.isnan(self.min) or q < self.min:
                 self.min = q
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -89,10 +86,10 @@ class Minimize(Factory, Container):
         return "Minimize[{}]".format(self.min)
 
     def __eq__(self, other):
-        return isinstance(other, Minimize) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and exact(self.min, other.min)
+        return isinstance(other, Minimize) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.min, other.min)
 
     def __hash__(self):
-        return hash((self.quantity, self.selection, self.entries, self.min))
+        return hash((self.quantity, self.entries, self.min))
 
 Factory.register(Minimize)
 
@@ -101,27 +98,26 @@ class Maximize(Factory, Container):
     def ed(entries, max):
         if entries < 0.0:
             raise ContainerException("entries ($entries) cannot be negative")
-        out = Maximize(None, None)
+        out = Maximize(None)
         out.entries = float(entries)
         out.max = float(max)
         return out
 
     @staticmethod
-    def ing(quantity, selection=unweighted):
-        return Maximize(quantity, selection)
+    def ing(quantity):
+        return Maximize(quantity)
 
-    def __init__(self, quantity, selection=unweighted):
+    def __init__(self, quantity):
         self.quantity = serializable(quantity)
-        self.selection = serializable(selection)
         self.entries = 0.0
         self.max = float("nan")
         super(Maximize, self).__init__()
 
-    def zero(self): return Maximize(self.quantity, self.selection)
+    def zero(self): return Maximize(self.quantity)
 
     def __add__(self, other):
         if isinstance(other, Maximize):
-            out = Maximize(self.quantity, self.selection)
+            out = Maximize(self.quantity)
             out.entries = self.entries + other.entries
             out.max = maxplus(self.max, other.max)
             return out
@@ -129,15 +125,13 @@ class Maximize(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
-            self.entries += w
             if math.isnan(self.max) or q > self.max:
                 self.max = q
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -166,9 +160,9 @@ class Maximize(Factory, Container):
         return "Maximize[{}]".format(self.max)
 
     def __eq__(self, other):
-        return isinstance(other, Maximize) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and exact(self.max, other.max)
+        return isinstance(other, Maximize) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.max, other.max)
 
     def __hash__(self):
-        return hash((self.quantity, self.selection, self.entries, self.max))
+        return hash((self.quantity, self.entries, self.max))
 
 Factory.register(Maximize)

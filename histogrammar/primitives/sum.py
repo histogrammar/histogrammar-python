@@ -22,27 +22,26 @@ class Sum(Factory, Container):
     def ed(entries, sum):
         if entries < 0.0:
             raise ContainerException("entries ($entries) cannot be negative")
-        out = Sum(None, None)
+        out = Sum(None)
         out.entries = float(entries)
         out.sum = float(sum)
         return out
 
     @staticmethod
-    def ing(quantity, selection=unweighted):
-        return Sum(quantity, selection)
+    def ing(quantity):
+        return Sum(quantity)
 
-    def __init__(self, quantity, selection=unweighted):
+    def __init__(self, quantity):
         self.quantity = serializable(quantity)
-        self.selection = serializable(selection)
         self.entries = 0.0
         self.sum = 0.0
         super(Sum, self).__init__()
 
-    def zero(self): return Sum(self.quantity, self.selection)
+    def zero(self): return Sum(self.quantity)
 
     def __add__(self, other):
         if isinstance(other, Sum):
-            out = Sum(self.quantity, self.selection)
+            out = Sum(self.quantity)
             out.entries = self.entries + other.entries
             out.sum = self.sum + other.sum
             return out
@@ -50,14 +49,12 @@ class Sum(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
-            self.entries += w
-            self.sum += q * w
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
+            self.sum += q * weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -86,9 +83,9 @@ class Sum(Factory, Container):
         return "Sum[{}]".format(self.sum)
 
     def __eq__(self, other):
-        return isinstance(other, Sum) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and exact(self.sum, other.sum)
+        return isinstance(other, Sum) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.sum, other.sum)
 
     def __hash__(self):
-        return hash((self.quantity, self.selection, self.entries, self.sum))
+        return hash((self.quantity, self.entries, self.sum))
 
 Factory.register(Sum)

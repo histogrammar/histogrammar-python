@@ -24,27 +24,26 @@ class Bag(Factory, Container):
     def ed(entries, values):
         if entries < 0.0:
             raise ContainerException("entries ({}) cannot be negative".format(entries))
-        out = Bag(None, None)
+        out = Bag(None)
         out.entries = float(entries)
         out.values = values
         return out
 
     @staticmethod
-    def ing(quantity, selection=unweighted):
-        return Bag(quantity, selection)
+    def ing(quantity):
+        return Bag(quantity)
 
-    def __init__(self, quantity, selection=unweighted):
+    def __init__(self, quantity):
         self.quantity = serializable(quantity)
-        self.selection = serializable(selection)
         self.entries = 0.0
         self.values = {}
         super(Bag, self).__init__()
 
-    def zero(self): return Bag(self.quantity, self.selection)
+    def zero(self): return Bag(self.quantity)
 
     def __add__(self, other):
         if isinstance(other, Bag):
-            out = Bag(self.quantity, self.selection)
+            out = Bag(self.quantity)
 
             out.entries = self.entries + other.entries
 
@@ -61,23 +60,21 @@ class Bag(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None or self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
-        w = weight * self.selection(datum)
-        if w > 0.0:
+        if weight > 0.0:
             q = self.quantity(datum)
+
             if isinstance(q, list):
                 q = tuple(map(float, q))
             elif not isinstance(q, (int, long, float, basestring, tuple)):
                 raise ContainerException("fill rule for Bag must return a number, vector of numbers, or a string, not {}".format(q))
 
-            self.entries += w
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
 
             if q in self.values:
-                self.values[q] += w
+                self.values[q] += weight
             else:
-                self.values[q] = w
+                self.values[q] = weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -136,9 +133,9 @@ class Bag(Factory, Container):
         return "Bag[{}]".format("size=0" if len(self.values) == 0 else repr(self.values[0]) + "..., size=" + str(len(self.values)))
 
     def __eq__(self, other):
-        return isinstance(other, Bag) and self.quantity == other.quantity and self.selection == other.selection and exact(self.entries, other.entries) and self.values == other.values
+        return isinstance(other, Bag) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
-        return hash((self.quantity, self.selection, self.entries, self.values))
+        return hash((self.quantity, self.entries, self.values))
 
 Factory.register(Bag)

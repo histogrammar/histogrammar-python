@@ -34,8 +34,9 @@ class Cut(Factory, Container):
 
     def __init__(self, selection, value):
         self.entries = 0.0
-        self.selection = selection
+        self.selection = serializable(selection)
         self.value = value
+        super(Cut, self).__init__()
 
     def zero(self):
         return Cut(self.selection, self.value.zero())
@@ -49,9 +50,6 @@ class Cut(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.selection is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
         w = weight * self.selection(datum)
         if w > 0.0:
             self.value.fill(datum, w)
@@ -118,6 +116,7 @@ class Limit(Factory, Container):
         else:
             self.contentType = value.name
         self.value = value
+        super(Limit, self).__init__()
 
     @property
     def saturated(self): return self.value is None
