@@ -68,20 +68,27 @@ class Fraction(Factory, Container):
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.numerator.name,
         "numerator": self.numerator.toJsonFragment(),
         "denominator": self.denominator.toJsonFragment(),
-        }
+        }, name=self.selection.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "numerator", "denominator"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "numerator", "denominator"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Fraction.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Fraction.name")
 
             if isinstance(json["type"], basestring):
                 factory = Factory.registered[json["type"]]
@@ -91,7 +98,9 @@ class Fraction(Factory, Container):
             numerator = factory.fromJsonFragment(json["numerator"])
             denominator = factory.fromJsonFragment(json["denominator"])
 
-            return Fraction.ed(entries, numerator, denominator)
+            out = Fraction.ed(entries, numerator, denominator)
+            out.selection.name = name
+            return out
 
         else:
             raise JsonFormatException(json, "Fraction")

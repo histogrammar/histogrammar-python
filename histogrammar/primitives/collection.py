@@ -56,19 +56,26 @@ class Cut(Factory, Container):
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.value.name,
         "data": self.value.toJsonFragment(),
-        }
+        }, name=self.selection.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Cut.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Cut.name")
 
             if isinstance(json["type"], basestring):
                 factory = Factory.registered[json["type"]]
@@ -77,7 +84,9 @@ class Cut(Factory, Container):
 
             value = factory.fromJsonFragment(json["data"])
 
-            return Cut.ed(entries, value)
+            out = Cut.ed(entries, value)
+            out.selection.name = name
+            return out
 
         else:
             raise JsonFormatException(json, "Cut")

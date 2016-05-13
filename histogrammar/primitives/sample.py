@@ -104,19 +104,26 @@ class Sample(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "limit": floatToJson(self.limit),
         "values": [{"w": w, "v": y} for y, w in sorted(self.values, key=lambda (y, w): y)],
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "values"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "values"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = json["entries"]
             else:
                 raise JsonFormatException(json["entries"], "Sample.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Sample.name")
 
             if isinstance(json["limit"], (int, long, float)):
                 limit = json["limit"]
@@ -152,10 +159,12 @@ class Sample(Factory, Container):
             else:
                 raise JsonFormatException(json["values"], "Sample.values")
 
-            return Sample.ed(entries, limit, values)
+            out = Sample.ed(entries, limit, values)
+            out.quantity.name = name
+            return out
 
         else:
-            raise JsonFormatException(json, self.name)
+            raise JsonFormatException(json, "Sample")
 
     def __repr__(self):
         return "Sample[{}, size={}]".format("empty" if self.isEmpty else repr(self.values[0][0]) + "...", self.size)

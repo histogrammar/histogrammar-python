@@ -182,7 +182,7 @@ class UserFcn(object):
             raise TypeError("unrecognized type for function: {}".format(type(self.expr)))
 
     def __repr__(self):
-        return "UserFcn({})".format(self.expr)
+        return "UserFcn({}, {})".format(self.expr, self.name)
 
     def __eq__(self, other):
         out = isinstance(other, UserFcn) and self.name == other.name
@@ -211,7 +211,7 @@ class CachedFcn(UserFcn):
             return self.lastReturn
 
     def __repr__(self):
-        return "CachedFcn({})".format(self.expr)
+        return "CachedFcn({}, {})".format(self.expr, self.name)
 
 def deserializeString(cls, expr, name):
     out = cls.__new__(cls)

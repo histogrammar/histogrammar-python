@@ -124,8 +124,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.simple[:i], self.simple[i:]
 
-            leftCounting = Cut(lambda x: x > 0.0, Count())
-            rightCounting = Cut(lambda x: x > 0.0, Count())
+            leftCounting = Cut(named("something", lambda x: x > 0.0), Count())
+            rightCounting = Cut(named("something", lambda x: x > 0.0), Count())
 
             for _ in left: leftCounting.fill(_)
             for _ in right: rightCounting.fill(_)
@@ -146,8 +146,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.simple[:i], self.simple[i:]
 
-            leftSumming = Sum(lambda x: x)
-            rightSumming = Sum(lambda x: x)
+            leftSumming = Sum(named("something", lambda x: x))
+            rightSumming = Sum(named("something", lambda x: x))
 
             for _ in left: leftSumming.fill(_)
             for _ in right: rightSumming.fill(_)
@@ -268,8 +268,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.simple[:i], self.simple[i:]
 
-            leftAveraging = Average(lambda x: x)
-            rightAveraging = Average(lambda x: x)
+            leftAveraging = Average(named("something", lambda x: x))
+            rightAveraging = Average(named("something", lambda x: x))
 
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
@@ -392,8 +392,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.simple[:i], self.simple[i:]
 
-            leftAbsoluteErring = AbsoluteErr(lambda x: x)
-            rightAbsoluteErring = AbsoluteErr(lambda x: x)
+            leftAbsoluteErring = AbsoluteErr(named("something", lambda x: x))
+            rightAbsoluteErring = AbsoluteErr(named("something", lambda x: x))
 
             for _ in left: leftAbsoluteErring.fill(_)
             for _ in right: rightAbsoluteErring.fill(_)
@@ -414,8 +414,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.simple[:i], self.simple[i:]
 
-            leftMinimizing = Minimize(lambda x: x)
-            rightMinimizing = Minimize(lambda x: x)
+            leftMinimizing = Minimize(named("something", lambda x: x))
+            rightMinimizing = Minimize(named("something", lambda x: x))
 
             for _ in left: leftMinimizing.fill(_)
             for _ in right: rightMinimizing.fill(_)
@@ -443,8 +443,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.simple[:i], self.simple[i:]
 
-            leftMaximizing = Maximize(lambda x: x)
-            rightMaximizing = Maximize(lambda x: x)
+            leftMaximizing = Maximize(named("something", lambda x: x))
+            rightMaximizing = Maximize(named("something", lambda x: x))
 
             for _ in left: leftMaximizing.fill(_)
             for _ in right: rightMaximizing.fill(_)
@@ -510,8 +510,8 @@ class TestEverything(unittest.TestCase):
             for i in xrange(11):
                 left, right = self.simple[:i], self.simple[i:]
 
-                leftQuantiling = Quantile(p, lambda x: x)
-                rightQuantiling = Quantile(p, lambda x: x)
+                leftQuantiling = Quantile(p, named("something", lambda x: x))
+                rightQuantiling = Quantile(p, named("something", lambda x: x))
 
                 for _ in left: leftQuantiling.fill(_)
                 for _ in right: rightQuantiling.fill(_)
@@ -542,7 +542,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Bag
 
     def testBag(self):
-        one = Bag(lambda x: x)
+        one = Bag(named("something", lambda x: x))
         for _ in self.simple: one.fill(_)
         self.assertEqual(one.values, {7.3: 1.0, 2.2: 1.0, -1.7: 1.0, -4.7: 1.0, 0.0: 2.0, -1.8: 1.0, -3.0: 1.0, 1.6: 1.0, 3.4: 1.0})
 
@@ -578,7 +578,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Sample
 
     def testSample(self):
-        one = Sample(100, lambda x: x)
+        one = Sample(100, named("something", lambda x: x))
         for _ in self.simple: one.fill(_)
         self.assertEqual(set(one.values), set([(3.4, 1.0), (2.2, 1.0), (-1.8, 1.0), (0.0, 1.0), (7.3, 1.0), (-4.7, 1.0), (1.6, 1.0), (0.0, 1.0), (-3.0, 1.0), (-1.7, 1.0)]))
 
@@ -613,7 +613,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Bin
 
     def testBin(self):
-        one = Bin(5, -3.0, 7.0, lambda x: x)
+        one = Bin(5, -3.0, 7.0, named("something", lambda x: x))
         for _ in self.simple: one.fill(_)
         self.assertEqual(map(lambda _: _.entries, one.values), [3.0, 2.0, 2.0, 1.0, 0.0])
         self.assertEqual(one.underflow.entries, 1.0)
@@ -657,7 +657,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ SparselyBin
 
     def testSparselyBin(self):
-        one = SparselyBin(1.0, lambda x: x)
+        one = SparselyBin(1.0, named("something", lambda x: x))
         for _ in self.simple: one.fill(_)
         self.assertEqual([(i, v.entries) for i, v in sorted(one.bins.items())], [(-5, 1.0), (-3, 1.0), (-2, 2.0), (0, 2.0), (1, 1.0), (2, 1.0), (3, 1.0), (7, 1.0)])
 
@@ -672,7 +672,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ CentrallyBin
 
     def testCentrallyBin(self):
-        one = CentrallyBin([-3.0, -1.0, 0.0, 1.0, 3.0, 10.0], lambda x: x)
+        one = CentrallyBin([-3.0, -1.0, 0.0, 1.0, 3.0, 10.0], named("something", lambda x: x))
         self.assertEqual(one.center(1.5), 1.0)
         self.assertEqual(one.neighbors(1.0), (0.0, 3.0))
         self.assertEqual(one.neighbors(10.0), (3.0, None))
@@ -695,7 +695,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ AdaptivelyBin
 
     def testAdaptivelyBin(self):
-        one = AdaptivelyBin(lambda x: x, num=5)
+        one = AdaptivelyBin(named("something", lambda x: x), num=5)
 
         for _ in self.simple: one.fill(_)
 
@@ -707,7 +707,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Fraction
 
     def testFraction(self):
-        fracking = Fraction(lambda x: x > 0.0, Count())
+        fracking = Fraction(named("something", lambda x: x > 0.0), Count())
         for _ in self.simple: fracking.fill(_)
 
         self.assertEqual(fracking.numerator.entries, 4.0)
@@ -739,7 +739,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Stack
 
     def testStack(self):
-        stacking = Stack(lambda x: x, Count(), 0.0, 2.0, 4.0, 6.0, 8.0)
+        stacking = Stack(named("something", lambda x: x), Count(), 0.0, 2.0, 4.0, 6.0, 8.0)
         for _ in self.simple: stacking.fill(_)        
 
         self.assertEqual([(k, v.entries) for k, v in stacking.cuts], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
@@ -750,7 +750,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Partition
 
     def testPartition(self):
-        partitioning = Partition(lambda x: x, Count(), 0.0, 2.0, 4.0, 6.0, 8.0)
+        partitioning = Partition(named("something", lambda x: x), Count(), 0.0, 2.0, 4.0, 6.0, 8.0)
         for _ in self.simple: partitioning.fill(_)
 
         self.assertEqual([(k, v.entries) for k, v in partitioning.cuts], [(float("-inf"), 4.0), (0.0, 3.0), (2.0, 2.0), (4.0, 0.0), (6.0, 1.0), (8.0, 0.0)])
@@ -771,7 +771,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Categorize
 
     def testCategorize(self):
-        categorizing = Categorize(lambda x: x.string[0])
+        categorizing = Categorize(named("something", lambda x: x.string[0]))
         for _ in self.struct: categorizing.fill(_)
 
         self.assertEqual({k: v.entries for k, v in categorizing.pairsMap.items()}, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
@@ -850,7 +850,7 @@ class TestEverything(unittest.TestCase):
     def testUntypedLabelMultipleTypes(self):
         one = Histogram(5, -3.0, 7.0, lambda x: x)
         two = Sum(lambda x: 1.0)
-        three = Deviate(lambda x: x + 100.0)
+        three = Deviate(named("something", lambda x: x + 100.0))
 
         mapping = UntypedLabel(one=one, two=two, three=three)
 

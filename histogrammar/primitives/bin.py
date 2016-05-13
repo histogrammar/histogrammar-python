@@ -108,7 +108,7 @@ class Bin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "low": floatToJson(self.low),
         "high": floatToJson(self.high),
         "entries": floatToJson(self.entries),
@@ -120,11 +120,11 @@ class Bin(Factory, Container):
         "overflow": self.overflow.toJsonFragment(),
         "nanflow:type": self.nanflow.name,
         "nanflow": self.nanflow.toJsonFragment(),
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values", "underflow:type", "underflow", "overflow:type", "overflow", "nanflow:type", "nanflow"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values", "underflow:type", "underflow", "overflow:type", "overflow", "nanflow:type", "nanflow"], ["name"]):
             if isinstance(json["low"], (int, long, float)):
                 low = float(json["low"])
             else:
@@ -139,6 +139,13 @@ class Bin(Factory, Container):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Bin.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Bin.name")
 
             if isinstance(json["values:type"], basestring):
                 valuesFactory = Factory.registered[json["values:type"]]
@@ -167,7 +174,9 @@ class Bin(Factory, Container):
                 raise JsonFormatException(json, "Bin.nanflow:type")
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"])
 
-            return Bin.ed(low, high, entries, values, underflow, overflow, nanflow)
+            out = Bin.ed(low, high, entries, values, underflow, overflow, nanflow)
+            out.quantity.name = name
+            return out
 
         else:
             raise JsonFormatException(json, "Bin")

@@ -135,7 +135,7 @@ class SparselyBin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "binWidth": floatToJson(self.binWidth),
         "entries": floatToJson(self.entries),
         "bins:type": self.value.name if self.value is not None else self.contentType,
@@ -143,11 +143,11 @@ class SparselyBin(Factory, Container):
         "nanflow:type": self.nanflow.name,
         "nanflow": self.nanflow.toJsonFragment(),
         "origin": self.origin,
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"], ["name"]):
             if isinstance(json["binWidth"], (int, long, float)):
                 binWidth = float(json["binWidth"])
             else:
@@ -157,6 +157,13 @@ class SparselyBin(Factory, Container):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "SparselyBin.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "SparselyBin.name")
 
             if isinstance(json["bins:type"], basestring):
                 binsFactory = Factory.registered[json["bins:type"]]
@@ -185,7 +192,9 @@ class SparselyBin(Factory, Container):
             else:
                 raise JsonFormatException(json, "SparselyBin.origin")
 
-            return SparselyBin.ed(binWidth, entries, json["bins:type"], bins, nanflow, origin)
+            out = SparselyBin.ed(binWidth, entries, json["bins:type"], bins, nanflow, origin)
+            out.quantity.name = name
+            return out
 
         else:
             raise JsonFormatException(json, "SparselyBin")

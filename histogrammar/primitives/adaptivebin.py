@@ -90,7 +90,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
             q = self.quantity(datum)
             self.clustering.update(q, datum, weight)
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "num": self.num,
         "bins:type": self.clustering.value.name if self.clustering.value is not None else self.contentType,
@@ -100,15 +100,22 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         "nanflow:type": self.nanflow.name,
         "nanflow": self.nanflow.toJsonFragment(),
         "tailDetail": self.tailDetail,
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "num", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow", "tailDetail"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "num", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow", "tailDetail"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "AdaptivelyBin.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "AdaptivelyBin.name")
 
             if isinstance(json["num"], (int, long)):
                 num = int(json["num"])
@@ -155,7 +162,9 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
             else:
                 raise JsonFormatException(json, "AdaptivelyBin.tailDetail")
 
-            return AdaptivelyBin.ed(entries, num, tailDetail, contentType, bins, min, max, nanflow)
+            out = AdaptivelyBin.ed(entries, num, tailDetail, contentType, bins, min, max, nanflow)
+            out.quantity.name = name
+            return out
 
         else:
             raise JsonFormatException(json, "AdaptivelyBin")

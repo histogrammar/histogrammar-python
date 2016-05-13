@@ -56,28 +56,37 @@ class Sum(Factory, Container):
             self.entries += weight
             self.sum += q * weight
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "sum": floatToJson(self.sum),
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sum"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sum"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Sum.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Sum.name")
 
             if isinstance(json["sum"], (int, long, float)):
                 sum = float(json["sum"])
             else:
                 raise JsonFormatException(json["sum"], "Sum.sum")
 
-            return Sum.ed(entries, sum)
+            out = Sum.ed(entries, sum)
+            out.quantity.name = name
+            return out
 
         else:
-            raise JsonFormatException(json, self.name)
+            raise JsonFormatException(json, "Sum")
         
     def __repr__(self):
         return "Sum[{}]".format(self.sum)

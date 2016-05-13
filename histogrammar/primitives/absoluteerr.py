@@ -63,28 +63,37 @@ class AbsoluteErr(Factory, Container):
             self.entries += weight
             self.absoluteSum += abs(q)
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mae": floatToJson(self.mae),
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mae"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mae"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "AbsoluteErr.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "AbsoluteErr.name")
 
             if isinstance(json["mae"], (int, long, float)):
                 mae = float(json["mae"])
             else:
                 raise JsonFormatException(json["mae"], "AbsoluteErr.mae")
 
-            return AbsoluteErr.ed(entries, mae)
+            out = AbsoluteErr.ed(entries, mae)
+            out.quantity.name = name
+            return out
 
         else:
-            raise JsonFormatException(json, self.name)
+            raise JsonFormatException(json, "AbsoluteErr")
         
     def __repr__(self):
         return "AbsoluteErr[{}]".format(self.mae)

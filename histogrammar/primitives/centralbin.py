@@ -87,7 +87,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
             if math.isnan(self.max) or q > self.max:
                 self.max = q
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "bins:type": self.bins[0][1].name,
         "bins": [{"center": floatToJson(c), "value": v.toJsonFragment()} for c, v in self.bins],
@@ -95,15 +95,22 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         "max": floatToJson(self.max),
         "nanflow:type": self.nanflow.name,
         "nanflow": self.nanflow.toJsonFragment(),
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "CentrallyBin.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "CentrallyBin.name")
 
             if isinstance(json["bins:type"], basestring):
                 factory = Factory.registered[json["bins:type"]]
@@ -139,7 +146,9 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
                 raise JsonFormatException(json, "CentrallyBin.nanflow:type")
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"])
 
-            return CentrallyBin.ed(entries, bins, min, max, nanflow)
+            out = CentrallyBin.ed(entries, bins, min, max, nanflow)
+            out.quantity.name = name
+            return out
 
         else:
             raise JsonFormatException(json, "CentrallyBin")

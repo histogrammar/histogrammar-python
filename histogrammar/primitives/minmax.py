@@ -59,28 +59,37 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "min": floatToJson(self.min),
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "min"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "min"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Minimize.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Minimize.name")
 
             if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], (int, long, float)):
                 min = float(json["min"])
             else:
                 raise JsonFormatException(json["min"], "Minimize.min")
 
-            return Minimize.ed(entries, min)
+            out = Minimize.ed(entries, min)
+            out.quantity.name = name
+            return out
 
         else:
-            raise JsonFormatException(json, self.name)
+            raise JsonFormatException(json, "Minimize")
         
     def __repr__(self):
         return "Minimize[{}]".format(self.min)
@@ -133,28 +142,37 @@ class Maximize(Factory, Container):
             if math.isnan(self.max) or q > self.max:
                 self.max = q
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "max": floatToJson(self.max),
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "max"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "max"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Maximize.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Maximize.name")
 
             if json["max"] in ("nan", "inf", "-inf") or isinstance(json["max"], (int, long, float)):
                 max = float(json["max"])
             else:
                 raise JsonFormatException(json["max"], "Maximize.max")
 
-            return Maximize.ed(entries, max)
+            out = Maximize.ed(entries, max)
+            out.quantity.name = name
+            return out
 
         else:
-            raise JsonFormatException(json, self.name)
+            raise JsonFormatException(json, "Maximize")
         
     def __repr__(self):
         return "Maximize[{}]".format(self.max)

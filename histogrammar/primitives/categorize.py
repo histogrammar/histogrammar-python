@@ -85,19 +85,26 @@ class Categorize(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.value.name if isinstance(self.value, Container) else self.value,
         "data": {k: v.toJsonFragment() for k, v in self.pairs.items()},
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Categorize.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Categorize.name")
 
             if isinstance(json["type"], basestring):
                 contentType = json["type"]
@@ -110,10 +117,12 @@ class Categorize(Factory, Container):
             else:
                 raise JsonFormatException(json, "Categorize.data")
 
+            out = Categorize.ed(entries, contentType, **pairs)
+            out.quantity.name = name
+            return out
+
         else:
             raise JsonFormatException(json, "Categorize")
-
-        return Categorize.ed(entries, contentType, **pairs)
 
     def __repr__(self):
         return "Categorize[{}..., size={}]".format(self.values[0] if self.size > 0 else self.value, self.size)

@@ -75,18 +75,25 @@ class Bag(Factory, Container):
             else:
                 self.values[q] = weight
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "values": [{"n": n, "v": v} for v, n in sorted(self.values.items())],
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "values"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "values"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = json["entries"]
             else:
                 raise JsonFormatException(json["entries"], "Bag.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Bag.name")
 
             if json["values"] is None:
                 values = None
@@ -123,10 +130,12 @@ class Bag(Factory, Container):
             else:
                 raise JsonFormatException(json["values"], "Bag.values")
 
-            return Bag.ed(entries, values)
+            out = Bag.ed(entries, values)
+            out.quantity.name = name
+            return out
 
         else:
-            raise JsonFormatException(json, self.name)
+            raise JsonFormatException(json, "Bag")
         
     def __repr__(self):
         return "Bag[{}]".format("size=0" if len(self.values) == 0 else repr(self.values[0]) + "..., size=" + str(len(self.values)))

@@ -58,28 +58,37 @@ class Average(Factory, Container):
             shift = delta * weight / self.entries
             self.mean += shift
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mean": floatToJson(self.mean),
-        }
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mean"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mean"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Average.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Average.name")
 
             if isinstance(json["mean"], (int, long, float)):
                 mean = float(json["mean"])
             else:
                 raise JsonFormatException(json["mean"], "Average.mean")
 
-            return Average.ed(entries, mean)
+            out = Average.ed(entries, mean)
+            out.quantity.name = name
+            return out
 
         else:
-            raise JsonFormatException(json, self.name)
+            raise JsonFormatException(json, "Average")
         
     def __repr__(self):
         return "Average[{}]".format(self.mean)

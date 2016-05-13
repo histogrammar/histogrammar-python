@@ -72,19 +72,26 @@ class Partition(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.cuts[0][1].name,
         "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment()} for atleast, sub in self.cuts],
-        }
+        }, name=self.expression.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Partition.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Partition.name")
 
             if isinstance(json["type"], basestring):
                 factory = Factory.registered[json["type"]]
@@ -102,7 +109,10 @@ class Partition(Factory, Container):
 
                     else:
                         raise JsonFormatException(json, "Partition.data {}".format(i))
-                return Partition.ed(entries, *cuts)
+
+                out = Partition.ed(entries, *cuts)
+                out.expression.name = name
+                return out
 
             else:
                 raise JsonFormatException(json, "Partition.data")

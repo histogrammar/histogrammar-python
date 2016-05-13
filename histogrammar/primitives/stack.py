@@ -71,19 +71,26 @@ class Stack(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def toJsonFragment(self): return {
+    def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.cuts[0][1].name,
         "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment()} for atleast, sub in self.cuts],
-        }
+        }, name=self.expression.name)
 
     @staticmethod
     def fromJsonFragment(json):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Stack.entries")
+
+            if isinstance(json.get("name", None), basestring):
+                name = json["name"]
+            elif json.get("name", None) is None:
+                name = None
+            else:
+                raise JsonFormatException(json["name"], "Stack.name")
 
             if isinstance(json["type"], basestring):
                 factory = Factory.registered[json["type"]]
@@ -101,7 +108,10 @@ class Stack(Factory, Container):
 
                     else:
                         raise JsonFormatException(json, "Stack.data {}".format(i))
-                return Stack.ed(entries, *cuts)
+
+                out = Stack.ed(entries, *cuts)
+                out.expression.name = name
+                return out
 
             else:
                 raise JsonFormatException(json, "Stack.data")
