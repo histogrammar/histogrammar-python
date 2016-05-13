@@ -80,7 +80,7 @@ class Container(object):
     def toJsonFragment(self): raise NotImplementedError
     def __repr__(self): raise NotImplementedError
 
-unweighted = Fcn(lambda datum: 1.0)
+unweighted = named("unweighted", lambda datum: 1.0)
 
 def increment(container, datum):
     container.fill(datum)

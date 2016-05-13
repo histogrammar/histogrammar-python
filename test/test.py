@@ -197,7 +197,7 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.simple[:i], self.simple[i:]
 
-            leftSumming = Sum("datum + 1")
+            leftSumming = Sum("_ + 1")
             rightSumming = Sum("datum + 1")
 
             for _ in left: leftSumming.fill(_)

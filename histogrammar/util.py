@@ -124,67 +124,113 @@ def floatToJson(x):
 
 ################################################################ function tools
 
-class Fcn(object):
-    def __init__(self, fcn, varname="datum"):
-        if isinstance(fcn, basestring):
-            c = compile(fcn, "<string>", "eval")
-            def function(datum):
-                context = dict(globals(), **{varname: datum})
-                try:
-                    context.update(datum.__dict__)
-                except AttributeError:
-                    pass
-                return eval(c, context)
-            fcn = function
-
-        if not isinstance(fcn, types.FunctionType):
-            raise TypeError("quantity or selection function must be a function or string expression")
-        self.fcn = fcn
+class UserFcn(object):
+    def __init__(self, expr, name=None):
+        self.expr = expr
+        if isinstance(expr, basestring) and name is None:
+            self.name = expr
+        else:
+            self.name = name
 
     def __call__(self, *args, **kwds):
+        if not hasattr(self, "fcn"):
+            if isinstance(self.expr, types.FunctionType):
+                self.fcn = self.expr
+
+            elif isinstance(self.expr, basestring):
+                c = compile(self.expr, "<string>", "eval")
+
+                # close over this state
+                varname = [None]
+
+                def function(datum):
+                    context = dict(globals())
+                    try:
+                        context.update(datum.__dict__)
+                    except AttributeError:
+                        v, = varname
+                        if v is None:
+                            try:
+                                v, = set(c.co_names) - set(context.keys())
+                            except ValueError:
+                                raise NameError("more than one unrecognized variable names in single-argument function: {}".format(set(c.co_names) - set(context.keys())))
+                        context.update({v: datum})
+
+                    return eval(c, context)
+
+                self.fcn = function
+
+            elif self.expr is None:
+                raise TypeError("immutable container (created from JSON or .ed) cannot be filled")
+
+            else:
+                raise TypeError("unrecognized type for function: {}".format(type(self.expr)))
+
         return self.fcn(*args, **kwds)
 
     def __reduce__(self):
-        refs = {n: self.fcn.func_globals[n] for n in self.fcn.func_code.co_names if n in self.fcn.func_globals}
-        return (deserializeFcn, (self.__class__, marshal.dumps(self.fcn.func_code), self.fcn.func_name, self.fcn.func_defaults, self.fcn.func_closure, refs))
+        if isinstance(self.expr, basestring) or self.expr is None:
+            return (deserializeString, (self.__class__, self.expr, self.name))
+
+        elif isinstance(self.expr, types.FunctionType):
+            refs = {n: self.expr.func_globals[n] for n in self.expr.func_code.co_names if n in self.expr.func_globals}
+            return (deserializeFunction, (self.__class__, marshal.dumps(self.expr.func_code), self.expr.func_name, self.expr.func_defaults, self.expr.func_closure, refs, self.name))
+
+        else:
+            raise TypeError("unrecognized type for function: {}".format(type(self.expr)))
 
     def __repr__(self):
-        return "Fcn({})".format(self.fcn)
+        return "UserFcn({})".format(self.expr)
 
-class CachedFcn(Fcn):
+class CachedFcn(UserFcn):
     def __call__(self, *args, **kwds):
         if hasattr(self, "lastArgs") and hasattr(self, "lastKwds") and args == self.lastArgs and kwds == self.lastKwds:
             return self.lastReturn
         else:
             self.lastArgs = args
             self.lastKwds = kwds
-            self.lastReturn = self.fcn(*args, **kwds)
+            self.lastReturn = super(CachedFcn, self).__call__(*args, **kwds)
             return self.lastReturn
 
     def __repr__(self):
-        return "CachedFcn({})".format(self.fcn)
+        return "CachedFcn({})".format(self.expr)
 
-def deserializeFcn(cls, func_code, func_name, func_defaults, func_closure, refs):
+def deserializeString(cls, expr, name):
+    out = cls.__new__(cls)
+    out.expr = expr
+    out.name = name
+    return out
+
+def deserializeFunction(cls, func_code, func_name, func_defaults, func_closure, refs, name):
     out = cls.__new__(cls)
     g = dict(globals(), **refs)
-    out.fcn = types.FunctionType(marshal.loads(func_code), g, func_name, func_defaults, func_closure)
+    out.expr = types.FunctionType(marshal.loads(func_code), g, func_name, func_defaults, func_closure)
+    out.name = name
     return out
 
 def serializable(fcn):
-    if fcn is None:
-        return None
-    elif isinstance(fcn, Fcn):
+    if isinstance(fcn, UserFcn):
         return fcn
     else:
-        return Fcn(fcn)
+        return UserFcn(fcn)
 
-def cache(fcn):
+def cached(fcn):
     if isinstance(fcn, CachedFcn):
         return fcn
-    elif isinstance(fcn, Fcn):
-        return CachedFcn(fcn.fcn)
+    elif isinstance(fcn, UserFcn):
+        return CachedFcn(fcn.expr, fcn.name)
     else:
         return CachedFcn(fcn)
+
+def named(name, fcn):
+    if isinstance(fcn, UserFcn) and fcn.name is not None:
+        raise ValueError("two names applied to the same function: {} and {}".format(fcn.name, name))
+    elif isinstance(fcn, CachedFcn):
+        return CachedFcn(fcn.expr, name)
+    elif isinstance(fcn, UserFcn):
+        return UserFcn(fcn.expr, name)
+    else:
+        return UserFcn(fcn, name)
 
 ################################################################ 1D clustering algorithm (used by AdaptivelyBin)
 
