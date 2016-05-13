@@ -62,16 +62,15 @@ class Partition(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.expression is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
         if weight > 0.0:
             value = self.expression(datum)
-            self.entries += weight
             for (low, sub), (high, _) in zip(self.cuts, self.cuts[1:] + (float("nan"), None)):
                 if value >= low and not value >= high:
                     sub.fill(datum, weight)
                     break
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),

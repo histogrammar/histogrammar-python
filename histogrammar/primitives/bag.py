@@ -70,7 +70,6 @@ class Bag(Factory, Container):
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
-
             if q in self.values:
                 self.values[q] += weight
             else:

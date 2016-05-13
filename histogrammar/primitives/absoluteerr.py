@@ -58,10 +58,10 @@ class AbsoluteErr(Factory, Container):
     def fill(self, datum, weight=1.0):
         if weight > 0.0:
             q = self.quantity(datum)
-            self.absoluteSum += abs(q)
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
+            self.absoluteSum += abs(q)
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),

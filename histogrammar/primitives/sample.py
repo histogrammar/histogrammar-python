@@ -96,12 +96,12 @@ class Sample(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.quantity is None is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
         if weight > 0.0:
             q = self.quantity(datum)
+
             self.reservoir.update(q, weight)
+
+            # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
     def toJsonFragment(self): return {

@@ -53,11 +53,11 @@ class Minimize(Factory, Container):
     def fill(self, datum, weight=1.0):
         if weight > 0.0:
             q = self.quantity(datum)
-            if math.isnan(self.min) or q < self.min:
-                self.min = q
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
+            if math.isnan(self.min) or q < self.min:
+                self.min = q
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -127,11 +127,11 @@ class Maximize(Factory, Container):
     def fill(self, datum, weight=1.0):
         if weight > 0.0:
             q = self.quantity(datum)
-            if math.isnan(self.max) or q > self.max:
-                self.max = q
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
+            if math.isnan(self.max) or q > self.max:
+                self.max = q
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),

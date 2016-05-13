@@ -80,13 +80,12 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
             else:
                 self.bins[self.index(q)][1].fill(datum, weight)
 
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
             if math.isnan(self.min) or q < self.min:
                 self.min = q
             if math.isnan(self.max) or q > self.max:
                 self.max = q
-
-            # no possibility of exception from here on out (for rollback)
-            self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),

@@ -62,15 +62,14 @@ class Stack(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        if self.expression is None:
-            raise RuntimeException("attempting to fill a container that has no fill rule")
-
         if weight > 0.0:
             value = self.expression(datum)
-            self.entries += weight
             for threshold, sub in self.cuts:
                 if value >= threshold:
                     sub.fill(datum, weight)
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),

@@ -53,6 +53,7 @@ class Cut(Factory, Container):
         w = weight * self.selection(datum)
         if w > 0.0:
             self.value.fill(datum, w)
+        # no possibility of exception from here on out (for rollback)
         self.entries += weight
 
     def toJsonFragment(self): return {
@@ -151,11 +152,13 @@ class Limit(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        self.entries += weight
-        if self.entries > self.limit:
+        if self.entries + weight > self.limit:
             self.value = None
-        else:
+        elif self.value is not None:
             self.value.fill(datum, weight)
+
+        # no possibility of exception from here on out (for rollback)
+        self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -266,6 +269,8 @@ class Label(Factory, Container):
     def fill(self, datum, weight=1.0):
         for x in self.values:
             x.fill(datum, weight)
+        # no possibility of exception from here on out (for rollback)
+        self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -364,6 +369,8 @@ class UntypedLabel(Factory, Container):
     def fill(self, datum, weight=1.0):
         for x in self.values:
             x.fill(datum, weight)
+        # no possibility of exception from here on out (for rollback)
+        self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -472,6 +479,8 @@ class Index(Factory, Container):
     def fill(self, datum, weight=1.0):
         for x in self.values:
             x.fill(datum, weight)
+        # no possibility of exception from here on out (for rollback)
+        self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -575,6 +584,8 @@ class Branch(Factory, Container):
     def fill(self, datum, weight=1.0):
         for x in self.values:
             x.fill(datum, weight)
+        # no possibility of exception from here on out (for rollback)
+        self.entries += weight
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),

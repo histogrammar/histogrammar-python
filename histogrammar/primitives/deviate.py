@@ -65,7 +65,7 @@ class Deviate(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
             delta = q - self.mean
-            shift = delta * weight / (self.entries)
+            shift = delta * weight / self.entries
             self.mean += shift
             self.varianceTimesEntries += weight * delta * (q - self.mean)
 

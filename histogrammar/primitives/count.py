@@ -45,6 +45,7 @@ class Count(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        # no possibility of exception from here on out (for rollback)
         if weight > 0.0:
             self.entries += weight
 
