@@ -35,7 +35,7 @@ class Categorize(Factory, Container):
 
     def __init__(self, quantity, value=Count()):
         self.entries = 0.0
-        self.quantity = quantity
+        self.quantity = serializable(quantity)
         self.value = value
         self.pairs = {}
         super(Categorize, self).__init__()

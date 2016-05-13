@@ -34,7 +34,7 @@ class Stack(Factory, Container):
 
     def __init__(self, expression, value, *cuts):
         self.entries = 0.0
-        self.expression = expression
+        self.expression = serializable(expression)
         if value is None:
             self.cuts = cuts
         else:
@@ -112,7 +112,7 @@ class Stack(Factory, Container):
     def __repr__(self):
         return "Stack[{}, thresholds=[{}]]".format(self.cuts[0], ", ".join(map(str, self.thresholds)))
 
-    def __eq__(self):
+    def __eq__(self, other):
         return isinstance(other, Stack) and exact(self.entries, other.entries) and self.expression == other.expression and self.cuts == other.cuts
 
     def __hash__(self):

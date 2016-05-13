@@ -49,7 +49,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         self.min = float("nan")
         self.max = float("nan")
 
-        self.quantity = quantity
+        self.quantity = serializable(quantity)
         self.value = value
         self.nanflow = nanflow
 
@@ -147,7 +147,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
     def __repr__(self):
         return "CentrallyBin[bins=[{}..., size={}], nanflow={}]".format(self.bins[0][1], len(self.bins), self.nanflow)
 
-    def __eq__(self):
+    def __eq__(self, other):
         return isinstance(other, CentrallyBin) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.bins == other.bins and exact(self.min, other.min) and exact(self.max, other.max) and self.nanflow == other.nanflow
 
     def __hash__(self):

@@ -154,6 +154,8 @@ class UserFcn(object):
                                 v, = set(c.co_names) - set(context.keys())
                             except ValueError:
                                 raise NameError("more than one unrecognized variable names in single-argument function: {}".format(set(c.co_names) - set(context.keys())))
+                            varname[0] = v
+
                         context.update({v: datum})
 
                     return eval(c, context)
@@ -181,6 +183,22 @@ class UserFcn(object):
 
     def __repr__(self):
         return "UserFcn({})".format(self.expr)
+
+    def __eq__(self, other):
+        out = isinstance(other, UserFcn) and self.name == other.name
+
+        if isinstance(self.expr, types.FunctionType) and isinstance(other.expr, types.FunctionType):
+            out = out and (self.expr.func_code.co_code == other.expr.func_code.co_code)
+        else:
+            out = out and (self.expr == other.expr)
+
+        return out
+
+    def __hash__(self):
+        if isinstance(self.expr, types.FunctionType):
+            return hash((None, self.expr.func_code.co_code, self.name))
+        else:
+            return hash((self.expr, self.name))
 
 class CachedFcn(UserFcn):
     def __call__(self, *args, **kwds):

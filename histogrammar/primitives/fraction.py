@@ -36,7 +36,7 @@ class Fraction(Factory, Container):
 
     def __init__(self, selection, value):
         self.entries = 0.0
-        self.selection = selection
+        self.selection = serializable(selection)
         if value is not None:
             self.numerator = value.zero()
             self.denominator = value.zero()

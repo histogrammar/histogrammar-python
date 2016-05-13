@@ -37,7 +37,7 @@ class Quantile(Factory, Container):
         if target < 0.0 or target > 1.0:
             raise ContainerException("target ({}) must be between 0 and 1, inclusive".format(target))
         self.target = target
-        self.quantity = quantity
+        self.quantity = serializable(quantity)
         self.entries = 0.0
         self.estimate = float("nan")
         self.cumulativeDeviation = 0.0

@@ -39,7 +39,7 @@ class Sample(Factory, Container):
         if limit <= 0.0:
             raise ContainerException("limit ({}) cannot be negative".format(limit))
         self.entries = 0.0
-        self.quantity = quantity
+        self.quantity = serializable(quantity)
         self.reservoir = Reservoir(limit)
         super(Sample, self).__init__()
 
@@ -161,7 +161,7 @@ class Sample(Factory, Container):
         return "Sample[{}, size={}]".format("empty" if self.isEmpty else repr(self.values[0][0]) + "...", self.size)
 
     def __eq__(self, other):
-        return isinstance(other, Sample) and self.entries == other.entries and self.quantity == other.quantity and self.limit == other.limit and self.value == other.value
+        return isinstance(other, Sample) and self.entries == other.entries and self.quantity == other.quantity and self.limit == other.limit and self.values == other.values
 
     def __hash__(self):
         return hash((self.entries, self.quantity, self.limit, self.value))

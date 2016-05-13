@@ -45,7 +45,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         if tailDetail < 0.0 or tailDetail > 1.0:
             raise ContainerException("tailDetail parameter ({}) must be between 0.0 and 1.0 inclusive".format(tailDetail))
 
-        self.quantity = quantity
+        self.quantity = serializable(quantity)
         self.clustering = Clustering1D(num, tailDetail, value, [], float("nan"), float("nan"), 0.0)
         self.nanflow = nanflow
         super(AdaptivelyBin, self).__init__()
@@ -169,7 +169,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
             v = self.contentType
         return "AdaptivelyBin[bins=[{}..., size={}], nanflow={}]".format(v, len(self.bins), self.nanflow)
 
-    def __eq__(self):
+    def __eq__(self, other):
         return isinstance(other, AdaptivelyBin) and self.quantity == other.quantity and self.clustering == other.clustering
 
     def __hash__(self):

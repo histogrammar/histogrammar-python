@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import math
+import pickle
 import unittest
 
 from histogrammar import *
@@ -94,6 +95,9 @@ class TestEverything(unittest.TestCase):
     def checkJson(self, x):
         self.assertEqual(x.toJson(), Factory.fromJson(x.toJson()).toJson())
 
+    def checkPickle(self, x):
+        self.assertEqual(pickle.loads(pickle.dumps(x)), x)
+
     ################################################################ Count
 
     def testCount(self):
@@ -114,6 +118,7 @@ class TestEverything(unittest.TestCase):
             self.assertEqual(finalResult.entries, len(self.simple))
 
             self.checkJson(leftCounting)
+            self.checkPickle(leftCounting)
 
     def testCountWithFilter(self):
         for i in xrange(11):
@@ -133,8 +138,9 @@ class TestEverything(unittest.TestCase):
             self.assertEqual(finalResult.value.entries, len(filter(lambda x: x > 0.0, self.simple)))
 
             self.checkJson(leftCounting)
+            self.checkJson(leftCounting)
 
-    ################################################################ Sum
+    ################################################################Pickle
 
     def testSum(self):
         for i in xrange(11):
@@ -154,6 +160,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.sum, sum(self.simple))
 
             self.checkJson(leftSumming)
+            self.checkPickle(leftSumming)
        
     def testSumWithFilter(self):
         for i in xrange(11):
@@ -172,6 +179,7 @@ class TestEverything(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.value.sum, sum(_.double for _ in self.struct if _.bool))
 
+            self.checkJson(leftSumming)
             self.checkJson(leftSumming)
 
     def testSumWithWeightingFactor(self):
@@ -192,6 +200,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.value.sum, sum(_.double * _.int for _ in self.struct if _.int > 0))
 
             self.checkJson(leftSumming)
+            self.checkPickle(leftSumming)
 
     def testSumStringFunctions(self):
         for i in xrange(11):
@@ -211,6 +220,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.sum, sum(self.simple) + len(self.simple))
 
             self.checkJson(leftSumming)
+            self.checkPickle(leftSumming)
        
     def testSumWithFilterStringFunctions(self):
         for i in xrange(11):
@@ -230,6 +240,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.value.sum, sum(_.double + 1 for _ in self.struct if not _.bool))
 
             self.checkJson(leftSumming)
+            self.checkPickle(leftSumming)
 
     def testSumWithWeightingFactorStringFunctions(self):
         for i in xrange(11):
@@ -249,6 +260,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.value.sum, sum(_.double * 2 * _.int for _ in self.struct if _.int > 0))
 
             self.checkJson(leftSumming)
+            self.checkPickle(leftSumming)
 
     ################################################################ Average
 
@@ -270,6 +282,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.mean, self.mean(self.simple))
 
             self.checkJson(leftAveraging)
+            self.checkPickle(leftAveraging)
 
     def testAverageWithFilter(self):
         for i in xrange(11):
@@ -289,6 +302,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.value.mean, self.mean([_.double for _ in self.struct if _.bool]))
 
             self.checkJson(leftAveraging)
+            self.checkPickle(leftAveraging)
 
     def testAverageWithWeightingFactor(self):
         for i in xrange(11):
@@ -308,6 +322,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.value.mean, self.meanWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
 
             self.checkJson(leftAveraging)
+            self.checkPickle(leftAveraging)
 
     ################################################################ Deviate
 
@@ -329,6 +344,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.variance, self.variance(self.simple))
 
             self.checkJson(leftDeviating)
+            self.checkPickle(leftDeviating)
 
     def testDeviateWithFilter(self):
         for i in xrange(11):
@@ -348,6 +364,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.value.variance, self.variance([_.double for _ in self.struct if _.bool]))
 
             self.checkJson(leftDeviating)
+            self.checkPickle(leftDeviating)
 
     def testDeviateWithWeightingFactor(self):
         for i in xrange(11):
@@ -367,6 +384,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.value.variance, self.varianceWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
 
             self.checkJson(leftDeviating)
+            self.checkPickle(leftDeviating)
 
     ################################################################ AbsoluteErr
 
@@ -388,6 +406,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.mae, self.mae(self.simple))
 
             self.checkJson(leftAbsoluteErring)
+            self.checkPickle(leftAbsoluteErring)
         
     ################################################################ Minimize
 
@@ -416,6 +435,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.min, min(self.simple))
 
             self.checkJson(leftMinimizing)
+            self.checkPickle(leftMinimizing)
 
     ################################################################ Maximize
 
@@ -444,6 +464,7 @@ class TestEverything(unittest.TestCase):
             self.assertAlmostEqual(finalResult.max, max(self.simple))
 
             self.checkJson(leftMaximizing)
+            self.checkPickle(leftMaximizing)
 
     ################################################################ Quantile
 
@@ -516,6 +537,7 @@ class TestEverything(unittest.TestCase):
                     self.assertAlmostEqual(finalResult.estimate, finalAnswer)
 
                 self.checkJson(leftQuantiling)
+                self.checkPickle(leftQuantiling)
 
     ################################################################ Bag
 
@@ -535,6 +557,9 @@ class TestEverything(unittest.TestCase):
         self.checkJson(one)
         self.checkJson(two)
         self.checkJson(three)
+        self.checkPickle(one)
+        self.checkPickle(two)
+        self.checkPickle(three)
 
     def testBagWithLimit(self):
         one = Limit(Bag(lambda x: x.string), 20)
@@ -547,6 +572,8 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(one)
         self.checkJson(two)
+        self.checkPickle(one)
+        self.checkPickle(two)
 
     ################################################################ Sample
 
@@ -577,6 +604,11 @@ class TestEverything(unittest.TestCase):
         self.checkJson(three)
         self.checkJson(four)
         self.checkJson(five)
+        self.checkPickle(one)
+        self.checkPickle(two)
+        self.checkPickle(three)
+        self.checkPickle(four)
+        self.checkPickle(five)
 
     ################################################################ Bin
 
@@ -598,6 +630,8 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(one)
         self.checkJson(two)
+        self.checkPickle(one)
+        self.checkPickle(two)
 
     def testHistogram(self):
         one = Histogram(5, -3.0, 7.0, lambda x: x)
@@ -617,6 +651,8 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(one)
         self.checkJson(two)
+        self.checkPickle(one)
+        self.checkPickle(two)
 
     ################################################################ SparselyBin
 
@@ -631,6 +667,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(one.high, 8.0)
 
         self.checkJson(one)
+        self.checkPickle(one)
 
     ################################################################ CentrallyBin
 
@@ -653,6 +690,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(one.qfTimesEntries(-1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0), [-4.7, -4.7, -3.35, -2.0, -1.25, -0.5, 0.0, 0.5, 2.0, 4.25, 6.5, 7.3, 7.3])
 
         self.checkJson(one)
+        self.checkPickle(one)
 
     ################################################################ AdaptivelyBin
 
@@ -664,6 +702,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(map(lambda (x, c): (x, c.entries), one.bins), [(-3.85, 2.0), (-1.1666666666666667, 3.0), (0.8, 2.0), (2.8, 2.0), (7.3, 1.0)])
 
         self.checkJson(one)
+        self.checkPickle(one)
 
     ################################################################ Fraction
 
@@ -675,6 +714,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(fracking.denominator.entries, 10.0)
 
         self.checkJson(fracking)
+        self.checkPickle(fracking)
 
     def testFractionSum(self):
         fracking = Fraction(lambda x: x > 0.0, Sum(lambda x: x))
@@ -684,6 +724,7 @@ class TestEverything(unittest.TestCase):
         self.assertAlmostEqual(fracking.denominator.sum, 3.3)
 
         self.checkJson(fracking)
+        self.checkPickle(fracking)
 
     def testFractionHistogram(self):
         fracking = Fraction(lambda x: x > 0.0, Histogram(5, -3.0, 7.0, lambda x: x))
@@ -693,6 +734,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(fracking.denominator.numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0])
 
         self.checkJson(fracking)
+        self.checkPickle(fracking)
 
     ################################################################ Stack
 
@@ -703,6 +745,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual([(k, v.entries) for k, v in stacking.cuts], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
 
         self.checkJson(stacking)
+        self.checkPickle(stacking)
 
     ################################################################ Partition
 
@@ -713,6 +756,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual([(k, v.entries) for k, v in partitioning.cuts], [(float("-inf"), 4.0), (0.0, 3.0), (2.0, 2.0), (4.0, 0.0), (6.0, 1.0), (8.0, 0.0)])
 
         self.checkJson(partitioning)
+        self.checkPickle(partitioning)
 
     def testPartitionSum(self):
         partitioning = Partition(lambda x: x, Sum(lambda x: x), 0.0, 2.0, 4.0, 6.0, 8.0)
@@ -722,6 +766,7 @@ class TestEverything(unittest.TestCase):
         self.assertAlmostEqual(partitioning.cuts[1][1].sum, 1.6)
 
         self.checkJson(partitioning)
+        self.checkPickle(partitioning)
 
     ################################################################ Categorize
 
@@ -732,6 +777,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual({k: v.entries for k, v in categorizing.pairsMap.items()}, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
 
         self.checkJson(categorizing)
+        self.checkPickle(categorizing)
 
     ################################################################ Label
 
@@ -749,6 +795,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(labeling("three").numericalValues, [0.0, 2.0, 0.0, 2.0, 1.0])
 
         self.checkJson(labeling)
+        self.checkPickle(labeling)
 
     def testLabelDifferentCuts(self):
         one = Histogram(10, -10, 10, lambda x: x, lambda x: x > 0)
@@ -764,6 +811,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(labeling("three").numericalValues, [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 0.0, 0.0, 0.0])
 
         self.checkJson(labeling)
+        self.checkPickle(labeling)
 
     ################################################################ UntypedLabel
 
@@ -781,6 +829,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(labeling("three").numericalValues, [0.0, 2.0, 0.0, 2.0, 1.0])
 
         self.checkJson(labeling)
+        self.checkPickle(labeling)
 
     def testUntypedLabelDifferenCuts(self):
         one = Histogram(10, -10, 10, lambda x: x, lambda x: x > 0)
@@ -796,6 +845,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(labeling("three").numericalValues, [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 0.0, 0.0, 0.0])
 
         self.checkJson(labeling)
+        self.checkPickle(labeling)
         
     def testUntypedLabelMultipleTypes(self):
         one = Histogram(5, -3.0, 7.0, lambda x: x)
@@ -813,6 +863,7 @@ class TestEverything(unittest.TestCase):
         self.assertAlmostEqual(mapping("three").variance, 10.8381)
 
         self.checkJson(mapping)
+        self.checkPickle(mapping)
 
     ################################################################ Index
 
@@ -830,6 +881,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(indexing(2).numericalValues, [0.0, 2.0, 0.0, 2.0, 1.0])
 
         self.checkJson(indexing)
+        self.checkPickle(indexing)
 
     def testIndexDifferentCuts(self):
         one = Histogram(10, -10, 10, lambda x: x, lambda x: x > 0)
@@ -845,6 +897,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(indexing(2).numericalValues, [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 0.0, 0.0, 0.0])
 
         self.checkJson(indexing)
+        self.checkPickle(indexing)
 
     ################################################################ Branch
 
@@ -869,6 +922,7 @@ class TestEverything(unittest.TestCase):
         self.assertAlmostEqual(branching.i2.variance, 10.8381)
 
         self.checkJson(branching)
+        self.checkPickle(branching)
         
     ################################################################ Usability in fold/aggregate
 
