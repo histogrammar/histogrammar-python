@@ -49,6 +49,10 @@ class Count(Factory, Container):
         if weight > 0.0:
             self.entries += weight
 
+    @property
+    def children(self):
+        return []
+
     def toJsonFragment(self): return floatToJson(self.entries)
 
     @staticmethod

@@ -108,6 +108,10 @@ class Bin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    @property
+    def children(self):
+        return [self.underflow, self.overflow, self.nanflow] + self.values
+
     def toJsonFragment(self): return maybeAdd({
         "low": floatToJson(self.low),
         "high": floatToJson(self.high),

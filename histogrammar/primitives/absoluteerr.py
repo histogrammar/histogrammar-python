@@ -63,6 +63,10 @@ class AbsoluteErr(Factory, Container):
             self.entries += weight
             self.absoluteSum += abs(q)
 
+    @property
+    def children(self):
+        return []
+
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mae": floatToJson(self.mae),

@@ -76,6 +76,9 @@ class Container(object):
 
     def copy(self): return self + self.zero()
 
+    @property
+    def children(self): raise NotImplementedError
+
     def toJson(self): return {"type": self.name, "data": self.toJsonFragment()}
     def toJsonFragment(self): raise NotImplementedError
     def __repr__(self): raise NotImplementedError

@@ -124,8 +124,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.simple[:i], self.simple[i:]
 
-            leftCounting = Cut(named("something", lambda x: x > 0.0), Count())
-            rightCounting = Cut(named("something", lambda x: x > 0.0), Count())
+            leftCounting = Select(named("something", lambda x: x > 0.0), Count())
+            rightCounting = Select(named("something", lambda x: x > 0.0), Count())
 
             for _ in left: leftCounting.fill(_)
             for _ in right: rightCounting.fill(_)
@@ -166,8 +166,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftSumming = Cut(lambda x: x.bool, Sum(lambda x: x.double))
-            rightSumming = Cut(lambda x: x.bool, Sum(lambda x: x.double))
+            leftSumming = Select(lambda x: x.bool, Sum(lambda x: x.double))
+            rightSumming = Select(lambda x: x.bool, Sum(lambda x: x.double))
 
             for _ in left: leftSumming.fill(_)
             for _ in right: rightSumming.fill(_)
@@ -186,8 +186,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftSumming = Cut(lambda x: x.int, Sum(lambda x: x.double))
-            rightSumming = Cut(lambda x: x.int, Sum(lambda x: x.double))
+            leftSumming = Select(lambda x: x.int, Sum(lambda x: x.double))
+            rightSumming = Select(lambda x: x.int, Sum(lambda x: x.double))
 
             for _ in left: leftSumming.fill(_)
             for _ in right: rightSumming.fill(_)
@@ -226,8 +226,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftSumming = Cut("not bool", Sum("double + 1"))
-            rightSumming = Cut("not bool", Sum("double + 1"))
+            leftSumming = Select("not bool", Sum("double + 1"))
+            rightSumming = Select("not bool", Sum("double + 1"))
 
             for _ in left: leftSumming.fill(_)
             for _ in right: rightSumming.fill(_)
@@ -246,8 +246,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftSumming = Cut("int", Sum("double * 2"))
-            rightSumming = Cut("int", Sum("double * 2"))
+            leftSumming = Select("int", Sum("double * 2"))
+            rightSumming = Select("int", Sum("double * 2"))
 
             for _ in left: leftSumming.fill(_)
             for _ in right: rightSumming.fill(_)
@@ -288,8 +288,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftAveraging = Cut(lambda x: x.bool, Average(lambda x: x.double))
-            rightAveraging = Cut(lambda x: x.bool, Average(lambda x: x.double))
+            leftAveraging = Select(lambda x: x.bool, Average(lambda x: x.double))
+            rightAveraging = Select(lambda x: x.bool, Average(lambda x: x.double))
 
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
@@ -308,8 +308,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftAveraging = Cut(lambda x: x.int, Average(lambda x: x.double))
-            rightAveraging = Cut(lambda x: x.int, Average(lambda x: x.double))
+            leftAveraging = Select(lambda x: x.int, Average(lambda x: x.double))
+            rightAveraging = Select(lambda x: x.int, Average(lambda x: x.double))
 
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
@@ -350,8 +350,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftDeviating = Cut(lambda x: x.bool, Deviate(lambda x: x.double))
-            rightDeviating = Cut(lambda x: x.bool, Deviate(lambda x: x.double))
+            leftDeviating = Select(lambda x: x.bool, Deviate(lambda x: x.double))
+            rightDeviating = Select(lambda x: x.bool, Deviate(lambda x: x.double))
 
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
@@ -370,8 +370,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
 
-            leftDeviating = Cut(lambda x: x.int, Deviate(lambda x: x.double))
-            rightDeviating = Cut(lambda x: x.int, Deviate(lambda x: x.double))
+            leftDeviating = Select(lambda x: x.int, Deviate(lambda x: x.double))
+            rightDeviating = Select(lambda x: x.int, Deviate(lambda x: x.double))
 
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
@@ -620,7 +620,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(one.overflow.entries, 1.0)
         self.assertEqual(one.nanflow.entries, 0.0)
 
-        two = Cut(lambda x: x.bool, Bin(5, -3.0, 7.0, lambda x: x.double))
+        two = Select(lambda x: x.bool, Bin(5, -3.0, 7.0, lambda x: x.double))
         for _ in self.struct: two.fill(_)
 
         self.assertEqual(map(lambda _: _.entries, two.value.values), [2.0, 1.0, 1.0, 1.0, 0.0])

@@ -47,7 +47,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
         self.quantity = serializable(quantity)
         self.clustering = Clustering1D(num, tailDetail, value, [], float("nan"), float("nan"), 0.0)
-        self.nanflow = nanflow
+        self.nanflow = nanflow.copy()
         super(AdaptivelyBin, self).__init__()
 
     @property
@@ -89,6 +89,10 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         if weight > 0.0:
             q = self.quantity(datum)
             self.clustering.update(q, datum, weight)
+
+    @property
+    def children(self):
+        return [self.value, self.nanflow] + [v for c, v in self.bins]
 
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),

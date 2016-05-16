@@ -83,6 +83,10 @@ class Quantile(Factory, Container):
                     sgn = 0
                 self.estimate = weight * learningRate * (sgn + 2.0*self.target - 1.0)
 
+    @property
+    def children(self):
+        return []
+
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "target": floatToJson(self.target),

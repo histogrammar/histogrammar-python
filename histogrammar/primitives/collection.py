@@ -17,50 +17,54 @@
 from histogrammar.defs import *
 from histogrammar.util import *
 
-################################################################ Cut
+################################################################ Select
 
-class Cut(Factory, Container):
+class Select(Factory, Container):
     @staticmethod
     def ed(entries, value):
         if entries < 0.0:
             raise ContainerException("entries ({}) cannot be negative".format(entries))
-        out = Cut(None, value)
+        out = Select(None, value)
         out.entries = entries
         return out
 
     @staticmethod
-    def ing(selection, value):
-        return Cut(selection, value)
+    def ing(quantity, value):
+        return Select(quantity, value)
 
-    def __init__(self, selection, value):
+    def __init__(self, quantity, value):
         self.entries = 0.0
-        self.selection = serializable(selection)
+        self.quantity = serializable(quantity)
         self.value = value
-        super(Cut, self).__init__()
+        super(Select, self).__init__()
 
     def zero(self):
-        return Cut(self.selection, self.value.zero())
+        return Select(self.quantity, self.value.zero())
 
     def __add__(self, other):
-        if isinstance(other, Cut):
-            out = Cut(self.selection, self.value + other.value)
+        if isinstance(other, Select):
+            out = Select(self.quantity, self.value + other.value)
             out.entries = self.entries + other.entries
             return out
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        w = weight * self.selection(datum)
+        w = weight * self.quantity(datum)
         if w > 0.0:
             self.value.fill(datum, w)
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
 
+    @property
+    def children(self):
+        return [self.value]
+
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.value.name,
         "data": self.value.toJsonFragment(),
-        }, name=self.selection.name)
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
@@ -68,39 +72,39 @@ class Cut(Factory, Container):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
-                raise JsonFormatException(json, "Cut.entries")
+                raise JsonFormatException(json, "Select.entries")
 
             if isinstance(json.get("name", None), basestring):
                 name = json["name"]
             elif json.get("name", None) is None:
                 name = None
             else:
-                raise JsonFormatException(json["name"], "Cut.name")
+                raise JsonFormatException(json["name"], "Select.name")
 
             if isinstance(json["type"], basestring):
                 factory = Factory.registered[json["type"]]
             else:
-                raise JsonFormatException(json, "Cut.type")
+                raise JsonFormatException(json, "Select.type")
 
             value = factory.fromJsonFragment(json["data"])
 
-            out = Cut.ed(entries, value)
-            out.selection.name = name
+            out = Select.ed(entries, value)
+            out.quantity.name = name
             return out
 
         else:
-            raise JsonFormatException(json, "Cut")
+            raise JsonFormatException(json, "Select")
 
     def __repr__(self):
-        return "Cutting[{}]".format(self.value)
+        return "Select[{}]".format(self.value)
 
     def __eq__(self, other):
-        return isinstance(other, Cut) and exact(self.entries, other.entries) and self.value == other.value
+        return isinstance(other, Select) and exact(self.entries, other.entries) and self.value == other.value
 
     def __hash__(self):
         return hash((self.entries, self.value))
 
-Factory.register(Cut)
+Factory.register(Select)
 
 ################################################################ Limit
 
@@ -168,6 +172,10 @@ class Limit(Factory, Container):
 
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
+
+    @property
+    def children(self):
+        return [] if self.value is None else [self.value]
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -281,6 +289,10 @@ class Label(Factory, Container):
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
 
+    @property
+    def children(self):
+        return self.values()
+
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
         "type": self.values[0].name,
@@ -380,6 +392,10 @@ class UntypedLabel(Factory, Container):
             x.fill(datum, weight)
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
+
+    @property
+    def children(self):
+        return self.values()
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
@@ -491,6 +507,10 @@ class Index(Factory, Container):
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
 
+    @property
+    def children(self):
+        return self.values()
+
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),
         "type": self.values[0].name,
@@ -595,6 +615,10 @@ class Branch(Factory, Container):
             x.fill(datum, weight)
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
+
+    @property
+    def children(self):
+        return self.values()
 
     def toJsonFragment(self): return {
         "entries": floatToJson(self.entries),

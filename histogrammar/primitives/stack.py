@@ -29,12 +29,12 @@ class Stack(Factory, Container):
         return out
 
     @staticmethod
-    def ing(expression, value, *cuts):
-        return Stack(expression, value, *cuts)
+    def ing(quantity, value, *cuts):
+        return Stack(quantity, value, *cuts)
 
-    def __init__(self, expression, value, *cuts):
+    def __init__(self, quantity, value, *cuts):
         self.entries = 0.0
-        self.expression = serializable(expression)
+        self.quantity = serializable(quantity)
         if value is None:
             self.cuts = cuts
         else:
@@ -47,14 +47,14 @@ class Stack(Factory, Container):
     def values(self): return [v for k, v in self.cuts]
 
     def zero(self):
-        return Stack(self.expression, None, *[(x, x.zero()) for x in cuts])
+        return Stack(self.quantity, None, *[(x, x.zero()) for x in cuts])
 
     def __add__(self, other):
         if isinstance(other, Stack):
             if self.thresholds != other.thresholds:
                 raise ContainerException("cannot add Stack because cut thresholds differ")
 
-            out = Stack(self.expression, None, *[(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)])
+            out = Stack(self.quantity, None, *[(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)])
             out.entries = self.entries + other.entries
             return out
 
@@ -63,7 +63,7 @@ class Stack(Factory, Container):
 
     def fill(self, datum, weight=1.0):
         if weight > 0.0:
-            value = self.expression(datum)
+            value = self.quantity(datum)
             for threshold, sub in self.cuts:
                 if value >= threshold:
                     sub.fill(datum, weight)
@@ -71,11 +71,15 @@ class Stack(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    @property
+    def children(self):
+        return self.values
+
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.cuts[0][1].name,
         "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment()} for atleast, sub in self.cuts],
-        }, name=self.expression.name)
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
@@ -110,7 +114,7 @@ class Stack(Factory, Container):
                         raise JsonFormatException(json, "Stack.data {}".format(i))
 
                 out = Stack.ed(entries, *cuts)
-                out.expression.name = name
+                out.quantity.name = name
                 return out
 
             else:
@@ -123,9 +127,9 @@ class Stack(Factory, Container):
         return "Stack[{}, thresholds=[{}]]".format(self.cuts[0], ", ".join(map(str, self.thresholds)))
 
     def __eq__(self, other):
-        return isinstance(other, Stack) and exact(self.entries, other.entries) and self.expression == other.expression and self.cuts == other.cuts
+        return isinstance(other, Stack) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.cuts == other.cuts
 
     def __hash__(self):
-        return hash((self.entries, self.expression, self.cuts))
+        return hash((self.entries, self.quantity, self.cuts))
 
 Factory.register(Stack)

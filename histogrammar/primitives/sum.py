@@ -56,6 +56,10 @@ class Sum(Factory, Container):
             self.entries += weight
             self.sum += q * weight
 
+    @property
+    def children(self):
+        return []
+
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "sum": floatToJson(self.sum),

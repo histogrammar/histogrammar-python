@@ -75,6 +75,10 @@ class Bag(Factory, Container):
             else:
                 self.values[q] = weight
 
+    @property
+    def children(self):
+        return []
+
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "values": [{"n": n, "v": v} for v, n in sorted(self.values.items())],

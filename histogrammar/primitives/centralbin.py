@@ -51,7 +51,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
         self.quantity = serializable(quantity)
         self.value = value
-        self.nanflow = nanflow
+        self.nanflow = nanflow.copy()
 
         super(CentrallyBin, self).__init__()
 
@@ -86,6 +86,10 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
                 self.min = q
             if math.isnan(self.max) or q > self.max:
                 self.max = q
+
+    @property
+    def children(self):
+        return [self.nanflow] + [v for c, v in self.bins]
 
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),

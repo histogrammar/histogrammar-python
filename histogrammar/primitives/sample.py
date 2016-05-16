@@ -104,6 +104,10 @@ class Sample(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    @property
+    def children(self):
+        return []
+
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "limit": floatToJson(self.limit),

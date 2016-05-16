@@ -29,12 +29,12 @@ class Partition(Factory, Container):
         return out
 
     @staticmethod
-    def ing(expression, value, *cuts):
-        return Partition(expression, value, *cuts)
+    def ing(quantity, value, *cuts):
+        return Partition(quantity, value, *cuts)
 
-    def __init__(self, expression, value, *cuts):
+    def __init__(self, quantity, value, *cuts):
         self.entries = 0.0
-        self.expression = serializable(expression)
+        self.quantity = serializable(quantity)
         if value is None:
             self.cuts = cuts
         else:
@@ -47,14 +47,14 @@ class Partition(Factory, Container):
     def values(self): return [v for k, v in self.cuts]
 
     def zero(self):
-        return Partition(self.expression, None, *[(x, x.zero()) for x in cuts])
+        return Partition(self.quantity, None, *[(x, x.zero()) for x in cuts])
 
     def __add__(self, other):
         if isinstance(other, Partition):
             if self.thresholds != other.thresholds:
                 raise ContainerException("cannot add Partition because cut thresholds differ")
 
-            out = Partition(self.expression, None, *[(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)])
+            out = Partition(self.quantity, None, *[(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)])
             out.entries = self.entries + other.entries
             return out
 
@@ -63,7 +63,7 @@ class Partition(Factory, Container):
 
     def fill(self, datum, weight=1.0):
         if weight > 0.0:
-            value = self.expression(datum)
+            value = self.quantity(datum)
             for (low, sub), (high, _) in zip(self.cuts, self.cuts[1:] + (float("nan"), None)):
                 if value >= low and not value >= high:
                     sub.fill(datum, weight)
@@ -72,11 +72,15 @@ class Partition(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    @property
+    def children(self):
+        return self.values
+
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.cuts[0][1].name,
         "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment()} for atleast, sub in self.cuts],
-        }, name=self.expression.name)
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
@@ -111,7 +115,7 @@ class Partition(Factory, Container):
                         raise JsonFormatException(json, "Partition.data {}".format(i))
 
                 out = Partition.ed(entries, *cuts)
-                out.expression.name = name
+                out.quantity.name = name
                 return out
 
             else:
@@ -124,9 +128,9 @@ class Partition(Factory, Container):
         return "Partition[{}, thresholds=[{}]]".format(self.cuts[0], ", ".join(map(str, self.thresholds)))
 
     def __eq__(self, other):
-        return isinstance(other, Partition) and exact(self.entries, other.entries) and self.expression == other.expression and self.cuts == other.cuts
+        return isinstance(other, Partition) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.cuts == other.cuts
 
     def __hash__(self):
-        return hash((self.entries, self.expression, self.cuts))
+        return hash((self.entries, self.quantity, self.cuts))
 
 Factory.register(Partition)

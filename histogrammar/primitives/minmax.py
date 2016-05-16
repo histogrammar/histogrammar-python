@@ -50,6 +50,10 @@ class Minimize(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @property
+    def children(self):
+        return []
+
     def fill(self, datum, weight=1.0):
         if weight > 0.0:
             q = self.quantity(datum)
@@ -141,6 +145,10 @@ class Maximize(Factory, Container):
             self.entries += weight
             if math.isnan(self.max) or q > self.max:
                 self.max = q
+
+    @property
+    def children(self):
+        return []
 
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),

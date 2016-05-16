@@ -129,11 +129,15 @@ class SparselyBin(Factory, Container):
             else:
                 b = self.bin(q)
                 if b not in self.bins:
-                    self.bins[b] = self.value.copy()
+                    self.bins[b] = self.value.zero()
                 self.bins[b].fill(datum, weight)
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
+
+    @property
+    def children(self):
+        return [self.value, self.nanflow] + self.bins.values()
 
     def toJsonFragment(self): return maybeAdd({
         "binWidth": floatToJson(self.binWidth),

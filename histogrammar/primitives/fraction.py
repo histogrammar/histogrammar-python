@@ -31,26 +31,26 @@ class Fraction(Factory, Container):
         return out
 
     @staticmethod
-    def ing(selection, value):
-        return Fraction(selection, value)
+    def ing(quantity, value):
+        return Fraction(quantity, value)
 
-    def __init__(self, selection, value):
+    def __init__(self, quantity, value):
         self.entries = 0.0
-        self.selection = serializable(selection)
+        self.quantity = serializable(quantity)
         if value is not None:
             self.numerator = value.zero()
             self.denominator = value.zero()
         super(Fraction, self).__init__()
         
     def zero(self):
-        out = Fraction(self.selection, None)
+        out = Fraction(self.quantity, None)
         out.numerator = self.numerator.zero()
         out.denominator = self.denominator.zero()
         return out
 
     def __add__(self, other):
         if isinstance(other, Fraction):
-            out = Fraction(self.selection, None)
+            out = Fraction(self.quantity, None)
             out.numerator = self.numerator + other.numerator
             out.denominator = self.denominator + other.denominator
             return out
@@ -58,7 +58,7 @@ class Fraction(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
-        w = weight * self.selection(datum)
+        w = weight * self.quantity(datum)
 
         if weight > 0.0:
             self.denominator.fill(datum, weight)
@@ -68,12 +68,16 @@ class Fraction(Factory, Container):
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
 
+    @property
+    def children(self):
+        return [self.numerator, self.denominator]
+
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.numerator.name,
         "numerator": self.numerator.toJsonFragment(),
         "denominator": self.denominator.toJsonFragment(),
-        }, name=self.selection.name)
+        }, name=self.quantity.name)
 
     @staticmethod
     def fromJsonFragment(json):
@@ -99,7 +103,7 @@ class Fraction(Factory, Container):
             denominator = factory.fromJsonFragment(json["denominator"])
 
             out = Fraction.ed(entries, numerator, denominator)
-            out.selection.name = name
+            out.quantity.name = name
             return out
 
         else:
@@ -109,9 +113,9 @@ class Fraction(Factory, Container):
         return "Fraction[{}, {}]".format(self.numerator, self.denominator)
 
     def __eq__(self, other):
-        return isinstance(other, Fraction) and exact(self.entries, other.entries) and self.selection == other.selection and self.numerator == other.numerator and self.denominator == other.denominator
+        return isinstance(other, Fraction) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.numerator == other.numerator and self.denominator == other.denominator
 
     def __hash__(self):
-        return hash((self.entries, self.selection, self.numerator, self.denominator))
+        return hash((self.entries, self.quantity, self.numerator, self.denominator))
 
 Factory.register(Fraction)

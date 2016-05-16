@@ -69,6 +69,10 @@ class Deviate(Factory, Container):
             self.mean += shift
             self.varianceTimesEntries += weight * delta * (q - self.mean)
 
+    @property
+    def children(self):
+        return []
+
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mean": floatToJson(self.mean),

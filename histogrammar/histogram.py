@@ -16,32 +16,32 @@
 
 from histogrammar.defs import unweighted
 from histogrammar.util import serializable
-from histogrammar.primitives.collection import Cut
+from histogrammar.primitives.collection import Select
 from histogrammar.primitives.bin import Bin
 from histogrammar.primitives.count import Count
 
 def Histogram(num, low, high, quantity, selection=unweighted):
-    return Cut(selection, Bin(num, low, high, quantity, Count(), Count(), Count(), Count()))
+    return Select(selection, Bin(num, low, high, quantity, Count(), Count(), Count(), Count()))
 
-class HistogramMethods(Cut):
+class HistogramMethods(Select):
     @property
     def name(self):
-        return "Cut"
+        return "Select"
 
     @property
     def factory(self):
-        return Cut
+        return Select
 
     @property
-    def entriesBeforeCut(self):
+    def entriesBeforeSelect(self):
         return self.entries
 
     @property
-    def entriesAfterCut(self):
+    def entriesAfterSelect(self):
         return self.value.entries
 
     @property
-    def fractionPassingCut(self):
+    def fractionPassingSelect(self):
         return self.value.entries / self.entries
 
     @property
@@ -98,7 +98,7 @@ class HistogramMethods(Cut):
         return th1
 
 def addImplicitMethods(container):
-    if isinstance(container, Cut) and \
+    if isinstance(container, Select) and \
            isinstance(container.value, Bin) and \
            all(isinstance(v, Count) for v in container.value.values) and \
            isinstance(container.value.underflow, Count) and \

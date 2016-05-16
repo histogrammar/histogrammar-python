@@ -85,6 +85,10 @@ class Categorize(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    @property
+    def children(self):
+        return [self.value] + self.pairs.values()
+
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.value.name if isinstance(self.value, Container) else self.value,
