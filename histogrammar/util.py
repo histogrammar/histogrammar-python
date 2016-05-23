@@ -20,6 +20,15 @@ import marshal
 import math
 import random
 import types
+import sys
+
+
+
+# Definitions for python 2/3 compatability 
+if sys.version_info[0] > 2:
+    basestring = str
+    xrange = range
+
 
 @functools.total_ordering
 class LessThanEverything(object):
