@@ -28,7 +28,7 @@ import sys
 if sys.version_info[0] > 2:
     basestring = str
     xrange = range
-
+    long = int
 
 @functools.total_ordering
 class LessThanEverything(object):
