@@ -62,6 +62,7 @@ class TestEverything(unittest.TestCase):
         if not any(_ > 0.0 for _ in w):
             return 0.0
         else:
+            w = list(w)
             return sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0)
 
     @staticmethod
@@ -76,6 +77,7 @@ class TestEverything(unittest.TestCase):
         if not any(_ > 0.0 for _ in w):
             return 0.0
         else:
+            w = list(w)
             return sum(xi**2 * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0) - math.pow(sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0), 2)
 
     @staticmethod
@@ -130,12 +132,12 @@ class TestEverything(unittest.TestCase):
             for _ in left: leftCounting.fill(_)
             for _ in right: rightCounting.fill(_)
 
-            self.assertEqual(leftCounting.value.entries, len(filter(lambda x: x > 0.0, left)))
-            self.assertEqual(rightCounting.value.entries, len(filter(lambda x: x > 0.0, right)))
+            self.assertEqual(leftCounting.value.entries, len(list(filter(lambda x: x > 0.0, left))))
+            self.assertEqual(rightCounting.value.entries, len(list(filter(lambda x: x > 0.0, right))))
 
             finalResult = leftCounting + rightCounting
 
-            self.assertEqual(finalResult.value.entries, len(filter(lambda x: x > 0.0, self.simple)))
+            self.assertEqual(finalResult.value.entries, len(list(filter(lambda x: x > 0.0, self.simple))))
 
             self.checkJson(leftCounting)
             self.checkJson(leftCounting)
@@ -615,7 +617,7 @@ class TestEverything(unittest.TestCase):
     def testBin(self):
         one = Bin(5, -3.0, 7.0, named("something", lambda x: x))
         for _ in self.simple: one.fill(_)
-        self.assertEqual(map(lambda _: _.entries, one.values), [3.0, 2.0, 2.0, 1.0, 0.0])
+        self.assertEqual(list(map(lambda _: _.entries, one.values)), [3.0, 2.0, 2.0, 1.0, 0.0])
         self.assertEqual(one.underflow.entries, 1.0)
         self.assertEqual(one.overflow.entries, 1.0)
         self.assertEqual(one.nanflow.entries, 0.0)
@@ -623,7 +625,7 @@ class TestEverything(unittest.TestCase):
         two = Select(lambda x: x.bool, Bin(5, -3.0, 7.0, lambda x: x.double))
         for _ in self.struct: two.fill(_)
 
-        self.assertEqual(map(lambda _: _.entries, two.value.values), [2.0, 1.0, 1.0, 1.0, 0.0])
+        self.assertEqual(list(map(lambda _: _.entries, two.value.values)), [2.0, 1.0, 1.0, 1.0, 0.0])
         self.assertEqual(two.value.underflow.entries, 0.0)
         self.assertEqual(two.value.overflow.entries, 0.0)
         self.assertEqual(two.value.nanflow.entries, 0.0)
@@ -699,7 +701,7 @@ class TestEverything(unittest.TestCase):
 
         for _ in self.simple: one.fill(_)
 
-        self.assertEqual(map(lambda x_c: (x_c[0], x_c[1].entries),one.bins), [(-3.85, 2.0), (-1.1666666666666667, 3.0), (0.8, 2.0), (2.8, 2.0), (7.3, 1.0)])
+        self.assertEqual(list(map(lambda x_c: (x_c[0], x_c[1].entries),one.bins)), [(-3.85, 2.0), (-1.1666666666666667, 3.0), (0.8, 2.0), (2.8, 2.0), (7.3, 1.0)])
 
         self.checkJson(one)
         self.checkPickle(one)
