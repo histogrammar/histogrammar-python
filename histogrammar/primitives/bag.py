@@ -79,13 +79,13 @@ class Bag(Factory, Container):
     def children(self):
         return []
 
-    def toJsonFragment(self): return maybeAdd({
+    def toJsonFragment(self, suppressName=False): return maybeAdd({
         "entries": floatToJson(self.entries),
         "values": [{"n": n, "v": v} for v, n in sorted(self.values.items())],
-        }, name=self.quantity.name)
+        }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
-    def fromJsonFragment(json):
+    def fromJsonFragment(json, nameFromParent=None):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "values"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = json["entries"]
@@ -135,7 +135,7 @@ class Bag(Factory, Container):
                 raise JsonFormatException(json["values"], "Bag.values")
 
             out = Bag.ed(entries, values)
-            out.quantity.name = name
+            out.quantity.name = nameFromParent if name is None else name
             return out
 
         else:

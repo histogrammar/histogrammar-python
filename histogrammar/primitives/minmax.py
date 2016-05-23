@@ -63,13 +63,13 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
-    def toJsonFragment(self): return maybeAdd({
+    def toJsonFragment(self, suppressName=False): return maybeAdd({
         "entries": floatToJson(self.entries),
         "min": floatToJson(self.min),
-        }, name=self.quantity.name)
+        }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
-    def fromJsonFragment(json):
+    def fromJsonFragment(json, nameFromParent=None):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "min"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -89,7 +89,7 @@ class Minimize(Factory, Container):
                 raise JsonFormatException(json["min"], "Minimize.min")
 
             out = Minimize.ed(entries, min)
-            out.quantity.name = name
+            out.quantity.name = nameFromParent if name is None else name
             return out
 
         else:
@@ -150,13 +150,13 @@ class Maximize(Factory, Container):
     def children(self):
         return []
 
-    def toJsonFragment(self): return maybeAdd({
+    def toJsonFragment(self, suppressName=False): return maybeAdd({
         "entries": floatToJson(self.entries),
         "max": floatToJson(self.max),
-        }, name=self.quantity.name)
+        }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
-    def fromJsonFragment(json):
+    def fromJsonFragment(json, nameFromParent=None):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "max"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -176,7 +176,7 @@ class Maximize(Factory, Container):
                 raise JsonFormatException(json["max"], "Maximize.max")
 
             out = Maximize.ed(entries, max)
-            out.quantity.name = name
+            out.quantity.name = nameFromParent if name is None else name
             return out
 
         else:

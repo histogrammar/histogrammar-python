@@ -89,14 +89,33 @@ class Categorize(Factory, Container):
     def children(self):
         return [self.value] + self.pairs.values()
 
-    def toJsonFragment(self): return maybeAdd({
-        "entries": floatToJson(self.entries),
-        "type": self.value.name if isinstance(self.value, Container) else self.value,
-        "data": {k: v.toJsonFragment() for k, v in self.pairs.items()},
-        }, name=self.quantity.name)
+    def toJsonFragment(self, suppressName=False):
+        if self.value is not None:
+            if getattr(self.value, "quantity", None) is not None:
+                binsName = self.value.quantity.name
+            elif getattr(self.value, "quantityName", None) is not None:
+                binsName = self.value.quantityName
+            else:
+                binsName = None
+        elif len(self.bins) > 0:
+            if getattr(self.bins[0][1], "quantity") is not None:
+                binsName = self.bins[0][1].quantity.name
+            elif getattr(self.bins[0][1], "quantityName") is not None:
+                binsName = self.bins[0][1].quantityName
+            else:
+                binsName = None
+        else:
+            binsName = None
+
+        return maybeAdd({
+            "entries": floatToJson(self.entries),
+            "type": self.value.name if isinstance(self.value, Container) else self.value,
+            "data": {k: v.toJsonFragment(True) for k, v in self.pairs.items()},
+            }, **{"name": None if suppressName else self.quantity.name,
+                  "data:name": binsName})
 
     @staticmethod
-    def fromJsonFragment(json):
+    def fromJsonFragment(json, nameFromParent=None):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -122,7 +141,7 @@ class Categorize(Factory, Container):
                 raise JsonFormatException(json, "Categorize.data")
 
             out = Categorize.ed(entries, contentType, **pairs)
-            out.quantity.name = name
+            out.quantity.name = nameFromParent if name is None else name
             return out
 
         else:

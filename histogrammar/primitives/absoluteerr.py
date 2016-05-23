@@ -67,13 +67,13 @@ class AbsoluteErr(Factory, Container):
     def children(self):
         return []
 
-    def toJsonFragment(self): return maybeAdd({
+    def toJsonFragment(self, suppressName=False): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mae": floatToJson(self.mae),
-        }, name=self.quantity.name)
+        }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
-    def fromJsonFragment(json):
+    def fromJsonFragment(json, nameFromParent=None):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mae"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -93,7 +93,7 @@ class AbsoluteErr(Factory, Container):
                 raise JsonFormatException(json["mae"], "AbsoluteErr.mae")
 
             out = AbsoluteErr.ed(entries, mae)
-            out.quantity.name = name
+            out.quantity.name = nameFromParent if name is None else name
             return out
 
         else:

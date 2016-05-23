@@ -112,22 +112,31 @@ class Bin(Factory, Container):
     def children(self):
         return [self.underflow, self.overflow, self.nanflow] + self.values
 
-    def toJsonFragment(self): return maybeAdd({
-        "low": floatToJson(self.low),
-        "high": floatToJson(self.high),
-        "entries": floatToJson(self.entries),
-        "values:type": self.values[0].name,
-        "values": [x.toJsonFragment() for x in self.values],
-        "underflow:type": self.underflow.name,
-        "underflow": self.underflow.toJsonFragment(),
-        "overflow:type": self.overflow.name,
-        "overflow": self.overflow.toJsonFragment(),
-        "nanflow:type": self.nanflow.name,
-        "nanflow": self.nanflow.toJsonFragment(),
-        }, name=self.quantity.name)
+    def toJsonFragment(self, suppressName=False):
+        if getattr(self.values[0], "quantity", None) is not None:
+            binsName = self.values[0].quantity.name
+        elif getattr(self.values[0], "quantityName", None) is not None:
+            binsName = self.values[0].quantityName
+        else:
+            binsName = None
+
+        return maybeAdd({
+            "low": floatToJson(self.low),
+            "high": floatToJson(self.high),
+            "entries": floatToJson(self.entries),
+            "values:type": self.values[0].name,
+            "values": [x.toJsonFragment(True) for x in self.values],
+            "underflow:type": self.underflow.name,
+            "underflow": self.underflow.toJsonFragment(False),
+            "overflow:type": self.overflow.name,
+            "overflow": self.overflow.toJsonFragment(False),
+            "nanflow:type": self.nanflow.name,
+            "nanflow": self.nanflow.toJsonFragment(False),
+            }, **{"name": None if suppressName else self.quantity.name,
+                  "values:name": binsName})
 
     @staticmethod
-    def fromJsonFragment(json):
+    def fromJsonFragment(json, nameFromParent=None):
         if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values", "underflow:type", "underflow", "overflow:type", "overflow", "nanflow:type", "nanflow"], ["name"]):
             if isinstance(json["low"], (int, long, float)):
                 low = float(json["low"])
@@ -179,7 +188,7 @@ class Bin(Factory, Container):
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"])
 
             out = Bin.ed(low, high, entries, values, underflow, overflow, nanflow)
-            out.quantity.name = name
+            out.quantity.name = nameFromParent if name is None else name
             return out
 
         else:

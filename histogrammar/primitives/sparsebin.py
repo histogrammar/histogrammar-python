@@ -139,18 +139,37 @@ class SparselyBin(Factory, Container):
     def children(self):
         return [self.value, self.nanflow] + self.bins.values()
 
-    def toJsonFragment(self): return maybeAdd({
-        "binWidth": floatToJson(self.binWidth),
-        "entries": floatToJson(self.entries),
-        "bins:type": self.value.name if self.value is not None else self.contentType,
-        "bins": {str(i): v.toJsonFragment() for i, v in self.bins.items()},
-        "nanflow:type": self.nanflow.name,
-        "nanflow": self.nanflow.toJsonFragment(),
-        "origin": self.origin,
-        }, name=self.quantity.name)
+    def toJsonFragment(self, suppressName=False):
+        if self.value is not None:
+            if getattr(self.value, "quantity", None) is not None:
+                binsName = self.value.quantity.name
+            elif getattr(self.value, "quantityName", None) is not None:
+                binsName = self.value.quantityName
+            else:
+                binsName = None
+        elif len(self.bins) > 0:
+            if getattr(self.bins[0][1], "quantity") is not None:
+                binsName = self.bins[0][1].quantity.name
+            elif getattr(self.bins[0][1], "quantityName") is not None:
+                binsName = self.bins[0][1].quantityName
+            else:
+                binsName = None
+        else:
+            binsName = None
+
+        return maybeAdd({
+            "binWidth": floatToJson(self.binWidth),
+            "entries": floatToJson(self.entries),
+            "bins:type": self.value.name if self.value is not None else self.contentType,
+            "bins": {str(i): v.toJsonFragment(True) for i, v in self.bins.items()},
+            "nanflow:type": self.nanflow.name,
+            "nanflow": self.nanflow.toJsonFragment(False),
+            "origin": self.origin,
+            }, **{"name": None if suppressName else self.quantity.name,
+                  "bins:name": binsName})
 
     @staticmethod
-    def fromJsonFragment(json):
+    def fromJsonFragment(json, nameFromParent=None):
         if isinstance(json, dict) and hasKeys(json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"], ["name"]):
             if isinstance(json["binWidth"], (int, long, float)):
                 binWidth = float(json["binWidth"])
@@ -197,7 +216,7 @@ class SparselyBin(Factory, Container):
                 raise JsonFormatException(json, "SparselyBin.origin")
 
             out = SparselyBin.ed(binWidth, entries, json["bins:type"], bins, nanflow, origin)
-            out.quantity.name = name
+            out.quantity.name = nameFromParent if name is None else name
             return out
 
         else:

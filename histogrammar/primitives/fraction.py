@@ -72,15 +72,24 @@ class Fraction(Factory, Container):
     def children(self):
         return [self.numerator, self.denominator]
 
-    def toJsonFragment(self): return maybeAdd({
-        "entries": floatToJson(self.entries),
-        "type": self.numerator.name,
-        "numerator": self.numerator.toJsonFragment(),
-        "denominator": self.denominator.toJsonFragment(),
-        }, name=self.quantity.name)
+    def toJsonFragment(self, suppressName=False):
+        if getattr(self.numerator, "quantity", None) is not None:
+            binsName = self.numerator.quantity.name
+        elif getattr(self.numerator, "quantityName", None) is not None:
+            binsName = self.numerator.quantityName
+        else:
+            binsName = None
+
+        return maybeAdd({
+            "entries": floatToJson(self.entries),
+            "type": self.numerator.name,
+            "numerator": self.numerator.toJsonFragment(True),
+            "denominator": self.denominator.toJsonFragment(True),
+            }, **{"name": None if suppressName else self.quantity.name,
+                  "sub:name": binsName})
 
     @staticmethod
-    def fromJsonFragment(json):
+    def fromJsonFragment(json, nameFromParent=None):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "numerator", "denominator"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -103,7 +112,7 @@ class Fraction(Factory, Container):
             denominator = factory.fromJsonFragment(json["denominator"])
 
             out = Fraction.ed(entries, numerator, denominator)
-            out.quantity.name = name
+            out.quantity.name = nameFromParent if name is None else name
             return out
 
         else:

@@ -108,14 +108,14 @@ class Sample(Factory, Container):
     def children(self):
         return []
 
-    def toJsonFragment(self): return maybeAdd({
+    def toJsonFragment(self, suppressName=False): return maybeAdd({
         "entries": floatToJson(self.entries),
         "limit": floatToJson(self.limit),
         "values": [{"w": w, "v": y} for y, w in sorted(self.values, key=lambda (y, w): y)],
-        }, name=self.quantity.name)
+        }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
-    def fromJsonFragment(json):
+    def fromJsonFragment(json, nameFromParent=None):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "values"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = json["entries"]
@@ -164,7 +164,7 @@ class Sample(Factory, Container):
                 raise JsonFormatException(json["values"], "Sample.values")
 
             out = Sample.ed(entries, limit, values)
-            out.quantity.name = name
+            out.quantity.name = nameFromParent if name is None else name
             return out
 
         else:

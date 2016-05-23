@@ -75,14 +75,23 @@ class Stack(Factory, Container):
     def children(self):
         return self.values
 
-    def toJsonFragment(self): return maybeAdd({
-        "entries": floatToJson(self.entries),
-        "type": self.cuts[0][1].name,
-        "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment()} for atleast, sub in self.cuts],
-        }, name=self.quantity.name)
+    def toJsonFragment(self, suppressName=False):
+        if getattr(self.cuts[0][1], "quantity", None) is not None:
+            binsName = self.cuts[0][1].quantity.name
+        elif getattr(self.cuts[0][1], "quantityName", None) is not None:
+            binsName = self.cuts[0][1].quantityName
+        else:
+            binsName = None
+
+        return maybeAdd({
+            "entries": floatToJson(self.entries),
+            "type": self.cuts[0][1].name,
+            "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment(True)} for atleast, sub in self.cuts],
+            }, **{"name": None if suppressName else self.quantity.name,
+                  "data:name": binsName})
 
     @staticmethod
-    def fromJsonFragment(json):
+    def fromJsonFragment(json, nameFromParent=None):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -114,7 +123,7 @@ class Stack(Factory, Container):
                         raise JsonFormatException(json, "Stack.data {}".format(i))
 
                 out = Stack.ed(entries, *cuts)
-                out.quantity.name = name
+                out.quantity.name = nameFromParent if name is None else name
                 return out
 
             else:

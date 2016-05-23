@@ -94,20 +94,39 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
     def children(self):
         return [self.value, self.nanflow] + [v for c, v in self.bins]
 
-    def toJsonFragment(self): return maybeAdd({
-        "entries": floatToJson(self.entries),
-        "num": self.num,
-        "bins:type": self.clustering.value.name if self.clustering.value is not None else self.contentType,
-        "bins": [{"center": c, "value": v.toJsonFragment()} for c, v in self.bins],
-        "min": floatToJson(self.min),
-        "max": floatToJson(self.max),
-        "nanflow:type": self.nanflow.name,
-        "nanflow": self.nanflow.toJsonFragment(),
-        "tailDetail": self.tailDetail,
-        }, name=self.quantity.name)
+    def toJsonFragment(self, suppressName=False):
+        if self.value is not None:
+            if getattr(self.value, "quantity", None) is not None:
+                binsName = self.value.quantity.name
+            elif getattr(self.value, "quantityName", None) is not None:
+                binsName = self.value.quantityName
+            else:
+                binsName = None
+        elif len(self.bins) > 0:
+            if getattr(self.bins[0][1], "quantity") is not None:
+                binsName = self.bins[0][1].quantity.name
+            elif getattr(self.bins[0][1], "quantityName") is not None:
+                binsName = self.bins[0][1].quantityName
+            else:
+                binsName = None
+        else:
+            binsName = None
+
+        return maybeAdd({
+            "entries": floatToJson(self.entries),
+            "num": self.num,
+            "bins:type": self.clustering.value.name if self.clustering.value is not None else self.contentType,
+            "bins": [{"center": c, "value": v.toJsonFragment(True)} for c, v in self.bins],
+            "min": floatToJson(self.min),
+            "max": floatToJson(self.max),
+            "nanflow:type": self.nanflow.name,
+            "nanflow": self.nanflow.toJsonFragment(False),
+            "tailDetail": self.tailDetail,
+            }, **{"name": None if suppressName else self.quantity.name,
+                  "bins:name": binsName})
 
     @staticmethod
-    def fromJsonFragment(json):
+    def fromJsonFragment(json, nameFromParent=None):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "num", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow", "tailDetail"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -167,7 +186,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
                 raise JsonFormatException(json, "AdaptivelyBin.tailDetail")
 
             out = AdaptivelyBin.ed(entries, num, tailDetail, contentType, bins, min, max, nanflow)
-            out.quantity.name = name
+            out.quantity.name = nameFromParent if name is None else name
             return out
 
         else:
