@@ -308,23 +308,25 @@ class TestEverything(unittest.TestCase):
 
     def testAverageWithWeightingFactor(self):
         for i in xrange(11):
-            left, right = self.struct[:i], self.struct[i:]
 
+            left, right = self.struct[:i], self.struct[i:]
+            
             leftAveraging = Select(lambda x: x.int, Average(lambda x: x.double))
             rightAveraging = Select(lambda x: x.int, Average(lambda x: x.double))
-
+            
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
 
-            self.assertAlmostEqual(leftAveraging.value.mean, self.meanWeighted(map(lambda _: _.double, left), map(lambda _: _.int, left)))
-            self.assertAlmostEqual(rightAveraging.value.mean, self.meanWeighted(map(lambda _: _.double, right), map(lambda _: _.int, right)))
+            self.assertAlmostEqual(leftAveraging.value.mean, self.meanWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
+            self.assertAlmostEqual(rightAveraging.value.mean, self.meanWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
 
             finalResult = leftAveraging + rightAveraging
 
-            self.assertAlmostEqual(finalResult.value.mean, self.meanWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
+            self.assertAlmostEqual(finalResult.value.mean, self.meanWeighted(list(map(lambda _: _.double, self.struct)), list(map(lambda _: _.int, self.struct))))
 
             self.checkJson(leftAveraging)
             self.checkPickle(leftAveraging)
+
 
     ################################################################ Deviate
 
@@ -378,12 +380,12 @@ class TestEverything(unittest.TestCase):
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
 
-            self.assertAlmostEqual(leftDeviating.value.variance, self.varianceWeighted(map(lambda _: _.double, left), map(lambda _: _.int, left)))
-            self.assertAlmostEqual(rightDeviating.value.variance, self.varianceWeighted(map(lambda _: _.double, right), map(lambda _: _.int, right)))
+            self.assertAlmostEqual(leftDeviating.value.variance, self.varianceWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
+            self.assertAlmostEqual(rightDeviating.value.variance, self.varianceWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
 
             finalResult = leftDeviating + rightDeviating
 
-            self.assertAlmostEqual(finalResult.value.variance, self.varianceWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
+            self.assertAlmostEqual(finalResult.value.variance, self.varianceWeighted(list(map(lambda _: _.double, self.struct)), list(map(lambda _: _.int, self.struct))))
 
             self.checkJson(leftDeviating)
             self.checkPickle(leftDeviating)
