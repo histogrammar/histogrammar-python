@@ -111,7 +111,7 @@ class Sample(Factory, Container):
     def toJsonFragment(self): return maybeAdd({
         "entries": floatToJson(self.entries),
         "limit": floatToJson(self.limit),
-        "values": [{"w": w, "v": y} for y, w in sorted(self.values, key=lambda (y, w): y)],
+        "values": [{"w": w, "v": y} for y, w in sorted(self.values, key=lambda y_w: y_w[0])],
         }, name=self.quantity.name)
 
     @staticmethod
