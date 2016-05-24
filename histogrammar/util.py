@@ -20,6 +20,15 @@ import marshal
 import math
 import random
 import types
+import sys
+
+
+
+# Definitions for python 2/3 compatability 
+if sys.version_info[0] > 2:
+    basestring = str
+    xrange = range
+    long = int
 
 @functools.total_ordering
 class LessThanEverything(object):
@@ -175,8 +184,8 @@ class UserFcn(object):
             return (deserializeString, (self.__class__, self.expr, self.name))
 
         elif isinstance(self.expr, types.FunctionType):
-            refs = {n: self.expr.func_globals[n] for n in self.expr.func_code.co_names if n in self.expr.func_globals}
-            return (deserializeFunction, (self.__class__, marshal.dumps(self.expr.func_code), self.expr.func_name, self.expr.func_defaults, self.expr.func_closure, refs, self.name))
+            refs = {n: self.expr.__globals__[n] for n in self.expr.__code__.co_names if n in self.expr.__globals__}
+            return (deserializeFunction, (self.__class__, marshal.dumps(self.expr.__code__), self.expr.__name__, self.expr.__defaults__, self.expr.__closure__, refs, self.name))
 
         else:
             raise TypeError("unrecognized type for function: {}".format(type(self.expr)))
@@ -188,7 +197,7 @@ class UserFcn(object):
         out = isinstance(other, UserFcn) and self.name == other.name
 
         if isinstance(self.expr, types.FunctionType) and isinstance(other.expr, types.FunctionType):
-            out = out and (self.expr.func_code.co_code == other.expr.func_code.co_code)
+            out = out and (self.expr.__code__.co_code == other.expr.__code__.co_code)
         else:
             out = out and (self.expr == other.expr)
 
@@ -196,7 +205,7 @@ class UserFcn(object):
 
     def __hash__(self):
         if isinstance(self.expr, types.FunctionType):
-            return hash((None, self.expr.func_code.co_code, self.name))
+            return hash((None, self.expr.__code__.co_code, self.name))
         else:
             return hash((self.expr, self.name))
 
@@ -219,10 +228,10 @@ def deserializeString(cls, expr, name):
     out.name = name
     return out
 
-def deserializeFunction(cls, func_code, func_name, func_defaults, func_closure, refs, name):
+def deserializeFunction(cls, __code__, __name__, __defaults__, __closure__, refs, name):
     out = cls.__new__(cls)
     g = dict(globals(), **refs)
-    out.expr = types.FunctionType(marshal.loads(func_code), g, func_name, func_defaults, func_closure)
+    out.expr = types.FunctionType(marshal.loads(__code__), g, __name__, __defaults__, __closure__)
     out.name = name
     return out
 
@@ -470,9 +479,9 @@ class CentrallyBinMethods(object):
     @property
     def centersSet(self): return set(self.centers)
     @property
-    def centers(self): return map(lambda (x, v): x, self.bins)
+    def centers(self): return map(lambda x: x[0], self.bins)
     @property
-    def values(self): return map(lambda (x, v): v, self.bins)
+    def values(self): return map(lambda x: x[0], self.bins)
 
     def index(self, x):
         closestIndex = bisect.bisect_left(self.bins, (x, LessThanEverything()))

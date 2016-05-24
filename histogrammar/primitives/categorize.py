@@ -98,10 +98,10 @@ class Categorize(Factory, Container):
             else:
                 binsName = None
         elif len(self.pairs) > 0:
-            if getattr(self.pairs.values()[0], "quantity", None) is not None:
-                binsName = self.pairs.values()[0].quantity.name
-            elif getattr(self.pairs.values()[0], "quantityName", None) is not None:
-                binsName = self.pairs.values()[0].quantityName
+            if getattr(list(self.pairs.values())[0], "quantity", None) is not None:
+                binsName = list(self.pairs.values())[0].quantity.name
+            elif getattr(list(self.pairs.values())[0], "quantityName", None) is not None:
+                binsName = list(self.pairs.values())[0].quantityName
             else:
                 binsName = None
         else:

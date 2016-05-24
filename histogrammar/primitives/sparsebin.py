@@ -148,10 +148,10 @@ class SparselyBin(Factory, Container):
             else:
                 binsName = None
         elif len(self.bins) > 0:
-            if getattr(self.bins.values()[0], "quantity", None) is not None:
-                binsName = self.bins.values()[0].quantity.name
-            elif getattr(self.bins.values()[0], "quantityName", None) is not None:
-                binsName = self.bins.values()[0].quantityName
+            if getattr(list(self.bins.values())[0], "quantity", None) is not None:
+                binsName = list(self.bins.values())[0].quantity.name
+            elif getattr(list(self.bins.values())[0], "quantityName", None) is not None:
+                binsName = list(self.bins.values())[0].quantityName
             else:
                 binsName = None
         else:

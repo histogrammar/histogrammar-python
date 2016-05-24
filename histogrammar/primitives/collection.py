@@ -245,7 +245,7 @@ class Label(Factory, Container):
             raise ContainerException("all Label keys must be strings")
         if len(pairs) < 1:
             raise ContainerException("at least one pair required")
-        contentType = pairs.values()[0].name
+        contentType = list(pairs.values())[0].name
         if any(x.name != contentType for x in pairs.values()):
             raise ContainerException("all Label values must have the same type")
 
@@ -261,7 +261,7 @@ class Label(Factory, Container):
     @property
     def keys(self): return self.pairs.keys()
     @property
-    def values(self): return self.pairs.values()
+    def values(self): return list(self.pairs.values())
     @property
     def keySet(self): return set(self.pairs.keys())
 
@@ -365,7 +365,7 @@ class UntypedLabel(Factory, Container):
     @property
     def keys(self): return self.pairs.keys()
     @property
-    def values(self): return self.pairs.values()
+    def values(self): return list(self.pairs.values())
     @property
     def keySet(self): return set(self.pairs.keys())
 

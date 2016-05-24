@@ -62,6 +62,7 @@ class TestEverything(unittest.TestCase):
         if not any(_ > 0.0 for _ in w):
             return 0.0
         else:
+            w = list(w)
             return sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0)
 
     @staticmethod
@@ -76,6 +77,7 @@ class TestEverything(unittest.TestCase):
         if not any(_ > 0.0 for _ in w):
             return 0.0
         else:
+            w = list(w)
             return sum(xi**2 * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0) - math.pow(sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0), 2)
 
     @staticmethod
@@ -130,12 +132,12 @@ class TestEverything(unittest.TestCase):
             for _ in left: leftCounting.fill(_)
             for _ in right: rightCounting.fill(_)
 
-            self.assertEqual(leftCounting.value.entries, len(filter(lambda x: x > 0.0, left)))
-            self.assertEqual(rightCounting.value.entries, len(filter(lambda x: x > 0.0, right)))
+            self.assertEqual(leftCounting.value.entries, len(list(filter(lambda x: x > 0.0, left))))
+            self.assertEqual(rightCounting.value.entries, len(list(filter(lambda x: x > 0.0, right))))
 
             finalResult = leftCounting + rightCounting
 
-            self.assertEqual(finalResult.value.entries, len(filter(lambda x: x > 0.0, self.simple)))
+            self.assertEqual(finalResult.value.entries, len(list(filter(lambda x: x > 0.0, self.simple))))
 
             self.checkJson(leftCounting)
             self.checkJson(leftCounting)
@@ -306,23 +308,25 @@ class TestEverything(unittest.TestCase):
 
     def testAverageWithWeightingFactor(self):
         for i in xrange(11):
-            left, right = self.struct[:i], self.struct[i:]
 
+            left, right = self.struct[:i], self.struct[i:]
+            
             leftAveraging = Select(lambda x: x.int, Average(lambda x: x.double))
             rightAveraging = Select(lambda x: x.int, Average(lambda x: x.double))
-
+            
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
 
-            self.assertAlmostEqual(leftAveraging.value.mean, self.meanWeighted(map(lambda _: _.double, left), map(lambda _: _.int, left)))
-            self.assertAlmostEqual(rightAveraging.value.mean, self.meanWeighted(map(lambda _: _.double, right), map(lambda _: _.int, right)))
+            self.assertAlmostEqual(leftAveraging.value.mean, self.meanWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
+            self.assertAlmostEqual(rightAveraging.value.mean, self.meanWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
 
             finalResult = leftAveraging + rightAveraging
 
-            self.assertAlmostEqual(finalResult.value.mean, self.meanWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
+            self.assertAlmostEqual(finalResult.value.mean, self.meanWeighted(list(map(lambda _: _.double, self.struct)), list(map(lambda _: _.int, self.struct))))
 
             self.checkJson(leftAveraging)
             self.checkPickle(leftAveraging)
+
 
     ################################################################ Deviate
 
@@ -376,12 +380,12 @@ class TestEverything(unittest.TestCase):
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
 
-            self.assertAlmostEqual(leftDeviating.value.variance, self.varianceWeighted(map(lambda _: _.double, left), map(lambda _: _.int, left)))
-            self.assertAlmostEqual(rightDeviating.value.variance, self.varianceWeighted(map(lambda _: _.double, right), map(lambda _: _.int, right)))
+            self.assertAlmostEqual(leftDeviating.value.variance, self.varianceWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
+            self.assertAlmostEqual(rightDeviating.value.variance, self.varianceWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
 
             finalResult = leftDeviating + rightDeviating
 
-            self.assertAlmostEqual(finalResult.value.variance, self.varianceWeighted(map(lambda _: _.double, self.struct), map(lambda _: _.int, self.struct)))
+            self.assertAlmostEqual(finalResult.value.variance, self.varianceWeighted(list(map(lambda _: _.double, self.struct)), list(map(lambda _: _.int, self.struct))))
 
             self.checkJson(leftDeviating)
             self.checkPickle(leftDeviating)
@@ -615,7 +619,7 @@ class TestEverything(unittest.TestCase):
     def testBin(self):
         one = Bin(5, -3.0, 7.0, named("xaxis", lambda x: x))
         for _ in self.simple: one.fill(_)
-        self.assertEqual(map(lambda _: _.entries, one.values), [3.0, 2.0, 2.0, 1.0, 0.0])
+        self.assertEqual(list(map(lambda _: _.entries, one.values)), [3.0, 2.0, 2.0, 1.0, 0.0])
         self.assertEqual(one.underflow.entries, 1.0)
         self.assertEqual(one.overflow.entries, 1.0)
         self.assertEqual(one.nanflow.entries, 0.0)
@@ -623,7 +627,7 @@ class TestEverything(unittest.TestCase):
         two = Select(lambda x: x.bool, Bin(5, -3.0, 7.0, lambda x: x.double))
         for _ in self.struct: two.fill(_)
 
-        self.assertEqual(map(lambda _: _.entries, two.value.values), [2.0, 1.0, 1.0, 1.0, 0.0])
+        self.assertEqual(list(map(lambda _: _.entries, two.value.values)), [2.0, 1.0, 1.0, 1.0, 0.0])
         self.assertEqual(two.value.underflow.entries, 0.0)
         self.assertEqual(two.value.overflow.entries, 0.0)
         self.assertEqual(two.value.nanflow.entries, 0.0)
@@ -636,7 +640,7 @@ class TestEverything(unittest.TestCase):
     def testBinWithSum(self):
         one = Bin(5, -3.0, 7.0, named("xaxis", lambda x: x), Sum(named("yaxis", lambda x: 10.0)), Sum(lambda x: 10.0), Sum(lambda x: 10.0), Sum(lambda x: 10.0))
         for _ in self.simple: one.fill(_)
-        self.assertEqual(map(lambda _: _.sum, one.values), [30.0, 20.0, 20.0, 10.0, 0.0])
+        self.assertEqual(list(map(lambda _: _.sum, one.values)), [30.0, 20.0, 20.0, 10.0, 0.0])
         self.assertEqual(one.underflow.sum, 10.0)
         self.assertEqual(one.overflow.sum, 10.0)
         self.assertEqual(one.nanflow.sum, 0.0)
@@ -644,7 +648,7 @@ class TestEverything(unittest.TestCase):
         two = Select(lambda x: x.bool, Bin(5, -3.0, 7.0, lambda x: x.double, Sum(lambda x: 10.0), Sum(lambda x: 10.0), Sum(lambda x: 10.0), Sum(lambda x: 10.0)))
         for _ in self.struct: two.fill(_)
 
-        self.assertEqual(map(lambda _: _.sum, two.value.values), [20.0, 10.0, 10.0, 10.0, 0.0])
+        self.assertEqual(list(map(lambda _: _.sum, two.value.values)), [20.0, 10.0, 10.0, 10.0, 0.0])
         self.assertEqual(two.value.underflow.sum, 0.0)
         self.assertEqual(two.value.overflow.sum, 0.0)
         self.assertEqual(two.value.nanflow.sum, 0.0)
@@ -730,7 +734,7 @@ class TestEverything(unittest.TestCase):
         one = AdaptivelyBin(named("something", lambda x: x), num=5)
         for _ in self.simple: one.fill(_)
 
-        self.assertEqual(map(lambda (x, c): (x, c.entries), one.bins), [(-3.85, 2.0), (-1.1666666666666667, 3.0), (0.8, 2.0), (2.8, 2.0), (7.3, 1.0)])
+        self.assertEqual(list(map(lambda x_c: (x_c[0], x_c[1].entries),one.bins)), [(-3.85, 2.0), (-1.1666666666666667, 3.0), (0.8, 2.0), (2.8, 2.0), (7.3, 1.0)])
 
         self.checkJson(one)
         self.checkPickle(one)
