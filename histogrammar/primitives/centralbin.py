@@ -56,7 +56,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         super(CentrallyBin, self).__init__()
 
     def zero(self):
-        return CentrallyBin(map(lambda x, v: x, self.bins), self.quantity, self.value, self.nanflow.zero())
+        return CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, self.value, self.nanflow.zero())
 
     def __add__(self, other):
         if self.centers != other.centers:
@@ -64,7 +64,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
         newbins = [(c1, v1 + v2) for (c1, v1), (_, v2) in zip(self.bins, other.bins)]
 
-        out = CentrallyBin(map(lambda x, v: x, self.bins), self.quantity, self.value, self.nanflow + other.nanflow)
+        out = CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, self.value, self.nanflow + other.nanflow)
         out.entries = self.entries + other.entries
         out.bins = newbins
         out.min = minplus(self.min, other.min)

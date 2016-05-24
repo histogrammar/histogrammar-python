@@ -479,9 +479,9 @@ class CentrallyBinMethods(object):
     @property
     def centersSet(self): return set(self.centers)
     @property
-    def centers(self): return map(lambda x, v: x, self.bins)
+    def centers(self): return map(lambda x: x[0], self.bins)
     @property
-    def values(self): return map(lambda x, v: v, self.bins)
+    def values(self): return map(lambda x: x[0], self.bins)
 
     def index(self, x):
         closestIndex = bisect.bisect_left(self.bins, (x, LessThanEverything()))
