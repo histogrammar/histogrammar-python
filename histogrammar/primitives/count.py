@@ -53,10 +53,10 @@ class Count(Factory, Container):
     def children(self):
         return []
 
-    def toJsonFragment(self, suppressName=False): return floatToJson(self.entries)
+    def toJsonFragment(self, suppressName): return floatToJson(self.entries)
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
+    def fromJsonFragment(json, nameFromParent):
         if isinstance(json, (int, long, float)):
             return Count.ed(float(json))
         else:

@@ -60,14 +60,14 @@ class Select(Factory, Container):
     def children(self):
         return [self.value]
 
-    def toJsonFragment(self, suppressName=False): return maybeAdd({
+    def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.value.name,
         "data": self.value.toJsonFragment(False),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
+    def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -86,7 +86,7 @@ class Select(Factory, Container):
             else:
                 raise JsonFormatException(json, "Select.type")
 
-            value = factory.fromJsonFragment(json["data"])
+            value = factory.fromJsonFragment(json["data"], None)
 
             out = Select.ed(entries, value)
             out.quantity.name = nameFromParent if name is None else name
@@ -177,7 +177,7 @@ class Limit(Factory, Container):
     def children(self):
         return [] if self.value is None else [self.value]
 
-    def toJsonFragment(self, suppressName=False): return {
+    def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
         "limit": floatToJson(self.limit),
         "type": self.contentType,
@@ -185,7 +185,7 @@ class Limit(Factory, Container):
         }
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
+    def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -206,7 +206,7 @@ class Limit(Factory, Container):
             if json["data"] is None:
                 value = None
             else:
-                value = factory.fromJsonFragment(json["data"])
+                value = factory.fromJsonFragment(json["data"], None)
 
             return Limit.ed(entries, limit, contentType, value)
 
@@ -293,14 +293,14 @@ class Label(Factory, Container):
     def children(self):
         return self.values()
 
-    def toJsonFragment(self, suppressName=False): return {
+    def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
         "type": self.values[0].name,
         "data": {k: v.toJsonFragment(False) for k, v in self.pairs.items()},
         }
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
+    def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -313,7 +313,7 @@ class Label(Factory, Container):
                 raise JsonFormatException(json, "Label.type")
 
             if isinstance(json["data"], dict):
-                pairs = {k: factory.fromJsonFragment(v) for k, v in json["data"].items()}
+                pairs = {k: factory.fromJsonFragment(v, None) for k, v in json["data"].items()}
             else:
                 raise JsonFormatException(json, "Label.data")
 
@@ -397,13 +397,13 @@ class UntypedLabel(Factory, Container):
     def children(self):
         return self.values()
 
-    def toJsonFragment(self, suppressName=False): return {
+    def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
         "data": {k: {"type": v.name, "data": v.toJsonFragment(False)} for k, v in self.pairs.items()},
         }
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
+    def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -415,7 +415,7 @@ class UntypedLabel(Factory, Container):
                 for k, v in json["data"].items():
                     if isinstance(v, dict) and hasKeys(v.keys(), ["type", "data"]):
                         factory = Factory.registered[v["type"]]
-                        pairs[k] = factory.fromJsonFragment(v["data"])
+                        pairs[k] = factory.fromJsonFragment(v["data"], None)
 
                     else:
                         raise JsonFormatException(k, "UntypedLabel.data {}".format(v))
@@ -511,14 +511,14 @@ class Index(Factory, Container):
     def children(self):
         return self.values()
 
-    def toJsonFragment(self, suppressName=False): return {
+    def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
         "type": self.values[0].name,
         "data": [x.toJsonFragment(False) for x in self.values],
         }
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
+    def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -531,7 +531,7 @@ class Index(Factory, Container):
                 raise JsonFormatException(json, "Index.type")
 
             if isinstance(json["data"], list):
-                values = [factory.fromJsonFragment(x) for x in json["data"]]
+                values = [factory.fromJsonFragment(x, None) for x in json["data"]]
             else:
                 raise JsonFormatException(json, "Index.data")
 
@@ -620,13 +620,13 @@ class Branch(Factory, Container):
     def children(self):
         return self.values()
 
-    def toJsonFragment(self, suppressName=False): return {
+    def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
         "data": [{x.name: x.toJsonFragment(False)} for x in self.values],
         }
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
+    def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -639,7 +639,7 @@ class Branch(Factory, Container):
                     if isinstance(x, dict) and len(x) == 1:
                         (k, v), = x.items()
                         factory = Factory.registered[k]
-                        values.append(factory.fromJsonFragment(v))
+                        values.append(factory.fromJsonFragment(v, None))
                     else:
                         raise JsonFormatException(v, "Branch.data {}".format(i))
 

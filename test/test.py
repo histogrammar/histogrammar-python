@@ -330,8 +330,8 @@ class TestEverything(unittest.TestCase):
         for i in xrange(11):
             left, right = self.simple[:i], self.simple[i:]
 
-            leftDeviating = Deviate(lambda x: x)
-            rightDeviating = Deviate(lambda x: x)
+            leftDeviating = Deviate(named("something", lambda x: x))
+            rightDeviating = Deviate(named("something", lambda x: x))
 
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
@@ -613,7 +613,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Bin
 
     def testBin(self):
-        one = Bin(5, -3.0, 7.0, named("something", lambda x: x))
+        one = Bin(5, -3.0, 7.0, named("xaxis", lambda x: x))
         for _ in self.simple: one.fill(_)
         self.assertEqual(map(lambda _: _.entries, one.values), [3.0, 2.0, 2.0, 1.0, 0.0])
         self.assertEqual(one.underflow.entries, 1.0)
@@ -627,6 +627,27 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(two.value.underflow.entries, 0.0)
         self.assertEqual(two.value.overflow.entries, 0.0)
         self.assertEqual(two.value.nanflow.entries, 0.0)
+
+        self.checkJson(one)
+        self.checkJson(two)
+        self.checkPickle(one)
+        self.checkPickle(two)
+
+    def testBinWithSum(self):
+        one = Bin(5, -3.0, 7.0, named("xaxis", lambda x: x), Sum(named("yaxis", lambda x: 10.0)), Sum(lambda x: 10.0), Sum(lambda x: 10.0), Sum(lambda x: 10.0))
+        for _ in self.simple: one.fill(_)
+        self.assertEqual(map(lambda _: _.sum, one.values), [30.0, 20.0, 20.0, 10.0, 0.0])
+        self.assertEqual(one.underflow.sum, 10.0)
+        self.assertEqual(one.overflow.sum, 10.0)
+        self.assertEqual(one.nanflow.sum, 0.0)
+
+        two = Select(lambda x: x.bool, Bin(5, -3.0, 7.0, lambda x: x.double, Sum(lambda x: 10.0), Sum(lambda x: 10.0), Sum(lambda x: 10.0), Sum(lambda x: 10.0)))
+        for _ in self.struct: two.fill(_)
+
+        self.assertEqual(map(lambda _: _.sum, two.value.values), [20.0, 10.0, 10.0, 10.0, 0.0])
+        self.assertEqual(two.value.underflow.sum, 0.0)
+        self.assertEqual(two.value.overflow.sum, 0.0)
+        self.assertEqual(two.value.nanflow.sum, 0.0)
 
         self.checkJson(one)
         self.checkJson(two)
@@ -669,6 +690,12 @@ class TestEverything(unittest.TestCase):
         self.checkJson(one)
         self.checkPickle(one)
 
+        two = SparselyBin(1.0, named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
+        for _ in self.simple: two.fill(_)
+
+        self.checkJson(two)
+        self.checkPickle(two)
+
     ################################################################ CentrallyBin
 
     def testCentrallyBin(self):
@@ -692,17 +719,27 @@ class TestEverything(unittest.TestCase):
         self.checkJson(one)
         self.checkPickle(one)
 
+        two = CentrallyBin([-3.0, -1.0, 0.0, 1.0, 3.0, 10.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
+
+        self.checkJson(two)
+        self.checkPickle(two)
+
     ################################################################ AdaptivelyBin
 
     def testAdaptivelyBin(self):
         one = AdaptivelyBin(named("something", lambda x: x), num=5)
-
         for _ in self.simple: one.fill(_)
 
         self.assertEqual(map(lambda (x, c): (x, c.entries), one.bins), [(-3.85, 2.0), (-1.1666666666666667, 3.0), (0.8, 2.0), (2.8, 2.0), (7.3, 1.0)])
 
         self.checkJson(one)
         self.checkPickle(one)
+
+        two = AdaptivelyBin(named("something", lambda x: x), num=5, value=Sum(named("elsie", lambda x: x)))
+        for _ in self.simple: two.fill(_)
+
+        self.checkJson(two)
+        self.checkPickle(two)
 
     ################################################################ Fraction
 
@@ -717,7 +754,7 @@ class TestEverything(unittest.TestCase):
         self.checkPickle(fracking)
 
     def testFractionSum(self):
-        fracking = Fraction(lambda x: x > 0.0, Sum(lambda x: x))
+        fracking = Fraction(named("something", lambda x: x > 0.0), Sum(named("elsie", lambda x: x)))
         for _ in self.simple: fracking.fill(_)
 
         self.assertAlmostEqual(fracking.numerator.sum, 14.5)
@@ -747,6 +784,15 @@ class TestEverything(unittest.TestCase):
         self.checkJson(stacking)
         self.checkPickle(stacking)
 
+    def testStackWithSum(self):
+        stacking = Stack(named("something", lambda x: x), Sum(named("elsie", lambda x: x)), 0.0, 2.0, 4.0, 6.0, 8.0)
+        for _ in self.simple: stacking.fill(_)        
+
+        self.assertEqual([(k, v.entries) for k, v in stacking.cuts], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
+
+        self.checkJson(stacking)
+        self.checkPickle(stacking)
+
     ################################################################ Partition
 
     def testPartition(self):
@@ -759,7 +805,7 @@ class TestEverything(unittest.TestCase):
         self.checkPickle(partitioning)
 
     def testPartitionSum(self):
-        partitioning = Partition(lambda x: x, Sum(lambda x: x), 0.0, 2.0, 4.0, 6.0, 8.0)
+        partitioning = Partition(named("something", lambda x: x), Sum(named("elsie", lambda x: x)), 0.0, 2.0, 4.0, 6.0, 8.0)
         for _ in self.simple: partitioning.fill(_)
 
         self.assertAlmostEqual(partitioning.cuts[0][1].sum, -11.2)
@@ -778,6 +824,12 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(categorizing)
         self.checkPickle(categorizing)
+
+        categorizing2 = Categorize(named("something", lambda x: x.string[0]), Sum(named("elsie", lambda x: x.double)))
+        for _ in self.struct: categorizing2.fill(_)
+
+        self.checkJson(categorizing2)
+        self.checkPickle(categorizing2)
 
     ################################################################ Label
 

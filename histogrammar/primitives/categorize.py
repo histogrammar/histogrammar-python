@@ -89,19 +89,19 @@ class Categorize(Factory, Container):
     def children(self):
         return [self.value] + self.pairs.values()
 
-    def toJsonFragment(self, suppressName=False):
-        if self.value is not None:
+    def toJsonFragment(self, suppressName):
+        if isinstance(self.value, Container):
             if getattr(self.value, "quantity", None) is not None:
                 binsName = self.value.quantity.name
             elif getattr(self.value, "quantityName", None) is not None:
                 binsName = self.value.quantityName
             else:
                 binsName = None
-        elif len(self.bins) > 0:
-            if getattr(self.bins[0][1], "quantity") is not None:
-                binsName = self.bins[0][1].quantity.name
-            elif getattr(self.bins[0][1], "quantityName") is not None:
-                binsName = self.bins[0][1].quantityName
+        elif len(self.pairs) > 0:
+            if getattr(self.pairs.values()[0], "quantity", None) is not None:
+                binsName = self.pairs.values()[0].quantity.name
+            elif getattr(self.pairs.values()[0], "quantityName", None) is not None:
+                binsName = self.pairs.values()[0].quantityName
             else:
                 binsName = None
         else:
@@ -115,8 +115,8 @@ class Categorize(Factory, Container):
                   "data:name": binsName})
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
+    def fromJsonFragment(json, nameFromParent):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name", "data:name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -135,8 +135,15 @@ class Categorize(Factory, Container):
             else:
                 raise JsonFormatException(json, "Categorize.type")
 
+            if isinstance(json.get("data:name", None), basestring):
+                dataName = json["data:name"]
+            elif json.get("data:name", None) is None:
+                dataName = None
+            else:
+                raise JsonFormatException(json["data:name"], "Categorize.data:name")
+
             if isinstance(json["data"], dict):
-                pairs = {k: factory.fromJsonFragment(v) for k, v in json["data"].items()}
+                pairs = {k: factory.fromJsonFragment(v, dataName) for k, v in json["data"].items()}
             else:
                 raise JsonFormatException(json, "Categorize.data")
 

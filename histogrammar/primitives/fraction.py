@@ -72,7 +72,7 @@ class Fraction(Factory, Container):
     def children(self):
         return [self.numerator, self.denominator]
 
-    def toJsonFragment(self, suppressName=False):
+    def toJsonFragment(self, suppressName):
         if getattr(self.numerator, "quantity", None) is not None:
             binsName = self.numerator.quantity.name
         elif getattr(self.numerator, "quantityName", None) is not None:
@@ -89,8 +89,8 @@ class Fraction(Factory, Container):
                   "sub:name": binsName})
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "numerator", "denominator"], ["name"]):
+    def fromJsonFragment(json, nameFromParent):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "numerator", "denominator"], ["name", "sub:name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -108,8 +108,15 @@ class Fraction(Factory, Container):
             else:
                 raise JsonFormatException(json, "Fraction.type")
 
-            numerator = factory.fromJsonFragment(json["numerator"])
-            denominator = factory.fromJsonFragment(json["denominator"])
+            if isinstance(json.get("sub:name", None), basestring):
+                subName = json["sub:name"]
+            elif json.get("sub:name", None) is None:
+                subName = None
+            else:
+                raise JsonFormatException(json["sub:name"], "Fraction.sub:name")
+
+            numerator = factory.fromJsonFragment(json["numerator"], subName)
+            denominator = factory.fromJsonFragment(json["denominator"], subName)
 
             out = Fraction.ed(entries, numerator, denominator)
             out.quantity.name = nameFromParent if name is None else name

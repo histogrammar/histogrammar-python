@@ -139,8 +139,8 @@ class SparselyBin(Factory, Container):
     def children(self):
         return [self.value, self.nanflow] + self.bins.values()
 
-    def toJsonFragment(self, suppressName=False):
-        if self.value is not None:
+    def toJsonFragment(self, suppressName):
+        if isinstance(self.value, Container):
             if getattr(self.value, "quantity", None) is not None:
                 binsName = self.value.quantity.name
             elif getattr(self.value, "quantityName", None) is not None:
@@ -148,10 +148,10 @@ class SparselyBin(Factory, Container):
             else:
                 binsName = None
         elif len(self.bins) > 0:
-            if getattr(self.bins[0][1], "quantity") is not None:
-                binsName = self.bins[0][1].quantity.name
-            elif getattr(self.bins[0][1], "quantityName") is not None:
-                binsName = self.bins[0][1].quantityName
+            if getattr(self.bins.values()[0], "quantity", None) is not None:
+                binsName = self.bins.values()[0].quantity.name
+            elif getattr(self.bins.values()[0], "quantityName", None) is not None:
+                binsName = self.bins.values()[0].quantityName
             else:
                 binsName = None
         else:
@@ -169,8 +169,8 @@ class SparselyBin(Factory, Container):
                   "bins:name": binsName})
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"], ["name"]):
+    def fromJsonFragment(json, nameFromParent):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"], ["name", "bins:name"]):
             if isinstance(json["binWidth"], (int, long, float)):
                 binWidth = float(json["binWidth"])
             else:
@@ -192,6 +192,12 @@ class SparselyBin(Factory, Container):
                 binsFactory = Factory.registered[json["bins:type"]]
             else:
                 raise JsonFormatException(json, "SparselyBin.bins:type")
+            if isinstance(json.get("bins:name", None), basestring):
+                binsName = json["bins:name"]
+            elif json.get("bins:name", None) is None:
+                binsName = None
+            else:
+                raise JsonFormatException(json["bins:name"], "SparselyBin.bins:name")
             if isinstance(json["bins"], dict):
                 for i in json["bins"]:
                     try:
@@ -199,7 +205,7 @@ class SparselyBin(Factory, Container):
                     except ValueError:
                         raise JsonFormatException(i, "SparselyBin.bins key must be an integer")
 
-                bins = {int(i): binsFactory.fromJsonFragment(v) for i, v in json["bins"].items()}
+                bins = {int(i): binsFactory.fromJsonFragment(v, binsName) for i, v in json["bins"].items()}
 
             else:
                 raise JsonFormatException(json, "SparselyBin.bins")
@@ -208,7 +214,7 @@ class SparselyBin(Factory, Container):
                 nanflowFactory = Factory.registered[json["nanflow:type"]]
             else:
                 raise JsonFormatException(json, "Bin.nanflow:type")
-            nanflow = nanflowFactory.fromJsonFragment(json["nanflow"])
+            nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
 
             if isinstance(json["origin"], (int, long, float)):
                 origin = json["origin"]

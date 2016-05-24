@@ -63,13 +63,13 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
-    def toJsonFragment(self, suppressName=False): return maybeAdd({
+    def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "min": floatToJson(self.min),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
+    def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "min"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
@@ -150,13 +150,13 @@ class Maximize(Factory, Container):
     def children(self):
         return []
 
-    def toJsonFragment(self, suppressName=False): return maybeAdd({
+    def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "max": floatToJson(self.max),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
+    def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "max"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])

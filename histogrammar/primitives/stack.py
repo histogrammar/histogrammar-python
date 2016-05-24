@@ -75,7 +75,7 @@ class Stack(Factory, Container):
     def children(self):
         return self.values
 
-    def toJsonFragment(self, suppressName=False):
+    def toJsonFragment(self, suppressName):
         if getattr(self.cuts[0][1], "quantity", None) is not None:
             binsName = self.cuts[0][1].quantity.name
         elif getattr(self.cuts[0][1], "quantityName", None) is not None:
@@ -91,8 +91,8 @@ class Stack(Factory, Container):
                   "data:name": binsName})
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
+    def fromJsonFragment(json, nameFromParent):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name", "data:name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -110,6 +110,13 @@ class Stack(Factory, Container):
             else:
                 raise JsonFormatException(json, "Stack.type")
 
+            if isinstance(json.get("data:name", None), basestring):
+                dataName = json["data:name"]
+            elif json.get("data:name", None) is None:
+                dataName = None
+            else:
+                raise JsonFormatException(json["data:name"], "Stack.data:name")
+
             if isinstance(json["data"], list):
                 cuts = []
                 for i, elementPair in enumerate(json["data"]):
@@ -117,7 +124,7 @@ class Stack(Factory, Container):
                         if elementPair["atleast"] not in ("nan", "inf", "-inf") and not isinstance(elementPair["atleast"], (int, long, float)):
                             raise JsonFormatException(json, "Stack.data {} atleast".format(i))
 
-                        cuts.append((float(elementPair["atleast"]), factory.fromJsonFragment(elementPair["data"])))
+                        cuts.append((float(elementPair["atleast"]), factory.fromJsonFragment(elementPair["data"], dataName)))
 
                     else:
                         raise JsonFormatException(json, "Stack.data {}".format(i))

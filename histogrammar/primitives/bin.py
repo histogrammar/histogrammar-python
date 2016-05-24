@@ -112,7 +112,7 @@ class Bin(Factory, Container):
     def children(self):
         return [self.underflow, self.overflow, self.nanflow] + self.values
 
-    def toJsonFragment(self, suppressName=False):
+    def toJsonFragment(self, suppressName):
         if getattr(self.values[0], "quantity", None) is not None:
             binsName = self.values[0].quantity.name
         elif getattr(self.values[0], "quantityName", None) is not None:
@@ -136,8 +136,8 @@ class Bin(Factory, Container):
                   "values:name": binsName})
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values", "underflow:type", "underflow", "overflow:type", "overflow", "nanflow:type", "nanflow"], ["name"]):
+    def fromJsonFragment(json, nameFromParent):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values", "underflow:type", "underflow", "overflow:type", "overflow", "nanflow:type", "nanflow"], ["name", "values:name"]):
             if isinstance(json["low"], (int, long, float)):
                 low = float(json["low"])
             else:
@@ -164,8 +164,14 @@ class Bin(Factory, Container):
                 valuesFactory = Factory.registered[json["values:type"]]
             else:
                 raise JsonFormatException(json, "Bin.values:type")
+            if isinstance(json.get("values:name", None), basestring):
+                valuesName = json["values:name"]
+            elif json.get("values:name", None) is None:
+                valuesName = None
+            else:
+                raise JsonFormatException(json["values:name"], "Bin.values:name")
             if isinstance(json["values"], list):
-                values = [valuesFactory.fromJsonFragment(x) for x in json["values"]]
+                values = [valuesFactory.fromJsonFragment(x, valuesName) for x in json["values"]]
             else:
                 raise JsonFormatException(json, "Bin.values")
 
@@ -173,19 +179,19 @@ class Bin(Factory, Container):
                 underflowFactory = Factory.registered[json["underflow:type"]]
             else:
                 raise JsonFormatException(json, "Bin.underflow:type")
-            underflow = underflowFactory.fromJsonFragment(json["underflow"])
+            underflow = underflowFactory.fromJsonFragment(json["underflow"], None)
 
             if isinstance(json["overflow:type"], basestring):
                 overflowFactory = Factory.registered[json["overflow:type"]]
             else:
                 raise JsonFormatException(json, "Bin.overflow:type")
-            overflow = overflowFactory.fromJsonFragment(json["overflow"])
+            overflow = overflowFactory.fromJsonFragment(json["overflow"], None)
 
             if isinstance(json["nanflow:type"], basestring):
                 nanflowFactory = Factory.registered[json["nanflow:type"]]
             else:
                 raise JsonFormatException(json, "Bin.nanflow:type")
-            nanflow = nanflowFactory.fromJsonFragment(json["nanflow"])
+            nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
 
             out = Bin.ed(low, high, entries, values, underflow, overflow, nanflow)
             out.quantity.name = nameFromParent if name is None else name

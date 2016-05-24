@@ -60,13 +60,13 @@ class Sum(Factory, Container):
     def children(self):
         return []
 
-    def toJsonFragment(self, suppressName=False): return maybeAdd({
+    def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "sum": floatToJson(self.sum),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
-    def fromJsonFragment(json, nameFromParent=None):
+    def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sum"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
