@@ -21,12 +21,23 @@ from histogrammar.primitives.count import *
 class Stack(Factory, Container):
     @staticmethod
     def ed(entries, *cuts):
-        if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+        if isinstance(entries, (int, long, float)):
+            if entries < 0.0:
+                raise ContainerException("entries ({}) cannot be negative".format(entries))
+            out = Stack(None, None, *cuts)
+            out.entries = float(entries)
+            return out
 
-        out = Stack(None, None, *cuts)
-        out.entries = float(entries)
-        return out
+        elif isinstance(entries, Container) and all(isinstance(x, Container) for x in cuts):
+            ys = [entries] + list(cuts)
+            entries = sum(y.entries for y in ys)
+            cuts = []
+            for i in xrange(len(ys)):
+                cuts.append((float("nan"), reduce(lambda a, b: a + b, ys[i:])))
+            return Stack.ed(entries, *cuts)
+
+        else:
+            raise TypeError("wrong arguments for Stack.ed")
 
     @staticmethod
     def ing(quantity, value, *cuts):
@@ -140,7 +151,7 @@ class Stack(Factory, Container):
             raise JsonFormatException(json, "Stack")
 
     def __repr__(self):
-        return "Stack[{}, thresholds=[{}]]".format(self.cuts[0], ", ".join(map(str, self.thresholds)))
+        return "Stack[{}, thresholds=[{}]]".format(self.cuts[0][1], ", ".join(map(str, self.thresholds)))
 
     def __eq__(self, other):
         return isinstance(other, Stack) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.cuts == other.cuts
