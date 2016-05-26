@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types
+
 from histogrammar.defs import *
 from histogrammar.util import *
 from histogrammar.primitives.count import *
@@ -21,36 +23,37 @@ from histogrammar.primitives.count import *
 class Stack(Factory, Container):
     @staticmethod
     def ed(entries, *cuts):
-        if isinstance(entries, (int, long, float)):
-            if entries < 0.0:
-                raise ContainerException("entries ({}) cannot be negative".format(entries))
-            out = Stack(None, None, *cuts)
-            out.entries = float(entries)
-            return out
-
-        elif isinstance(entries, Container) and all(isinstance(x, Container) for x in cuts):
-            ys = [entries] + list(cuts)
-            entries = sum(y.entries for y in ys)
-            cuts = []
-            for i in xrange(len(ys)):
-                cuts.append((float("nan"), reduce(lambda a, b: a + b, ys[i:])))
-            return Stack.ed(entries, *cuts)
-
-        else:
-            raise TypeError("wrong arguments for Stack.ed")
+        if entries < 0.0:
+            raise ContainerException("entries ({}) cannot be negative".format(entries))
+        out = Stack(None, None, *cuts)
+        out.entries = float(entries)
+        return out
 
     @staticmethod
     def ing(quantity, value, *cuts):
         return Stack(quantity, value, *cuts)
 
-    def __init__(self, quantity, value, *cuts):
-        self.entries = 0.0
-        self.quantity = serializable(quantity)
-        if value is None:
-            self.cuts = cuts
+    def __init__(self, *args):
+        if len(args) >= 2 and isinstance(args[0], (UserFcn, types.FunctionType, type(None), basestring)):
+            quantity = args[0]
+            value = args[1]
+            cuts = args[2:]
+            self.entries = 0.0
+            self.quantity = serializable(quantity)
+            if value is None:
+                self.cuts = cuts
+            else:
+                self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + cuts)
+            super(Stack, self).__init__()
+
         else:
-            self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + cuts)
-        super(Stack, self).__init__()
+            ys = args
+            self.entries = sum(y.entries for y in ys)
+            self.quantity = lambda x: float("nan")
+            self.cuts = []
+            for i in xrange(len(ys)):
+                self.cuts.append((float("nan"), reduce(lambda a, b: a + b, ys[i:])))
+            super(Stack, self).__init__()
 
     @property
     def thresholds(self): return [k for k, v in self.cuts]
