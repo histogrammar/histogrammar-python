@@ -43,7 +43,10 @@ class Average(Factory, Container):
         if isinstance(other, Average):
             out = Average(self.quantity)
             out.entries = self.entries + other.entries
-            out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
+            if out.entries == 0.0:
+                out.mean = 0.0
+            else:
+                out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
             return out
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
