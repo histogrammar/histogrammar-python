@@ -52,7 +52,10 @@ class Deviate(Factory, Container):
         if isinstance(other, Deviate):
             out = Deviate(self.quantity)
             out.entries = self.entries + other.entries
-            out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
+            if out.entries == 0.0:
+                out.mean = (self.mean + other.mean)/2.0
+            else:
+                out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
             out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + self.entries*self.mean**2 + other.entries*other.mean**2 - 2.0*out.mean*(self.entries*self.mean + other.entries*other.mean) + out.mean*out.mean*out.entries
             return out
         else:

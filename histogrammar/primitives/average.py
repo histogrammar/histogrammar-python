@@ -44,7 +44,7 @@ class Average(Factory, Container):
             out = Average(self.quantity)
             out.entries = self.entries + other.entries
             if out.entries == 0.0:
-                out.mean = 0.0
+                out.mean = (self.mean + other.mean)/2.0
             else:
                 out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
             return out

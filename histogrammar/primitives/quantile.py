@@ -56,6 +56,8 @@ class Quantile(Factory, Container):
                     out.estimate = other.estimate
                 elif math.isnan(other.estimate):
                     out.estimate = self.estimate
+                elif out.entries == 0.0:
+                    out.estimate = (self.estimate + other.estimate) / 2.0
                 else:
                     out.estimate = (self.estimate*self.entries + other.estimate*other.entries) / (self.entries + other.entries)
                 return out
