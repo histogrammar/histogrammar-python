@@ -19,7 +19,6 @@ import pickle
 import unittest
 
 from histogrammar import *
-from histogrammar.histogram import Histogram
 
 class Struct(object):
     def __init__(self, x, y, z, w):

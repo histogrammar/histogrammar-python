@@ -40,8 +40,8 @@ class Factory(object):
 
     def __init__(self):
         try:
-            import histogrammar.histogram
-            histogrammar.histogram.addImplicitMethods(self)
+            import histogrammar.specialized
+            histogrammar.specialized.addImplicitMethods(self)
         except (ImportError, AttributeError):
             pass
 

@@ -27,10 +27,14 @@ from histogrammar.primitives.bag import *
 from histogrammar.primitives.bin import *
 from histogrammar.primitives.deviate import *
 from histogrammar.primitives.fraction import *
+from histogrammar.primitives.limit import *
 from histogrammar.primitives.minmax import *
 from histogrammar.primitives.partition import *
 from histogrammar.primitives.quantile import *
 from histogrammar.primitives.sample import *
+from histogrammar.primitives.select import *
 from histogrammar.primitives.sparsebin import *
 from histogrammar.primitives.stack import *
 from histogrammar.primitives.sum import *
+
+from histogrammar.specialized import Histogram

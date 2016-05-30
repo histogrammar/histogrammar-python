@@ -19,7 +19,6 @@ import pickle
 import unittest
 
 from histogrammar import *
-from histogrammar.histogram import Histogram
 
 class TestEverything(unittest.TestCase):
     simple = [3.4, 2.2, -1.8, 0.0, 7.3, -4.7, 1.6, 0.0, -3.0, -1.7]

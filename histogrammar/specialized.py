@@ -16,7 +16,7 @@
 
 from histogrammar.defs import unweighted
 from histogrammar.util import serializable
-from histogrammar.primitives.collection import Select
+from histogrammar.primitives.select import Select
 from histogrammar.primitives.bin import Bin
 from histogrammar.primitives.count import Count
 
