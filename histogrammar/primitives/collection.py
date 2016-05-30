@@ -17,9 +17,11 @@
 from histogrammar.defs import *
 from histogrammar.util import *
 
+class Collection(object): pass
+
 ################################################################ Label
 
-class Label(Factory, Container):
+class Label(Factory, Container, Collection):
     @staticmethod
     def ed(entries, **pairs):
         if entries < 0.0:
@@ -58,7 +60,11 @@ class Label(Factory, Container):
     @property
     def keySet(self): return set(self.pairs.keys())
 
-    def __call__(self, x): return self.pairs[x]
+    def __call__(self, x, *rest):
+        if len(rest) == 0:
+            return self.pairs[x]
+        else:
+            return self.pairs[x](*rest)
     def get(self, x): return self.pairs.get(x, None)
     def getOrElse(self, x, default): return self.pairs.get(x, default)
 
@@ -128,7 +134,7 @@ Factory.register(Label)
 
 ################################################################ UntypedLabel
 
-class UntypedLabel(Factory, Container):
+class UntypedLabel(Factory, Container, Collection):
     @staticmethod
     def ed(entries, **pairs):
         if entries < 0.0:
@@ -162,7 +168,11 @@ class UntypedLabel(Factory, Container):
     @property
     def keySet(self): return set(self.pairs.keys())
 
-    def __call__(self, x): return self.pairs[x]
+    def __call__(self, x, *rest):
+        if len(rest) == 0:
+            return self.pairs[x]
+        else:
+            return self.pairs[x](*rest)
     def get(self, x): return self.pairs.get(x, None)
     def getOrElse(self, x, default): return self.pairs.get(x, default)
 
@@ -237,7 +247,7 @@ Factory.register(UntypedLabel)
 
 ################################################################ Index
 
-class Index(Factory, Container):
+class Index(Factory, Container, Collection):
     @staticmethod
     def ed(entries, *values):
         if entries < 0.0:
@@ -266,8 +276,11 @@ class Index(Factory, Container):
     @property
     def size(self): return len(self.values)
 
-    def __call__(self, i): return self.values[i]
-
+    def __call__(self, i, *rest):
+        if len(rest) == 0:
+            return self.values[i]
+        else:
+            return self.values[i](*rest)
     def get(self, i):
         if i < 0 or i >= len(self.values):
             return None
@@ -346,7 +359,7 @@ Factory.register(Index)
 
 ################################################################ Branch
 
-class Branch(Factory, Container):
+class Branch(Factory, Container, Collection):
     @staticmethod
     def ed(entries, *values):
         if entries < 0.0:
@@ -375,8 +388,11 @@ class Branch(Factory, Container):
     @property
     def size(self): return len(self.values)
 
-    def __call__(self, i): return self.values[i]
-
+    def __call__(self, i, *rest):
+        if len(rest) == 0:
+            return self.values[i]
+        else:
+            return self.values[i](*rest)
     def get(self, i):
         if i < 0 or i >= len(self.values):
             return None

@@ -95,3 +95,14 @@ def increment(container, datum):
 
 def combine(container1, container2):
     return container1 + container2
+
+i0 = 0
+i1 = 1
+i2 = 2
+i3 = 3
+i4 = 4
+i5 = 5
+i6 = 6
+i7 = 7
+i8 = 8
+i9 = 9
