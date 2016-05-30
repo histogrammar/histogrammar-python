@@ -100,7 +100,7 @@ class AbsoluteErr(Factory, Container):
             raise JsonFormatException(json, "AbsoluteErr")
         
     def __repr__(self):
-        return "AbsoluteErr[{}]".format(self.mae)
+        return "<AbsoluteErr mae={}>".format(self.mae)
 
     def __eq__(self, other):
         return isinstance(other, AbsoluteErr) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.mae, other.mae)

@@ -235,7 +235,7 @@ class SparselyBin(Factory, Container):
             contentType = self.value.name
         else:
             contentType = repr(min(self.bins.items())[1])
-        return "SparselyBin[binWidth={}, bins=[{}, size={}], nanflow={}, origin={}]".format(self.binWidth, contentType, len(self.bins), self.nanflow, self.origin)
+        return "<SparselyBin binWidth={} bins={} nanflow={}>".format(self.binWidth, self.value.name if self.value is not None else self.contentType, self.nanflow.name)
 
     def __eq__(self, other):
         return isinstance(other, SparselyBin) and exact(self.binWidth, other.binWidth) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.bins == other.bins and self.nanflow == other.nanflow and self.origin == other.origin

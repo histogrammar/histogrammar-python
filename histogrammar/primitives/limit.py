@@ -125,7 +125,7 @@ class Limit(Factory, Container):
             raise JsonFormatException(json, "Limit")
 
     def __repr__(self):
-        return "Limit[{}]".format("saturated" if self.saturated else self.value.get)
+        return "<Limit value={}>".format("saturated" if self.saturated else self.value.name)
 
     def __eq__(self, other):
         return isinstance(other, Limit) and exact(self.entries, other.entries) and exact(self.limit, other.limit) and self.contentType == other.contentType and self.value == other.value

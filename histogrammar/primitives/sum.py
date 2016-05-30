@@ -93,7 +93,7 @@ class Sum(Factory, Container):
             raise JsonFormatException(json, "Sum")
         
     def __repr__(self):
-        return "Sum[{}]".format(self.sum)
+        return "<Sum sum={}>".format(self.sum)
 
     def __eq__(self, other):
         return isinstance(other, Sum) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.sum, other.sum)

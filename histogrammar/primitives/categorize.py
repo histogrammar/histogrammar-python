@@ -47,7 +47,7 @@ class Categorize(Factory, Container):
     @property
     def keys(self): return self.pairs.keys()
     @property
-    def values(self): return self.pairs.values()
+    def values(self): return list(self.pairs.values())
     @property
     def keySet(self): return set(self.pairs.keys())
 
@@ -155,7 +155,7 @@ class Categorize(Factory, Container):
             raise JsonFormatException(json, "Categorize")
 
     def __repr__(self):
-        return "Categorize[{}..., size={}]".format(self.values[0] if self.size > 0 else self.value, self.size)
+        return "<Categorize values={} size={}".format(self.values[0].name if self.size > 0 else self.value.name, self.size)
 
     def __eq__(self, other):
         return isinstance(other, Categorize) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.pairs == other.pairs

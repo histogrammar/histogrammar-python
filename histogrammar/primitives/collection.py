@@ -122,7 +122,7 @@ class Label(Factory, Container, Collection):
             raise JsonFormatException(json, "Label")
 
     def __repr__(self):
-        return "Label[{}..., size={}]".format(repr(self.values[0]), self.size)
+        return "<Label values={} size={}>".format(self.values[0].name, self.size)
 
     def __eq__(self, other):
         return isinstance(other, Label) and exact(self.entries, other.entries) and self.pairs == other.pairs
@@ -232,10 +232,7 @@ class UntypedLabel(Factory, Container, Collection):
             raise JsonFormatException(json, "UntypedLabel")
 
     def __repr__(self):
-        if self.size == 0:
-            return "UntypedLabel[size={}]".format(self.size)
-        else:
-            return "UntypedLabel[{}..., size={}]".format(repr(self.values[0]), self.size)
+        return "<UntypedLabel size={}>".format(self.size)
 
     def __eq__(self, other):
         return isinstance(other, UntypedLabel) and exact(self.entries, other.entries) and self.pairs == other.pairs
@@ -347,7 +344,7 @@ class Index(Factory, Container, Collection):
             raise JsonFormatException(json, "Index")
 
     def __repr__(self):
-        return "Index[{}..., size={}]".format(repr(self.values[0]), self.size)
+        return "<Index values={} size={}>".format(self.values[0].name, self.size)
 
     def __eq__(self, other):
         return isinstance(other, Index) and exact(self.entries, other.entries) and self.values == other.values
@@ -461,7 +458,7 @@ class Branch(Factory, Container, Collection):
             raise JsonFormatException(json, "Branch")
         
     def __repr__(self):
-        return "Branch[{}]".format(", ".join(map(repr, self.values)))
+        return "<Branch {}>".format(" ".join("i" + str(i) + "=" + v.name for i, v in enumerate(self.values)))
 
     def __eq__(self, other):
         return isinstance(other, Branch) and exact(self.entries, other.entries) and self.values == other.values

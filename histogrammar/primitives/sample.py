@@ -171,7 +171,7 @@ class Sample(Factory, Container):
             raise JsonFormatException(json, "Sample")
 
     def __repr__(self):
-        return "Sample[{}, size={}]".format("empty" if self.isEmpty else repr(self.values[0][0]) + "...", self.size)
+        return "<Sample size={}>".format(self.size)
 
     def __eq__(self, other):
         return isinstance(other, Sample) and self.entries == other.entries and self.quantity == other.quantity and self.limit == other.limit and self.values == other.values

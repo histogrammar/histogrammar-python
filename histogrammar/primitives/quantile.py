@@ -128,7 +128,7 @@ class Quantile(Factory, Container):
             raise JsonFormatException(json, "Quantile")
 
     def __repr__(self):
-        return "Quantile[{}, {}]".format(self.target, self.estimate)
+        return "<Quantile target={} estimate={}>".format(self.target, self.estimate)
 
     def __eq__(self, other):
         return isinstance(other, Quantile) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.target, other.target) and exact(self.estimate, other.estimate)

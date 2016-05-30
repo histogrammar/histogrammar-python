@@ -126,7 +126,7 @@ class Fraction(Factory, Container):
             raise JsonFormatException(json, "Fraction")
 
     def __repr__(self):
-        return "Fraction[{}, {}]".format(self.numerator, self.denominator)
+        return "<Fraction values={}>".format(self.numerator.name)
 
     def __eq__(self, other):
         return isinstance(other, Fraction) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.numerator == other.numerator and self.denominator == other.denominator

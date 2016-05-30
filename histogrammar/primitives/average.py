@@ -98,7 +98,7 @@ class Average(Factory, Container):
             raise JsonFormatException(json, "Average")
         
     def __repr__(self):
-        return "Average[{}]".format(self.mean)
+        return "<Average mean={}>".format(self.mean)
 
     def __eq__(self, other):
         return isinstance(other, Average) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.mean, other.mean)

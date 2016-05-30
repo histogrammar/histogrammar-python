@@ -142,7 +142,7 @@ class Bag(Factory, Container):
             raise JsonFormatException(json, "Bag")
         
     def __repr__(self):
-        return "Bag[{}]".format("size=0" if len(self.values) == 0 else repr(self.values[0]) + "..., size=" + str(len(self.values)))
+        return "<Bag size={}>".format(len(self.values))
 
     def __eq__(self, other):
         return isinstance(other, Bag) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.values == other.values

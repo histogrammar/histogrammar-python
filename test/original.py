@@ -99,6 +99,9 @@ class TestEverything(unittest.TestCase):
     def checkPickle(self, x):
         self.assertEqual(pickle.loads(pickle.dumps(x)), x)
 
+    def checkName(self, x):
+        x
+
     ################################################################ Count
 
     def testCount(self):
@@ -120,6 +123,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftCounting)
             self.checkPickle(leftCounting)
+            self.checkName(leftCounting)
 
     def testCountWithFilter(self):
         for i in xrange(11):
@@ -162,6 +166,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftSumming)
             self.checkPickle(leftSumming)
+            self.checkName(leftSumming)
        
     def testSumWithFilter(self):
         for i in xrange(11):
@@ -202,6 +207,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftSumming)
             self.checkPickle(leftSumming)
+            self.checkName(leftSumming)
 
     def testSumStringFunctions(self):
         for i in xrange(11):
@@ -222,6 +228,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftSumming)
             self.checkPickle(leftSumming)
+            self.checkName(leftSumming)
        
     def testSumWithFilterStringFunctions(self):
         for i in xrange(11):
@@ -242,6 +249,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftSumming)
             self.checkPickle(leftSumming)
+            self.checkName(leftSumming)
 
     def testSumWithWeightingFactorStringFunctions(self):
         for i in xrange(11):
@@ -262,6 +270,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftSumming)
             self.checkPickle(leftSumming)
+            self.checkName(leftSumming)
 
     ################################################################ Average
 
@@ -284,6 +293,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftAveraging)
             self.checkPickle(leftAveraging)
+            self.checkName(leftAveraging)
 
     def testAverageWithFilter(self):
         for i in xrange(11):
@@ -304,6 +314,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftAveraging)
             self.checkPickle(leftAveraging)
+            self.checkName(leftAveraging)
 
     def testAverageWithWeightingFactor(self):
         for i in xrange(11):
@@ -325,7 +336,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftAveraging)
             self.checkPickle(leftAveraging)
-
+            self.checkName(leftAveraging)
 
     ################################################################ Deviate
 
@@ -348,6 +359,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftDeviating)
             self.checkPickle(leftDeviating)
+            self.checkName(leftDeviating)
 
     def testDeviateWithFilter(self):
         for i in xrange(11):
@@ -368,6 +380,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftDeviating)
             self.checkPickle(leftDeviating)
+            self.checkName(leftDeviating)
 
     def testDeviateWithWeightingFactor(self):
         for i in xrange(11):
@@ -388,6 +401,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftDeviating)
             self.checkPickle(leftDeviating)
+            self.checkName(leftDeviating)
 
     ################################################################ AbsoluteErr
 
@@ -410,6 +424,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftAbsoluteErring)
             self.checkPickle(leftAbsoluteErring)
+            self.checkName(leftAbsoluteErring)
         
     ################################################################ Minimize
 
@@ -439,6 +454,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftMinimizing)
             self.checkPickle(leftMinimizing)
+            self.checkName(leftMinimizing)
 
     ################################################################ Maximize
 
@@ -468,6 +484,7 @@ class TestEverything(unittest.TestCase):
 
             self.checkJson(leftMaximizing)
             self.checkPickle(leftMaximizing)
+            self.checkName(leftMaximizing)
 
     ################################################################ Quantile
 
@@ -541,6 +558,7 @@ class TestEverything(unittest.TestCase):
 
                 self.checkJson(leftQuantiling)
                 self.checkPickle(leftQuantiling)
+                self.checkName(leftQuantiling)
 
     ################################################################ Bag
 
@@ -563,6 +581,9 @@ class TestEverything(unittest.TestCase):
         self.checkPickle(one)
         self.checkPickle(two)
         self.checkPickle(three)
+        self.checkName(one)
+        self.checkName(two)
+        self.checkName(three)
 
     def testBagWithLimit(self):
         one = Limit(Bag(lambda x: x.string), 20)
@@ -577,6 +598,8 @@ class TestEverything(unittest.TestCase):
         self.checkJson(two)
         self.checkPickle(one)
         self.checkPickle(two)
+        self.checkName(one)
+        self.checkName(two)
 
     ################################################################ Sample
 
@@ -612,6 +635,11 @@ class TestEverything(unittest.TestCase):
         self.checkPickle(three)
         self.checkPickle(four)
         self.checkPickle(five)
+        self.checkName(one)
+        self.checkName(two)
+        self.checkName(three)
+        self.checkName(four)
+        self.checkName(five)
 
     ################################################################ Bin
 
@@ -635,6 +663,8 @@ class TestEverything(unittest.TestCase):
         self.checkJson(two)
         self.checkPickle(one)
         self.checkPickle(two)
+        self.checkName(one)
+        self.checkName(two)
 
     def testBinWithSum(self):
         one = Bin(5, -3.0, 7.0, named("xaxis", lambda x: x), Sum(named("yaxis", lambda x: 10.0)), Sum(lambda x: 10.0), Sum(lambda x: 10.0), Sum(lambda x: 10.0))
@@ -656,6 +686,8 @@ class TestEverything(unittest.TestCase):
         self.checkJson(two)
         self.checkPickle(one)
         self.checkPickle(two)
+        self.checkName(one)
+        self.checkName(two)
 
     def testHistogram(self):
         one = Histogram(5, -3.0, 7.0, lambda x: x)
@@ -677,6 +709,8 @@ class TestEverything(unittest.TestCase):
         self.checkJson(two)
         self.checkPickle(one)
         self.checkPickle(two)
+        self.checkName(one)
+        self.checkName(two)
 
     ################################################################ SparselyBin
 
@@ -692,12 +726,14 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(one)
         self.checkPickle(one)
+        self.checkName(one)
 
         two = SparselyBin(1.0, named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
         for _ in self.simple: two.fill(_)
 
         self.checkJson(two)
         self.checkPickle(two)
+        self.checkName(two)
 
     ################################################################ CentrallyBin
 
@@ -721,11 +757,13 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(one)
         self.checkPickle(one)
+        self.checkName(one)
 
         two = CentrallyBin([-3.0, -1.0, 0.0, 1.0, 3.0, 10.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
 
         self.checkJson(two)
         self.checkPickle(two)
+        self.checkName(two)
 
     ################################################################ AdaptivelyBin
 
@@ -737,12 +775,14 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(one)
         self.checkPickle(one)
+        self.checkName(one)
 
         two = AdaptivelyBin(named("something", lambda x: x), num=5, value=Sum(named("elsie", lambda x: x)))
         for _ in self.simple: two.fill(_)
 
         self.checkJson(two)
         self.checkPickle(two)
+        self.checkName(two)
 
     ################################################################ Fraction
 
@@ -755,6 +795,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(fracking)
         self.checkPickle(fracking)
+        self.checkName(fracking)
 
     def testFractionSum(self):
         fracking = Fraction(named("something", lambda x: x > 0.0), Sum(named("elsie", lambda x: x)))
@@ -765,6 +806,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(fracking)
         self.checkPickle(fracking)
+        self.checkName(fracking)
 
     def testFractionHistogram(self):
         fracking = Fraction(lambda x: x > 0.0, Histogram(5, -3.0, 7.0, lambda x: x))
@@ -775,6 +817,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(fracking)
         self.checkPickle(fracking)
+        self.checkName(fracking)
 
     ################################################################ Stack
 
@@ -786,6 +829,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(stacking)
         self.checkPickle(stacking)
+        self.checkName(stacking)
 
     def testStackWithSum(self):
         stacking = Stack(named("something", lambda x: x), Sum(named("elsie", lambda x: x)), 0.0, 2.0, 4.0, 6.0, 8.0)
@@ -795,6 +839,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(stacking)
         self.checkPickle(stacking)
+        self.checkName(stacking)
 
     ################################################################ Partition
 
@@ -806,6 +851,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(partitioning)
         self.checkPickle(partitioning)
+        self.checkName(partitioning)
 
     def testPartitionSum(self):
         partitioning = Partition(named("something", lambda x: x), Sum(named("elsie", lambda x: x)), 0.0, 2.0, 4.0, 6.0, 8.0)
@@ -816,6 +862,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(partitioning)
         self.checkPickle(partitioning)
+        self.checkName(partitioning)
 
     ################################################################ Categorize
 
@@ -827,12 +874,14 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(categorizing)
         self.checkPickle(categorizing)
+        self.checkName(categorizing)
 
         categorizing2 = Categorize(named("something", lambda x: x.string[0]), Sum(named("elsie", lambda x: x.double)))
         for _ in self.struct: categorizing2.fill(_)
 
         self.checkJson(categorizing2)
         self.checkPickle(categorizing2)
+        self.checkName(categorizing2)
 
     ################################################################ Label
 
@@ -851,6 +900,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(labeling)
         self.checkPickle(labeling)
+        self.checkName(labeling)
 
     def testLabelDifferentCuts(self):
         one = Histogram(10, -10, 10, lambda x: x, lambda x: x > 0)
@@ -867,6 +917,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(labeling)
         self.checkPickle(labeling)
+        self.checkName(labeling)
 
     ################################################################ UntypedLabel
 
@@ -885,6 +936,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(labeling)
         self.checkPickle(labeling)
+        self.checkName(labeling)
 
     def testUntypedLabelDifferenCuts(self):
         one = Histogram(10, -10, 10, lambda x: x, lambda x: x > 0)
@@ -901,6 +953,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(labeling)
         self.checkPickle(labeling)
+        self.checkName(labeling)
         
     def testUntypedLabelMultipleTypes(self):
         one = Histogram(5, -3.0, 7.0, lambda x: x)
@@ -919,6 +972,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(mapping)
         self.checkPickle(mapping)
+        self.checkName(mapping)
 
     ################################################################ Index
 
@@ -937,6 +991,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(indexing)
         self.checkPickle(indexing)
+        self.checkName(indexing)
 
     def testIndexDifferentCuts(self):
         one = Histogram(10, -10, 10, lambda x: x, lambda x: x > 0)
@@ -953,6 +1008,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(indexing)
         self.checkPickle(indexing)
+        self.checkName(indexing)
 
     ################################################################ Branch
 
@@ -978,6 +1034,7 @@ class TestEverything(unittest.TestCase):
 
         self.checkJson(branching)
         self.checkPickle(branching)
+        self.checkName(branching)
         
     ################################################################ Usability in fold/aggregate
 

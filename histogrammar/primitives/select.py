@@ -96,7 +96,7 @@ class Select(Factory, Container):
             raise JsonFormatException(json, "Select")
 
     def __repr__(self):
-        return "Select[{}]".format(self.value)
+        return "<Select value={}>".format(self.value.name)
 
     def __eq__(self, other):
         return isinstance(other, Select) and exact(self.entries, other.entries) and self.value == other.value

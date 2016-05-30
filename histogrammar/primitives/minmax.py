@@ -96,7 +96,7 @@ class Minimize(Factory, Container):
             raise JsonFormatException(json, "Minimize")
         
     def __repr__(self):
-        return "Minimize[{}]".format(self.min)
+        return "<Minimize min={}>".format(self.min)
 
     def __eq__(self, other):
         return isinstance(other, Minimize) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.min, other.min)
@@ -183,7 +183,7 @@ class Maximize(Factory, Container):
             raise JsonFormatException(json, "Maximize")
         
     def __repr__(self):
-        return "Maximize[{}]".format(self.max)
+        return "<Maximize max={}>".format(self.max)
 
     def __eq__(self, other):
         return isinstance(other, Maximize) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.max, other.max)

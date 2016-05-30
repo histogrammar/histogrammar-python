@@ -63,7 +63,7 @@ class Count(Factory, Container):
             raise JsonFormatException(json, "Count")
         
     def __repr__(self):
-        return "Count[{}]".format(self.entries)
+        return "<Count {}>".format(self.entries)
 
     def __eq__(self, other):
         return isinstance(other, Count) and exact(self.entries, other.entries)

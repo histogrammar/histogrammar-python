@@ -201,7 +201,7 @@ class Bin(Factory, Container):
             raise JsonFormatException(json, "Bin")
         
     def __repr__(self):
-        return "Bin[low={}, high={}, values=[{}..., size={}], underflow={}, overflow={}, nanflow={}]".format(self.low, self.high, repr(self.values[0]), len(self.values), repr(self.underflow), repr(self.overflow), repr(self.nanflow))
+        return "<Bin num={} low={} high={} values={} underflow={} overflow={} nanflow={}>".format(len(self.values), self.low, self.high, self.values[0].name, self.underflow.name, self.overflow.name, self.nanflow.name)
 
     def __eq__(self, other):
         return isinstance(other, Bin) and exact(self.low, other.low) and exact(self.high, other.high) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.values == other.values and self.underflow == other.underflow and self.overflow == other.overflow and self.nanflow == other.nanflow

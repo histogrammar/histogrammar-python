@@ -115,7 +115,7 @@ class Deviate(Factory, Container):
             raise JsonFormatException(json, "Deviate")
         
     def __repr__(self):
-        return "Deviate[{}, {}]".format(self.mean, self.variance)
+        return "<Deviate mean={} variance={}>".format(self.mean, self.variance)
 
     def __eq__(self, other):
         return isinstance(other, Deviate) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.mean, other.mean) and exact(self.variance, other.variance)

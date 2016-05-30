@@ -149,7 +149,7 @@ class Stack(Factory, Container):
             raise JsonFormatException(json, "Stack")
 
     def __repr__(self):
-        return "Stack[{}, thresholds=[{}]]".format(self.cuts[0][1], ", ".join(map(str, self.thresholds)))
+        return "<Stack bins={} thresholds=({})>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)))
 
     def __eq__(self, other):
         return isinstance(other, Stack) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.cuts == other.cuts

@@ -141,7 +141,7 @@ class Partition(Factory, Container):
             raise JsonFormatException(json, "Partition")
 
     def __repr__(self):
-        return "Partition[{}, thresholds=[{}]]".format(self.cuts[0], ", ".join(map(str, self.thresholds)))
+        return "<Partition bins={} thresholds=({})>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)))
 
     def __eq__(self, other):
         return isinstance(other, Partition) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.cuts == other.cuts

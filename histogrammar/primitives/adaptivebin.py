@@ -200,12 +200,12 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
     def __repr__(self):
         if len(self.bins) > 0:
-            v = self.bins[0][1]
+            v = self.bins[0][1].name
         elif self.value is not None:
             v = self.value.name
         else:
             v = self.contentType
-        return "AdaptivelyBin[bins=[{}..., size={}], nanflow={}]".format(v, len(self.bins), self.nanflow)
+        return "<AdaptivelyBin bins={} size={} nanflow={}>".format(v, len(self.bins), self.nanflow.name)
 
     def __eq__(self, other):
         return isinstance(other, AdaptivelyBin) and self.quantity == other.quantity and self.clustering == other.clustering
