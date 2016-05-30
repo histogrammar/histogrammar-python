@@ -100,7 +100,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(pickle.loads(pickle.dumps(x)), x)
 
     def checkName(self, x):
-        x
+        repr(x)
 
     ################################################################ Count
 
