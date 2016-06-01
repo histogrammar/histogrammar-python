@@ -101,7 +101,7 @@ class Average(Factory, Container):
         return "<Average mean={}>".format(self.mean)
 
     def __eq__(self, other):
-        return isinstance(other, Average) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.mean, other.mean)
+        return isinstance(other, Average) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.mean, other.mean)
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.mean))

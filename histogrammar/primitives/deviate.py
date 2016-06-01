@@ -118,7 +118,7 @@ class Deviate(Factory, Container):
         return "<Deviate mean={} variance={}>".format(self.mean, self.variance)
 
     def __eq__(self, other):
-        return isinstance(other, Deviate) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.mean, other.mean) and exact(self.variance, other.variance)
+        return isinstance(other, Deviate) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.mean, other.mean) and numeq(self.variance, other.variance)
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.mean, self.variance))

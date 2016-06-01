@@ -103,7 +103,7 @@ class AbsoluteErr(Factory, Container):
         return "<AbsoluteErr mae={}>".format(self.mae)
 
     def __eq__(self, other):
-        return isinstance(other, AbsoluteErr) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.mae, other.mae)
+        return isinstance(other, AbsoluteErr) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.mae, other.mae)
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.mae))

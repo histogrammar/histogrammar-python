@@ -102,7 +102,7 @@ class Select(Factory, Container):
         return "<Select cut={}>".format(self.cut.name)
 
     def __eq__(self, other):
-        return isinstance(other, Select) and exact(self.entries, other.entries) and self.cut == other.cut
+        return isinstance(other, Select) and numeq(self.entries, other.entries) and self.cut == other.cut
 
     def __hash__(self):
         return hash((self.entries, self.cut))

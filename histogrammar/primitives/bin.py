@@ -204,7 +204,7 @@ class Bin(Factory, Container):
         return "<Bin num={} low={} high={} values={} underflow={} overflow={} nanflow={}>".format(len(self.values), self.low, self.high, self.values[0].name, self.underflow.name, self.overflow.name, self.nanflow.name)
 
     def __eq__(self, other):
-        return isinstance(other, Bin) and exact(self.low, other.low) and exact(self.high, other.high) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.values == other.values and self.underflow == other.underflow and self.overflow == other.overflow and self.nanflow == other.nanflow
+        return isinstance(other, Bin) and numeq(self.low, other.low) and numeq(self.high, other.high) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values and self.underflow == other.underflow and self.overflow == other.overflow and self.nanflow == other.nanflow
 
     def __hash__(self):
         return hash((self.low, self.high, self.quantity, self.entries, self.values, self.underflow, self.overflow, self.nanflow))

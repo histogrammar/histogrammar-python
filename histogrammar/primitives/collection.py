@@ -125,7 +125,7 @@ class Label(Factory, Container, Collection):
         return "<Label values={} size={}>".format(self.values[0].name, self.size)
 
     def __eq__(self, other):
-        return isinstance(other, Label) and exact(self.entries, other.entries) and self.pairs == other.pairs
+        return isinstance(other, Label) and numeq(self.entries, other.entries) and self.pairs == other.pairs
 
     def __hash__(self):
         return hash((self.entries, tuple(sorted(self.pairs.items()))))
@@ -235,7 +235,7 @@ class UntypedLabel(Factory, Container, Collection):
         return "<UntypedLabel size={}>".format(self.size)
 
     def __eq__(self, other):
-        return isinstance(other, UntypedLabel) and exact(self.entries, other.entries) and self.pairs == other.pairs
+        return isinstance(other, UntypedLabel) and numeq(self.entries, other.entries) and self.pairs == other.pairs
 
     def __hash__(self):
         return hash((self.entries, tuple(sorted(self.pairs.items()))))
@@ -347,7 +347,7 @@ class Index(Factory, Container, Collection):
         return "<Index values={} size={}>".format(self.values[0].name, self.size)
 
     def __eq__(self, other):
-        return isinstance(other, Index) and exact(self.entries, other.entries) and self.values == other.values
+        return isinstance(other, Index) and numeq(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
         return hash((self.entries, tuple(self.values)))
@@ -461,7 +461,7 @@ class Branch(Factory, Container, Collection):
         return "<Branch {}>".format(" ".join("i" + str(i) + "=" + v.name for i, v in enumerate(self.values)))
 
     def __eq__(self, other):
-        return isinstance(other, Branch) and exact(self.entries, other.entries) and self.values == other.values
+        return isinstance(other, Branch) and numeq(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
         return hash((self.entries, tuple(self.values)))

@@ -66,7 +66,7 @@ class Count(Factory, Container):
         return "<Count {}>".format(self.entries)
 
     def __eq__(self, other):
-        return isinstance(other, Count) and exact(self.entries, other.entries)
+        return isinstance(other, Count) and numeq(self.entries, other.entries)
 
     def __hash__(self):
         return hash(self.entries)

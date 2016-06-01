@@ -145,7 +145,7 @@ class Bag(Factory, Container):
         return "<Bag size={}>".format(len(self.values))
 
     def __eq__(self, other):
-        return isinstance(other, Bag) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.values == other.values
+        return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.values))

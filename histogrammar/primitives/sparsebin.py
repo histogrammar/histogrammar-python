@@ -238,7 +238,7 @@ class SparselyBin(Factory, Container):
         return "<SparselyBin binWidth={} bins={} nanflow={}>".format(self.binWidth, self.value.name if self.value is not None else self.contentType, self.nanflow.name)
 
     def __eq__(self, other):
-        return isinstance(other, SparselyBin) and exact(self.binWidth, other.binWidth) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.bins == other.bins and self.nanflow == other.nanflow and self.origin == other.origin
+        return isinstance(other, SparselyBin) and numeq(self.binWidth, other.binWidth) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.bins == other.bins and self.nanflow == other.nanflow and numeq(self.origin, other.origin)
 
     def __hash__(self):
         return hash((self.binWidth, self.quantity, self.entries, tuple(sorted(self.bins.items())), self.nanflow, self.origin))

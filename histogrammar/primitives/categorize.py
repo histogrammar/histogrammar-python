@@ -158,7 +158,7 @@ class Categorize(Factory, Container):
         return "<Categorize values={} size={}".format(self.values[0].name if self.size > 0 else self.value.name, self.size)
 
     def __eq__(self, other):
-        return isinstance(other, Categorize) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.pairs == other.pairs
+        return isinstance(other, Categorize) and numeq(self.entries, other.entries) and self.quantity == other.quantity and self.pairs == other.pairs
 
     def __hash__(self):
         return hash((self.entries, self.quantity, tuple(sorted(self.pairs.items()))))

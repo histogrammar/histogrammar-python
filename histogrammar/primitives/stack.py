@@ -164,7 +164,7 @@ class Stack(Factory, Container):
         return "<Stack bins={} thresholds=({}) nanflow={}>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)), self.nanflow.name)
 
     def __eq__(self, other):
-        return isinstance(other, Stack) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.cuts == other.cuts and self.nanflow == other.nanflow
+        return isinstance(other, Stack) and numeq(self.entries, other.entries) and self.quantity == other.quantity and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.cuts, other.cuts)) and self.nanflow == other.nanflow
 
     def __hash__(self):
         return hash((self.entries, self.quantity, self.cuts, self.nanflow))

@@ -128,7 +128,7 @@ class Limit(Factory, Container):
         return "<Limit value={}>".format("saturated" if self.saturated else self.value.name)
 
     def __eq__(self, other):
-        return isinstance(other, Limit) and exact(self.entries, other.entries) and exact(self.limit, other.limit) and self.contentType == other.contentType and self.value == other.value
+        return isinstance(other, Limit) and numeq(self.entries, other.entries) and numeq(self.limit, other.limit) and self.contentType == other.contentType and self.value == other.value
 
     def __hash__(self):
         return hash((self.entries, self.limit, self.contentType, self.value))
