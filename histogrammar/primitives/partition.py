@@ -64,7 +64,7 @@ class Partition(Factory, Container):
     def fill(self, datum, weight=1.0):
         if weight > 0.0:
             value = self.quantity(datum)
-            for (low, sub), (high, _) in zip(self.cuts, self.cuts[1:] + (float("nan"), None)):
+            for (low, sub), (high, _) in zip(self.cuts, self.cuts[1:] + ((float("nan"), None),)):
                 if value >= low and not value >= high:
                     sub.fill(datum, weight)
                     break
