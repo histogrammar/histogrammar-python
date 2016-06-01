@@ -326,7 +326,7 @@ class TestEverything(unittest.TestCase):
             
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
-
+            print(leftAveraging.value.mean)
             self.assertAlmostEqual(leftAveraging.value.mean, self.meanWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
             self.assertAlmostEqual(rightAveraging.value.mean, self.meanWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
 
@@ -337,7 +337,7 @@ class TestEverything(unittest.TestCase):
             self.checkJson(leftAveraging)
             self.checkPickle(leftAveraging)
             self.checkName(leftAveraging)
-
+        assert(False)
     ################################################################ Deviate
 
     def testDeviate(self):
