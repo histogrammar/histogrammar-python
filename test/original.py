@@ -822,7 +822,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Stack
 
     def testStack(self):
-        stacking = Stack(named("something", lambda x: x), Count(), 0.0, 2.0, 4.0, 6.0, 8.0)
+        stacking = Stack([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count())
         for _ in self.simple: stacking.fill(_)        
 
         self.assertEqual([(k, v.entries) for k, v in stacking.cuts], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
@@ -832,7 +832,7 @@ class TestEverything(unittest.TestCase):
         self.checkName(stacking)
 
     def testStackWithSum(self):
-        stacking = Stack(named("something", lambda x: x), Sum(named("elsie", lambda x: x)), 0.0, 2.0, 4.0, 6.0, 8.0)
+        stacking = Stack([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
         for _ in self.simple: stacking.fill(_)        
 
         self.assertEqual([(k, v.entries) for k, v in stacking.cuts], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
@@ -844,7 +844,7 @@ class TestEverything(unittest.TestCase):
     ################################################################ Partition
 
     def testPartition(self):
-        partitioning = Partition(named("something", lambda x: x), Count(), 0.0, 2.0, 4.0, 6.0, 8.0)
+        partitioning = Partition([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count())
         for _ in self.simple: partitioning.fill(_)
 
         self.assertEqual([(k, v.entries) for k, v in partitioning.cuts], [(float("-inf"), 4.0), (0.0, 3.0), (2.0, 2.0), (4.0, 0.0), (6.0, 1.0), (8.0, 0.0)])
@@ -854,7 +854,7 @@ class TestEverything(unittest.TestCase):
         self.checkName(partitioning)
 
     def testPartitionSum(self):
-        partitioning = Partition(named("something", lambda x: x), Sum(named("elsie", lambda x: x)), 0.0, 2.0, 4.0, 6.0, 8.0)
+        partitioning = Partition([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
         for _ in self.simple: partitioning.fill(_)
 
         self.assertAlmostEqual(partitioning.cuts[0][1].sum, -11.2)

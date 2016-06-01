@@ -22,24 +22,25 @@ from histogrammar.primitives.count import *
 
 class Stack(Factory, Container):
     @staticmethod
-    def ed(entries, *cuts):
+    def ed(entries, cuts, nanflow):
         if entries < 0.0:
             raise ContainerException("entries ({}) cannot be negative".format(entries))
-        out = Stack(None, None, *cuts)
+        out = Stack(cuts, None, None, nanflow)
         out.entries = float(entries)
         return out
 
     @staticmethod
-    def ing(quantity, value, *cuts):
-        return Stack(quantity, value, *cuts)
+    def ing(cuts, quantity, value, nanflow=Count()):
+        return Stack(cuts, quantity, value, nanflow)
 
-    def __init__(self, quantity, value, *cuts):
+    def __init__(self, cuts, quantity, value, nanflow=Count()):
         self.entries = 0.0
         self.quantity = serializable(quantity)
         if value is None:
-            self.cuts = cuts
+            self.cuts = tuple(cuts)
         else:
-            self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + cuts)
+            self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(cuts))
+        self.nanflow = nanflow
         super(Stack, self).__init__()
 
     @staticmethod
@@ -48,7 +49,7 @@ class Stack(Factory, Container):
         cuts = []
         for i in xrange(len(ys)):
             cuts.append((float("nan"), reduce(lambda a, b: a + b, ys[i:])))
-        return Stack.ed(entries, *cuts)
+        return Stack.ed(entries, cuts, Count.ed(0.0))
 
     @property
     def thresholds(self): return [k for k, v in self.cuts]
@@ -56,14 +57,14 @@ class Stack(Factory, Container):
     def values(self): return [v for k, v in self.cuts]
 
     def zero(self):
-        return Stack(self.quantity, None, *[(x, x.zero()) for x in cuts])
+        return Stack([(x, x.zero()) for x in cuts], self.quantity, None, self.nanflow.zero())
 
     def __add__(self, other):
         if isinstance(other, Stack):
             if self.thresholds != other.thresholds:
                 raise ContainerException("cannot add Stack because cut thresholds differ")
 
-            out = Stack(self.quantity, None, *[(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)])
+            out = Stack([(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)], self.quantity, None, self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
             return out
 
@@ -72,17 +73,20 @@ class Stack(Factory, Container):
 
     def fill(self, datum, weight=1.0):
         if weight > 0.0:
-            value = self.quantity(datum)
-            for threshold, sub in self.cuts:
-                if value >= threshold:
-                    sub.fill(datum, weight)
+            q = self.quantity(datum)
+            if math.isnan(q):
+                self.nanflow.fill(datum, weight)
+            else:
+                for threshold, sub in self.cuts:
+                    if q >= threshold:
+                        sub.fill(datum, weight)
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
     @property
     def children(self):
-        return self.values
+        return [self.nanflow] + self.values
 
     def toJsonFragment(self, suppressName):
         if getattr(self.cuts[0][1], "quantity", None) is not None:
@@ -96,12 +100,14 @@ class Stack(Factory, Container):
             "entries": floatToJson(self.entries),
             "type": self.cuts[0][1].name,
             "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment(True)} for atleast, sub in self.cuts],
+            "nanflow:type": self.nanflow.name,
+            "nanflow": self.nanflow.toJsonFragment(False),
             }, **{"name": None if suppressName else self.quantity.name,
                   "data:name": binsName})
 
     @staticmethod
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name", "data:name"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data", "nanflow:type", "nanflow"], ["name", "data:name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -126,6 +132,12 @@ class Stack(Factory, Container):
             else:
                 raise JsonFormatException(json["data:name"], "Stack.data:name")
 
+            if isinstance(json["nanflow:type"], basestring):
+                nanflowFactory = Factory.registered[json["nanflow:type"]]
+            else:
+                raise JsonFormatException(json, "Stack.nanflow:type")
+            nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
+
             if isinstance(json["data"], list):
                 cuts = []
                 for i, elementPair in enumerate(json["data"]):
@@ -138,7 +150,7 @@ class Stack(Factory, Container):
                     else:
                         raise JsonFormatException(json, "Stack.data {}".format(i))
 
-                out = Stack.ed(entries, *cuts)
+                out = Stack.ed(entries, cuts, nanflow)
                 out.quantity.name = nameFromParent if name is None else name
                 return out
 
@@ -149,12 +161,12 @@ class Stack(Factory, Container):
             raise JsonFormatException(json, "Stack")
 
     def __repr__(self):
-        return "<Stack bins={} thresholds=({})>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)))
+        return "<Stack bins={} thresholds=({}) nanflow={}>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)), self.nanflow.name)
 
     def __eq__(self, other):
-        return isinstance(other, Stack) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.cuts == other.cuts
+        return isinstance(other, Stack) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.cuts == other.cuts and self.nanflow == other.nanflow
 
     def __hash__(self):
-        return hash((self.entries, self.quantity, self.cuts))
+        return hash((self.entries, self.quantity, self.cuts, self.nanflow))
 
 Factory.register(Stack)
