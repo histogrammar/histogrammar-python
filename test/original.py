@@ -370,6 +370,7 @@ class TestEverything(unittest.TestCase):
 
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
+            
 
             self.assertAlmostEqual(leftDeviating.value.variance, self.variance([_.double for _ in left if _.bool]))
             self.assertAlmostEqual(rightDeviating.value.variance, self.variance([_.double for _ in right if _.bool]))
@@ -381,7 +382,7 @@ class TestEverything(unittest.TestCase):
             self.checkJson(leftDeviating)
             self.checkPickle(leftDeviating)
             self.checkName(leftDeviating)
-
+        
     def testDeviateWithWeightingFactor(self):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
