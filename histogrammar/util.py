@@ -374,7 +374,7 @@ class CentralBinsDistribution(object):
             out = [0.0] * len(xs)
 
         elif len(self.bins) == 1:
-            out = [float("inf") if x == bins[0][0] else 0.0 for x in xs]
+            out = [float("inf") if x == self.bins[0][0] else 0.0 for x in xs]
 
         else:
             out = [0.0] * len(xs)
