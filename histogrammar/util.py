@@ -22,8 +22,6 @@ import random
 import types
 import sys
 
-
-
 # Definitions for python 2/3 compatability 
 if sys.version_info[0] > 2:
     basestring = str
@@ -94,8 +92,20 @@ class Reservoir(object):
 
 ################################################################ NaN handling
 
-def exact(x, y):
-    return (math.isnan(x) and math.isnan(y)) or x == y
+relativeTolerance = 0.0
+absoluteTolerance = 0.0
+
+def numeq(x, y):
+    if math.isnan(x) and math.isnan(y):
+        return True
+    elif relativeTolerance > 0.0 and absoluteTolerance > 0.0:
+        return abs(x - y) <= max(relativeTolerance * max(abs(x), abs(y)), absoluteTolerance)
+    elif relativeTolerance > 0.0:
+        return abs(x - y) <= relativeTolerance * max(abs(x), abs(y))
+    elif absoluteTolerance > 0.0:
+        return abs(x - y) <= absoluteTolerance
+    else:
+        return x == y
 
 def minplus(x, y):
     if math.isnan(x) and math.isnan(y):
@@ -331,7 +341,7 @@ class Clustering1D(object):
         return Clustering1D(self.num, self.tailDetail, self.value, sorted(bins.items()), minplus(self.min, other.min), maxplus(self.max, other.max), self.entries + other.entries)
 
     def __eq__(self, other):
-        return self.num == other.num and exact(self.tailDetail, other.tailDetail) and self.values == other.values and exact(self.min, other.min) and exact(self.max, other.max) and exact(self.entries, other.entries)
+        return self.num == other.num and numeq(self.tailDetail, other.tailDetail) and self.values == other.values and numeq(self.min, other.min) and numeq(self.max, other.max) and numeq(self.entries, other.entries)
 
     def __hash__(self):
         return hash((self.num, self.tailDetail, self.values, self.min, self.max, self.entries))

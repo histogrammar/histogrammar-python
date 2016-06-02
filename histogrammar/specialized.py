@@ -33,75 +33,63 @@ class HistogramMethods(Select):
         return Select
 
     @property
-    def entriesBeforeSelect(self):
-        return self.entries
-
-    @property
-    def entriesAfterSelect(self):
-        return self.value.entries
-
-    @property
-    def fractionPassingSelect(self):
-        return self.value.entries / self.entries
-
-    @property
     def numericalValues(self):
-        return [v.entries for v in self.value.values]
+        return [v.entries for v in self.cut.values]
 
     @property
     def numericalOverflow(self):
-        return self.value.overflow.entries
+        return self.cut.overflow.entries
 
     @property
     def numericalUnderflow(self):
-        return self.value.underflow.entries
+        return self.cut.underflow.entries
 
     @property
     def numericalNanflow(self):
-        return self.value.nanflow.entries
+        return self.cut.nanflow.entries
 
     def __setTH1(self, th1):
-        th1.SetBinContent(0, self.value.underflow.entries)
-        for i, v in enumerate(self.value.values):
+        th1.SetBinContent(0, self.cut.underflow.entries)
+        for i, v in enumerate(self.cut.values):
             th1.SetBinContent(i + 1, v.entries)
-        th1.SetBinContent(len(self.value.values), self.value.overflow.entries)
-        th1.SetEntries(self.value.entries)
+        th1.SetBinContent(len(self.cut.values), self.cut.overflow.entries)
+        th1.SetEntries(self.cut.entries)
 
     def TH1C(self, name, title):
         import ROOT
-        th1 = ROOT.TH1C(name, title, len(self.value.values), self.value.low, self.value.high)
-        self.value.__setTH1(th1)
+        th1 = ROOT.TH1C(name, title, len(self.cut.values), self.cut.low, self.cut.high)
+        self.cut.__setTH1(th1)
         return th1
 
     def TH1S(self, name, title):
         import ROOT
-        th1 = ROOT.TH1S(name, title, len(self.value.values), self.value.low, self.value.high)
-        self.value.__setTH1(th1)
+        th1 = ROOT.TH1S(name, title, len(self.cut.values), self.cut.low, self.cut.high)
+        self.cut.__setTH1(th1)
         return th1
 
     def TH1I(self, name, title):
         import ROOT
-        th1 = ROOT.TH1I(name, title, len(self.value.values), self.value.low, self.value.high)
-        self.value.__setTH1(th1)
+        th1 = ROOT.TH1I(name, title, len(self.cut.values), self.cut.low, self.cut.high)
+        self.cut.__setTH1(th1)
         return th1
 
     def TH1F(self, name, title):
         import ROOT
-        th1 = ROOT.TH1F(name, title, len(self.value.values), self.value.low, self.value.high)
-        self.value.__setTH1(th1)
+        th1 = ROOT.TH1F(name, title, len(self.cut.values), self.cut.low, self.cut.high)
+        self.cut.__setTH1(th1)
         return th1
 
     def TH1D(self, name, title):
         import ROOT
-        th1 = ROOT.TH1D(name, title, len(self.value.values), self.value.low, self.value.high)
-        self.value.__setTH1(th1)
+        th1 = ROOT.TH1D(name, title, len(self.cut.values), self.cut.low, self.cut.high)
+        self.cut.__setTH1(th1)
         return th1
 
 def addImplicitMethods(container):
     if isinstance(container, Select) and \
-           isinstance(container.value, Bin) and \
-           all(isinstance(v, Count) for v in container.value.values) and \
-           isinstance(container.value.underflow, Count) and \
-           isinstance(container.value.overflow, Count) and \
-           isinstance(container.value.nanflow, Count):
+           isinstance(container.cut, Bin) and \
+           all(isinstance(v, Count) for v in container.cut.values) and \
+           isinstance(container.cut.underflow, Count) and \
+           isinstance(container.cut.overflow, Count) and \
+           isinstance(container.cut.nanflow, Count):
         container.__class__ = HistogramMethods

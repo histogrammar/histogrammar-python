@@ -129,7 +129,7 @@ class Fraction(Factory, Container):
         return "<Fraction values={}>".format(self.numerator.name)
 
     def __eq__(self, other):
-        return isinstance(other, Fraction) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.numerator == other.numerator and self.denominator == other.denominator
+        return isinstance(other, Fraction) and numeq(self.entries, other.entries) and self.quantity == other.quantity and self.numerator == other.numerator and self.denominator == other.denominator
 
     def __hash__(self):
         return hash((self.entries, self.quantity, self.numerator, self.denominator))

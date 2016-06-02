@@ -96,7 +96,7 @@ class Sum(Factory, Container):
         return "<Sum sum={}>".format(self.sum)
 
     def __eq__(self, other):
-        return isinstance(other, Sum) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.sum, other.sum)
+        return isinstance(other, Sum) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.sum, other.sum)
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.sum))

@@ -20,25 +20,26 @@ from histogrammar.primitives.count import *
 
 class Partition(Factory, Container):
     @staticmethod
-    def ed(entries, *cuts):
+    def ed(entries, cuts, nanflow):
         if entries < 0.0:
             raise ContainerException("entries ({}) cannot be negative".format(entries))
 
-        out = Partition(None, None, *cuts)
+        out = Partition(cuts, None, None, nanflow)
         out.entries = float(entries)
         return out
 
     @staticmethod
-    def ing(quantity, value, *cuts):
-        return Partition(quantity, value, *cuts)
+    def ing(cuts, quantity, value, nanflow=Count()):
+        return Partition(cuts, quantity, value, nanflow)
 
-    def __init__(self, quantity, value, *cuts):
+    def __init__(self, cuts, quantity, value, nanflow=Count()):
         self.entries = 0.0
         self.quantity = serializable(quantity)
         if value is None:
-            self.cuts = cuts
+            self.cuts = tuple(cuts)
         else:
-            self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + cuts)
+            self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(cuts))
+        self.nanflow = nanflow
         super(Partition, self).__init__()
 
     @property
@@ -47,14 +48,14 @@ class Partition(Factory, Container):
     def values(self): return [v for k, v in self.cuts]
 
     def zero(self):
-        return Partition(self.quantity, None, *[(x, x.zero()) for x in cuts])
+        return Partition([(x, x.zero()) for x in cuts], self.quantity, None, self.nanflow.zero())
 
     def __add__(self, other):
         if isinstance(other, Partition):
             if self.thresholds != other.thresholds:
                 raise ContainerException("cannot add Partition because cut thresholds differ")
 
-            out = Partition(self.quantity, None, *[(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)])
+            out = Partition([(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)], self.quantity, None, self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
             return out
 
@@ -63,18 +64,21 @@ class Partition(Factory, Container):
 
     def fill(self, datum, weight=1.0):
         if weight > 0.0:
-            value = self.quantity(datum)
-            for (low, sub), (high, _) in zip(self.cuts, self.cuts[1:] + (float("nan"), None)):
-                if value >= low and not value >= high:
-                    sub.fill(datum, weight)
-                    break
+            q = self.quantity(datum)
+            if math.isnan(q):
+                self.nanflow.fill(datum, weight)
+            else:
+                for (low, sub), (high, _) in zip(self.cuts, self.cuts[1:] + ((float("nan"), None),)):
+                    if q >= low and not q >= high:
+                        sub.fill(datum, weight)
+                        break
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
     @property
     def children(self):
-        return self.values
+        return [self.nanflow] + self.values
 
     def toJsonFragment(self, suppressName):
         if getattr(self.cuts[0][1], "quantity", None) is not None:
@@ -88,12 +92,14 @@ class Partition(Factory, Container):
             "entries": floatToJson(self.entries),
             "type": self.cuts[0][1].name,
             "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment(True)} for atleast, sub in self.cuts],
+            "nanflow:type": self.nanflow.name,
+            "nanflow": self.nanflow.toJsonFragment(False),
             }, **{"name": None if suppressName else self.quantity.name,
                   "data:name": binsName})
 
     @staticmethod
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name", "data:name"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data", "nanflow:type", "nanflow"], ["name", "data:name"]):
             if isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
@@ -118,6 +124,12 @@ class Partition(Factory, Container):
             else:
                 raise JsonFormatException(json["data:name"], "Partition.data:name")
 
+            if isinstance(json["nanflow:type"], basestring):
+                nanflowFactory = Factory.registered[json["nanflow:type"]]
+            else:
+                raise JsonFormatException(json, "Partition.nanflow:type")
+            nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
+
             if isinstance(json["data"], list):
                 cuts = []
                 for i, elementPair in enumerate(json["data"]):
@@ -130,7 +142,7 @@ class Partition(Factory, Container):
                     else:
                         raise JsonFormatException(json, "Partition.data {}".format(i))
 
-                out = Partition.ed(entries, *cuts)
+                out = Partition.ed(entries, cuts, nanflow)
                 out.quantity.name = nameFromParent if name is None else name
                 return out
 
@@ -141,12 +153,12 @@ class Partition(Factory, Container):
             raise JsonFormatException(json, "Partition")
 
     def __repr__(self):
-        return "<Partition bins={} thresholds=({})>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)))
+        return "<Partition bins={} thresholds=({}) nanflow={}>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)), self.nanflow.name)
 
     def __eq__(self, other):
-        return isinstance(other, Partition) and exact(self.entries, other.entries) and self.quantity == other.quantity and self.cuts == other.cuts
+        return isinstance(other, Partition) and numeq(self.entries, other.entries) and self.quantity == other.quantity and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.cuts, other.cuts)) and self.nanflow == other.nanflow
 
     def __hash__(self):
-        return hash((self.entries, self.quantity, self.cuts))
+        return hash((self.entries, self.quantity, self.cuts, self.nanflow))
 
 Factory.register(Partition)

@@ -125,7 +125,7 @@ class Label(Factory, Container, Collection):
         return "<Label values={} size={}>".format(self.values[0].name, self.size)
 
     def __eq__(self, other):
-        return isinstance(other, Label) and exact(self.entries, other.entries) and self.pairs == other.pairs
+        return isinstance(other, Label) and numeq(self.entries, other.entries) and self.pairs == other.pairs
 
     def __hash__(self):
         return hash((self.entries, tuple(sorted(self.pairs.items()))))
@@ -235,7 +235,7 @@ class UntypedLabel(Factory, Container, Collection):
         return "<UntypedLabel size={}>".format(self.size)
 
     def __eq__(self, other):
-        return isinstance(other, UntypedLabel) and exact(self.entries, other.entries) and self.pairs == other.pairs
+        return isinstance(other, UntypedLabel) and numeq(self.entries, other.entries) and self.pairs == other.pairs
 
     def __hash__(self):
         return hash((self.entries, tuple(sorted(self.pairs.items()))))
@@ -347,7 +347,7 @@ class Index(Factory, Container, Collection):
         return "<Index values={} size={}>".format(self.values[0].name, self.size)
 
     def __eq__(self, other):
-        return isinstance(other, Index) and exact(self.entries, other.entries) and self.values == other.values
+        return isinstance(other, Index) and numeq(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
         return hash((self.entries, tuple(self.values)))
@@ -428,7 +428,7 @@ class Branch(Factory, Container, Collection):
 
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
-        "data": [{x.name: x.toJsonFragment(False)} for x in self.values],
+        "data": [{"type": x.name, "data": x.toJsonFragment(False)} for x in self.values],
         }
 
     @staticmethod
@@ -442,12 +442,12 @@ class Branch(Factory, Container, Collection):
             if isinstance(json["data"], list):
                 values = []
                 for i, x in enumerate(json["data"]):
-                    if isinstance(x, dict) and len(x) == 1:
-                        (k, v), = x.items()
-                        factory = Factory.registered[k]
-                        values.append(factory.fromJsonFragment(v, None))
-                    else:
-                        raise JsonFormatException(v, "Branch.data {}".format(i))
+                    if isinstance(x, dict) and hasKeys(x.keys(), ["type", "data"]):
+                        if isinstance(x["type"], basestring):
+                            factory = Factory.registered[x["type"]]
+                        else:
+                            raise JsonFormatException(x, "Branch.data {} type".format(i))
+                        values.append(factory.fromJsonFragment(x["data"], None))
 
             else:
                 raise JsonFormatException(json, "Branch.data")
@@ -461,7 +461,7 @@ class Branch(Factory, Container, Collection):
         return "<Branch {}>".format(" ".join("i" + str(i) + "=" + v.name for i, v in enumerate(self.values)))
 
     def __eq__(self, other):
-        return isinstance(other, Branch) and exact(self.entries, other.entries) and self.values == other.values
+        return isinstance(other, Branch) and numeq(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
         return hash((self.entries, tuple(self.values)))

@@ -131,7 +131,7 @@ class Quantile(Factory, Container):
         return "<Quantile target={} estimate={}>".format(self.target, self.estimate)
 
     def __eq__(self, other):
-        return isinstance(other, Quantile) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.target, other.target) and exact(self.estimate, other.estimate)
+        return isinstance(other, Quantile) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.target, other.target) and numeq(self.estimate, other.estimate) and numeq(self.cumulativeDeviation, other.cumulativeDeviation)
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.target, self.estimate))

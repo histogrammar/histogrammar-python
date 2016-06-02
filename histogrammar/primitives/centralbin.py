@@ -176,7 +176,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         return "<CentrallyBin bins={} size={} nanflow={}>".format(self.bins[0][1].name, len(self.bins), self.nanflow.name)
 
     def __eq__(self, other):
-        return isinstance(other, CentrallyBin) and self.quantity == other.quantity and exact(self.entries, other.entries) and self.bins == other.bins and exact(self.min, other.min) and exact(self.max, other.max) and self.nanflow == other.nanflow
+        return isinstance(other, CentrallyBin) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.bins == other.bins and numeq(self.min, other.min) and numeq(self.max, other.max) and self.nanflow == other.nanflow
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.bins, self.min, self.max, self.nanflow))

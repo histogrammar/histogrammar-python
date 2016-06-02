@@ -99,7 +99,7 @@ class Minimize(Factory, Container):
         return "<Minimize min={}>".format(self.min)
 
     def __eq__(self, other):
-        return isinstance(other, Minimize) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.min, other.min)
+        return isinstance(other, Minimize) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.min, other.min)
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.min))
@@ -186,7 +186,7 @@ class Maximize(Factory, Container):
         return "<Maximize max={}>".format(self.max)
 
     def __eq__(self, other):
-        return isinstance(other, Maximize) and self.quantity == other.quantity and exact(self.entries, other.entries) and exact(self.max, other.max)
+        return isinstance(other, Maximize) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.max, other.max)
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.max))

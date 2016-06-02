@@ -21,29 +21,32 @@ from histogrammar.util import *
 
 class Select(Factory, Container):
     @staticmethod
-    def ed(entries, value):
+    def ed(entries, cut):
         if entries < 0.0:
             raise ContainerException("entries ({}) cannot be negative".format(entries))
-        out = Select(None, value)
+        out = Select(None, cut)
         out.entries = entries
         return out
 
     @staticmethod
-    def ing(quantity, value):
-        return Select(quantity, value)
+    def ing(quantity, cut):
+        return Select(quantity, cut)
 
-    def __init__(self, quantity, value):
+    def __init__(self, quantity, cut):
         self.entries = 0.0
         self.quantity = serializable(quantity)
-        self.value = value
+        self.cut = cut
         super(Select, self).__init__()
 
+    def fractionPassing(self):
+        return self.cut.entries / self.entries
+
     def zero(self):
-        return Select(self.quantity, self.value.zero())
+        return Select(self.quantity, self.cut.zero())
 
     def __add__(self, other):
         if isinstance(other, Select):
-            out = Select(self.quantity, self.value + other.value)
+            out = Select(self.quantity, self.cut + other.cut)
             out.entries = self.entries + other.entries
             return out
         else:
@@ -52,18 +55,18 @@ class Select(Factory, Container):
     def fill(self, datum, weight=1.0):
         w = weight * self.quantity(datum)
         if w > 0.0:
-            self.value.fill(datum, w)
+            self.cut.fill(datum, w)
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
 
     @property
     def children(self):
-        return [self.value]
+        return [self.cut]
 
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
-        "type": self.value.name,
-        "data": self.value.toJsonFragment(False),
+        "type": self.cut.name,
+        "data": self.cut.toJsonFragment(False),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
@@ -86,9 +89,9 @@ class Select(Factory, Container):
             else:
                 raise JsonFormatException(json, "Select.type")
 
-            value = factory.fromJsonFragment(json["data"], None)
+            cut = factory.fromJsonFragment(json["data"], None)
 
-            out = Select.ed(entries, value)
+            out = Select.ed(entries, cut)
             out.quantity.name = nameFromParent if name is None else name
             return out
 
@@ -96,13 +99,13 @@ class Select(Factory, Container):
             raise JsonFormatException(json, "Select")
 
     def __repr__(self):
-        return "<Select value={}>".format(self.value.name)
+        return "<Select cut={}>".format(self.cut.name)
 
     def __eq__(self, other):
-        return isinstance(other, Select) and exact(self.entries, other.entries) and self.value == other.value
+        return isinstance(other, Select) and numeq(self.entries, other.entries) and self.cut == other.cut
 
     def __hash__(self):
-        return hash((self.entries, self.value))
+        return hash((self.entries, self.cut))
 
 Factory.register(Select)
 
