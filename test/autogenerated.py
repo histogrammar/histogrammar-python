@@ -17,8 +17,15 @@
 import math
 import pickle
 import unittest
+import sys
+
 
 from histogrammar import *
+
+tolerance = 3.0*sys.float_info.epsilon
+
+util.relativeTolerance  = tolerance
+util.absoluteTolerance  = tolerance
 
 class Struct(object):
     def __init__(self, x, y, z, w):
