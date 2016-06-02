@@ -428,7 +428,7 @@ class Branch(Factory, Container, Collection):
 
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
-        "data": [{x.name: x.toJsonFragment(False)} for x in self.values],
+        "data": [{"type": x.name, "data": x.toJsonFragment(False)} for x in self.values],
         }
 
     @staticmethod
@@ -442,12 +442,12 @@ class Branch(Factory, Container, Collection):
             if isinstance(json["data"], list):
                 values = []
                 for i, x in enumerate(json["data"]):
-                    if isinstance(x, dict) and len(x) == 1:
-                        (k, v), = x.items()
-                        factory = Factory.registered[k]
-                        values.append(factory.fromJsonFragment(v, None))
-                    else:
-                        raise JsonFormatException(v, "Branch.data {}".format(i))
+                    if isinstance(x, dict) and hasKeys(x.keys(), ["type", "data"]):
+                        if isinstance(x["type"], basestring):
+                            factory = Factory.registered[x["type"]]
+                        else:
+                            raise JsonFormatException(x, "Branch.data {} type".format(i))
+                        values.append(factory.fromJsonFragment(x["data"], None))
 
             else:
                 raise JsonFormatException(json, "Branch.data")

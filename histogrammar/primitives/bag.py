@@ -81,7 +81,7 @@ class Bag(Factory, Container):
 
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
-        "values": [{"n": n, "v": v} for v, n in sorted(self.values.items())],
+        "values": [{"w": n, "v": v} for v, n in sorted(self.values.items())],
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
@@ -105,11 +105,11 @@ class Bag(Factory, Container):
             elif json["values"] is None or isinstance(json["values"], list):
                 values = {}
                 for i, nv in enumerate(json["values"]):
-                    if isinstance(nv, dict) and hasKeys(nv.keys(), ["n", "v"]):
-                        if isinstance(nv["n"], (int, long, float)):
-                            n = float(nv["n"])
+                    if isinstance(nv, dict) and hasKeys(nv.keys(), ["w", "v"]):
+                        if isinstance(nv["w"], (int, long, float)):
+                            n = float(nv["w"])
                         else:
-                            raise JsonFormatException(nv["n"], "Bag.values {} n".format(i))
+                            raise JsonFormatException(nv["w"], "Bag.values {} n".format(i))
 
                         if isinstance(nv["v"], basestring):
                             v = nv["v"]
