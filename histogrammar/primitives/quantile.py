@@ -53,13 +53,17 @@ class Quantile(Factory, Container):
                 if math.isnan(self.estimate) and math.isnan(other.estimate):
                     out.estimate = float("nan")
                 elif math.isnan(self.estimate):
-                    out.estimate = other.estimate
+                    out.estimate            = other.estimate
+                    out.cumulativeDeviation = other.cumulativeDeviation
                 elif math.isnan(other.estimate):
-                    out.estimate = self.estimate
+                    out.estimate            = self.estimate
+                    out.cumulativeDeviation = self.cumulativeDeviation
                 elif out.entries == 0.0:
-                    out.estimate = (self.estimate + other.estimate) / 2.0
+                    out.estimate            = (self.estimate + other.estimate) / 2.0
+                    out.cumulativeDeviation = (self.cumulativeDeviation + other.cumulativeDeviation)/2.0
                 else:
                     out.estimate = (self.estimate*self.entries + other.estimate*other.entries) / (self.entries + other.entries)
+                    out.cumulativeDeviation = (self.cumulativeDeviation*self.entries + other.cumulativeDeviation*other.entries) / (self.entries + other.entries)
                 return out
             else:
                 raise ContainerException("cannot add Quantiles because targets do not match ({} vs {})".format(self.target, other.target))
