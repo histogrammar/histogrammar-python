@@ -61,7 +61,7 @@ class AbsoluteErr(Factory, Container):
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
-            self.absoluteSum += abs(q)
+            self.absoluteSum += abs(q) * weight
 
     @property
     def children(self):
