@@ -17,12 +17,11 @@
 import math
 import pickle
 import unittest
-import sys
 
 
 from histogrammar import *
 
-tolerance = 4.0*sys.float_info.epsilon
+tolerance = 1e-12
 
 util.relativeTolerance  = tolerance
 util.absoluteTolerance  = tolerance
