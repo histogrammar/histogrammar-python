@@ -17,41 +17,41 @@
 # "Private" methods; not attached to the histogram because not a member of the class, but within scope because it's a closure.
 
 def setTH1(self, th1):
-    th1.SetBinContent(0, self.cut.underflow.entries)
-    for i, v in enumerate(self.cut.values):
+    th1.SetBinContent(0, self.underflow.entries)
+    for i, v in enumerate(self.values):
         th1.SetBinContent(i + 1, v.entries)
-    th1.SetBinContent(len(self.cut.values), self.cut.overflow.entries)
-    th1.SetEntries(self.cut.entries)
+    th1.SetBinContent(len(self.values), self.overflow.entries)
+    th1.SetEntries(self.entries)
 
 # "Public" methods; what we want to attach to the Histogram as a mix-in.
 
 class HistogramMethods(object):
     def TH1C(self, name, title):
         import ROOT
-        th1 = ROOT.TH1C(name, title, len(self.cut.values), self.cut.low, self.cut.high)
+        th1 = ROOT.TH1C(name, title, len(self.values), self.low, self.high)
         setTH1(self, th1)
         return th1
 
     def TH1S(self, name, title):
         import ROOT
-        th1 = ROOT.TH1S(name, title, len(self.cut.values), self.cut.low, self.cut.high)
+        th1 = ROOT.TH1S(name, title, len(self.values), self.low, self.high)
         setTH1(self, th1)
         return th1
 
     def TH1I(self, name, title):
         import ROOT
-        th1 = ROOT.TH1I(name, title, len(self.cut.values), self.cut.low, self.cut.high)
+        th1 = ROOT.TH1I(name, title, len(self.values), self.low, self.high)
         setTH1(self, th1)
         return th1
 
     def TH1F(self, name, title):
         import ROOT
-        th1 = ROOT.TH1F(name, title, len(self.cut.values), self.cut.low, self.cut.high)
+        th1 = ROOT.TH1F(name, title, len(self.values), self.low, self.high)
         setTH1(self, th1)
         return th1
 
     def TH1D(self, name, title):
         import ROOT
-        th1 = ROOT.TH1D(name, title, len(self.cut.values), self.cut.low, self.cut.high)
+        th1 = ROOT.TH1D(name, title, len(self.values), self.low, self.high)
         setTH1(self, th1)
         return th1
