@@ -24,4 +24,6 @@ class HistogramMethods(object):
 
         return something
 
+class ProfileMethods(object):
+    pass
 

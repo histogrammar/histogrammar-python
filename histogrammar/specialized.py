@@ -19,12 +19,16 @@ from histogrammar.util import serializable
 from histogrammar.primitives.select import Select
 from histogrammar.primitives.bin import Bin
 from histogrammar.primitives.count import Count
+from histogrammar.primitives.deviate import Deviate
 
 import histogrammar.plot.root
 import histogrammar.plot.bokeh
 
 def Histogram(num, low, high, quantity, selection=unweighted):
     return Select(selection, Bin(num, low, high, quantity, Count(), Count(), Count(), Count()))
+
+def Profile(num, low, high, fillx, filly, selection=unweighted):
+    return Select(selection, Bin(num, low, high, fillx, Deviate(filly), Count(), Count(), Count()))
 
 class SelectedHistogramMethods(Select):
     @property
@@ -70,6 +74,34 @@ class HistogramMethods(Bin,
     def numericalNanflow(self):
         return self.nanflow.entries
 
+class SelectedProfileMethods(Select):
+    @property
+    def name(self):
+        return "Select"
+
+    @property
+    def factory(self):
+        return Select
+
+    def __getattr__(self, attr):
+        if attr.startswith("__") and attr.endswith("__"):
+            return getattr(Select, attr)
+        elif attr not in self.__dict__ and hasattr(self.__dict__["cut"], attr):
+            return getattr(self.__dict__["cut"], attr)
+        else:
+            return self.__dict__[attr]
+
+class ProfileMethods(Bin,
+                     histogrammar.plot.root.ProfileMethods,
+                     histogrammar.plot.bokeh.ProfileMethods):
+    @property
+    def name(self):
+        return "Bin"
+
+    @property
+    def factory(self):
+        return Bin
+
 def addImplicitMethods(container):
     if isinstance(container, Bin) and \
        all(isinstance(v, Count) for v in container.values) and \
@@ -85,3 +117,18 @@ def addImplicitMethods(container):
            isinstance(container.cut.overflow, Count) and \
            isinstance(container.cut.nanflow, Count):
         container.__class__ = SelectedHistogramMethods
+
+    elif isinstance(container, Bin) and \
+       all(isinstance(v, Deviate) for v in container.values) and \
+       isinstance(container.underflow, Count) and \
+       isinstance(container.overflow, Count) and \
+       isinstance(container.nanflow, Count):
+        container.__class__ = ProfileMethods
+
+    elif isinstance(container, Select) and \
+           isinstance(container.cut, Bin) and \
+           all(isinstance(v, Deviate) for v in container.cut.values) and \
+           isinstance(container.cut.underflow, Count) and \
+           isinstance(container.cut.overflow, Count) and \
+           isinstance(container.cut.nanflow, Count):
+        container.__class__ = SelectedProfileMethods
