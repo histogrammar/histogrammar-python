@@ -102,6 +102,26 @@ class ProfileMethods(Bin,
     def factory(self):
         return Bin
 
+    @property
+    def meanValues(self):
+        return [v.mean for v in self.values]
+
+    @property
+    def varianceValues(self):
+        return [v.variance for v in self.values]
+
+    @property
+    def numericalOverflow(self):
+        return self.overflow.entries
+
+    @property
+    def numericalUnderflow(self):
+        return self.underflow.entries
+
+    @property
+    def numericalNanflow(self):
+        return self.nanflow.entries
+
 def addImplicitMethods(container):
     if isinstance(container, Bin) and \
        all(isinstance(v, Count) for v in container.values) and \
