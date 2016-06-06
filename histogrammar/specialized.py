@@ -20,10 +20,15 @@ from histogrammar.primitives.select import Select
 from histogrammar.primitives.bin import Bin
 from histogrammar.primitives.count import Count
 
+import histogrammar.plot.root
+import histogrammar.plot.bokeh
+
 def Histogram(num, low, high, quantity, selection=unweighted):
     return Select(selection, Bin(num, low, high, quantity, Count(), Count(), Count(), Count()))
 
-class HistogramMethods(Select):
+class HistogramMethods(Select,
+                       histogrammar.plot.root.HistogramMethods,
+                       histogrammar.plot.bokeh.HistogramMethods):
     @property
     def name(self):
         return "Select"
@@ -47,43 +52,6 @@ class HistogramMethods(Select):
     @property
     def numericalNanflow(self):
         return self.cut.nanflow.entries
-
-    def __setTH1(self, th1):
-        th1.SetBinContent(0, self.cut.underflow.entries)
-        for i, v in enumerate(self.cut.values):
-            th1.SetBinContent(i + 1, v.entries)
-        th1.SetBinContent(len(self.cut.values), self.cut.overflow.entries)
-        th1.SetEntries(self.cut.entries)
-
-    def TH1C(self, name, title):
-        import ROOT
-        th1 = ROOT.TH1C(name, title, len(self.cut.values), self.cut.low, self.cut.high)
-        self.cut.__setTH1(th1)
-        return th1
-
-    def TH1S(self, name, title):
-        import ROOT
-        th1 = ROOT.TH1S(name, title, len(self.cut.values), self.cut.low, self.cut.high)
-        self.cut.__setTH1(th1)
-        return th1
-
-    def TH1I(self, name, title):
-        import ROOT
-        th1 = ROOT.TH1I(name, title, len(self.cut.values), self.cut.low, self.cut.high)
-        self.cut.__setTH1(th1)
-        return th1
-
-    def TH1F(self, name, title):
-        import ROOT
-        th1 = ROOT.TH1F(name, title, len(self.cut.values), self.cut.low, self.cut.high)
-        self.cut.__setTH1(th1)
-        return th1
-
-    def TH1D(self, name, title):
-        import ROOT
-        th1 = ROOT.TH1D(name, title, len(self.cut.values), self.cut.low, self.cut.high)
-        self.cut.__setTH1(th1)
-        return th1
 
 def addImplicitMethods(container):
     if isinstance(container, Select) and \

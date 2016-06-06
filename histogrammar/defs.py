@@ -18,6 +18,8 @@ import json as jsonlib
 
 from histogrammar.util import *
 
+# used by SparselyBin as NaN for long
+
 MIN_LONG = -9223372036854775808
 
 class ContainerException(Exception):
@@ -87,7 +89,11 @@ class Container(object):
     def toJsonFragment(self, suppressName): raise NotImplementedError
     def __repr__(self): raise NotImplementedError
 
+# default weight
+
 unweighted = named("unweighted", lambda datum: 1.0)
+
+# functions for Spark's RDD.aggregate
 
 def increment(container, datum):
     container.fill(datum)
@@ -95,6 +101,8 @@ def increment(container, datum):
 
 def combine(container1, container2):
     return container1 + container2
+
+# symbols for Branch paths (Index paths use integers, Label/UntypedLabel paths use strings)
 
 i0 = 0
 i1 = 1
