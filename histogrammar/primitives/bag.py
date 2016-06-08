@@ -149,7 +149,7 @@ class Bag(Factory, Container):
         return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
-        return hash((self.quantity, self.entries, json.dumps(self.values, sort_keys=True)))
+        return hash((self.quantity, self.entries, tuple(self.values)))
         
 
 Factory.register(Bag)
