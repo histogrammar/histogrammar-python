@@ -15,6 +15,7 @@
 # limitations under the License.
 
 # "Public" methods; what we want to attach to the Histogram as a mix-in.
+from __future__ import absolute_import
 
 class HistogramMethods(object):
     def bokeh(self, label=None, values=None, color=None, stack=None, group=None, agg="sum",
