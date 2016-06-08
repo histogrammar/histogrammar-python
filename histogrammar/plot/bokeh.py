@@ -16,18 +16,18 @@
 
 # "Public" methods; what we want to attach to the Histogram as a mix-in.
 
-from bokeh.charts.builder import Builder, create_and_build
-from bokeh.models import FactorRange, Range1d
-from bokeh.charts.glyphs import BarGlyph
-from bokeh.charts.properties import Dimension
-from bokeh.charts.attributes import ColorAttr, CatAttr
-from bokeh.models.sources import ColumnDataSource
-from bokeh.charts.builders.bar_builder import BarBuilder
-
 class HistogramMethods(object):
     def bokeh(self, label=None, values=None, color=None, stack=None, group=None, agg="sum",
         xscale="categorical", yscale="linear", xgrid=False, ygrid=True,
         continuous_range=None, **kw):
+
+        from bokeh.charts.builder import Builder, create_and_build
+        from bokeh.models import FactorRange, Range1d
+        from bokeh.charts.glyphs import BarGlyph
+        from bokeh.charts.properties import Dimension
+        from bokeh.charts.attributes import ColorAttr, CatAttr
+        from bokeh.models.sources import ColumnDataSource
+        from bokeh.charts.builders.bar_builder import BarBuilder
 
         if continuous_range and not isinstance(continuous_range, Range1d):
             raise ValueError(
