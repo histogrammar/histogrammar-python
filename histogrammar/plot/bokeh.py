@@ -18,50 +18,48 @@
 from __future__ import absolute_import
 
 class HistogramMethods(object):
-    def bokeh(self, label=None, values=None, color=None, stack=None, group=None, agg="sum",
+    def bokeh(self, glyphType="bar", label=None, color=None, stack=None, group=None,
         xscale="categorical", yscale="linear", xgrid=False, ygrid=True,
         continuous_range=None, **kw):
 
-        from bokeh.charts.builder import Builder, create_and_build
-        from bokeh.models import FactorRange, Range1d
-        from bokeh.charts.glyphs import BarGlyph
-        from bokeh.charts.properties import Dimension
-        from bokeh.charts.attributes import ColorAttr, CatAttr
-        from bokeh.models.sources import ColumnDataSource
+        from bokeh.charts.builder import create_and_build
         from bokeh.charts.builders.bar_builder import BarBuilder
+        from bokeh.charts.builders.histogram_builder import HistogramBuilder
+        from bokeh.charts.builders.boxplot_builder import BoxPlotBuilder
+        from bokeh.models import Range1d
 
         if continuous_range and not isinstance(continuous_range, Range1d):
             raise ValueError(
                     "continuous_range must be an instance of bokeh.models.ranges.Range1d"
             )
 
-        if label is not None and values is None:
-            kw['label_only'] = True
-            if (agg == 'sum') or (agg == 'mean'):
-                agg = 'count'
-                values = label
+        if label is not None and values is None: kw['label_only'] = True
 
         # The continuous_range is the y_range
         y_range = continuous_range
         kw['label'] = label
-        kw['values'] = values
         kw['color'] = color
         kw['stack'] = stack
         kw['group'] = group
-        kw['agg'] = agg
         kw['xscale'] = xscale
         kw['yscale'] = yscale
         kw['xgrid'] = xgrid
         kw['ygrid'] = ygrid
         kw['y_range'] = y_range
 
-        return create_and_build(BarBuilder, self.numericalValues, **kw)
+        if glyphType == "box": return create_and_build(BoxPlotBuilder, self.numericalValues, **kw)
+        if glyphType == "histogram": return create_and_build(HistogramBuilder, self.numericalValues, **kw)
+        else: return create_and_build(BarBuilder, self.numericalValues, **kw) 
 
+    def plot(self,chart,fname="default.html"):
+        from bokeh.charts import output_file,show
 
-    def plot(self):
-        pass
+        output_file(fname)
+        #show(chart) 
+        
     def save(self):
         pass
+
     def view(self): 
         pass
 
