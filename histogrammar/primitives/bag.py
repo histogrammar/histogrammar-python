@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import math
+import json
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -148,6 +149,7 @@ class Bag(Factory, Container):
         return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
-        return hash((self.quantity, self.entries, self.values))
+        return hash((self.quantity, self.entries, json.dumps(self.values, sort_keys=True)))
+        
 
 Factory.register(Bag)
