@@ -19,11 +19,18 @@ from histogrammar.util import serializable
 from histogrammar.primitives.select import Select
 from histogrammar.primitives.bin import Bin
 from histogrammar.primitives.count import Count
+from histogrammar.primitives.deviate import Deviate
+
+import histogrammar.plot.root
+import histogrammar.plot.bokeh
 
 def Histogram(num, low, high, quantity, selection=unweighted):
     return Select(selection, Bin(num, low, high, quantity, Count(), Count(), Count(), Count()))
 
-class HistogramMethods(Select):
+def Profile(num, low, high, fillx, filly, selection=unweighted):
+    return Select(selection, Bin(num, low, high, fillx, Deviate(filly), Count(), Count(), Count()))
+
+class SelectedHistogramMethods(Select):
     @property
     def name(self):
         return "Select"
@@ -32,64 +39,116 @@ class HistogramMethods(Select):
     def factory(self):
         return Select
 
+    def __getattr__(self, attr):
+        if attr.startswith("__") and attr.endswith("__"):
+            return getattr(Select, attr)
+        elif attr not in self.__dict__ and hasattr(self.__dict__["cut"], attr):
+            return getattr(self.__dict__["cut"], attr)
+        else:
+            return self.__dict__[attr]
+
+class HistogramMethods(Bin,
+                       histogrammar.plot.root.HistogramMethods,
+                       histogrammar.plot.bokeh.HistogramMethods):
+    @property
+    def name(self):
+        return "Bin"
+
+    @property
+    def factory(self):
+        return Bin
+
     @property
     def numericalValues(self):
-        return [v.entries for v in self.cut.values]
+        return [v.entries for v in self.values]
 
     @property
     def numericalOverflow(self):
-        return self.cut.overflow.entries
+        return self.overflow.entries
 
     @property
     def numericalUnderflow(self):
-        return self.cut.underflow.entries
+        return self.underflow.entries
 
     @property
     def numericalNanflow(self):
-        return self.cut.nanflow.entries
+        return self.nanflow.entries
 
-    def __setTH1(self, th1):
-        th1.SetBinContent(0, self.cut.underflow.entries)
-        for i, v in enumerate(self.cut.values):
-            th1.SetBinContent(i + 1, v.entries)
-        th1.SetBinContent(len(self.cut.values), self.cut.overflow.entries)
-        th1.SetEntries(self.cut.entries)
+class SelectedProfileMethods(Select):
+    @property
+    def name(self):
+        return "Select"
 
-    def TH1C(self, name, title):
-        import ROOT
-        th1 = ROOT.TH1C(name, title, len(self.cut.values), self.cut.low, self.cut.high)
-        self.cut.__setTH1(th1)
-        return th1
+    @property
+    def factory(self):
+        return Select
 
-    def TH1S(self, name, title):
-        import ROOT
-        th1 = ROOT.TH1S(name, title, len(self.cut.values), self.cut.low, self.cut.high)
-        self.cut.__setTH1(th1)
-        return th1
+    def __getattr__(self, attr):
+        if attr.startswith("__") and attr.endswith("__"):
+            return getattr(Select, attr)
+        elif attr not in self.__dict__ and hasattr(self.__dict__["cut"], attr):
+            return getattr(self.__dict__["cut"], attr)
+        else:
+            return self.__dict__[attr]
 
-    def TH1I(self, name, title):
-        import ROOT
-        th1 = ROOT.TH1I(name, title, len(self.cut.values), self.cut.low, self.cut.high)
-        self.cut.__setTH1(th1)
-        return th1
+class ProfileMethods(Bin,
+                     histogrammar.plot.root.ProfileMethods,
+                     histogrammar.plot.bokeh.ProfileMethods):
+    @property
+    def name(self):
+        return "Bin"
 
-    def TH1F(self, name, title):
-        import ROOT
-        th1 = ROOT.TH1F(name, title, len(self.cut.values), self.cut.low, self.cut.high)
-        self.cut.__setTH1(th1)
-        return th1
+    @property
+    def factory(self):
+        return Bin
 
-    def TH1D(self, name, title):
-        import ROOT
-        th1 = ROOT.TH1D(name, title, len(self.cut.values), self.cut.low, self.cut.high)
-        self.cut.__setTH1(th1)
-        return th1
+    @property
+    def meanValues(self):
+        return [v.mean for v in self.values]
+
+    @property
+    def varianceValues(self):
+        return [v.variance for v in self.values]
+
+    @property
+    def numericalOverflow(self):
+        return self.overflow.entries
+
+    @property
+    def numericalUnderflow(self):
+        return self.underflow.entries
+
+    @property
+    def numericalNanflow(self):
+        return self.nanflow.entries
 
 def addImplicitMethods(container):
-    if isinstance(container, Select) and \
+    if isinstance(container, Bin) and \
+       all(isinstance(v, Count) for v in container.values) and \
+       isinstance(container.underflow, Count) and \
+       isinstance(container.overflow, Count) and \
+       isinstance(container.nanflow, Count):
+        container.__class__ = HistogramMethods
+
+    elif isinstance(container, Select) and \
            isinstance(container.cut, Bin) and \
            all(isinstance(v, Count) for v in container.cut.values) and \
            isinstance(container.cut.underflow, Count) and \
            isinstance(container.cut.overflow, Count) and \
            isinstance(container.cut.nanflow, Count):
-        container.__class__ = HistogramMethods
+        container.__class__ = SelectedHistogramMethods
+
+    elif isinstance(container, Bin) and \
+       all(isinstance(v, Deviate) for v in container.values) and \
+       isinstance(container.underflow, Count) and \
+       isinstance(container.overflow, Count) and \
+       isinstance(container.nanflow, Count):
+        container.__class__ = ProfileMethods
+
+    elif isinstance(container, Select) and \
+           isinstance(container.cut, Bin) and \
+           all(isinstance(v, Deviate) for v in container.cut.values) and \
+           isinstance(container.cut.underflow, Count) and \
+           isinstance(container.cut.overflow, Count) and \
+           isinstance(container.cut.nanflow, Count):
+        container.__class__ = SelectedProfileMethods
