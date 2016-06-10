@@ -344,7 +344,7 @@ class Clustering1D(object):
         return self.num == other.num and numeq(self.tailDetail, other.tailDetail) and self.values == other.values and numeq(self.min, other.min) and numeq(self.max, other.max) and numeq(self.entries, other.entries)
 
     def __hash__(self):
-        return hash((self.num, self.tailDetail, self.values, self.min, self.max, self.entries))
+        return hash((self.num, self.tailDetail, tuple(self.values), self.min, self.max, self.entries))
 
 ################################################################ interpretation of central bins as a distribution
 

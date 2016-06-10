@@ -93,6 +93,7 @@ class Bin(Factory, Container):
     def range(self, index): ((self.high - self.low) * index / self.num + self.low, (self.high - self.low) * (index + 1) / self.num + self.low)
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
 
@@ -207,6 +208,6 @@ class Bin(Factory, Container):
         return isinstance(other, Bin) and numeq(self.low, other.low) and numeq(self.high, other.high) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values and self.underflow == other.underflow and self.overflow == other.overflow and self.nanflow == other.nanflow
 
     def __hash__(self):
-        return hash((self.low, self.high, self.quantity, self.entries, self.values, self.underflow, self.overflow, self.nanflow))
+        return hash((self.low, self.high, self.quantity, self.entries, tuple(self.values), self.underflow, self.overflow, self.nanflow))
 
 Factory.register(Bin)

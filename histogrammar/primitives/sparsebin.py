@@ -121,6 +121,7 @@ class SparselyBin(Factory, Container):
     def nan(self, x): return math.isnan(x)
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
 
@@ -137,7 +138,7 @@ class SparselyBin(Factory, Container):
 
     @property
     def children(self):
-        return [self.value, self.nanflow] + self.bins.values()
+        return [self.value, self.nanflow] + list(self.bins.values())
 
     def toJsonFragment(self, suppressName):
         if isinstance(self.value, Container):

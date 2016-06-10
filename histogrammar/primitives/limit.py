@@ -76,6 +76,7 @@ class Limit(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if self.entries + weight > self.limit:
             self.value = None
         elif self.value is not None:

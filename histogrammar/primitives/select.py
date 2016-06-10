@@ -53,6 +53,7 @@ class Select(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         w = weight * self.quantity(datum)
         if w > 0.0:
             self.cut.fill(datum, w)
