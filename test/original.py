@@ -712,6 +712,21 @@ class TestEverything(unittest.TestCase):
         self.checkName(one)
         self.checkName(two)
 
+    def testPlotHistogram(self):
+        one = Histogram(5, -3.0, 7.0, lambda x: x)
+
+        for _ in self.simple: one.fill(_)
+
+        two = Histogram(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
+        for _ in self.struct: two.fill(_)
+
+        from histogrammar.plot.bokeh import plot,save,view
+        curve1 = one.bokeh("rect")
+        curve2 = two.bokeh()
+        c = plot(renderers=[curve1,curve2])
+        save(c,"example.html")
+
+        #self.checkHtml("example.html")
     ################################################################ SparselyBin
 
     def testSparselyBin(self):
