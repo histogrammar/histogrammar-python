@@ -721,7 +721,7 @@ class TestEverything(unittest.TestCase):
         for _ in self.struct: two.fill(_)
 
         from histogrammar.plot.bokeh import plot,save,view
-        curve1 = one.bokeh("rect")
+        curve1 = one.bokeh("histogram")
         curve2 = two.bokeh()
         c = plot(renderers=[curve1,curve2])
         save(c,"example.html")
