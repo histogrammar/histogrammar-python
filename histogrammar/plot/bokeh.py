@@ -51,7 +51,12 @@ class HistogramMethods(object):
         elif glyphType == "triangle": glyph = Triangle(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
         elif glyphType == "circle": glyph = Circle(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
         elif glyphType == "rect": glyph = Rect(x='x', y='y', width=bin_width, height=0.1, fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
-        #elif glyphType == "histogram": glyph = Segment(x0='x', y0='y', x1='xm01', y1='ym01', line_color=line_color, line_width=glyphSize)
+        elif glyphType == "histogram": 
+            w = [bin_width for _ in x]
+            h = y
+            y = [yy/2 for yy in y]
+            source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
+            glyph = Rect(x='x', y='y', width='w', height='h', fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
         else: glyph = Line(x='x', y='y',line_color=line_color,line_alpha=line_alpha,line_width=glyphSize,line_dash=line_dash)
 
         return GlyphRenderer(glyph=glyph,data_source=source)
