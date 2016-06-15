@@ -58,7 +58,28 @@ class HistogramMethods(object):
         setTH1(self, th1)
         return th1
 
+class SparselyHistogramMethods(object):
+    pass
+
 class ProfileMethods(object):
+    def TProfile(self, name, title=""):
+        import ROOT
+        tprofile = ROOT.TProfile(name, title, len(self.values), self.low, self.high)
+        tprofile.SetBinContent(0, self.underflow.entries**2)
+        tprofile.SetBinEntries(0, self.underflow.entries)
+        for i, v in enumerate(self.values):
+            tprofile.SetBinError(i + 1, math.sqrt(v.entries) * v.mean)
+            tprofile.SetBinContent(i + 1, v.entries * v.mean)
+            tprofile.SetBinEntries(i + 1, v.entries)
+        tprofile.SetBinContent(len(self.values), self.underflow.entries**2)
+        tprofile.SetBinEntries(len(self.values), self.underflow.entries)
+        tprofile.SetEntries(self.entries)
+        return tprofile
+
+class SparselyProfileMethods(object):
+    pass
+
+class ProfileErrMethods(object):
     def TProfile(self, name, title=""):
         import ROOT
         tprofile = ROOT.TProfile(name, title, len(self.values), self.low, self.high)
@@ -72,3 +93,21 @@ class ProfileMethods(object):
         tprofile.SetBinEntries(len(self.values), self.underflow.entries)
         tprofile.SetEntries(self.entries)
         return tprofile
+
+class SparselyProfileErrMethods(object):
+    pass
+
+class StackedHistogramMethods(object):
+    pass
+
+class PartitionedHistogramMethods(object):
+    pass
+
+class FractionedHistogramMethods(object):
+    pass
+
+class TwoDimensionallyHistogramMethods(object):
+    pass
+
+class SparselyTwoDimensionallyHistogramMethods(object):
+    pass

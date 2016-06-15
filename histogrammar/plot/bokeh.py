@@ -24,6 +24,32 @@ class HistogramMethods(object):
 
         return something
 
+class SparselyHistogramMethods(object):
+    pass
+
 class ProfileMethods(object):
     pass
 
+class SparselyProfileMethods(object):
+    pass
+
+class ProfileErrMethods(object):
+    pass
+
+class SparselyProfileErrMethods(object):
+    pass
+
+class StackedHistogramMethods(object):
+    pass
+
+class PartitionedHistogramMethods(object):
+    pass
+
+class FractionedHistogramMethods(object):
+    pass
+
+class TwoDimensionallyHistogramMethods(object):
+    pass
+
+class SparselyTwoDimensionallyHistogramMethods(object):
+    pass

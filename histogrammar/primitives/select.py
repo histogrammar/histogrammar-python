@@ -32,6 +32,14 @@ class Select(Factory, Container):
     def ing(quantity, cut):
         return Select(quantity, cut)
 
+    def __getattr__(self, attr):
+        if attr.startswith("__") and attr.endswith("__"):
+            return getattr(Select, attr)
+        elif attr not in self.__dict__ and hasattr(self.__dict__["cut"], attr):
+            return getattr(self.__dict__["cut"], attr)
+        else:
+            return self.__dict__[attr]
+
     def __init__(self, quantity, cut):
         self.entries = 0.0
         self.quantity = serializable(quantity)
