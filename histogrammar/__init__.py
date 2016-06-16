@@ -38,3 +38,10 @@ from histogrammar.primitives.stack import *
 from histogrammar.primitives.sum import *
 
 from histogrammar.specialized import Histogram
+from histogrammar.specialized import SparselyHistogram
+from histogrammar.specialized import Profile
+from histogrammar.specialized import SparselyProfile
+from histogrammar.specialized import ProfileErr
+from histogrammar.specialized import SparselyProfileErr
+from histogrammar.specialized import TwoDimensionallyHistogram
+from histogrammar.specialized import TwoDimensionallySparselyHistogram

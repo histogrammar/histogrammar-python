@@ -25,6 +25,27 @@ def setTH1(entries, values, underflow, overflow, th1):
     th1.SetBinContent(len(values), overflow)
     th1.SetEntries(entries)
 
+def prepareTH2sparse(sparse):
+    sample = list(sparse.bins.values())[0]
+    yminBins = [v.minBin for v in sparse.bins.values() if v.minBin is not None]
+    ymaxBins = [v.maxBin for v in sparse.bins.values() if v.maxBin is not None]
+    if len(yminBins) > 0 and len(ymaxBins) > 0:
+        yminBin = min(yminBins)
+        ymaxBin = max(ymaxBins)
+    else:
+        yminBin = 0
+        ymaxBin = 0
+    ynum = 1 + ymaxBin - yminBin
+    ylow = yminBin * sample.binWidth + sample.origin
+    yhigh = (ymaxBin + 1) * sample.binWidth + sample.origin
+    return yminBin, ymaxBin, ynum, ylow, yhigh
+
+def setTH2sparse(sparse, yminBin, ymaxBin, th2):
+    for i, iindex in enumerate(xrange(sparse.minBin, sparse.maxBin + 1)):
+        for j, jindex in enumerate(xrange(yminBin, ymaxBin + 1)):
+            if iindex in sparse.bins and jindex in sparse.bins[iindex].bins:
+                th2.SetBinContent(i + 1, j + 1, sparse.bins[iindex].bins[jindex].entries)
+
 # "Public" methods; what we want to attach to the Histogram as a mix-in.
 
 class HistogramMethods(object):
@@ -185,11 +206,93 @@ class StackedHistogramMethods(object):
 class PartitionedHistogramMethods(object):
     pass
 
+# confidenceInterval: (Double, Double, Double) => Double
+
 class FractionedHistogramMethods(object):
+    # def TH1F(self, name, title="", confidenceInterval=None):
+    #     fractions = [ for n, d in zip(self.numerator)]
     pass
+
+
 
 class TwoDimensionallyHistogramMethods(object):
-    pass
+    def TH2C(self, name, title=""):
+        import ROOT
+        sample = self.values[0]
+        th2 = ROOT.TH2C(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
+        for i in xrange(self.num):
+            for j in xrange(sample.num):
+                th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
+        return th2
+
+    def TH2S(self, name, title=""):
+        import ROOT
+        sample = self.values[0]
+        th2 = ROOT.TH2S(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
+        for i in xrange(self.num):
+            for j in xrange(sample.num):
+                th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
+        return th2
+
+    def TH2I(self, name, title=""):
+        import ROOT
+        sample = self.values[0]
+        th2 = ROOT.TH2I(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
+        for i in xrange(self.num):
+            for j in xrange(sample.num):
+                th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
+        return th2
+
+    def TH2F(self, name, title=""):
+        import ROOT
+        sample = self.values[0]
+        th2 = ROOT.TH2F(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
+        for i in xrange(self.num):
+            for j in xrange(sample.num):
+                th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
+        return th2
+
+    def TH2D(self, name, title=""):
+        import ROOT
+        sample = self.values[0]
+        th2 = ROOT.TH2D(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
+        for i in xrange(self.num):
+            for j in xrange(sample.num):
+                th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
+        return th2
 
 class SparselyTwoDimensionallyHistogramMethods(object):
-    pass
+    def TH2C(self, name, title=""):
+        import ROOT
+        yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
+        th2 = ROOT.TH2C(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
+        setTH2sparse(self, yminBin, ymaxBin, th2)
+        return th2
+
+    def TH2S(self, name, title=""):
+        import ROOT
+        yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
+        th2 = ROOT.TH2S(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
+        setTH2sparse(self, yminBin, ymaxBin, th2)
+        return th2
+
+    def TH2I(self, name, title=""):
+        import ROOT
+        yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
+        th2 = ROOT.TH2I(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
+        setTH2sparse(self, yminBin, ymaxBin, th2)
+        return th2
+
+    def TH2F(self, name, title=""):
+        import ROOT
+        yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
+        th2 = ROOT.TH2F(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
+        setTH2sparse(self, yminBin, ymaxBin, th2)
+        return th2
+
+    def TH2D(self, name, title=""):
+        import ROOT
+        yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
+        th2 = ROOT.TH2D(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
+        setTH2sparse(self, yminBin, ymaxBin, th2)
+        return th2
