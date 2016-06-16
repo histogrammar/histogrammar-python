@@ -85,13 +85,13 @@ class SparselyBin(Factory, Container):
         if len(self.bins) == 0:
             return None
         else:
-            return min(*self.bins.keys())
+            return min(self.bins.keys())
     @property
     def maxBin(self):
         if len(self.bins) == 0:
             return None
         else:
-            return max(*self.bins.keys())
+            return max(self.bins.keys())
     @property
     def low(self):
         if len(self.bins) == 0:

@@ -18,12 +18,12 @@
 
 import math
 
-def setTH1(self, th1):
-    th1.SetBinContent(0, self.underflow.entries)
-    for i, v in enumerate(self.values):
-        th1.SetBinContent(i + 1, v.entries)
-    th1.SetBinContent(len(self.values), self.overflow.entries)
-    th1.SetEntries(self.entries)
+def setTH1(entries, values, underflow, overflow, th1):
+    th1.SetBinContent(0, underflow)
+    for i, v in enumerate(values):
+        th1.SetBinContent(i + 1, v)
+    th1.SetBinContent(len(values), overflow)
+    th1.SetEntries(entries)
 
 # "Public" methods; what we want to attach to the Histogram as a mix-in.
 
@@ -31,36 +31,45 @@ class HistogramMethods(object):
     def TH1C(self, name, title=""):
         import ROOT
         th1 = ROOT.TH1C(name, title, len(self.values), self.low, self.high)
-        setTH1(self, th1)
+        setTH1(self.entries, [x.entries for x in self.values], self.underflow.entries, self.overflow.entries, th1)
         return th1
 
     def TH1S(self, name, title=""):
         import ROOT
         th1 = ROOT.TH1S(name, title, len(self.values), self.low, self.high)
-        setTH1(self, th1)
+        setTH1(self.entries, [x.entries for x in self.values], self.underflow.entries, self.overflow.entries, th1)
         return th1
 
     def TH1I(self, name, title=""):
         import ROOT
         th1 = ROOT.TH1I(name, title, len(self.values), self.low, self.high)
-        setTH1(self, th1)
+        setTH1(self.entries, [x.entries for x in self.values], self.underflow.entries, self.overflow.entries, th1)
         return th1
 
     def TH1F(self, name, title=""):
         import ROOT
         th1 = ROOT.TH1F(name, title, len(self.values), self.low, self.high)
-        setTH1(self, th1)
+        setTH1(self.entries, [x.entries for x in self.values], self.underflow.entries, self.overflow.entries, th1)
         return th1
 
     def TH1D(self, name, title=""):
         import ROOT
         th1 = ROOT.TH1D(name, title, len(self.values), self.low, self.high)
-        setTH1(self, th1)
+        setTH1(self.entries, [x.entries for x in self.values], self.underflow.entries, self.overflow.entries, th1)
         return th1
 
 class SparselyHistogramMethods(object):
-    pass
-
+    def TH1F(self, name, title=""):
+        import ROOT
+        if self.minBin is None or self.maxBin is None:
+            th1 = ROOT.TH1F(name, title, 1, self.origin, self.origin + 1.0)
+            setTH1(self.entries, [0.0], 0.0, 0.0, th1)
+        else:
+            size = 1 + self.maxBin - self.minBin
+            th1 = ROOT.TH1F(name, title, size, self.low, self.high)
+            setTH1(self.entries, [self.bins[x].entries if x in self.bins else 0.0 for x in xrange(size)], 0.0, 0.0, th1)
+        return th1
+    
 class ProfileMethods(object):
     def TProfile(self, name, title=""):
         import ROOT

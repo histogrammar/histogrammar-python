@@ -66,7 +66,7 @@ class HistogramMethods(Bin,
     def numericalNanflow(self):
         return self.nanflow.entries
 
-class SparselyHistogramMethods(Bin,
+class SparselyHistogramMethods(SparselyBin,
         histogrammar.plot.root.SparselyHistogramMethods,
         histogrammar.plot.bokeh.SparselyHistogramMethods):
 
@@ -106,7 +106,7 @@ class ProfileMethods(Bin,
     def numericalNanflow(self):
         return self.nanflow.entries
 
-class SparselyProfileMethods(Bin,
+class SparselyProfileMethods(SparselyBin,
         histogrammar.plot.root.SparselyProfileMethods,
         histogrammar.plot.bokeh.SparselyProfileMethods):
 
@@ -150,7 +150,7 @@ class ProfileErrMethods(Bin,
     def numericalNanflow(self):
         return self.nanflow.entries
 
-class SparselyProfileErrMethods(Bin,
+class SparselyProfileErrMethods(SparselyBin,
         histogrammar.plot.root.SparselyProfileErrMethods,
         histogrammar.plot.bokeh.SparselyProfileErrMethods):
 
@@ -226,32 +226,32 @@ def addImplicitMethods(container):
     if isinstance(container, Bin) and all(isinstance(v, Count) for v in container.values):
         container.__class__ = HistogramMethods
 
-    elif isinstance(container, SparselyBin) and all(isinstance(v, Count) for v in container.values):
+    elif isinstance(container, SparselyBin) and all(isinstance(v, Count) for v in container.bins.values()):
         container.__class__ = SparselyHistogramMethods
 
     elif isinstance(container, Bin) and all(isinstance(v, Average) for v in container.values):
         container.__class__ = ProfileMethods
 
-    elif isinstance(container, SparselyBin) and all(isinstance(v, Average) for v in container.values):
+    elif isinstance(container, SparselyBin) and all(isinstance(v, Average) for v in container.bins.values()):
         container.__class__ = SparselyProfileMethods
 
     elif isinstance(container, Bin) and all(isinstance(v, Deviate) for v in container.values):
         container.__class__ = ProfileErrMethods
 
-    elif isinstance(container, SparselyBin) and all(isinstance(v, Deviate) for v in container.values):
+    elif isinstance(container, SparselyBin) and all(isinstance(v, Deviate) for v in container.bins.values()):
         container.__class__ = SparselyProfileErrMethods
 
-    elif isinstance(container, Stack) and (all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts) or all(isinstance(v, SparselyBin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts)):
+    elif isinstance(container, Stack) and (all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts) or all(isinstance(v, SparselyBin) and all(isinstance(vv, Count) for vv in v.bins.values()) for c, v in container.cuts)):
         container.__class__ = StackedHistogramMethods
 
-    elif isinstance(container, Partition) and (all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts) or all(isinstance(v, SparselyBin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts)):
+    elif isinstance(container, Partition) and (all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts) or all(isinstance(v, SparselyBin) and all(isinstance(vv, Count) for vv in v.bins.values()) for c, v in container.cuts)):
         container.__class__ = PartitionedHistogramMethods
 
-    elif isinstance(container, Fraction) and ((isinstance(container.numerator, Bin) and all(isinstance(v, Count) for v in container.numerator.values) and isinstance(container.denominator, Bin) and all(isinstance(v, Count) for v in container.denominator.values)) or (isinstance(container.numerator, SparselyBin) and all(isinstance(v, Count) for v in container.numerator.values) and isinstance(container.denominator, SparselyBin) and all(isinstance(v, Count) for v in container.denominator.values))):
+    elif isinstance(container, Fraction) and ((isinstance(container.numerator, Bin) and all(isinstance(v, Count) for v in container.numerator.values) and isinstance(container.denominator, Bin) and all(isinstance(v, Count) for v in container.denominator.values)) or (isinstance(container.numerator, SparselyBin) and all(isinstance(v, Count) for v in container.numerator.bins.values()) and isinstance(container.denominator, SparselyBin) and all(isinstance(v, Count) for v in container.denominator.bins.values()))):
         container.__class__ = FractionedHistogramMethods
 
     elif isinstance(container, Bin) and all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for v in container.values):
         container.__class__ = TwoDimensionallyHistogramMethods
 
-    elif isinstance(container, SparselyBin) and all(isinstance(v, SparselyBin) and all(isinstance(vv, Count) for vv in v.values) for v in container.values):
+    elif isinstance(container, SparselyBin) and all(isinstance(v, SparselyBin) and all(isinstance(vv, Count) for vv in v.bins.values()) for v in container.values):
         container.__class__ = SparselyTwoDimensionallyHistogramMethods
