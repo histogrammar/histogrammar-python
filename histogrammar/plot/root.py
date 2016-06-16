@@ -59,17 +59,56 @@ class HistogramMethods(object):
         return th1
 
 class SparselyHistogramMethods(object):
+    def TH1C(self, name, title=""):
+        import ROOT
+        if self.minBin is None or self.maxBin is None:
+            th1 = ROOT.TH1C(name, title, 1, self.origin, self.origin + 1.0)
+        else:
+            size = 1 + self.maxBin - self.minBin
+            th1 = ROOT.TH1C(name, title, size, self.low, self.high)
+            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
+        return th1
+
+    def TH1S(self, name, title=""):
+        import ROOT
+        if self.minBin is None or self.maxBin is None:
+            th1 = ROOT.TH1S(name, title, 1, self.origin, self.origin + 1.0)
+        else:
+            size = 1 + self.maxBin - self.minBin
+            th1 = ROOT.TH1S(name, title, size, self.low, self.high)
+            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
+        return th1
+
+    def TH1I(self, name, title=""):
+        import ROOT
+        if self.minBin is None or self.maxBin is None:
+            th1 = ROOT.TH1I(name, title, 1, self.origin, self.origin + 1.0)
+        else:
+            size = 1 + self.maxBin - self.minBin
+            th1 = ROOT.TH1I(name, title, size, self.low, self.high)
+            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
+        return th1
+
     def TH1F(self, name, title=""):
         import ROOT
         if self.minBin is None or self.maxBin is None:
             th1 = ROOT.TH1F(name, title, 1, self.origin, self.origin + 1.0)
-            setTH1(self.entries, [0.0], 0.0, 0.0, th1)
         else:
             size = 1 + self.maxBin - self.minBin
             th1 = ROOT.TH1F(name, title, size, self.low, self.high)
-            setTH1(self.entries, [self.bins[x].entries if x in self.bins else 0.0 for x in xrange(size)], 0.0, 0.0, th1)
+            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
         return th1
-    
+
+    def TH1D(self, name, title=""):
+        import ROOT
+        if self.minBin is None or self.maxBin is None:
+            th1 = ROOT.TH1D(name, title, 1, self.origin, self.origin + 1.0)
+        else:
+            size = 1 + self.maxBin - self.minBin
+            th1 = ROOT.TH1D(name, title, size, self.low, self.high)
+            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
+        return th1
+
 class ProfileMethods(object):
     def TProfile(self, name, title=""):
         import ROOT
@@ -80,13 +119,30 @@ class ProfileMethods(object):
             tprofile.SetBinError(i + 1, math.sqrt(v.entries) * v.mean)
             tprofile.SetBinContent(i + 1, v.entries * v.mean)
             tprofile.SetBinEntries(i + 1, v.entries)
-        tprofile.SetBinContent(len(self.values), self.underflow.entries**2)
-        tprofile.SetBinEntries(len(self.values), self.underflow.entries)
+        tprofile.SetBinContent(len(self.values), self.overflow.entries**2)
+        tprofile.SetBinEntries(len(self.values), self.overflow.entries)
         tprofile.SetEntries(self.entries)
         return tprofile
 
 class SparselyProfileMethods(object):
-    pass
+    def TProfile(self, name, title=""):
+        import ROOT
+        if self.minBin is None or self.maxBin is None:
+            tprofile = ROOT.TProfile(name, title, 1, self.origin, self.origin + 1.0)
+        else:
+            tprofile = ROOT.TProfile(name, title, 1 + self.maxBin - self.minBin, self.low, self.high)
+            for i, index in enumerate(xrange(self.minBin, self.maxBin + 1)):
+                if index in self.bins:
+                    v = self.bins[index]
+                    tprofile.SetBinError(i + 1, math.sqrt(v.entries) * v.mean)
+                    tprofile.SetBinContent(i + 1, v.entries * v.mean)
+                    tprofile.SetBinEntries(i + 1, v.entries)
+            tprofile.SetBinContent(0, 0.0)
+            tprofile.SetBinEntries(0, 0.0)
+            tprofile.SetBinContent(1 + self.maxBin - self.minBin, 0.0)
+            tprofile.SetBinEntries(1 + self.maxBin - self.minBin, 0.0)
+            tprofile.SetEntries(self.entries)
+        return tprofile
 
 class ProfileErrMethods(object):
     def TProfile(self, name, title=""):
@@ -98,13 +154,30 @@ class ProfileErrMethods(object):
             tprofile.SetBinError(i + 1, math.sqrt(v.entries*(v.variance + v.mean**2)))
             tprofile.SetBinContent(i + 1, v.entries * v.mean)
             tprofile.SetBinEntries(i + 1, v.entries)
-        tprofile.SetBinContent(len(self.values), self.underflow.entries**2)
-        tprofile.SetBinEntries(len(self.values), self.underflow.entries)
+        tprofile.SetBinContent(len(self.values), self.overflow.entries**2)
+        tprofile.SetBinEntries(len(self.values), self.overflow.entries)
         tprofile.SetEntries(self.entries)
         return tprofile
 
 class SparselyProfileErrMethods(object):
-    pass
+    def TProfile(self, name, title=""):
+        import ROOT
+        if self.minBin is None or self.maxBin is None:
+            tprofile = ROOT.TProfile(name, title, 1, self.origin, self.origin + 1.0)
+        else:
+            tprofile = ROOT.TProfile(name, title, 1 + self.maxBin - self.minBin, self.low, self.high)
+            for i, index in enumerate(xrange(self.minBin, self.maxBin + 1)):
+                if index in self.bins:
+                    v = self.bins[index]
+                    tprofile.SetBinError(i + 1, math.sqrt(v.entries*(v.variance + v.mean**2)))
+                    tprofile.SetBinContent(i + 1, v.entries * v.mean)
+                    tprofile.SetBinEntries(i + 1, v.entries)
+            tprofile.SetBinContent(0, 0.0)
+            tprofile.SetBinEntries(0, 0.0)
+            tprofile.SetBinContent(1 + self.maxBin - self.minBin, 0.0)
+            tprofile.SetBinEntries(1 + self.maxBin - self.minBin, 0.0)
+            tprofile.SetEntries(self.entries)
+        return tprofile
 
 class StackedHistogramMethods(object):
     pass

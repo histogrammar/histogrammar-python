@@ -44,6 +44,8 @@ class SparselyBin(Factory, Container):
         self.entries = 0.0
         self.quantity = serializable(quantity)
         self.value = value
+        if value is not None:
+            self.contentType = self.value.name
         self.bins = {}
         self.nanflow = nanflow.copy()
         self.origin = origin
