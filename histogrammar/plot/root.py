@@ -49,89 +49,27 @@ def setTH2sparse(sparse, yminBin, ymaxBin, th2):
 # "Public" methods; what we want to attach to the Histogram as a mix-in.
 
 class HistogramMethods(object):
-    def TH1C(self, name, title=""):
+    def root(self, name, title="", binType="D"):
         import ROOT
-        th1 = ROOT.TH1C(name, title, len(self.values), self.low, self.high)
-        setTH1(self.entries, [x.entries for x in self.values], self.underflow.entries, self.overflow.entries, th1)
-        return th1
-
-    def TH1S(self, name, title=""):
-        import ROOT
-        th1 = ROOT.TH1S(name, title, len(self.values), self.low, self.high)
-        setTH1(self.entries, [x.entries for x in self.values], self.underflow.entries, self.overflow.entries, th1)
-        return th1
-
-    def TH1I(self, name, title=""):
-        import ROOT
-        th1 = ROOT.TH1I(name, title, len(self.values), self.low, self.high)
-        setTH1(self.entries, [x.entries for x in self.values], self.underflow.entries, self.overflow.entries, th1)
-        return th1
-
-    def TH1F(self, name, title=""):
-        import ROOT
-        th1 = ROOT.TH1F(name, title, len(self.values), self.low, self.high)
-        setTH1(self.entries, [x.entries for x in self.values], self.underflow.entries, self.overflow.entries, th1)
-        return th1
-
-    def TH1D(self, name, title=""):
-        import ROOT
-        th1 = ROOT.TH1D(name, title, len(self.values), self.low, self.high)
+        constructor = getattr(ROOT, "TH1" + binType)
+        th1 = constructor(name, title, len(self.values), self.low, self.high)
         setTH1(self.entries, [x.entries for x in self.values], self.underflow.entries, self.overflow.entries, th1)
         return th1
 
 class SparselyHistogramMethods(object):
-    def TH1C(self, name, title=""):
+    def root(self, name, title="", binType="D"):
         import ROOT
+        constructor = getattr(ROOT, "TH1" + binType)
         if self.minBin is None or self.maxBin is None:
-            th1 = ROOT.TH1C(name, title, 1, self.origin, self.origin + 1.0)
+            th1 = constructor(name, title, 1, self.origin, self.origin + 1.0)
         else:
             size = 1 + self.maxBin - self.minBin
-            th1 = ROOT.TH1C(name, title, size, self.low, self.high)
-            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
-        return th1
-
-    def TH1S(self, name, title=""):
-        import ROOT
-        if self.minBin is None or self.maxBin is None:
-            th1 = ROOT.TH1S(name, title, 1, self.origin, self.origin + 1.0)
-        else:
-            size = 1 + self.maxBin - self.minBin
-            th1 = ROOT.TH1S(name, title, size, self.low, self.high)
-            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
-        return th1
-
-    def TH1I(self, name, title=""):
-        import ROOT
-        if self.minBin is None or self.maxBin is None:
-            th1 = ROOT.TH1I(name, title, 1, self.origin, self.origin + 1.0)
-        else:
-            size = 1 + self.maxBin - self.minBin
-            th1 = ROOT.TH1I(name, title, size, self.low, self.high)
-            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
-        return th1
-
-    def TH1F(self, name, title=""):
-        import ROOT
-        if self.minBin is None or self.maxBin is None:
-            th1 = ROOT.TH1F(name, title, 1, self.origin, self.origin + 1.0)
-        else:
-            size = 1 + self.maxBin - self.minBin
-            th1 = ROOT.TH1F(name, title, size, self.low, self.high)
-            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
-        return th1
-
-    def TH1D(self, name, title=""):
-        import ROOT
-        if self.minBin is None or self.maxBin is None:
-            th1 = ROOT.TH1D(name, title, 1, self.origin, self.origin + 1.0)
-        else:
-            size = 1 + self.maxBin - self.minBin
-            th1 = ROOT.TH1D(name, title, size, self.low, self.high)
+            th1 = constructor(name, title, size, self.low, self.high)
             setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
         return th1
 
 class ProfileMethods(object):
-    def TProfile(self, name, title=""):
+    def root(self, name, title=""):
         import ROOT
         tprofile = ROOT.TProfile(name, title, len(self.values), self.low, self.high)
         tprofile.SetBinContent(0, self.underflow.entries**2)
@@ -146,7 +84,7 @@ class ProfileMethods(object):
         return tprofile
 
 class SparselyProfileMethods(object):
-    def TProfile(self, name, title=""):
+    def root(self, name, title=""):
         import ROOT
         if self.minBin is None or self.maxBin is None:
             tprofile = ROOT.TProfile(name, title, 1, self.origin, self.origin + 1.0)
@@ -166,7 +104,7 @@ class SparselyProfileMethods(object):
         return tprofile
 
 class ProfileErrMethods(object):
-    def TProfile(self, name, title=""):
+    def root(self, name, title=""):
         import ROOT
         tprofile = ROOT.TProfile(name, title, len(self.values), self.low, self.high)
         tprofile.SetBinContent(0, self.underflow.entries**2)
@@ -181,7 +119,7 @@ class ProfileErrMethods(object):
         return tprofile
 
 class SparselyProfileErrMethods(object):
-    def TProfile(self, name, title=""):
+    def root(self, name, title=""):
         import ROOT
         if self.minBin is None or self.maxBin is None:
             tprofile = ROOT.TProfile(name, title, 1, self.origin, self.origin + 1.0)
@@ -207,90 +145,28 @@ class PartitionedHistogramMethods(object):
     pass
 
 class FractionedHistogramMethods(object):
-    def TEfficiency(self, numeratorName, denominatorName):
+    def root(self, numeratorName, denominatorName):
         import ROOT
-        numerator = self.numerator.TH1D(numeratorName)
-        denominator = self.denominator.TH1D(denominatorName)
+        numerator = self.numerator.root(numeratorName)
+        denominator = self.denominator.root(denominatorName)
         return ROOT.TEfficiency(numerator, denominator)
 
 class TwoDimensionallyHistogramMethods(object):
-    def TH2C(self, name, title=""):
+    def root(self, name, title="", binType="D"):
         import ROOT
+        constructor = getattr(ROOT, "TH2" + binType)
         sample = self.values[0]
-        th2 = ROOT.TH2C(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
-        for i in xrange(self.num):
-            for j in xrange(sample.num):
-                th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
-        return th2
-
-    def TH2S(self, name, title=""):
-        import ROOT
-        sample = self.values[0]
-        th2 = ROOT.TH2S(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
-        for i in xrange(self.num):
-            for j in xrange(sample.num):
-                th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
-        return th2
-
-    def TH2I(self, name, title=""):
-        import ROOT
-        sample = self.values[0]
-        th2 = ROOT.TH2I(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
-        for i in xrange(self.num):
-            for j in xrange(sample.num):
-                th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
-        return th2
-
-    def TH2F(self, name, title=""):
-        import ROOT
-        sample = self.values[0]
-        th2 = ROOT.TH2F(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
-        for i in xrange(self.num):
-            for j in xrange(sample.num):
-                th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
-        return th2
-
-    def TH2D(self, name, title=""):
-        import ROOT
-        sample = self.values[0]
-        th2 = ROOT.TH2D(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
+        th2 = constructor(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
         for i in xrange(self.num):
             for j in xrange(sample.num):
                 th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
         return th2
 
 class SparselyTwoDimensionallyHistogramMethods(object):
-    def TH2C(self, name, title=""):
+    def root(self, name, title="", binType="D"):
         import ROOT
+        constructor = getattr(ROOT, "TH2" + binType)
         yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
-        th2 = ROOT.TH2C(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
-        setTH2sparse(self, yminBin, ymaxBin, th2)
-        return th2
-
-    def TH2S(self, name, title=""):
-        import ROOT
-        yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
-        th2 = ROOT.TH2S(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
-        setTH2sparse(self, yminBin, ymaxBin, th2)
-        return th2
-
-    def TH2I(self, name, title=""):
-        import ROOT
-        yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
-        th2 = ROOT.TH2I(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
-        setTH2sparse(self, yminBin, ymaxBin, th2)
-        return th2
-
-    def TH2F(self, name, title=""):
-        import ROOT
-        yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
-        th2 = ROOT.TH2F(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
-        setTH2sparse(self, yminBin, ymaxBin, th2)
-        return th2
-
-    def TH2D(self, name, title=""):
-        import ROOT
-        yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
-        th2 = ROOT.TH2D(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
+        th2 = constructor(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
         setTH2sparse(self, yminBin, ymaxBin, th2)
         return th2
