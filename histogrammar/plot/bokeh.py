@@ -61,6 +61,85 @@ class HistogramMethods(object):
 
         return GlyphRenderer(glyph=glyph,data_source=source)
 
+class SparselyHistogramMethods(object):
+    pass
+
+class ProfileMethods(object):
+    pass
+
+class SparselyProfileMethods(object):
+    pass
+
+class ProfileErrMethods(object):
+    def bokeh(self,glyphType="line",glyphSize=1,fill_color="red",line_color="black",line_alpha=1,fill_alpha=0.1,line_dash='solid'):
+
+        #glyphs
+        from bokeh.models.glyphs import Rect, Segment, Line, Patches, Arc
+        from bokeh.models.renderers import GlyphRenderer
+        from bokeh.models.markers import (Marker, Asterisk, Circle, CircleCross, CircleX, Cross,
+                      Diamond, DiamondCross, InvertedTriangle, Square,
+                      SquareCross, SquareX, Triangle, X)
+
+        #data 
+        from bokeh.models import ColumnDataSource
+
+        from math import sqrt
+
+        #Parameters of the histogram
+        l = self.low
+        h = self.high
+        num = self.num
+        bin_width = (h-l)/num
+        x = list()
+        y = list()
+        center = l
+        for v in self.values:
+            y.append(v.mean)
+            x.append(center+bin_width/2)
+            center += bin_width
+
+        source = ColumnDataSource(data=dict(x=x, y=y))
+
+        glyph = None
+        if glyphType == "square": glyph = Square(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
+        elif glyphType == "diamond": glyph = Diamond(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
+        elif glyphType == "cross": glyph = Cross(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
+        elif glyphType == "triangle": glyph = Triangle(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
+        elif glyphType == "circle": glyph = Circle(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
+        elif glyphType == "errors":
+            w = [bin_width for _ in x]
+            h = [sqrt(v.variance/v.entries) if v.entries > 0 else 0.0 for v in self.values]
+            source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
+            glyph = Rect(x='x', y='y', width='w', height='h', fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
+        elif glyphType == "histogram":
+            w = [bin_width for _ in x]
+            h = y
+            y = [yy/2 for yy in y]
+            source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
+            glyph = Rect(x='x', y='y', width='w', height='h', fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
+        else: glyph = Line(x='x', y='y',line_color=line_color,line_alpha=line_alpha,line_width=glyphSize,line_dash=line_dash)
+
+        return GlyphRenderer(glyph=glyph,data_source=source)
+
+
+class SparselyProfileErrMethods(object):
+    pass
+
+class StackedHistogramMethods(object):
+    pass
+
+class PartitionedHistogramMethods(object):
+    pass
+
+class FractionedHistogramMethods(object):
+    pass
+
+class TwoDimensionallyHistogramMethods(object):
+    pass
+
+class SparselyTwoDimensionallyHistogramMethods(object):
+    pass
+
 
 def plot(xLabel='x',yLabel='y',**kwargs):
     from bokeh.models import DataRange1d, Plot, LinearAxis, Grid
@@ -91,8 +170,9 @@ def plot(xLabel='x',yLabel='y',**kwargs):
 
 def save(plot,fname):    
     #SaveTool https://github.com/bokeh/bokeh/blob/118b6a765ee79232b1fef0e82ed968a9dbb0e17f/examples/models/line.py
-    from bokeh.io import save
-    save(plot,fname)
+    from bokeh.io import save, output_file
+    output_file(fname)
+    save(plot)
 
 def view(plot):
     #FIXME tests with the bokeh serve pending
@@ -102,47 +182,3 @@ def view(plot):
     #session = push_session(document)
     #document.add_root(plot)
     #session.show(plot)
-
-class ProfileMethods(object):
-    def bokeh(self,glyphType="line",glyphSize=1,fill_color="red",line_color="black",line_alpha=1,fill_alpha=0.1,line_dash='solid'):
-
-        #glyphs
-        from bokeh.models.glyphs import Rect, Segment, Line, Patches, Arc
-        from bokeh.models.renderers import GlyphRenderer
-        from bokeh.models.markers import (Marker, Asterisk, Circle, CircleCross, CircleX, Cross,
-                      Diamond, DiamondCross, InvertedTriangle, Square,
-                      SquareCross, SquareX, Triangle, X)
-
-        #data 
-        from bokeh.models import ColumnDataSource
-
-        #Parameters of the histogram
-        l = self.low
-        h = self.high
-        num = self.num
-        bin_width = (h-l)/num
-        x = list()
-        center = l
-        for _ in range(num):
-            x.append(center+bin_width/2)
-            center += bin_width
-        y = self.numericalValues
-
-        source = ColumnDataSource(data=dict(x=x, y=y))
-
-        glyph = None
-        if glyphType == "square": glyph = Square(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "diamond": glyph = Diamond(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "cross": glyph = Cross(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "triangle": glyph = Triangle(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "circle": glyph = Circle(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        #elif glyphType == "errors": glyph = Rect(x='x', y='y', width=bin_width, height=0.1, fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
-        elif glyphType == "histogram":
-            w = [bin_width for _ in x]
-            h = y
-            y = [yy/2 for yy in y]
-            source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
-            glyph = Rect(x='x', y='y', width='w', height='h', fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
-        else: glyph = Line(x='x', y='y',line_color=line_color,line_alpha=line_alpha,line_width=glyphSize,line_dash=line_dash)
-
-        return GlyphRenderer(glyph=glyph,data_source=source)
