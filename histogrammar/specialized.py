@@ -282,7 +282,11 @@ def addImplicitMethods(container):
     elif isinstance(container, Partition) and (all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts) or all(isinstance(v, SparselyBin) and v.contentType == "Count" and all(isinstance(vv, Count) for vv in v.bins.values()) for c, v in container.cuts)):
         container.__class__ = PartitionedHistogramMethods
 
-    elif isinstance(container, Fraction) and ((isinstance(container.numerator, Bin) and all(isinstance(v, Count) for v in container.numerator.values) and isinstance(container.denominator, Bin) and all(isinstance(v, Count) for v in container.denominator.values)) or (isinstance(container.numerator, SparselyBin) and container.numerator.contentType == "Count" and all(isinstance(v, Count) for v in container.numerator.bins.values()) and isinstance(container.denominator, SparselyBin) and container.denominator.contentType == "Count" and all(isinstance(v, Count) for v in container.denominator.bins.values()))):
+    elif isinstance(container, Fraction) and (
+        (isinstance(container.denominator, Bin) and all(isinstance(v, Count) for v in container.denominator.values)) or
+        (isinstance(container.denominator, Select) and isinstance(container.denominator.cut, Bin) and all(isinstance(v, Count) for v in container.denominator.cut.values)) or
+        (isinstance(container.denominator, SparselyBin) and container.denominator.contentType == "Count" and all(isinstance(v, Count) for v in container.denominator.bins.values())) or
+        (isinstance(container.denominator, Select) and isinstance(container.denominator.cut, SparselyBin) and container.denominator.cut.contentType == "Count" and all(isinstance(v, Count) for v in container.denominator.cut.bins.values()))):
         container.__class__ = FractionedHistogramMethods
 
     elif isinstance(container, Bin) and all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for v in container.values):

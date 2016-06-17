@@ -207,36 +207,11 @@ class PartitionedHistogramMethods(object):
     pass
 
 class FractionedHistogramMethods(object):
-    def TProfile(self, name, title="", confidenceInterval=None):
-        intervals = []
-        for n, d in zip(self.numerator.values, self.denominator.values):
-            if d.entries > 0.0:
-                if confidenceInterval is None:
-                    frac = n.entries / d.entries
-                    intervals.append((frac, frac, frac))
-                else:
-                    intervals.append((confidenceInterval(n.entries, d.entries, -1.0),
-                                      confidenceInterval(n.entries, d.entries,  0.0),
-                                      confidenceInterval(n.entries, d.entries,  1.0)))
-            else:
-                intervals.append(None)
-
-        tprofile = ROOT.TProfile(name, title, len(self.denominator.values), self.denominator.low, self.denominator.high)
-        for i, interval in enumerate(intervals):
-            if interval is not None:
-                low, mid, high = interval
-                tprofile.SetBinError(???)
-                tprofile.SetBinContent(???)
-                tprofile.SetBinEntries(self.denominator.values[i].entries)
-
-        return tprofile
-
-        # for i, v in enumerate(self.values):
-        #     tprofile.SetBinError(i + 1, math.sqrt(v.entries*(v.variance + v.mean**2)))
-        #     tprofile.SetBinContent(i + 1, v.entries * v.mean)
-        #     tprofile.SetBinEntries(i + 1, v.entries)
-
-
+    def TEfficiency(self, numeratorName, denominatorName):
+        import ROOT
+        numerator = self.numerator.TH1D(numeratorName)
+        denominator = self.denominator.TH1D(denominatorName)
+        return ROOT.TEfficiency(numerator, denominator)
 
 class TwoDimensionallyHistogramMethods(object):
     def TH2C(self, name, title=""):
