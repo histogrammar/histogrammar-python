@@ -276,10 +276,18 @@ def addImplicitMethods(container):
     elif isinstance(container, SparselyBin) and container.contentType == "Deviate" and all(isinstance(v, Deviate) for v in container.bins.values()):
         container.__class__ = SparselyProfileErrMethods
 
-    elif isinstance(container, Stack) and (all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts) or all(isinstance(v, SparselyBin) and v.contentType == "Count" and all(isinstance(vv, Count) for vv in v.bins.values()) for c, v in container.cuts)):
+    elif isinstance(container, Stack) and (
+        all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts) or
+        all(isinstance(v, Select) and isinstance(v.cut, Bin) and all(isinstance(vv, Count) for vv in v.cut.values) for c, v in container.cuts) or
+        all(isinstance(v, SparselyBin) and v.contentType == "Count" and all(isinstance(vv, Count) for vv in v.bins.values()) for c, v in container.cuts) or
+        all(isinstance(v, Select) and isinstance(v.cut, SparselyBin) and v.cut.contentType == "Count" and all(isinstance(vv, Count) for vv in v.cut.bins.values()) for c, v in container.cuts)):
         container.__class__ = StackedHistogramMethods
 
-    elif isinstance(container, Partition) and (all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts) or all(isinstance(v, SparselyBin) and v.contentType == "Count" and all(isinstance(vv, Count) for vv in v.bins.values()) for c, v in container.cuts)):
+    elif isinstance(container, Partition) and (
+        all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts) or
+        all(isinstance(v, Select) and isinstance(v.cut, Bin) and all(isinstance(vv, Count) for vv in v.cut.values) for c, v in container.cuts) or
+        all(isinstance(v, SparselyBin) and v.contentType == "Count" and all(isinstance(vv, Count) for vv in v.bins.values()) for c, v in container.cuts) or
+        all(isinstance(v, Select) and isinstance(v.cut, SparselyBin) and v.cut.contentType == "Count" and all(isinstance(vv, Count) for vv in v.cut.bins.values()) for c, v in container.cuts)):
         container.__class__ = PartitionedHistogramMethods
 
     elif isinstance(container, Fraction) and (

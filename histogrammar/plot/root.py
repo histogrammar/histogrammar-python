@@ -16,7 +16,9 @@
 
 # "Private" methods; not attached to the histogram because not a member of the class, but within scope because it's a closure.
 
+from collections import OrderedDict
 import math
+import types
 
 def setTH1(entries, values, underflow, overflow, th1):
     th1.SetBinContent(0, underflow)
@@ -139,10 +141,48 @@ class SparselyProfileErrMethods(object):
         return tprofile
 
 class StackedHistogramMethods(object):
-    pass
+    def root(self, *names):
+        import ROOT
+        out = OrderedDict()
+        for n, (c, v) in zip(names, self.cuts):
+            if isinstance(n, (list, tuple)) and len(n) == 2:
+                name, title = n
+            else:
+                name, title = n, ""
+            out[c] = v.root(name, title)
+
+        def Draw(self, options=""):
+            first = True
+            for v in self.values():
+                v.Draw(options)
+                if first:
+                    options = options + "same"
+                    first = False
+
+        out.Draw = types.MethodType(Draw, out)
+        return out
 
 class PartitionedHistogramMethods(object):
-    pass
+    def root(self, *names):
+        import ROOT
+        out = OrderedDict()
+        for n, (c, v) in zip(names, self.cuts):
+            if isinstance(n, (list, tuple)) and len(n) == 2:
+                name, title = n
+            else:
+                name, title = n, ""
+            out[c] = v.root(name, title)
+
+        def Draw(self, options=""):
+            first = True
+            for v in self.values():
+                v.Draw(options)
+                if first:
+                    options = options + "same"
+                    first = False
+
+        out.Draw = types.MethodType(Draw, out)
+        return out
 
 class FractionedHistogramMethods(object):
     def root(self, numeratorName, denominatorName):
