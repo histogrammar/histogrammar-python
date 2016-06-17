@@ -86,13 +86,14 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         return out
         
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
             self.clustering.update(q, datum, weight)
 
     @property
     def children(self):
-        return [self.value, self.nanflow] + [v for c, v in self.bins]
+        return [self.nanflow] + [v for c, v in self.bins]
 
     def toJsonFragment(self, suppressName):
         if isinstance(self.value, Container):

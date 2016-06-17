@@ -32,6 +32,14 @@ class Select(Factory, Container):
     def ing(quantity, cut):
         return Select(quantity, cut)
 
+    def __getattr__(self, attr):
+        if attr.startswith("__") and attr.endswith("__"):
+            return getattr(Select, attr)
+        elif attr not in self.__dict__ and hasattr(self.__dict__["cut"], attr):
+            return getattr(self.__dict__["cut"], attr)
+        else:
+            return self.__dict__[attr]
+
     def __init__(self, quantity, cut):
         self.entries = 0.0
         self.quantity = serializable(quantity)
@@ -53,6 +61,7 @@ class Select(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         w = weight * self.quantity(datum)
         if w > 0.0:
             self.cut.fill(datum, w)

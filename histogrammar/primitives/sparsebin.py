@@ -44,6 +44,8 @@ class SparselyBin(Factory, Container):
         self.entries = 0.0
         self.quantity = serializable(quantity)
         self.value = value
+        if value is not None:
+            self.contentType = self.value.name
         self.bins = {}
         self.nanflow = nanflow.copy()
         self.origin = origin
@@ -85,13 +87,13 @@ class SparselyBin(Factory, Container):
         if len(self.bins) == 0:
             return None
         else:
-            return min(*self.bins.keys())
+            return min(self.bins.keys())
     @property
     def maxBin(self):
         if len(self.bins) == 0:
             return None
         else:
-            return max(*self.bins.keys())
+            return max(self.bins.keys())
     @property
     def low(self):
         if len(self.bins) == 0:
@@ -121,6 +123,7 @@ class SparselyBin(Factory, Container):
     def nan(self, x): return math.isnan(x)
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
 
@@ -137,7 +140,7 @@ class SparselyBin(Factory, Container):
 
     @property
     def children(self):
-        return [self.value, self.nanflow] + self.bins.values()
+        return [self.value, self.nanflow] + list(self.bins.values())
 
     def toJsonFragment(self, suppressName):
         if isinstance(self.value, Container):

@@ -41,6 +41,7 @@ class Factory(object):
         Factory.registered[factory.__name__] = factory
 
     def __init__(self):
+        self._checkedForCrossReferences = False
         try:
             import histogrammar.specialized
             histogrammar.specialized.addImplicitMethods(self)
@@ -84,6 +85,17 @@ class Container(object):
 
     @property
     def children(self): raise NotImplementedError
+
+    def _checkForCrossReferences(self, memo=None):
+        if not self._checkedForCrossReferences:
+            if memo is None:
+                memo = set()
+            if any(x is self for x in memo):
+                raise ContainerException("cannot fill a tree that contains the same aggregator twice: {}".format(self))
+            memo.add(self)
+            for child in self.children:
+                child._checkForCrossReferences(memo)
+            self._checkedForCrossReferences = True
 
     def toJson(self): return {"type": self.name, "data": self.toJsonFragment(False)}
     def toJsonFragment(self, suppressName): raise NotImplementedError

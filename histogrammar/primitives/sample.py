@@ -96,6 +96,7 @@ class Sample(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
 
@@ -177,6 +178,6 @@ class Sample(Factory, Container):
         return isinstance(other, Sample) and self.entries == other.entries and self.quantity == other.quantity and self.limit == other.limit and self.values == other.values
 
     def __hash__(self):
-        return hash((self.entries, self.quantity, self.limit, self.value))
+        return hash((self.entries, self.quantity, self.limit, tuple(self.values)))
 
 Factory.register(Sample)

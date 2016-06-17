@@ -60,6 +60,7 @@ class Bag(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
 
@@ -148,6 +149,6 @@ class Bag(Factory, Container):
         return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
-        return hash((self.quantity, self.entries, self.values))
+        return hash((self.quantity, self.entries, tuple(self.values.items())))
 
 Factory.register(Bag)

@@ -83,6 +83,7 @@ class Label(Factory, Container, Collection):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         for x in self.values:
             x.fill(datum, weight)
         # no possibility of exception from here on out (for rollback)
@@ -90,7 +91,7 @@ class Label(Factory, Container, Collection):
 
     @property
     def children(self):
-        return self.values()
+        return self.values
 
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
@@ -191,6 +192,7 @@ class UntypedLabel(Factory, Container, Collection):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         for x in self.values:
             x.fill(datum, weight)
         # no possibility of exception from here on out (for rollback)
@@ -198,7 +200,7 @@ class UntypedLabel(Factory, Container, Collection):
 
     @property
     def children(self):
-        return self.values()
+        return self.values
 
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
@@ -305,6 +307,7 @@ class Index(Factory, Container, Collection):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         for x in self.values:
             x.fill(datum, weight)
         # no possibility of exception from here on out (for rollback)
@@ -312,7 +315,7 @@ class Index(Factory, Container, Collection):
 
     @property
     def children(self):
-        return self.values()
+        return self.values
 
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
@@ -417,6 +420,7 @@ class Branch(Factory, Container, Collection):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         for x in self.values:
             x.fill(datum, weight)
         # no possibility of exception from here on out (for rollback)
@@ -424,7 +428,7 @@ class Branch(Factory, Container, Collection):
 
     @property
     def children(self):
-        return self.values()
+        return self.values
 
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
