@@ -28,7 +28,7 @@ class HistogramMethods(object):
                       SquareCross, SquareX, Triangle, X)
 
         #data 
-	from bokeh.models import ColumnDataSource
+        from bokeh.models import ColumnDataSource
 
         #Parameters of the histogram
         l = self.low 
