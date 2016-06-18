@@ -67,7 +67,7 @@ class SparselyHistogramMethods(object):
         else:
             size = 1 + self.maxBin - self.minBin
             th1 = constructor(name, title, size, self.low, self.high)
-            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
+            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(self.minBin, self.maxBin + 1)], 0.0, 0.0, th1)
         return th1
 
 class ProfileMethods(object):
@@ -187,8 +187,21 @@ class PartitionedHistogramMethods(object):
 class FractionedHistogramMethods(object):
     def root(self, numeratorName, denominatorName):
         import ROOT
-        numerator = self.numerator.root(numeratorName)
         denominator = self.denominator.root(denominatorName)
+        num = denominator.GetNbinsX()
+        low = denominator.GetBinLowEdge(1)
+        high = denominator.GetBinLowEdge(num) + denominator.GetBinWidth(num)
+
+        numerator = ROOT.TH1D(numeratorName, "", num, low, high)
+        if isinstance(self.numerator, HistogramMethods):
+            setTH1(self.numerator.entries, [x.entries for x in self.numerator.values], self.numerator.underflow.entries, self.numerator.overflow.entries, numerator)
+        elif isinstance(self.numerator, SparselyHistogramMethods):
+            setTH1(self.numerator.entries,
+                   [self.numerator.bins[i].entries if i in self.numerator.bins else 0.0 for i in xrange(self.denominator.minBin, self.denominator.maxBin + 1)],
+                   0.0,
+                   0.0,
+                   numerator)
+
         return ROOT.TEfficiency(numerator, denominator)
 
 class TwoDimensionallyHistogramMethods(object):
