@@ -26,7 +26,7 @@ class Deviate(Factory, Container):
         out.entries = float(entries)
         out.mean = float(mean)
         out.varianceTimesEntries = float(variance)*float(entries)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity):
@@ -38,6 +38,7 @@ class Deviate(Factory, Container):
         self.mean = 0.0
         self.varianceTimesEntries = 0.0
         super(Deviate, self).__init__()
+        self.specialize()
 
     @property
     def variance(self):
@@ -57,7 +58,7 @@ class Deviate(Factory, Container):
             else:
                 out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
             out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + self.entries*self.mean**2 + other.entries*other.mean**2 - 2.0*out.mean*(self.entries*self.mean + other.entries*other.mean) + out.mean*out.mean*out.entries
-            return out
+            return out.specialize()
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
@@ -110,7 +111,7 @@ class Deviate(Factory, Container):
 
             out = Deviate.ed(entries, mean, variance)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Deviate")

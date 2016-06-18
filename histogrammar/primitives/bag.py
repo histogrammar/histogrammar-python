@@ -27,7 +27,7 @@ class Bag(Factory, Container):
         out = Bag(None)
         out.entries = float(entries)
         out.values = values
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity):
@@ -38,6 +38,7 @@ class Bag(Factory, Container):
         self.entries = 0.0
         self.values = {}
         super(Bag, self).__init__()
+        self.specialize()
 
     def zero(self): return Bag(self.quantity)
 
@@ -54,7 +55,7 @@ class Bag(Factory, Container):
                 else:
                     out.values[value] = count
 
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -137,7 +138,7 @@ class Bag(Factory, Container):
 
             out = Bag.ed(entries, values)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Bag")

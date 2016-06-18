@@ -25,7 +25,7 @@ class Sum(Factory, Container):
         out = Sum(None)
         out.entries = float(entries)
         out.sum = float(sum)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity):
@@ -36,6 +36,7 @@ class Sum(Factory, Container):
         self.entries = 0.0
         self.sum = 0.0
         super(Sum, self).__init__()
+        self.specialize()
 
     def zero(self): return Sum(self.quantity)
 
@@ -44,7 +45,7 @@ class Sum(Factory, Container):
             out = Sum(self.quantity)
             out.entries = self.entries + other.entries
             out.sum = self.sum + other.sum
-            return out
+            return out.specialize()
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
@@ -88,7 +89,7 @@ class Sum(Factory, Container):
 
             out = Sum.ed(entries, sum)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Sum")

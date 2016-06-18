@@ -27,7 +27,7 @@ class Categorize(Factory, Container):
         out = Categorize(None, contentType)
         out.entries = float(entries)
         out.pairs = pairs
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity, value=Count()):
@@ -39,6 +39,7 @@ class Categorize(Factory, Container):
         self.value = value
         self.pairs = {}
         super(Categorize, self).__init__()
+        self.specialize()
 
     @property
     def pairsMap(self): return self.pairs
@@ -69,7 +70,7 @@ class Categorize(Factory, Container):
                     out.pairs[k] = self.pairs[k].copy()
                 else:
                     out.pairs[k] = other.pairs[k].copy()
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -150,7 +151,7 @@ class Categorize(Factory, Container):
 
             out = Categorize.ed(entries, contentType, **pairs)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Categorize")

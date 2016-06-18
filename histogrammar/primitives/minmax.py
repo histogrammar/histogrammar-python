@@ -27,7 +27,7 @@ class Minimize(Factory, Container):
         out = Minimize(None)
         out.entries = float(entries)
         out.min = float(min)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity):
@@ -38,6 +38,7 @@ class Minimize(Factory, Container):
         self.entries = 0.0
         self.min = float("nan")
         super(Minimize, self).__init__()
+        self.specialize()
 
     def zero(self): return Minimize(self.quantity)
 
@@ -46,7 +47,7 @@ class Minimize(Factory, Container):
             out = Minimize(self.quantity)
             out.entries = self.entries + other.entries
             out.min = minplus(self.min, other.min)
-            return out
+            return out.specialize()
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
@@ -91,7 +92,7 @@ class Minimize(Factory, Container):
 
             out = Minimize.ed(entries, min)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Minimize")
@@ -115,7 +116,7 @@ class Maximize(Factory, Container):
         out = Maximize(None)
         out.entries = float(entries)
         out.max = float(max)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity):
@@ -126,6 +127,7 @@ class Maximize(Factory, Container):
         self.entries = 0.0
         self.max = float("nan")
         super(Maximize, self).__init__()
+        self.specialize()
 
     def zero(self): return Maximize(self.quantity)
 
@@ -134,7 +136,7 @@ class Maximize(Factory, Container):
             out = Maximize(self.quantity)
             out.entries = self.entries + other.entries
             out.max = maxplus(self.max, other.max)
-            return out
+            return out.specialize()
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
@@ -179,7 +181,7 @@ class Maximize(Factory, Container):
 
             out = Maximize.ed(entries, max)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Maximize")
