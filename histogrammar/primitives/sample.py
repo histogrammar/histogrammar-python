@@ -29,7 +29,7 @@ class Sample(Factory, Container):
         out.entries = entries
         out._limit = limit
         out._values = values
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(limit, quantity):
@@ -42,6 +42,7 @@ class Sample(Factory, Container):
         self.quantity = serializable(quantity)
         self.reservoir = Reservoir(limit)
         super(Sample, self).__init__()
+        self.specialize()
 
     @property
     def limit(self):
@@ -90,7 +91,7 @@ class Sample(Factory, Container):
             else:
                 del out.reservoir
                 out._values = newreservoir.values
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -166,7 +167,7 @@ class Sample(Factory, Container):
 
             out = Sample.ed(entries, limit, values)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Sample")

@@ -28,12 +28,12 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
             raise ContainerException("entries ({}) cannot be negative".format(entries))
 
         out = AdaptivelyBin(None, num, tailDetail, None, nanflow)
-        out.clustering.entries = entries
+        out.clustering.entries = float(entries)
         out.clustering.values = bins
         out.clustering.min = min
         out.clustering.max = max
         out.contentType = contentType
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity, num=100, tailDetail=0.2, value=Count(), nanflow=Count()):
@@ -49,6 +49,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         self.clustering = Clustering1D(num, tailDetail, value, [], float("nan"), float("nan"), 0.0)
         self.nanflow = nanflow.copy()
         super(AdaptivelyBin, self).__init__()
+        self.specialize()
 
     @property
     def num(self): return self.clustering.num
@@ -72,6 +73,16 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
     def max(self, value):
         self.clustering.max = max
 
+    def histogram(self):
+        out = AdaptivelyBin(self.quantity, self.num, self.tailDetail, Count(), self.nanflow.copy())
+        out.clustering.entries = float(self.entries)
+        for i, v in self.clustering.values:
+            out.clustering.values.append((i, Count.ed(v.entries)))
+        out.clustering.min = self.min
+        out.clustering.max = self.max
+        out.clustering.contentType = "Count"
+        return out.specialize()
+
     def zero(self):
         return AdaptivelyBin(self.quantity, self.num, self.tailDetail, self.clustering.value, self.nanflow.zero())
 
@@ -83,7 +94,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
         out = AdaptivelyBin(self.quantity, self.num, self.tailDetail, self.clustering.value, self.nanflow + other.nanflow)
         out.clustering = self.clustering.merge(other.clustering)
-        return out
+        return out.specialize()
         
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
@@ -194,7 +205,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
             out = AdaptivelyBin.ed(entries, num, tailDetail, contentType, bins, min, max, nanflow)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "AdaptivelyBin")

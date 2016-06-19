@@ -27,7 +27,7 @@ class Stack(Factory, Container):
             raise ContainerException("entries ({}) cannot be negative".format(entries))
         out = Stack(cuts, None, None, nanflow)
         out.entries = float(entries)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(cuts, quantity, value, nanflow=Count()):
@@ -42,6 +42,7 @@ class Stack(Factory, Container):
             self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(cuts))
         self.nanflow = nanflow
         super(Stack, self).__init__()
+        self.specialize()
 
     @staticmethod
     def build(*ys):
@@ -66,7 +67,7 @@ class Stack(Factory, Container):
 
             out = Stack([(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)], self.quantity, None, self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -153,7 +154,7 @@ class Stack(Factory, Container):
 
                 out = Stack.ed(entries, cuts, nanflow)
                 out.quantity.name = nameFromParent if name is None else name
-                return out
+                return out.specialize()
 
             else:
                 raise JsonFormatException(json, "Stack.data")
@@ -162,7 +163,7 @@ class Stack(Factory, Container):
             raise JsonFormatException(json, "Stack")
 
     def __repr__(self):
-        return "<Stack bins={} thresholds=({}) nanflow={}>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)), self.nanflow.name)
+        return "<Stack values={} thresholds=({}) nanflow={}>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)), self.nanflow.name)
 
     def __eq__(self, other):
         return isinstance(other, Stack) and numeq(self.entries, other.entries) and self.quantity == other.quantity and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.cuts, other.cuts)) and self.nanflow == other.nanflow

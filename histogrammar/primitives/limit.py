@@ -28,7 +28,7 @@ class Limit(Factory, Container):
         out = Limit(value, limit)
         out.entries = entries
         out.contentType = contentType
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(value, limit): return Limit(value, limit)
@@ -42,6 +42,15 @@ class Limit(Factory, Container):
             self.contentType = value.name
         self.value = value
         super(Limit, self).__init__()
+        self.specialize()
+
+    def __getattr__(self, attr):
+        if attr.startswith("__") and attr.endswith("__"):
+            return getattr(Limit, attr)
+        elif attr not in self.__dict__ and hasattr(self.__dict__["value"], attr):
+            return getattr(self.__dict__["value"], attr)
+        else:
+            return self.__dict__[attr]
 
     @property
     def saturated(self): return self.value is None

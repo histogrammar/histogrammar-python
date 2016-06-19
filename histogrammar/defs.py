@@ -42,11 +42,14 @@ class Factory(object):
 
     def __init__(self):
         self._checkedForCrossReferences = False
+
+    def specialize(self):
         try:
             import histogrammar.specialized
             histogrammar.specialized.addImplicitMethods(self)
         except (ImportError, AttributeError):
             pass
+        return self
 
     @staticmethod
     def fromJsonFragment(json, nameFromParent):

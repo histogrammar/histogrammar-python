@@ -24,7 +24,7 @@ def setTH1(entries, values, underflow, overflow, th1):
     th1.SetBinContent(0, underflow)
     for i, v in enumerate(values):
         th1.SetBinContent(i + 1, v)
-    th1.SetBinContent(len(values), overflow)
+    th1.SetBinContent(len(values) + 1, overflow)
     th1.SetEntries(entries)
 
 def prepareTH2sparse(sparse):
@@ -67,7 +67,7 @@ class SparselyHistogramMethods(object):
         else:
             size = 1 + self.maxBin - self.minBin
             th1 = constructor(name, title, size, self.low, self.high)
-            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(size)], 0.0, 0.0, th1)
+            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(self.minBin, self.maxBin + 1)], 0.0, 0.0, th1)
         return th1
 
 class ProfileMethods(object):
@@ -80,8 +80,8 @@ class ProfileMethods(object):
             tprofile.SetBinError(i + 1, math.sqrt(v.entries) * v.mean)
             tprofile.SetBinContent(i + 1, v.entries * v.mean)
             tprofile.SetBinEntries(i + 1, v.entries)
-        tprofile.SetBinContent(len(self.values), self.overflow.entries**2)
-        tprofile.SetBinEntries(len(self.values), self.overflow.entries)
+        tprofile.SetBinContent(len(self.values) + 1, self.overflow.entries**2)
+        tprofile.SetBinEntries(len(self.values) + 1, self.overflow.entries)
         tprofile.SetEntries(self.entries)
         return tprofile
 
@@ -115,8 +115,8 @@ class ProfileErrMethods(object):
             tprofile.SetBinError(i + 1, math.sqrt(v.entries*(v.variance + v.mean**2)))
             tprofile.SetBinContent(i + 1, v.entries * v.mean)
             tprofile.SetBinEntries(i + 1, v.entries)
-        tprofile.SetBinContent(len(self.values), self.overflow.entries**2)
-        tprofile.SetBinEntries(len(self.values), self.overflow.entries)
+        tprofile.SetBinContent(len(self.values) + 1, self.overflow.entries**2)
+        tprofile.SetBinEntries(len(self.values) + 1, self.overflow.entries)
         tprofile.SetEntries(self.entries)
         return tprofile
 
@@ -187,8 +187,21 @@ class PartitionedHistogramMethods(object):
 class FractionedHistogramMethods(object):
     def root(self, numeratorName, denominatorName):
         import ROOT
-        numerator = self.numerator.root(numeratorName)
         denominator = self.denominator.root(denominatorName)
+        num = denominator.GetNbinsX()
+        low = denominator.GetBinLowEdge(1)
+        high = denominator.GetBinLowEdge(num) + denominator.GetBinWidth(num)
+
+        numerator = ROOT.TH1D(numeratorName, "", num, low, high)
+        if isinstance(self.numerator, HistogramMethods):
+            setTH1(self.numerator.entries, [x.entries for x in self.numerator.values], self.numerator.underflow.entries, self.numerator.overflow.entries, numerator)
+        elif isinstance(self.numerator, SparselyHistogramMethods):
+            setTH1(self.numerator.entries,
+                   [self.numerator.bins[i].entries if i in self.numerator.bins else 0.0 for i in xrange(self.denominator.minBin, self.denominator.maxBin + 1)],
+                   0.0,
+                   0.0,
+                   numerator)
+
         return ROOT.TEfficiency(numerator, denominator)
 
 class TwoDimensionallyHistogramMethods(object):
