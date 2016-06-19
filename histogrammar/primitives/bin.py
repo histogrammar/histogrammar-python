@@ -104,7 +104,6 @@ class Bin(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
-
             if self.under(q):
                 self.underflow.fill(datum, weight)
             elif self.over(q):

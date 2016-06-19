@@ -44,6 +44,14 @@ class Limit(Factory, Container):
         super(Limit, self).__init__()
         self.specialize()
 
+    def __getattr__(self, attr):
+        if attr.startswith("__") and attr.endswith("__"):
+            return getattr(Limit, attr)
+        elif attr not in self.__dict__ and hasattr(self.__dict__["value"], attr):
+            return getattr(self.__dict__["value"], attr)
+        else:
+            return self.__dict__[attr]
+
     @property
     def saturated(self): return self.value is None
     @property

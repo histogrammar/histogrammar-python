@@ -24,7 +24,7 @@ def setTH1(entries, values, underflow, overflow, th1):
     th1.SetBinContent(0, underflow)
     for i, v in enumerate(values):
         th1.SetBinContent(i + 1, v)
-    th1.SetBinContent(len(values), overflow)
+    th1.SetBinContent(len(values) + 1, overflow)
     th1.SetEntries(entries)
 
 def prepareTH2sparse(sparse):
@@ -80,8 +80,8 @@ class ProfileMethods(object):
             tprofile.SetBinError(i + 1, math.sqrt(v.entries) * v.mean)
             tprofile.SetBinContent(i + 1, v.entries * v.mean)
             tprofile.SetBinEntries(i + 1, v.entries)
-        tprofile.SetBinContent(len(self.values), self.overflow.entries**2)
-        tprofile.SetBinEntries(len(self.values), self.overflow.entries)
+        tprofile.SetBinContent(len(self.values) + 1, self.overflow.entries**2)
+        tprofile.SetBinEntries(len(self.values) + 1, self.overflow.entries)
         tprofile.SetEntries(self.entries)
         return tprofile
 
@@ -115,8 +115,8 @@ class ProfileErrMethods(object):
             tprofile.SetBinError(i + 1, math.sqrt(v.entries*(v.variance + v.mean**2)))
             tprofile.SetBinContent(i + 1, v.entries * v.mean)
             tprofile.SetBinEntries(i + 1, v.entries)
-        tprofile.SetBinContent(len(self.values), self.overflow.entries**2)
-        tprofile.SetBinEntries(len(self.values), self.overflow.entries)
+        tprofile.SetBinContent(len(self.values) + 1, self.overflow.entries**2)
+        tprofile.SetBinEntries(len(self.values) + 1, self.overflow.entries)
         tprofile.SetEntries(self.entries)
         return tprofile
 
