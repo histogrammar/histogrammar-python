@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+import argparse
+import code
+import os
+try:
+    import readline
+    import rlcompleter
+except ImportError:
+    pass
+import sys
+import threading
+
+VERSION = "0.7-prerelease"
+hg = "Still waiting for first plot object..."
+
+class Watcher(threading.Thread):
+    def start(self, file, commands):
+        self.file = file
+        if os.path.exists(commands):
+            self.code = compile(open(commands).read(), commands, "exec")
+        else:
+            self.code = compile(commands, "<-p commands>", "exec")
+
+    def run(self):
+        pass
+        # exec(self.code, globals())        
+
+watcher = Watcher()
+watcher.daemon = True
+
+if __name__ == "__main__":
+    argparser = argparse.ArgumentParser(description="Watch a file, pipe, or remote connection for Histogrammar JSON objects and perform some action on each (such as plotting).", epilog="Only one of [-f, -c, -s] may be used. Each JSON object in the stream must be a separate line of text, and no action is performed until the input buffer flushes with an end of line character (\"\\n\").", add_help=True)
+    argparser.add_argument("-f", metavar="FILE", default="-", help="file or pipe to watch (default is \"-\", standard input)")
+    argparser.add_argument("-c", metavar="COMMAND", help="shell command(s) to run and watch; if a filename, use the contents of that file")
+    argparser.add_argument("-s", metavar="ADDRESS:PORT", help="socket address and port to watch (separated by a colon)")
+    argparser.add_argument("-p", metavar="COMMANDS", default="print(json.dumps(hg.toJson()))", help="Python commands to run on each new histogram \"hg\"; if a filename, use the contents of that file (default is \"print(json.dumps(hg.toJson()))\")")
+    arguments = argparser.parse_args()
+
+    if arguments.f is not None and arguments.c is None and arguments.s is None:
+        if arguments.f == "-":
+            file = sys.stdin
+        else:
+            file = open(arguments.f)
+
+        watcher.start(file, arguments.p)
+
+    elif arguments.f is None and arguments.c is not None and arguments.s is None:
+        raise NotImplementedError
+
+    elif arguments.f is None and arguments.c is None and arguments.s is not None:
+        raise NotImplementedError
+
+    else:
+        argparser.print_help(sys.stderr)
+        sys.exit(-1)
+
+    watcher.run()
+
+    try:
+        readline.set_completer(rlcompleter.Completer(globals()).complete)
+        readline.parse_and_bind("tab: complete")
+    except NameError:
+        pass
+    code.interact("""Python {} on {}
+Histogrammar Watcher version {}
+Current plot object is \"hg\". Type ctrl-D to exit.""".format(sys.version.replace("\n", " ").replace("  ", " "), sys.platform, VERSION), raw_input, globals())

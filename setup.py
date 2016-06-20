@@ -29,6 +29,7 @@ class TestCommand(Command):
 
 setup(name="Histogrammar",
       version=histogrammar.version.__version__,
+      scripts=["scripts/hgwatch"],
       description="Composable histogram primitives for distributed data reduction.",
       author="Jim Pivarski",
       author_email="pivarski@fnal.gov",
