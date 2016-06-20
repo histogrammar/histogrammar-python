@@ -2,11 +2,13 @@
 
 import argparse
 import code
+import getpass
 import json
 import os
+import re
+import subprocess
 import sys
 import threading
-import traceback
 try:
     import readline
     import rlcompleter
@@ -20,6 +22,72 @@ hg = "Waiting for first valid plot object..."
 hgin = None
 hgerr = None
 
+newNameNumber = 0
+def newName():
+    global newNameNumber
+    newNameNumber += 1
+    return "name_" + str(newNameNumber)
+
+commandSets = {
+    # for --json
+    "json": "import json; print(json.dumps(hg.toJson()))",
+
+    # for --root
+    "root": """
+import ROOT
+
+# Must give hg.root the right number of "name" strings.
+if isinstance(hg, Fraction):
+    roothist = hg.root(newName(), newName())
+elif isinstance(hg, (Stack, Partition)):
+    roothist = hg.root(*[newName() for i in xrange(hg.cuts)])
+else:
+    roothist = hg.root(newName())
+
+if isinstance(roothist, ROOT.TH2):
+    roothist.Draw("colz")    # Preferred visualization.
+else:
+    roothist.Draw()
+
+ROOT.gPad.Modified()         # Deal with the fact that we're in a non-main thread.
+ROOT.gPad.Update()
+""",
+
+    # ...others?
+    }
+
+class SSHConnection(object):
+    def __init__(self, coordinates, sshkey):
+        try:
+            _, user, address, _, port = re.match("(([^@]*)@)?([^:]*)(:([0-9]*))?", coordinates).groups()
+        except AttributeError:
+            sys.stderr.write("Not a valid USER@ADDRESS:PORT string: " + coordinates)
+            sys.exit(-1)
+
+        self.user = user
+        self.address = address
+        if port is None:
+            self.port = 22
+        else:
+            self.port = int(port)
+
+        import paramiko
+        self.client = paramiko.SSHClient()
+        self.client.load_system_host_keys()
+
+        try:
+            self.client.connect(self.address, self.port, self.user, key_filename=sshkey)
+        except paramiko.ssh_exception.SSHException:
+            password = getpass.getpass("Password required for {}: ".format(coordinates))
+            self.client.connect(self.address, self.port, self.user, password, key_filename=sshkey)
+
+    def command(self, command):
+        stdin, stdout, stderr = self.client.exec_command(command)
+        return stdout
+
+    def file(self, file):
+        return self.command("cat " + file)
+        
 class Watcher(threading.Thread):
     def start(self, stream, commands):
         self.stream = stream
@@ -33,6 +101,7 @@ class Watcher(threading.Thread):
         global hg
         global hgin
         global hgerr
+
         while True:
             hgin = self.stream.readline()
 
@@ -42,40 +111,55 @@ class Watcher(threading.Thread):
             try:
                 hg = Factory.fromJson(json.loads(hgin))
             except Exception as err:
-                traceback.print_exc(3)
                 hgerr = err
             else:
                 try:
                     exec(self.code, globals())
                 except Exception as err:
-                    traceback.print_exc(3)
                     hgerr = err
-
-        sys.stderr.write("End of input.")
 
 watcher = Watcher()
 watcher.daemon = True
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Watch a file, pipe, or remote connection for Histogrammar JSON objects and perform some action on each (such as plotting).", epilog="Only one of [-f, -c, -s] may be used. Each JSON object in the stream must be a separate line of text, and no action is performed until the input buffer flushes with an end of line character (\"\\n\").", add_help=True)
-    argparser.add_argument("-f", metavar="FILE", default="-", help="file or pipe to watch (default is \"-\", standard input)")
-    argparser.add_argument("-c", metavar="COMMAND", help="shell command(s) to run and watch; if a filename, use the contents of that file")
-    argparser.add_argument("-s", metavar="ADDRESS:PORT", help="socket address and port to watch (separated by a colon)")
-    argparser.add_argument("-p", metavar="COMMANDS", default="print(json.dumps(hg.toJson()))", help="Python commands to run on each new histogram \"hg\"; if a filename, use the contents of that file (default is \"print(json.dumps(hg.toJson()))\")")
+    argparser.add_argument("-f", metavar="FILE", default="-", help="File or pipe to watch (default is \"-\", standard input).")
+    argparser.add_argument("-c", metavar="COMMAND", help="Shell command(s) to run and watch; if a filename, use the contents of that file.")
+    argparser.add_argument("-s", metavar="ADDRESS:PORT", help="Socket address and port to watch (separated by a colon).")
+    argparser.add_argument("-p", metavar="COMMANDS", default="print(hg)", help="Python commands to run on each new histogram \"hg\"; if a filename, use the contents of that file (default is \"print(hg)\").")
+    argparser.add_argument("--ssh", metavar="USER@HOST:PORT", help="Connect to remote host for -f and -c (no effect for -s or \"-f -\") with the paramiko library for ssh. Raises an exception if paramiko is not installed.")
+    argparser.add_argument("--ssh-key", metavar="LOCAL-FILE", help="Identity for ssh (RSA or DSA private key file) or None.")
+    argparser.add_argument("--json", action="store_true", help="append -p with print-out of JSON.")
+    argparser.add_argument("--root", action="store_true", help="append -p with visualization in ROOT.")
     arguments = argparser.parse_args()
 
-    if arguments.f is not None and arguments.c is None and arguments.s is None:
-        if arguments.f == "-":
+    if arguments.json: arguments.p += "\n" + commandSets["json"]
+    if arguments.root: arguments.p += "\n" + commandSets["root"]
+
+    if arguments.c is None and arguments.s is None:
+        if arguments.ssh is not None and arguments.f != "-":
+            ssh = SSHConnection(arguments.ssh, arguments.ssh_key)
+            file = ssh.file(arguments.f)
+
+        elif arguments.f == "-":
             file = sys.stdin
+
         else:
             file = open(arguments.f)
 
         watcher.start(file, arguments.p)
 
-    elif arguments.f is None and arguments.c is not None and arguments.s is None:
-        raise NotImplementedError
+    elif arguments.f == "-" and arguments.c is not None and arguments.s is None:
+        if arguments.ssh is not None:
+            ssh = SSHConnection(arguments.ssh, arguments.ssh_key)
+            command = ssh.command(arguments.c)
 
-    elif arguments.f is None and arguments.c is None and arguments.s is not None:
+        else:
+            command = subprocess.Popen(arguments.c, stdout=subprocess.PIPE, shell=True)
+
+        watcher.start(command.stdout, arguments.p)
+
+    elif arguments.f == "-" and arguments.c is None and arguments.s is not None:
         raise NotImplementedError
 
     else:
