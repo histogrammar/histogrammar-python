@@ -52,11 +52,10 @@ class HistogramMethods(object):
         elif glyphType == "circle": glyph = Circle(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
         elif glyphType == "rect": glyph = Rect(x='x', y='y', width=bin_width, height=0.1, fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
         elif glyphType == "histogram": 
-            w = [bin_width for _ in x]
             h = y
             y = [yy/2 for yy in y]
-            source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
-            glyph = Rect(x='x', y='y', width='w', height='h', fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
+            source = ColumnDataSource(dict(x=x, y=y, h=h))
+            glyph = Rect(x='x', y='y', width=bin_width, height='h', fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
         else: glyph = Line(x='x', y='y',line_color=line_color,line_alpha=line_alpha,line_width=glyphSize,line_dash=line_dash)
 
         return GlyphRenderer(glyph=glyph,data_source=source)
@@ -126,7 +125,32 @@ class SparselyProfileErrMethods(object):
     pass
 
 class StackedHistogramMethods(object):
-    pass
+    nMaxStacked = 7
+    glyphTypeDefaults = ["circle"]*nMaxStacked
+    glyphSizeDefaults = [1]*nMaxStacked
+    fillColorDefaults = ["red"]*nMaxStacked
+    lineColorDefaults = ["black"]*nMaxStacked
+    lineAlphaDefaults = [1]*nMaxStacked
+    fillAlphaDefaults = [0.1]*nMaxStacked
+    lineDashDefaults = ["solid"]*nMaxStacked
+
+    def bokeh(self,glyphTypes=glyphTypeDefaults,glyphSizes=glyphSizeDefaults,fillColors=fillColorDefaults,lineColors=lineColorDefaults,lineAlphas=lineAlphaDefaults,fillAlphas=fillAlphaDefaults,lineDashes = lineDashDefaults):
+        nTypes = len(glyphTypes)
+        assert nTypes == len(glyphSizes)
+        assert nTypes == len(fillColors)
+        assert nTypes == len(lineColors)
+        assert nTypes == len(lineAlphas)
+        assert nTypes == len(fillAlphas)
+        assert nTypes == len(lineDashes)
+
+        stackedGlyphs = list()
+        for ichild, p in enumerate(self.children):
+            #print "\n\n\n"
+            #print self.children, type(self.children[0])
+            #stackedGlyphs.append(p.bokeh(glyphTypes[ichild],glyphSizes[ichild],fillColors[ichild],lineColors[ichild],lineAlphas[ichild],fillAlphas[ichild],lineDashes[ichild]))
+            p.bokeh(glyphTypes[ichild],glyphSizes[ichild],fillColors[ichild],lineColors[ichild],lineAlphas[ichild],fillAlphas[ichild],lineDashes[ichild])
+
+        return stackedGlyphs
 
 class PartitionedHistogramMethods(object):
     pass
@@ -175,10 +199,5 @@ def save(plot,fname):
     save(plot)
 
 def view(plot):
-    #FIXME tests with the bokeh serve pending
-    from bokeh.plotting import show
-    show(plot)
-    #document = Document()
-    #session = push_session(document)
-    #document.add_root(plot)
-    #session.show(plot)
+    from bokeh.plotting import curdoc
+    curdoc().add_root(plot)
