@@ -97,7 +97,7 @@ if __name__ == "__main__":
     argparser.add_argument("-i", action="store_true", help="Start an interactive Python prompt with the watcher in a background thread.")
     argparser.add_argument("--json", action="store_true", help="append -p with print-out of JSON.")
     argparser.add_argument("--root", action="store_true", help="append -p with visualization in ROOT.")
-    argparser.add_argument("-v", "--version", action="version", version="Histogrammar Watch (hgwatch) version {}".format(histogrammar.version.__version__))
+    argparser.add_argument("-v", "--version", action="version", version="HistogrammarWatch (hgwatch) version {}".format(histogrammar.version.__version__))
     arguments = argparser.parse_args()
 
     if arguments.json: arguments.p += "\n" + commandSets["json"]
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         except NameError:
             pass
         code.interact("""Python {} on {}.
-Histogrammar Watcher version {}.
+HistogrammarWatch version {}.
 Current plot object is \"hg\"; raw input is \"hgin\"; last error is \"hgerr\".
 Type ctrl-D to exit.""".format(sys.version.replace("\n", " ").replace("  ", " "), sys.platform, histogrammar.version.__version__), raw_input, globals())
 
