@@ -722,7 +722,7 @@ class TestEverything(unittest.TestCase):
         from histogrammar.plot.bokeh import plot,save,view
         curve1 = one.bokeh("histogram")
         curve2 = two.bokeh()
-        c = plot(renderers=[curve1,curve2])
+        c = plot(curve1,curve2)
         save(c,"plot_histogram.html")
 
         #self.checkHtml("example.html")
@@ -733,7 +733,7 @@ class TestEverything(unittest.TestCase):
     
         from histogrammar.plot.bokeh import plot,save,view
         curve = one.bokeh("errors")
-        c = plot(renderers=[curve])
+        c = plot(curve)
         save(c,"plot_errors.html")
     
         #self.checkHtml("example.html")
@@ -748,7 +748,7 @@ class TestEverything(unittest.TestCase):
         from histogrammar.plot.bokeh import plot,save,view
         s = Stack.build(one,two)
         curve = s.bokeh()
-        c = plot(renderers=[curve])
+        c = plot(curve)
         save(c,"plot_stack.html")
    
         #self.checkHtml("example.html")
