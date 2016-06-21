@@ -20,8 +20,6 @@ from histogrammar.defs import *
 from histogrammar.util import *
 from histogrammar.primitives.count import *
 
-from functools import reduce
-
 class Stack(Factory, Container):
     @staticmethod
     def ed(entries, cuts, nanflow):
@@ -29,6 +27,7 @@ class Stack(Factory, Container):
             raise ContainerException("entries ({}) cannot be negative".format(entries))
         out = Stack(cuts, None, None, nanflow)
         out.entries = float(entries)
+        print("out.entries ", out.entries)
         return out.specialize()
 
     @staticmethod
@@ -48,10 +47,14 @@ class Stack(Factory, Container):
 
     @staticmethod
     def build(*ys):
+        from functools import reduce
+
         entries = sum(y.entries for y in ys)
+        print("entries ", entries)
         cuts = []
         for i in xrange(len(ys)):
             cuts.append((float("nan"), reduce(lambda a, b: a + b, ys[i:])))
+        print("cuts ", cuts)
         return Stack.ed(entries, cuts, Count.ed(0.0))
 
     @property
@@ -90,6 +93,8 @@ class Stack(Factory, Container):
 
     @property
     def children(self):
+        print("children ",self.values)
+        print("child type ",type(self.values))
         return [self.nanflow] + self.values
 
     def toJsonFragment(self, suppressName):
