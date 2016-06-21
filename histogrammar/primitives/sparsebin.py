@@ -30,7 +30,7 @@ class SparselyBin(Factory, Container):
         out.entries = entries
         out.contentType = contentType
         out.bins = bins
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(binWidth, quantity, value=Count(), nanflow=Count(), origin=0.0):
@@ -50,6 +50,15 @@ class SparselyBin(Factory, Container):
         self.nanflow = nanflow.copy()
         self.origin = origin
         super(SparselyBin, self).__init__()
+        self.specialize()
+
+    def histogram(self):
+        out = SparselyBin(self.binWidth, self.quantity, Count(), self.nanflow.copy(), self.origin)
+        out.entries = float(self.entries)
+        out.contentType = "Count"
+        for i, v in self.bins.items():
+            out.bins[i] = Count.ed(v.entries)
+        return out.specialize()
 
     def zero(self): return SparselyBin(self.binWidth, self.quantity, self.value, self.nanflow.zero(), self.origin)
 
@@ -68,7 +77,7 @@ class SparselyBin(Factory, Container):
                     out.bins[i] += v
                 else:
                     out.bins[i] = v
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -226,7 +235,7 @@ class SparselyBin(Factory, Container):
 
             out = SparselyBin.ed(binWidth, entries, json["bins:type"], bins, nanflow, origin)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "SparselyBin")

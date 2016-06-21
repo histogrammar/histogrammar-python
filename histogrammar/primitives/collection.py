@@ -29,7 +29,7 @@ class Label(Factory, Container, Collection):
 
         out = Label(**pairs)
         out.entries = float(entries)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(**pairs):
@@ -48,6 +48,7 @@ class Label(Factory, Container, Collection):
         self.pairs = pairs
 
         super(Label, self).__init__()
+        self.specialize()
 
     @property
     def pairsMap(self): return self.pairs
@@ -77,7 +78,7 @@ class Label(Factory, Container, Collection):
 
             out = Label(**{k: self(k) + other(k) for k in self.keys})
             out.entries = self.entries + other.entries
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -143,7 +144,7 @@ class UntypedLabel(Factory, Container, Collection):
 
         out = UntypedLabel(**pairs)
         out.entries = float(entries)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(**pairs):
@@ -157,6 +158,7 @@ class UntypedLabel(Factory, Container, Collection):
         self.pairs = pairs
 
         super(UntypedLabel, self).__init__()
+        self.specialize()
 
     @property
     def pairsMap(self): return self.pairs
@@ -186,7 +188,7 @@ class UntypedLabel(Factory, Container, Collection):
 
             out = UntypedLabel(**{k: self(k) + other(k) for k in self.keys})
             out.entries = self.entries + other.entries
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -228,7 +230,7 @@ class UntypedLabel(Factory, Container, Collection):
             else:
                 raise JsonFormatException(json, "UntypedLabel.data")
 
-            return UntypedLabel.ed(entries, **pairs)
+            return UntypedLabel.ed(entries, **pairs).specialize()
 
         else:
             raise JsonFormatException(json, "UntypedLabel")
@@ -254,7 +256,7 @@ class Index(Factory, Container, Collection):
 
         out = Index(*values)
         out.entries = float(entries)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(*values):
@@ -271,6 +273,7 @@ class Index(Factory, Container, Collection):
         self.values = values
 
         super(Index, self).__init__()
+        self.specialize()
 
     @property
     def size(self): return len(self.values)
@@ -301,7 +304,7 @@ class Index(Factory, Container, Collection):
 
             out = Index(*[x + y for x, y in zip(self.values, other.values)])
             out.entries = self.entries + other.entries
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -341,7 +344,7 @@ class Index(Factory, Container, Collection):
             else:
                 raise JsonFormatException(json, "Index.data")
 
-            return Index.ed(entries, *values)
+            return Index.ed(entries, *values).specialize()
 
         else:
             raise JsonFormatException(json, "Index")
@@ -367,7 +370,7 @@ class Branch(Factory, Container, Collection):
 
         out = Branch(*values)
         out.entries = float(entries)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(*values):
@@ -384,6 +387,7 @@ class Branch(Factory, Container, Collection):
             setattr(self, "i" + str(i), x)
 
         super(Branch, self).__init__()
+        self.specialize()
 
     @property
     def size(self): return len(self.values)
@@ -414,7 +418,7 @@ class Branch(Factory, Container, Collection):
 
             out = Branch(*[x + y for x, y in zip(self.values, other.values)])
             out.entries = self.entries + other.entries
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))

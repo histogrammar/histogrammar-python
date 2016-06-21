@@ -31,7 +31,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         out.bins = bins
         out.min = min
         out.max = max
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(bins, quantity, value=Count(), nanflow=Count()):
@@ -54,6 +54,16 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         self.nanflow = nanflow.copy()
 
         super(CentrallyBin, self).__init__()
+        self.specialize()
+
+    def histogram(self):
+        out = CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, Count(), self.nanflow.copy())
+        out.entries = self.entries
+        for i, v in self.bins:
+            out.bins[i] = Count.ed(v.entries)
+        out.min = self.min
+        out.max = self.max
+        return out.specialize()
 
     def zero(self):
         return CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, self.value, self.nanflow.zero())
@@ -69,7 +79,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         out.bins = newbins
         out.min = minplus(self.min, other.min)
         out.max = maxplus(self.max, other.max)
-        return out
+        return out.specialize()
 
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
@@ -168,7 +178,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
             out = CentrallyBin.ed(entries, bins, min, max, nanflow)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "CentrallyBin")
