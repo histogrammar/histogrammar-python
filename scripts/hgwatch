@@ -18,6 +18,9 @@ except ImportError:
 from histogrammar import *
 import histogrammar.version
 
+if sys.version_info[0] > 2:
+    raw_input = input
+
 hg = "Waiting for first valid plot object..."
 hgin = None
 hgerr = None
@@ -136,6 +139,8 @@ if __name__ == "__main__":
     if arguments.json: arguments.p += "\n" + commandSets["json"]
     if arguments.root: arguments.p += "\n" + commandSets["root"]
 
+    command = None
+
     if arguments.c is None and arguments.s is None:
         if arguments.ssh is not None and arguments.f != "-":
             ssh = SSHConnection(arguments.ssh, arguments.ssh_key)
@@ -175,3 +180,8 @@ if __name__ == "__main__":
 Histogrammar Watcher version {}.
 Current plot object is \"hg\"; raw input is \"hgin\"; last error is \"hgerr\".
 Type ctrl-D to exit.""".format(sys.version.replace("\n", " ").replace("  ", " "), sys.platform, histogrammar.version.__version__), raw_input, globals())
+
+    if command is not None:
+        # FIXME: this SIGTERM kills the process, but not the process's children if it has any...
+        command.terminate()
+        command.wait()
