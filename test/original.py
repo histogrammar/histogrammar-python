@@ -738,6 +738,21 @@ class TestEverything(unittest.TestCase):
     
         #self.checkHtml("example.html")
 
+    def testPlotStack(self):
+        one = Histogram(5, -3.0, 7.0, lambda x: x)
+        two = Histogram(5, -3.0, 7.0, lambda x: x)
+        for _ in self.simple:  
+            one.fill(_)
+            two.fill(_)
+   
+        from histogrammar.plot.bokeh import plot,save,view
+        s = Stack.build(one,two)
+        curve = s.bokeh()
+        #c = plot(renderers=[curve])
+        #save(c,"plot_stack.html")
+   
+        #self.checkHtml("example.html")
+
     ################################################################ SparselyBin
 
     def testSparselyBin(self):
