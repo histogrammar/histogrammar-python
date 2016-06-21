@@ -82,14 +82,14 @@ class SSHConnection(object):
             self.client.connect(self.address, self.port, self.user, key_filename=sshkey)
         except paramiko.ssh_exception.SSHException:
             password = getpass.getpass("Password required for {}: ".format(coordinates))
-            self.client.connect(self.address, self.port, self.user, password, key_filename=sshkey)
+            self.client.connect(self.address, self.port, self.user, password, key_filename=sshkey, sock=paramiko.ProxyCommand("ssh tigressdata.princeton.edu -W %h:%p"))
 
     def command(self, command):
         stdin, stdout, stderr = self.client.exec_command(command)
         return stdout
 
     def file(self, file):
-        return self.command("cat " + file)
+        return self.command("tail -f " + file)
         
 class Watcher(threading.Thread):
     def start(self, stream, commands):
@@ -120,7 +120,7 @@ class Watcher(threading.Thread):
                     exec(self.code, globals())
                 except Exception as err:
                     hgerr = err
-
+        
 watcher = Watcher()
 watcher.daemon = True
 
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     argparser.add_argument("-f", metavar="FILE", default="-", help="File or pipe to watch (default is \"-\", standard input).")
     argparser.add_argument("-c", metavar="COMMAND", help="Shell command(s) to run and watch; if a filename, use the contents of that file.")
     argparser.add_argument("-s", metavar="ADDRESS:PORT", help="Socket address and port to watch (separated by a colon).")
-    argparser.add_argument("-p", metavar="COMMANDS", default="print(hg)", help="Python commands to run on each new histogram \"hg\"; if a filename, use the contents of that file (default is \"print(hg)\").")
+    argparser.add_argument("-p", default="", metavar="COMMANDS", help="Python commands to run on each new histogram \"hg\"; if a filename, use the contents of that file.")
     argparser.add_argument("--ssh", metavar="USER@HOST:PORT", help="Connect to remote host for -f and -c (no effect for -s or \"-f -\") with the paramiko library for ssh. Raises an exception if paramiko is not installed.")
     argparser.add_argument("--ssh-key", metavar="LOCAL-FILE", help="Identity for ssh (RSA or DSA private key file) or None.")
     argparser.add_argument("--json", action="store_true", help="append -p with print-out of JSON.")
@@ -144,25 +144,26 @@ if __name__ == "__main__":
     if arguments.c is None and arguments.s is None:
         if arguments.ssh is not None and arguments.f != "-":
             ssh = SSHConnection(arguments.ssh, arguments.ssh_key)
-            file = ssh.file(arguments.f)
+            stream = ssh.file(arguments.f)
 
         elif arguments.f == "-":
-            file = sys.stdin
+            stream = sys.stdin
 
         else:
-            file = open(arguments.f)
+            stream = open(arguments.f)
 
-        watcher.start(file, arguments.p)
+        watcher.start(stream, arguments.p)
 
     elif arguments.f == "-" and arguments.c is not None and arguments.s is None:
         if arguments.ssh is not None:
             ssh = SSHConnection(arguments.ssh, arguments.ssh_key)
-            command = ssh.command(arguments.c)
+            stream = ssh.command(arguments.c)
 
         else:
             command = subprocess.Popen(arguments.c, stdout=subprocess.PIPE, shell=True)
+            stream = command.stdout
 
-        watcher.start(command.stdout, arguments.p)
+        watcher.start(stream, arguments.p)
 
     elif arguments.f == "-" and arguments.c is None and arguments.s is not None:
         raise NotImplementedError
