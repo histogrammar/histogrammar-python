@@ -175,7 +175,12 @@ def plot(xLabel='x',yLabel='y',*args):
     plot = Plot(x_range=xdr, y_range=ydr, min_border=80)
 
     extra = list()
-    if type(xLabel) is not str: 
+    if type(xLabel) is not str and type(yLabel) is not str:
+        extra.append(xLabel)
+        extra.append(yLabel)
+        xLabel = 'x'
+        yLabel = 'y'
+    elif type(xLabel) is not str: 
         extra.append(xLabel)
         xLabel = 'x'
     elif type(yLabel) is not str:
