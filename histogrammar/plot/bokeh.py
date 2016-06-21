@@ -144,8 +144,10 @@ class StackedHistogramMethods(object):
         assert nTypes == len(lineDashes)
 
         stackedGlyphs = list()
-        for ichild, p in enumerate(self.children):
-            stackedGlyphs.append(p.bokeh(glyphTypes[ichild],glyphSizes[ichild],fillColors[ichild],lineColors[ichild],lineAlphas[ichild],fillAlphas[ichild],lineDashes[ichild]))
+        #for ichild, p in enumerate(self.children,start=1):
+        for ichild in range(1,len(self.children)):
+            print(ichild)
+            stackedGlyphs.append(self.children[ichild].bokeh(glyphTypes[ichild],glyphSizes[ichild],fillColors[ichild],lineColors[ichild],lineAlphas[ichild],fillAlphas[ichild],lineDashes[ichild]))
 
         return stackedGlyphs
 
@@ -162,7 +164,8 @@ class SparselyTwoDimensionallyHistogramMethods(object):
     pass
 
 
-def plot(xLabel='x',yLabel='y',**kwargs):
+def plot(xLabel='x',yLabel='y',*args):
+
     from bokeh.models import DataRange1d, Plot, LinearAxis, Grid
     from bokeh.models import PanTool, WheelZoomTool
 
@@ -171,8 +174,20 @@ def plot(xLabel='x',yLabel='y',**kwargs):
 
     plot = Plot(x_range=xdr, y_range=ydr, min_border=80)
 
-    for _,renderer in kwargs.items():
-        plot.renderers.extend(renderer)
+    extra = list()
+    if type(xLabel) is not str: 
+        extra.append(xLabel)
+        xLabel = 'x'
+    elif type(yLabel) is not str:
+        extra.append(yLabel)
+        yLabel = 'y'
+   
+    args = extra+list(args) 
+    for renderer in args:
+         if type(renderer) is not list: 
+             plot.renderers.append(renderer)
+         else: 
+             plot.renderers.extend(renderer)
 
     #axes
     xaxis = LinearAxis(axis_label=xLabel)
@@ -187,6 +202,8 @@ def plot(xLabel='x',yLabel='y',**kwargs):
     plot.add_tools(PanTool(), WheelZoomTool()) #, SaveTool())
 
     return plot
+
+
 
 
 def save(plot,fname):    
