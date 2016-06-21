@@ -20,6 +20,8 @@ from histogrammar.defs import *
 from histogrammar.util import *
 from histogrammar.primitives.count import *
 
+from functools import reduce
+
 class Stack(Factory, Container):
     @staticmethod
     def ed(entries, cuts, nanflow):
