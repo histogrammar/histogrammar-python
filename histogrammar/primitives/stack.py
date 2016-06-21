@@ -27,7 +27,6 @@ class Stack(Factory, Container):
             raise ContainerException("entries ({}) cannot be negative".format(entries))
         out = Stack(cuts, None, None, nanflow)
         out.entries = float(entries)
-        print("out.entries ", out.entries)
         return out.specialize()
 
     @staticmethod
@@ -50,11 +49,9 @@ class Stack(Factory, Container):
         from functools import reduce
 
         entries = sum(y.entries for y in ys)
-        print("entries ", entries)
         cuts = []
         for i in xrange(len(ys)):
             cuts.append((float("nan"), reduce(lambda a, b: a + b, ys[i:])))
-        print("cuts ", cuts)
         return Stack.ed(entries, cuts, Count.ed(0.0))
 
     @property
