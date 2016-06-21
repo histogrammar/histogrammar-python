@@ -90,8 +90,6 @@ class Stack(Factory, Container):
 
     @property
     def children(self):
-        print("children ",self.values)
-        print("child type ",type(self.values))
         return [self.nanflow] + self.values
 
     def toJsonFragment(self, suppressName):
