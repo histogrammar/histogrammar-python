@@ -25,7 +25,7 @@ class AbsoluteErr(Factory, Container):
         out = AbsoluteErr(None)
         out.entries = float(entries)
         out.absoluteSum = float(mae)*float(entries)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity):
@@ -36,6 +36,7 @@ class AbsoluteErr(Factory, Container):
         self.entries = 0.0
         self.absoluteSum = 0.0
         super(AbsoluteErr, self).__init__()
+        self.specialize()
 
     @property
     def mae(self):
@@ -51,11 +52,12 @@ class AbsoluteErr(Factory, Container):
             out = AbsoluteErr(self.quantity)
             out.entries = self.entries + other.entries
             out.absoluteSum = self.entries*self.mae + other.entries*other.mae
-            return out
+            return out.specialize()
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
 
@@ -94,7 +96,7 @@ class AbsoluteErr(Factory, Container):
 
             out = AbsoluteErr.ed(entries, mae)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "AbsoluteErr")

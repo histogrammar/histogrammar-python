@@ -25,7 +25,7 @@ class Average(Factory, Container):
         out = Average(None)
         out.entries = float(entries)
         out.mean = float(mean)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity):
@@ -36,6 +36,7 @@ class Average(Factory, Container):
         self.entries = 0.0
         self.mean = 0.0
         super(Average, self).__init__()
+        self.specialize()
 
     def zero(self): return Average(self.quantity)
 
@@ -47,11 +48,12 @@ class Average(Factory, Container):
                 out.mean = (self.mean + other.mean)/2.0
             else:
                 out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
-            return out
+            return out.specialize()
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
 
@@ -92,7 +94,7 @@ class Average(Factory, Container):
 
             out = Average.ed(entries, mean)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Average")

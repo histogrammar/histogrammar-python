@@ -29,7 +29,7 @@ class Bin(Factory, Container):
         out = Bin(len(values), low, high, None, None, underflow, overflow, nanflow)
         out.entries = float(entries)
         out.values = values
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(num, low, high, quantity, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
@@ -53,6 +53,14 @@ class Bin(Factory, Container):
         self.overflow = overflow.copy()
         self.nanflow = nanflow.copy()
         super(Bin, self).__init__()
+        self.specialize()
+
+    def histogram(self):
+        out = Bin(len(self.values), self.low, self.high, self.quantity, None, self.underflow.copy(), self.overflow.copy(), self.nanflow.copy())
+        out.entries = float(self.entries)
+        for i, v in enumerate(self.values):
+            out.values[i] = Count.ed(v.entries)
+        return out.specialize()
 
     def zero(self): return Bin(len(self.values), self.low, self.high, self.quantity, self.values[0].zero(), self.underflow.zero(), self.overflow.zero(), self.nanflow.zero())
 
@@ -70,7 +78,7 @@ class Bin(Factory, Container):
             out = Bin(len(self.values), self.low, self.high, self.quantity, self.values[0], self.underflow + other.underflow, self.overflow + other.overflow, self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
             out.values = [x + y for x, y in zip(self.values, other.values)]
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -90,12 +98,12 @@ class Bin(Factory, Container):
 
     @property
     def indexes(self): return range(self.num)
-    def range(self, index): ((self.high - self.low) * index / self.num + self.low, (self.high - self.low) * (index + 1) / self.num + self.low)
+    def range(self, index): return ((self.high - self.low) * index / self.num + self.low, (self.high - self.low) * (index + 1) / self.num + self.low)
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
-
             if self.under(q):
                 self.underflow.fill(datum, weight)
             elif self.over(q):
@@ -195,7 +203,7 @@ class Bin(Factory, Container):
 
             out = Bin.ed(low, high, entries, values, underflow, overflow, nanflow)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Bin")
@@ -207,6 +215,6 @@ class Bin(Factory, Container):
         return isinstance(other, Bin) and numeq(self.low, other.low) and numeq(self.high, other.high) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values and self.underflow == other.underflow and self.overflow == other.overflow and self.nanflow == other.nanflow
 
     def __hash__(self):
-        return hash((self.low, self.high, self.quantity, self.entries, self.values, self.underflow, self.overflow, self.nanflow))
+        return hash((self.low, self.high, self.quantity, self.entries, tuple(self.values), self.underflow, self.overflow, self.nanflow))
 
 Factory.register(Bin)

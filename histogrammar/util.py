@@ -150,6 +150,8 @@ class UserFcn(object):
         self.expr = expr
         if isinstance(expr, basestring) and name is None:
             self.name = expr
+        elif isinstance(expr, types.FunctionType) and expr.__name__ != "<lambda>" and name is None:
+            self.name = expr.__name__
         else:
             self.name = name
 
@@ -166,6 +168,7 @@ class UserFcn(object):
 
                 def function(datum):
                     context = dict(globals())
+                    context.update(math.__dict__)
                     try:
                         context.update(datum.__dict__)
                     except AttributeError:
@@ -346,7 +349,7 @@ class Clustering1D(object):
         return self.num == other.num and numeq(self.tailDetail, other.tailDetail) and self.values == other.values and numeq(self.min, other.min) and numeq(self.max, other.max) and numeq(self.entries, other.entries)
 
     def __hash__(self):
-        return hash((self.num, self.tailDetail, self.values, self.min, self.max, self.entries))
+        return hash((self.num, self.tailDetail, tuple(self.values), self.min, self.max, self.entries))
 
 ################################################################ interpretation of central bins as a distribution
 

@@ -30,7 +30,7 @@ class SparselyBin(Factory, Container):
         out.entries = entries
         out.contentType = contentType
         out.bins = bins
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(binWidth, quantity, value=Count(), nanflow=Count(), origin=0.0):
@@ -44,10 +44,21 @@ class SparselyBin(Factory, Container):
         self.entries = 0.0
         self.quantity = serializable(quantity)
         self.value = value
+        if value is not None:
+            self.contentType = self.value.name
         self.bins = {}
         self.nanflow = nanflow.copy()
         self.origin = origin
         super(SparselyBin, self).__init__()
+        self.specialize()
+
+    def histogram(self):
+        out = SparselyBin(self.binWidth, self.quantity, Count(), self.nanflow.copy(), self.origin)
+        out.entries = float(self.entries)
+        out.contentType = "Count"
+        for i, v in self.bins.items():
+            out.bins[i] = Count.ed(v.entries)
+        return out.specialize()
 
     def zero(self): return SparselyBin(self.binWidth, self.quantity, self.value, self.nanflow.zero(), self.origin)
 
@@ -66,7 +77,7 @@ class SparselyBin(Factory, Container):
                     out.bins[i] += v
                 else:
                     out.bins[i] = v
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
@@ -85,13 +96,13 @@ class SparselyBin(Factory, Container):
         if len(self.bins) == 0:
             return None
         else:
-            return min(*self.bins.keys())
+            return min(self.bins.keys())
     @property
     def maxBin(self):
         if len(self.bins) == 0:
             return None
         else:
-            return max(*self.bins.keys())
+            return max(self.bins.keys())
     @property
     def low(self):
         if len(self.bins) == 0:
@@ -121,6 +132,7 @@ class SparselyBin(Factory, Container):
     def nan(self, x): return math.isnan(x)
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
 
@@ -137,7 +149,7 @@ class SparselyBin(Factory, Container):
 
     @property
     def children(self):
-        return [self.value, self.nanflow] + self.bins.values()
+        return [self.value, self.nanflow] + list(self.bins.values())
 
     def toJsonFragment(self, suppressName):
         if isinstance(self.value, Container):
@@ -223,7 +235,7 @@ class SparselyBin(Factory, Container):
 
             out = SparselyBin.ed(binWidth, entries, json["bins:type"], bins, nanflow, origin)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "SparselyBin")

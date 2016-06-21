@@ -28,7 +28,7 @@ class Fraction(Factory, Container):
         out.entries = float(entries)
         out.numerator = numerator
         out.denominator = denominator
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity, value):
@@ -41,23 +41,25 @@ class Fraction(Factory, Container):
             self.numerator = value.zero()
             self.denominator = value.zero()
         super(Fraction, self).__init__()
+        self.specialize()
         
     def zero(self):
         out = Fraction(self.quantity, None)
         out.numerator = self.numerator.zero()
         out.denominator = self.denominator.zero()
-        return out
+        return out.specialize()
 
     def __add__(self, other):
         if isinstance(other, Fraction):
             out = Fraction(self.quantity, None)
             out.numerator = self.numerator + other.numerator
             out.denominator = self.denominator + other.denominator
-            return out
+            return out.specialize()
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         w = weight * self.quantity(datum)
 
         if weight > 0.0:
@@ -120,7 +122,7 @@ class Fraction(Factory, Container):
 
             out = Fraction.ed(entries, numerator, denominator)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Fraction")

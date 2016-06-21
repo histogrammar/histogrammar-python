@@ -26,17 +26,26 @@ class Select(Factory, Container):
             raise ContainerException("entries ({}) cannot be negative".format(entries))
         out = Select(None, cut)
         out.entries = entries
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity, cut):
         return Select(quantity, cut)
+
+    def __getattr__(self, attr):
+        if attr.startswith("__") and attr.endswith("__"):
+            return getattr(Select, attr)
+        elif attr not in self.__dict__ and hasattr(self.__dict__["cut"], attr):
+            return getattr(self.__dict__["cut"], attr)
+        else:
+            return self.__dict__[attr]
 
     def __init__(self, quantity, cut):
         self.entries = 0.0
         self.quantity = serializable(quantity)
         self.cut = cut
         super(Select, self).__init__()
+        self.specialize()
 
     def fractionPassing(self):
         return self.cut.entries / self.entries
@@ -48,11 +57,12 @@ class Select(Factory, Container):
         if isinstance(other, Select):
             out = Select(self.quantity, self.cut + other.cut)
             out.entries = self.entries + other.entries
-            return out
+            return out.specialize()
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         w = weight * self.quantity(datum)
         if w > 0.0:
             self.cut.fill(datum, w)
@@ -93,7 +103,7 @@ class Select(Factory, Container):
 
             out = Select.ed(entries, cut)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Select")

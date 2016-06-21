@@ -26,7 +26,7 @@ class Partition(Factory, Container):
 
         out = Partition(cuts, None, None, nanflow)
         out.entries = float(entries)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(cuts, quantity, value, nanflow=Count()):
@@ -41,6 +41,7 @@ class Partition(Factory, Container):
             self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(cuts))
         self.nanflow = nanflow
         super(Partition, self).__init__()
+        self.specialize()
 
     @property
     def thresholds(self): return [k for k, v in self.cuts]
@@ -57,12 +58,13 @@ class Partition(Factory, Container):
 
             out = Partition([(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)], self.quantity, None, self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
             if math.isnan(q):
@@ -144,7 +146,7 @@ class Partition(Factory, Container):
 
                 out = Partition.ed(entries, cuts, nanflow)
                 out.quantity.name = nameFromParent if name is None else name
-                return out
+                return out.specialize()
 
             else:
                 raise JsonFormatException(json, "Partition.data")
@@ -153,7 +155,7 @@ class Partition(Factory, Container):
             raise JsonFormatException(json, "Partition")
 
     def __repr__(self):
-        return "<Partition bins={} thresholds=({}) nanflow={}>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)), self.nanflow.name)
+        return "<Partition values={} thresholds=({}) nanflow={}>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)), self.nanflow.name)
 
     def __eq__(self, other):
         return isinstance(other, Partition) and numeq(self.entries, other.entries) and self.quantity == other.quantity and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.cuts, other.cuts)) and self.nanflow == other.nanflow

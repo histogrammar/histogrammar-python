@@ -29,7 +29,7 @@ class Sample(Factory, Container):
         out.entries = entries
         out._limit = limit
         out._values = values
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(limit, quantity):
@@ -42,6 +42,7 @@ class Sample(Factory, Container):
         self.quantity = serializable(quantity)
         self.reservoir = Reservoir(limit)
         super(Sample, self).__init__()
+        self.specialize()
 
     @property
     def limit(self):
@@ -90,12 +91,13 @@ class Sample(Factory, Container):
             else:
                 del out.reservoir
                 out._values = newreservoir.values
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
 
@@ -165,7 +167,7 @@ class Sample(Factory, Container):
 
             out = Sample.ed(entries, limit, values)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Sample")
@@ -177,6 +179,6 @@ class Sample(Factory, Container):
         return isinstance(other, Sample) and self.entries == other.entries and self.quantity == other.quantity and self.limit == other.limit and self.values == other.values
 
     def __hash__(self):
-        return hash((self.entries, self.quantity, self.limit, self.value))
+        return hash((self.entries, self.quantity, self.limit, tuple(self.values)))
 
 Factory.register(Sample)

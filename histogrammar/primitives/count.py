@@ -24,7 +24,7 @@ class Count(Factory, Container):
             raise ContainerException("entries ($entries) cannot be negative")
         out = Count()
         out.entries = float(entries)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing():
@@ -33,6 +33,7 @@ class Count(Factory, Container):
     def __init__(self):
         self.entries = 0.0
         super(Count, self).__init__()
+        self.specialize()
 
     def zero(self): return Count()
 
@@ -40,11 +41,12 @@ class Count(Factory, Container):
         if isinstance(other, Count):
             out = Count()
             out.entries = self.entries + other.entries
-            return out
+            return out.specialize()
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         # no possibility of exception from here on out (for rollback)
         if weight > 0.0:
             self.entries += weight

@@ -28,7 +28,7 @@ class Bag(Factory, Container):
         out = Bag(None)
         out.entries = float(entries)
         out.values = values
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(quantity):
@@ -39,6 +39,7 @@ class Bag(Factory, Container):
         self.entries = 0.0
         self.values = {}
         super(Bag, self).__init__()
+        self.specialize()
 
     def zero(self): return Bag(self.quantity)
 
@@ -55,12 +56,13 @@ class Bag(Factory, Container):
                 else:
                     out.values[value] = count
 
-            return out
+            return out.specialize()
 
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
 
@@ -137,7 +139,7 @@ class Bag(Factory, Container):
 
             out = Bag.ed(entries, values)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Bag")
@@ -149,7 +151,6 @@ class Bag(Factory, Container):
         return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values
 
     def __hash__(self):
-        return hash((self.quantity, self.entries, tuple(self.values)))
-        
+       return hash((self.quantity, self.entries, tuple(self.values.items())))
 
 Factory.register(Bag)

@@ -27,7 +27,7 @@ class Quantile(Factory, Container):
         out = Quantile(target, None)
         out.entries = float(entries)
         out.estimate = float(estimate)
-        return out
+        return out.specialize()
 
     @staticmethod
     def ing(target, quantity):
@@ -42,6 +42,7 @@ class Quantile(Factory, Container):
         self.estimate = float("nan")
         self.cumulativeDeviation = 0.0
         super(Quantile, self).__init__()
+        self.specialize()
 
     def zero(self): return Quantile(self.target, self.quantity)
 
@@ -63,14 +64,14 @@ class Quantile(Factory, Container):
                     out.cumulativeDeviation = (self.cumulativeDeviation + other.cumulativeDeviation)/2.0
                 else:
                     out.estimate = (self.estimate*self.entries + other.estimate*other.entries) / (self.entries + other.entries)
-                    out.cumulativeDeviation = (self.cumulativeDeviation*self.entries + other.cumulativeDeviation*other.entries) / (self.entries + other.entries)
-                return out
+                return out.specialize()
             else:
                 raise ContainerException("cannot add Quantiles because targets do not match ({} vs {})".format(self.target, other.target))
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     def fill(self, datum, weight=1.0):
+        self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
 
@@ -126,7 +127,7 @@ class Quantile(Factory, Container):
 
             out = Quantile.ed(entries, target, estimate)
             out.quantity.name = nameFromParent if name is None else name
-            return out
+            return out.specialize()
 
         else:
             raise JsonFormatException(json, "Quantile")
