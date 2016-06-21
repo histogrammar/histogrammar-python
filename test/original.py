@@ -748,8 +748,8 @@ class TestEverything(unittest.TestCase):
         from histogrammar.plot.bokeh import plot,save,view
         s = Stack.build(one,two)
         curve = s.bokeh()
-        #c = plot(renderers=[curve])
-        #save(c,"plot_stack.html")
+        c = plot(renderers=[curve])
+        save(c,"plot_stack.html")
    
         #self.checkHtml("example.html")
 
