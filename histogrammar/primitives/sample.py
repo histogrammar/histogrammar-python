@@ -42,7 +42,9 @@ class Sample(Factory, Container):
         self.quantity = serializable(quantity)
         self.reservoir = Reservoir(limit)
         super(Sample, self).__init__()
+        self._limit = limit
         self.specialize()
+        
 
     @property
     def limit(self):
