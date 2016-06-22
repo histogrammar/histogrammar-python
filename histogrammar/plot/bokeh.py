@@ -146,7 +146,6 @@ class StackedHistogramMethods(object):
         stackedGlyphs = list()
         #for ichild, p in enumerate(self.children,start=1):
         for ichild in range(1,len(self.children)):
-            print(ichild)
             stackedGlyphs.append(self.children[ichild].bokeh(glyphTypes[ichild],glyphSizes[ichild],fillColors[ichild],lineColors[ichild],lineAlphas[ichild],fillAlphas[ichild],lineDashes[ichild]))
 
         return stackedGlyphs
