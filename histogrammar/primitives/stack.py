@@ -46,6 +46,8 @@ class Stack(Factory, Container):
 
     @staticmethod
     def build(*ys):
+        from functools import reduce
+
         entries = sum(y.entries for y in ys)
         cuts = []
         for i in xrange(len(ys)):
