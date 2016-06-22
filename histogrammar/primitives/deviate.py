@@ -20,8 +20,14 @@ from histogrammar.util import *
 class Deviate(Factory, Container):
     @staticmethod
     def ed(entries, mean, variance):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(mean, (int, long, float)):
+            raise TypeError("mean ({}) must be a number".format(mean))
+        if not isinstance(variance, (int, long, float)):
+            raise TypeError("variance ({}) must be a number".format(variance))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Deviate(None)
         out.entries = float(entries)
         out.mean = float(mean)

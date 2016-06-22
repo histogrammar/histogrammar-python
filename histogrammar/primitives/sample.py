@@ -26,8 +26,16 @@ MAX_LONG = 2**63 - 1
 class Sample(Factory, Container):
     @staticmethod
     def ed(entries, limit, values, randomSeed=None):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(limit, (int, long, float)):
+            raise TypeError("limit ({}) must be a number".format(limit))
+        if not isinstance(values, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 3 and isinstance(v[1], (int, long, float)) and isinstance(v[2], (int, long, float)) for v in values):
+            raise TypeError("values ({}) must be a list of quantity return type, number, number triples".format(values))
+        if randomSeed is not None and not isinstance(randomSeed, (int, long)):
+            raise TypeError("randomSeed ({}) must be None or a number".format(randomSeed))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Sample(limit, None, randomSeed)
         del out.reservoir
         out.entries = entries
@@ -40,8 +48,12 @@ class Sample(Factory, Container):
         return Sample(limit, quantity, randomSeed)
 
     def __init__(self, limit, quantity, randomSeed=None):
+        if not isinstance(limit, (int, long, float)):
+            raise TypeError("limit ({}) must be a number".format(limit))
+        if randomSeed is not None and not isinstance(randomSeed, (int, long)):
+            raise TypeError("randomSeed ({}) must be None or a number".format(randomSeed))
         if limit <= 0.0:
-            raise ContainerException("limit ({}) cannot be negative".format(limit))
+            raise ValueError("limit ({}) cannot be negative".format(limit))
         self.entries = 0.0
         self.quantity = serializable(quantity)
         self.reservoir = Reservoir(limit)

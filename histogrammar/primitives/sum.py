@@ -20,8 +20,12 @@ from histogrammar.util import *
 class Sum(Factory, Container):
     @staticmethod
     def ed(entries, sum):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(sum, (int, long, float)):
+            raise TypeError("sum ({}) must be a number".format(sum))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Sum(None)
         out.entries = float(entries)
         out.sum = float(sum)

@@ -22,8 +22,12 @@ from histogrammar.util import *
 class Minimize(Factory, Container):
     @staticmethod
     def ed(entries, min):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(min, (int, long, float)):
+            raise TypeError("min ({}) must be a number".format(min))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Minimize(None)
         out.entries = float(entries)
         out.min = float(min)
@@ -111,8 +115,12 @@ Factory.register(Minimize)
 class Maximize(Factory, Container):
     @staticmethod
     def ed(entries, max):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(max, (int, long, float)):
+            raise TypeError("max ({}) must be a number".format(max))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Maximize(None)
         out.entries = float(entries)
         out.max = float(max)

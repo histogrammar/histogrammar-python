@@ -21,8 +21,14 @@ from histogrammar.primitives.count import *
 class Fraction(Factory, Container):
     @staticmethod
     def ed(entries, numerator, denominator):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(numerator, Container):
+            raise TypeError("numerator ({}) must be a Container".format(numerator))
+        if not isinstance(denominator, Container):
+            raise TypeError("denominatior ({}) must be a Container".format(denominatior))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
 
         out = Fraction(None, None)
         out.entries = float(entries)
@@ -35,6 +41,8 @@ class Fraction(Factory, Container):
         return Fraction(quantity, value)
 
     def __init__(self, quantity, value):
+        if value is not None and not isinstance(value, Container):
+            raise TypeError("value ({}) must be None or a Container".format(value))
         self.entries = 0.0
         self.quantity = serializable(quantity)
         if value is not None:
@@ -45,6 +53,10 @@ class Fraction(Factory, Container):
 
     @staticmethod
     def build(numerator, denominator):
+        if not isinstance(numerator, Container):
+            raise TypeError("numerator ({}) must be a Container".format(numerator))
+        if not isinstance(denominator, Container):
+            raise TypeError("denominatior ({}) must be a Container".format(denominatior))
         # check for compatibility
         numerator + denominator
         # return object

@@ -22,8 +22,12 @@ from histogrammar.util import *
 class Bag(Factory, Container):
     @staticmethod
     def ed(entries, values):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(values, dict) and not all(isinstance(k, (int, long, float)) for k, v in values.items()):
+            raise TypeError("values ({}) must be a dict from numbers to range type".format(values))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Bag(None)
         out.entries = float(entries)
         out.values = values

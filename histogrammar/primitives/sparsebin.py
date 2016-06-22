@@ -23,8 +23,22 @@ from histogrammar.primitives.count import *
 class SparselyBin(Factory, Container):
     @staticmethod
     def ed(binWidth, entries, contentType, bins, nanflow, origin):
+        if not isinstance(binWidth, (int, long, float)):
+            raise TypeError("binWidth ({}) must be a number".format(binWidth))
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(contentType, basestring):
+            raise TypeError("contentType ({}) must be a string".format(contentType))
+        if not isinstance(bins, dict) or not all(isinstance(k, (int, long)) and isinstance(v, Container) for k, v in bins.items()):
+            raise TypeError("bins ({}) must be a map from 64-bit integers to Containers".format(bins))
+        if not isinstance(nanflow, Container):
+            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+        if not isinstance(origin, (int, long, float)):
+            raise TypeError("origin ({}) must be a number".format(origin))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
+        if binWidth <= 0.0:
+            raise ValueError("binWidth ({}) must be greater than zero".format(binWidth))
 
         out = SparselyBin(binWidth, None, None, nanflow, origin)
         out.entries = entries
@@ -37,8 +51,16 @@ class SparselyBin(Factory, Container):
         return SparselyBin(binWidth, quantity, value, nanflow, origin)
 
     def __init__(self, binWidth, quantity, value=Count(), nanflow=Count(), origin=0.0):
+        if not isinstance(binWidth, (int, long, float)):
+            raise TypeError("binWidth ({}) must be a number".format(binWidth))
+        if value is not None and not isinstance(value, Container):
+            raise TypeError("value ({}) must be a Container".format(value))
+        if not isinstance(nanflow, Container):
+            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+        if not isinstance(origin, (int, long, float)):
+            raise TypeError("origin ({}) must be a number".format(origin))
         if binWidth <= 0.0:
-            raise ContainerException("binWidth ({}) must be greater than zero".format(binWidth))
+            raise ValueError("binWidth ({}) must be greater than zero".format(binWidth))
 
         self.binWidth = binWidth
         self.entries = 0.0

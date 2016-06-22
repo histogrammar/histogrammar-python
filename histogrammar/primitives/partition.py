@@ -21,8 +21,14 @@ from histogrammar.primitives.count import *
 class Partition(Factory, Container):
     @staticmethod
     def ed(entries, cuts, nanflow):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(cuts, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in cuts):
+            raise TypeError("cuts ({}) must be a list of number, Container pairs".format(cuts))
+        if not isinstance(nanflow, Container):
+            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
 
         out = Partition(cuts, None, None, nanflow)
         out.entries = float(entries)
@@ -32,13 +38,20 @@ class Partition(Factory, Container):
     def ing(cuts, quantity, value, nanflow=Count()):
         return Partition(cuts, quantity, value, nanflow)
 
-    def __init__(self, cuts, quantity, value, nanflow=Count()):
+    def __init__(self, thresholds, quantity, value, nanflow=Count()):
+        if not isinstance(thresholds, (list, tuple)) and not all(isinstance(v, (int, long, float)) for v in thresholds):
+            raise TypeError("thresholds ({}) must be a list of numbers".format(thresholds))
+        if value is not None and not isinstance(value, Container):
+            raise TypeError("value ({}) must be None or a Container".format(value))
+        if not isinstance(nanflow, Container):
+            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+
         self.entries = 0.0
         self.quantity = serializable(quantity)
         if value is None:
-            self.cuts = tuple(cuts)
+            self.cuts = tuple(thresholds)
         else:
-            self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(cuts))
+            self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(thresholds))
         self.nanflow = nanflow
         super(Partition, self).__init__()
         self.specialize()

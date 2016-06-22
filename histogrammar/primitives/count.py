@@ -22,8 +22,10 @@ identity = serializable(lambda x: x)
 class Count(Factory, Container):
     @staticmethod
     def ed(entries):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Count()
         out.entries = float(entries)
         return out.specialize()

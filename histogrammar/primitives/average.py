@@ -20,8 +20,12 @@ from histogrammar.util import *
 class Average(Factory, Container):
     @staticmethod
     def ed(entries, mean):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(mean, (int, long, float)):
+            raise TypeError("mean ({}) must be a number".format(mean))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Average(None)
         out.entries = float(entries)
         out.mean = float(mean)

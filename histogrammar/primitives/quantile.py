@@ -22,8 +22,14 @@ from histogrammar.util import *
 class Quantile(Factory, Container):
     @staticmethod
     def ed(entries, target, estimate):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(target, (int, long, float)):
+            raise TypeError("target ({}) must be a number".format(target))
+        if not isinstance(estimate, (int, long, float)):
+            raise TypeError("estimate ({}) must be a number".format(estimate))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Quantile(target, None)
         out.entries = float(entries)
         out.estimate = float(estimate)
@@ -34,8 +40,10 @@ class Quantile(Factory, Container):
         return Quantile(target, quantity)
 
     def __init__(self, target, quantity):
+        if not isinstance(target, (int, long, float)):
+            raise TypeError("target ({}) must be a number".format(target))
         if target < 0.0 or target > 1.0:
-            raise ContainerException("target ({}) must be between 0 and 1, inclusive".format(target))
+            raise ValueError("target ({}) must be between 0 and 1, inclusive".format(target))
         self.target = target
         self.quantity = serializable(quantity)
         self.entries = 0.0

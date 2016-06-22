@@ -20,8 +20,12 @@ from histogrammar.util import *
 class AbsoluteErr(Factory, Container):
     @staticmethod
     def ed(entries, mae):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(mae, (int, long, float)):
+            raise TypeError("mae ({}) must be a number".format(mae))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = AbsoluteErr(None)
         out.entries = float(entries)
         out.absoluteSum = float(mae)*float(entries)

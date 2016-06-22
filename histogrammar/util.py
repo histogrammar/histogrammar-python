@@ -155,6 +155,8 @@ class UserFcn(object):
             self.name = expr.__name__
         else:
             self.name = name
+        if expr is not None and not isinstance(expr, (basestring, types.FunctionType)):
+            raise TypeError("quantity ({}) must be a string or function".format(expr))
 
     def __call__(self, *args, **kwds):
         if not hasattr(self, "fcn"):
