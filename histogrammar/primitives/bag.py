@@ -23,8 +23,12 @@ from histogrammar.util import *
 class Bag(Factory, Container):
     @staticmethod
     def ed(entries, values):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(values, dict) and not all(isinstance(k, (int, long, float)) for k, v in values.items()):
+            raise TypeError("values ({}) must be a dict from numbers to range type".format(values))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Bag(None)
         out.entries = float(entries)
         out.values = values
@@ -65,11 +69,10 @@ class Bag(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
-
+            if not isinstance(q, (bool, int, long, float, basestring)) and not (isinstance(q, (list, tuple)) and all(isinstance(qi, (int, long, float)) for qi in q)):
+                raise TypeError("function return value ({}) must be boolean, number, string, or list/tuple of numbers".format(q))
             if isinstance(q, list):
-                q = tuple(map(float, q))
-            elif not isinstance(q, (int, long, float, basestring, tuple)):
-                raise ContainerException("fill rule for Bag must return a number, vector of numbers, or a string, not {}".format(q))
+                q = tuple(q)
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight

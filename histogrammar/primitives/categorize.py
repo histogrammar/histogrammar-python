@@ -21,12 +21,19 @@ from histogrammar.primitives.count import *
 class Categorize(Factory, Container):
     @staticmethod
     def ed(entries, contentType, **pairs):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(contentType, basestring):
+            raise TypeError("contentType ({}) must be a string".format(contentType))
+        if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
+            raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
 
-        out = Categorize(None, contentType)
+        out = Categorize(None, None)
         out.entries = float(entries)
         out.pairs = pairs
+        out.contentType = contentType
         return out.specialize()
 
     @staticmethod
@@ -34,6 +41,8 @@ class Categorize(Factory, Container):
         return Categorize(quantity, value)
 
     def __init__(self, quantity, value=Count()):
+        if value is not None and not isinstance(value, Container):
+            raise TypeError("value ({}) must be None or a Container".format(value))
         self.entries = 0.0
         self.quantity = serializable(quantity)
         self.value = value
@@ -79,6 +88,8 @@ class Categorize(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
+            if not isinstance(q, basestring):
+                raise TypeError("function return value ({}) must be a string".format(q))
 
             if q not in self.pairs:
                 self.pairs[q] = self.value.zero()
@@ -111,7 +122,7 @@ class Categorize(Factory, Container):
 
         return maybeAdd({
             "entries": floatToJson(self.entries),
-            "type": self.value.name if isinstance(self.value, Container) else self.value,
+            "type": self.value.name if self.value is not None else self.contentType,
             "data": {k: v.toJsonFragment(True) for k, v in self.pairs.items()},
             }, **{"name": None if suppressName else self.quantity.name,
                   "data:name": binsName})
@@ -157,7 +168,7 @@ class Categorize(Factory, Container):
             raise JsonFormatException(json, "Categorize")
 
     def __repr__(self):
-        return "<Categorize values={} size={}".format(self.values[0].name if self.size > 0 else self.value.name, self.size)
+        return "<Categorize values={} size={}".format(self.values[0].name if self.size > 0 else self.value.name if self.value is not None else self.contentType, self.size)
 
     def __eq__(self, other):
         return isinstance(other, Categorize) and numeq(self.entries, other.entries) and self.quantity == other.quantity and self.pairs == other.pairs

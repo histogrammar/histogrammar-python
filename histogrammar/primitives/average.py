@@ -20,8 +20,12 @@ from histogrammar.util import *
 class Average(Factory, Container):
     @staticmethod
     def ed(entries, mean):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(mean, (int, long, float)):
+            raise TypeError("mean ({}) must be a number".format(mean))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Average(None)
         out.entries = float(entries)
         out.mean = float(mean)
@@ -56,6 +60,8 @@ class Average(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
+            if not isinstance(q, (bool, int, long, float)):
+                raise TypeError("function return value ({}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight

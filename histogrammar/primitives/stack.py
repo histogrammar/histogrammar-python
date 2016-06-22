@@ -23,8 +23,14 @@ from histogrammar.primitives.count import *
 class Stack(Factory, Container):
     @staticmethod
     def ed(entries, cuts, nanflow):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(cuts, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in cuts):
+            raise TypeError("cuts ({}) must be a list of number, Container pairs".format(cuts))
+        if not isinstance(nanflow, Container):
+            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Stack(cuts, None, None, nanflow)
         out.entries = float(entries)
         return out.specialize()
@@ -34,6 +40,12 @@ class Stack(Factory, Container):
         return Stack(cuts, quantity, value, nanflow)
 
     def __init__(self, cuts, quantity, value, nanflow=Count()):
+        if not isinstance(cuts, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in cuts):
+            raise TypeError("cuts ({}) must be a list of number, Container pairs".format(cuts))
+        if value is not None and not isinstance(value, Container):
+            raise TypeError("value ({}) must be None or a Container".format(value))
+        if not isinstance(nanflow, Container):
+            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
         self.entries = 0.0
         self.quantity = serializable(quantity)
         if value is None:
@@ -47,7 +59,8 @@ class Stack(Factory, Container):
     @staticmethod
     def build(*ys):
         from functools import reduce
-
+        if not all(isinstance(y, Container) for y in ys):
+            raise TypeError("ys must all be Containers")
         entries = sum(y.entries for y in ys)
         cuts = []
         for i in xrange(len(ys)):
@@ -78,6 +91,9 @@ class Stack(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
+            if not isinstance(q, (bool, int, long, float)):
+                raise TypeError("function return value ({}) must be boolean or number".format(q))
+
             if math.isnan(q):
                 self.nanflow.fill(datum, weight)
             else:

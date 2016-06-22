@@ -24,8 +24,12 @@ class Collection(object): pass
 class Label(Factory, Container, Collection):
     @staticmethod
     def ed(entries, **pairs):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
+            raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
 
         out = Label(**pairs)
         out.entries = float(entries)
@@ -36,10 +40,13 @@ class Label(Factory, Container, Collection):
         return Label(**pairs)
 
     def __init__(self, **pairs):
+        if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
+            raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
         if any(not isinstance(x, basestring) for x in pairs.keys()):
-            raise ContainerException("all Label keys must be strings")
+            raise ValueError("all Label keys must be strings")
         if len(pairs) < 1:
-            raise ContainerException("at least one pair required")
+            raise ValueError("at least one pair required")
+
         contentType = list(pairs.values())[0].name
         if any(x.name != contentType for x in pairs.values()):
             raise ContainerException("all Label values must have the same type")
@@ -139,8 +146,12 @@ Factory.register(Label)
 class UntypedLabel(Factory, Container, Collection):
     @staticmethod
     def ed(entries, **pairs):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
+            raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
 
         out = UntypedLabel(**pairs)
         out.entries = float(entries)
@@ -151,8 +162,8 @@ class UntypedLabel(Factory, Container, Collection):
         return UntypedLabel(**pairs)
 
     def __init__(self, **pairs):
-        if any(not isinstance(x, basestring) for x in pairs.keys()):
-            raise ContainerException("all UntypedLabel keys must be strings")
+        if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
+            raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
 
         self.entries = 0.0
         self.pairs = pairs
@@ -251,8 +262,12 @@ Factory.register(UntypedLabel)
 class Index(Factory, Container, Collection):
     @staticmethod
     def ed(entries, *values):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not all(isinstance(v, Container) for v in values):
+            raise TypeError("values ({}) must be a list of Containers".format(values))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
 
         out = Index(*values)
         out.entries = float(entries)
@@ -263,11 +278,13 @@ class Index(Factory, Container, Collection):
         return Index(*values)
 
     def __init__(self, *values):
+        if not all(isinstance(v, Container) for v in values):
+            raise TypeError("values ({}) must be a list of Containers".format(values))
         if len(values) < 1:
             raise ContainerException("at least one value required")
         contentType = values[0].name
         if any(x.name != contentType for x in values):
-            raise ContainerException("all Index values must have the same type")
+            raise ValueError("all Index values must have the same type")
 
         self.entries = 0.0
         self.values = values
@@ -365,8 +382,12 @@ Factory.register(Index)
 class Branch(Factory, Container, Collection):
     @staticmethod
     def ed(entries, *values):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not all(isinstance(v, Container) for v in values):
+            raise TypeError("values ({}) must be a list of Containers".format(values))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
 
         out = Branch(*values)
         out.entries = float(entries)
@@ -377,8 +398,10 @@ class Branch(Factory, Container, Collection):
         return Branch(*values)
 
     def __init__(self, *values):
+        if not all(isinstance(v, Container) for v in values):
+            raise TypeError("values ({}) must be a list of Containers".format(values))
         if len(values) < 1:
-            raise ContainerException("at least one value required")
+            raise ValueError("at least one value required")
 
         self.entries = 0.0
         self.values = values

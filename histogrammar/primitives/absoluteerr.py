@@ -20,8 +20,12 @@ from histogrammar.util import *
 class AbsoluteErr(Factory, Container):
     @staticmethod
     def ed(entries, mae):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(mae, (int, long, float)):
+            raise TypeError("mae ({}) must be a number".format(mae))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = AbsoluteErr(None)
         out.entries = float(entries)
         out.absoluteSum = float(mae)*float(entries)
@@ -60,6 +64,8 @@ class AbsoluteErr(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
+            if not isinstance(q, (bool, int, long, float)):
+                raise TypeError("function return value ({}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight

@@ -23,8 +23,26 @@ from histogrammar.primitives.count import *
 class Bin(Factory, Container):
     @staticmethod
     def ed(low, high, entries, values, underflow, overflow, nanflow):
+        if not isinstance(low, (int, long, float)):
+            raise TypeError("low ({}) must be a number".format(low))
+        if not isinstance(high, (int, long, float)):
+            raise TypeError("high ({}) must be a number".format(high))
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(values, (list, tuple)) and not all(isinstance(v, Container) for v in values):
+            raise TypeError("values ({}) must be a list of Containers".format(values))
+        if not isinstance(underflow, Container):
+            raise TypeError("underflow ({}) must be a Container".format(underflow))
+        if not isinstance(overflow, Container):
+            raise TypeError("overflow ({}) must be a Container".format(overflow))
+        if not isinstance(nanflow, Container):
+            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+        if low >= high:
+            raise ValueError("low ({}) must be less than high ({})".format(low, high))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
+        if len(values) < 1:
+            raise ValueError("values ({}) must have at least one element".format(values))
 
         out = Bin(len(values), low, high, None, None, underflow, overflow, nanflow)
         out.entries = float(entries)
@@ -36,10 +54,24 @@ class Bin(Factory, Container):
         return Bin(num, low, high, quantity, value, underflow, overflow, nanflow)
 
     def __init__(self, num, low, high, quantity, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
-        if low >= high:
-            raise ContainerException("low ({}) must be less than high ({})".format(low, high))
+        if not isinstance(num, (int, long)):
+            raise TypeError("num ({}) must be an integer".format(num))
+        if not isinstance(low, (int, long, float)):
+            raise TypeError("low ({}) must be a number".format(low))
+        if not isinstance(high, (int, long, float)):
+            raise TypeError("high ({}) must be a number".format(high))
+        if value is not None and not isinstance(value, Container):
+            raise TypeError("value ({}) must be a Container".format(value))
+        if not isinstance(underflow, Container):
+            raise TypeError("underflow ({}) must be a Container".format(underflow))
+        if not isinstance(overflow, Container):
+            raise TypeError("overflow ({}) must be a Container".format(overflow))
+        if not isinstance(nanflow, Container):
+            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
         if num < 1:
-            raise ContainerException("num ({}) must be least one".format(num))
+            raise ValueError("num ({}) must be least one".format(num))
+        if low >= high:
+            raise ValueError("low ({}) must be less than high ({})".format(low, high))
 
         self.entries = 0.0
         self.low = float(low)
@@ -104,6 +136,9 @@ class Bin(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
+            if not isinstance(q, (bool, int, long, float)):
+                raise TypeError("function return value ({}) must be boolean or number".format(q))
+
             if self.under(q):
                 self.underflow.fill(datum, weight)
             elif self.over(q):

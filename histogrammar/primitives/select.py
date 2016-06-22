@@ -22,8 +22,12 @@ from histogrammar.util import *
 class Select(Factory, Container):
     @staticmethod
     def ed(entries, cut):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(cut, Container):
+            raise TypeError("cut ({}) must be a Container".format(cut))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
         out = Select(None, cut)
         out.entries = entries
         return out.specialize()
@@ -41,6 +45,8 @@ class Select(Factory, Container):
             return self.__dict__[attr]
 
     def __init__(self, quantity, cut):
+        if not isinstance(cut, Container):
+            raise TypeError("cut ({}) must be a Container".format(cut))
         self.entries = 0.0
         self.quantity = serializable(quantity)
         self.cut = cut
@@ -63,7 +69,11 @@ class Select(Factory, Container):
 
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
-        w = weight * self.quantity(datum)
+        w = self.quantity(datum)
+        if not isinstance(w, (bool, int, long, float)):
+            raise TypeError("function return value ({}) must be boolean or number".format(w))
+        w *= weight
+
         if w > 0.0:
             self.cut.fill(datum, w)
         # no possibility of exception from here on out (for rollback)

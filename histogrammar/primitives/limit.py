@@ -22,8 +22,16 @@ from histogrammar.util import *
 class Limit(Factory, Container):
     @staticmethod
     def ed(entries, limit, contentType, value):
+        if not isinstance(entries, (int, long, float)):
+            raise TypeError("entries ({}) must be a number".format(entries))
+        if not isinstance(limit, (int, long, float)):
+            raise TypeError("limit ({}) must be a number".format(limit))
+        if not isinstance(contentType, basestring):
+            raise TypeError("contentType ({}) must be a number".format(contentType))
+        if value is not None and not isinstance(value, Container):
+            raise TypeError("value ({}) must be None or a Container".format(value))
         if entries < 0.0:
-            raise ContainerException("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({}) cannot be negative".format(entries))
 
         out = Limit(value, limit)
         out.entries = entries
@@ -34,6 +42,11 @@ class Limit(Factory, Container):
     def ing(value, limit): return Limit(value, limit)
 
     def __init__(self, value, limit):
+        if value is not None and not isinstance(value, Container):
+            raise TypeError("value ({}) must be None or a Container".format(value))
+        if not isinstance(limit, (int, long, float)):
+            raise TypeError("limit ({}) must be a number".format(limit))
+
         self.entries = 0.0
         self.limit = limit
         if value is None:
