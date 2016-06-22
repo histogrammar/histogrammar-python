@@ -66,10 +66,13 @@ class Reservoir(object):
         for y, weight in initial:
             self.update(y, weight)
 
-    def update(self, y, weight=1.0):
+    def update(self, y, weight=1.0, randomGenerator=None):
         self.numObserved += 1
 
-        r = random.uniform(0.0, 1.0)**(1.0/weight)
+        if randomGenerator is None:
+            r = random.uniform(0.0, 1.0)**(1.0/weight)
+        else:
+            r = randomGenerator.uniform(0.0, 1.0)**(1.0/weight)
 
         if self.numObserved <= self.limit:
             # insert this item in the list, keeping the list sorted, letting it grow
