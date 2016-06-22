@@ -17,6 +17,8 @@
 from histogrammar.defs import *
 from histogrammar.util import *
 
+untransformed = serializable(lambda x: x)
+
 class Count(Factory, Container):
     @staticmethod
     def ed(entries):
@@ -27,19 +29,20 @@ class Count(Factory, Container):
         return out.specialize()
 
     @staticmethod
-    def ing():
-        return Count()
+    def ing(transform=untransformed):
+        return Count(transform)
 
-    def __init__(self):
+    def __init__(self, transform=untransformed):
         self.entries = 0.0
+        self.transform = serializable(transform)
         super(Count, self).__init__()
         self.specialize()
-
-    def zero(self): return Count()
+    
+    def zero(self): return Count(self.transform)
 
     def __add__(self, other):
         if isinstance(other, Count):
-            out = Count()
+            out = Count(self.transform)
             out.entries = self.entries + other.entries
             return out.specialize()
         else:
@@ -49,7 +52,7 @@ class Count(Factory, Container):
         self._checkForCrossReferences()
         # no possibility of exception from here on out (for rollback)
         if weight > 0.0:
-            self.entries += weight
+            self.entries += self.transform(weight)
 
     @property
     def children(self):
@@ -68,9 +71,9 @@ class Count(Factory, Container):
         return "<Count {}>".format(self.entries)
 
     def __eq__(self, other):
-        return isinstance(other, Count) and numeq(self.entries, other.entries)
+        return isinstance(other, Count) and numeq(self.entries, other.entries) and self.transform == other.transform
 
     def __hash__(self):
-        return hash(self.entries)
+        return hash((self.entries, self.transform))
 
 Factory.register(Count)
