@@ -88,6 +88,8 @@ class Categorize(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
+            if not isinstance(q, basestring):
+                raise TypeError("function return value ({}) must be a string".format(q))
 
             if q not in self.pairs:
                 self.pairs[q] = self.value.zero()

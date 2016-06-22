@@ -157,6 +157,8 @@ class SparselyBin(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
+            if not isinstance(q, (bool, int, long, float)):
+                raise TypeError("function return value ({}) must be boolean or number".format(q))
 
             if self.nan(q):
                 self.nanflow.fill(datum, weight)

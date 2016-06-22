@@ -79,7 +79,10 @@ class Fraction(Factory, Container):
 
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
-        w = weight * self.quantity(datum)
+        w = self.quantity(datum)
+        if not isinstance(w, (bool, int, long, float)):
+            raise TypeError("function return value ({}) must be boolean or number".format(w))
+        w *= weight
 
         if weight > 0.0:
             self.denominator.fill(datum, weight)

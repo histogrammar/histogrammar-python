@@ -69,7 +69,11 @@ class Select(Factory, Container):
 
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
-        w = weight * self.quantity(datum)
+        w = self.quantity(datum)
+        if not isinstance(w, (bool, int, long, float)):
+            raise TypeError("function return value ({}) must be boolean or number".format(w))
+        w *= weight
+
         if w > 0.0:
             self.cut.fill(datum, w)
         # no possibility of exception from here on out (for rollback)

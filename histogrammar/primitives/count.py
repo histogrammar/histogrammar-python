@@ -52,9 +52,13 @@ class Count(Factory, Container):
 
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
-        # no possibility of exception from here on out (for rollback)
         if weight > 0.0:
-            self.entries += self.transform(weight)
+            t = self.transform(weight)
+            if not isinstance(t, (bool, int, long, float)):
+                raise TypeError("function return value ({}) must be boolean or number".format(t))
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += t
 
     @property
     def children(self):
