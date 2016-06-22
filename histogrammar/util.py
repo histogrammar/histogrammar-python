@@ -101,6 +101,8 @@ absoluteTolerance = 0.0
 def numeq(x, y):
     if math.isnan(x) and math.isnan(y):
         return True
+    elif math.isinf(x) and math.isinf(y):
+        return True
     elif relativeTolerance > 0.0 and absoluteTolerance > 0.0:
         return abs(x - y) <= max(relativeTolerance * max(abs(x), abs(y)), absoluteTolerance)
     elif relativeTolerance > 0.0:
@@ -382,7 +384,7 @@ class CentralBinsDistribution(object):
             out = [0.0] * len(xs)
 
         elif len(self.bins) == 1:
-            out = [float("inf") if x == bins[0][0] else 0.0 for x in xs]
+            out = [float("inf") if x == self.bins[0][0] else 0.0 for x in xs]
 
         else:
             out = [0.0] * len(xs)

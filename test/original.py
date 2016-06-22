@@ -18,7 +18,12 @@ import math
 import pickle
 import unittest
 
+
 from histogrammar import *
+
+
+
+
 
 class TestEverything(unittest.TestCase):
     simple = [3.4, 2.2, -1.8, 0.0, 7.3, -4.7, 1.6, 0.0, -3.0, -1.7]
@@ -327,6 +332,7 @@ class TestEverything(unittest.TestCase):
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
 
+
             self.assertAlmostEqual(leftAveraging.cut.mean, self.meanWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
             self.assertAlmostEqual(rightAveraging.cut.mean, self.meanWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
 
@@ -337,7 +343,7 @@ class TestEverything(unittest.TestCase):
             self.checkJson(leftAveraging)
             self.checkPickle(leftAveraging)
             self.checkName(leftAveraging)
-
+        
     ################################################################ Deviate
 
     def testDeviate(self):
@@ -370,6 +376,7 @@ class TestEverything(unittest.TestCase):
 
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
+            
 
             self.assertAlmostEqual(leftDeviating.cut.variance, self.variance([_.double for _ in left if _.bool]))
             self.assertAlmostEqual(rightDeviating.cut.variance, self.variance([_.double for _ in right if _.bool]))
@@ -381,7 +388,7 @@ class TestEverything(unittest.TestCase):
             self.checkJson(leftDeviating)
             self.checkPickle(leftDeviating)
             self.checkName(leftDeviating)
-
+        
     def testDeviateWithWeightingFactor(self):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]

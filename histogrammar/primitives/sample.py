@@ -62,7 +62,9 @@ class Sample(Factory, Container):
         else:
             self.randomGenerator = random.Random(randomSeed)
         super(Sample, self).__init__()
+        self._limit = limit
         self.specialize()
+        
 
     @property
     def limit(self):
