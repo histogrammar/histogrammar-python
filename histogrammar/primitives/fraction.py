@@ -42,7 +42,14 @@ class Fraction(Factory, Container):
             self.denominator = value.zero()
         super(Fraction, self).__init__()
         self.specialize()
-        
+
+    @staticmethod
+    def build(numerator, denominator):
+        # check for compatibility
+        numerator + denominator
+        # return object
+        return Fraction.ed(denominator.entries, numerator, denominator)
+
     def zero(self):
         out = Fraction(self.quantity, None)
         out.numerator = self.numerator.zero()

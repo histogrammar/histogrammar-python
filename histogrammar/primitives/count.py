@@ -17,7 +17,7 @@
 from histogrammar.defs import *
 from histogrammar.util import *
 
-untransformed = serializable(lambda x: x)
+identity = serializable(lambda x: x)
 
 class Count(Factory, Container):
     @staticmethod
@@ -29,10 +29,10 @@ class Count(Factory, Container):
         return out.specialize()
 
     @staticmethod
-    def ing(transform=untransformed):
+    def ing(transform=identity):
         return Count(transform)
 
-    def __init__(self, transform=untransformed):
+    def __init__(self, transform=identity):
         self.entries = 0.0
         self.transform = serializable(transform)
         super(Count, self).__init__()
