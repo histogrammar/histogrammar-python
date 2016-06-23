@@ -721,26 +721,26 @@ class TestEverything(unittest.TestCase):
 
     def testPlotHistogram(self):
         one = Histogram(5, -3.0, 7.0, lambda x: x)
-        for _ in self.simple: one.fill(_)
-
         two = Histogram(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
-        for _ in self.struct: two.fill(_)
+        
+        labeling = Label(one=one, two=two)
+        map(lambda _: labeling.fill(_), self.simple)
 
         from histogrammar.plot.bokeh import plot,save,view
-        curve1 = one.bokeh("histogram")
-        curve2 = two.bokeh()
-        c = plot(curve1,curve2)
+        glyph1 = one.bokeh("histogram")
+        glyph2 = two.bokeh()
+        c = plot(glyph1,glyph2)
         save(c,"plot_histogram.html")
 
         #self.checkHtml("example.html")
 
     def testPlotProfileErr(self):
         one = ProfileErr(5, -3.0, 7.0, lambda x: x, lambda x: x)
-        for _ in self.simple: one.fill(_)
+        map(lambda _: one.fill(_), self.simple)
     
         from histogrammar.plot.bokeh import plot,save,view
-        curve = one.bokeh("errors")
-        c = plot(curve)
+        glyph = one.bokeh("errors")
+        c = plot(glyph)
         save(c,"plot_errors.html")
     
         #self.checkHtml("example.html")
@@ -748,14 +748,14 @@ class TestEverything(unittest.TestCase):
     def testPlotStack(self):
         one = Histogram(5, -3.0, 7.0, lambda x: x)
         two = Histogram(5, -3.0, 7.0, lambda x: x)
-        for _ in self.simple:  
-            one.fill(_)
-            two.fill(_)
-   
+
+        labeling = Label(one=one, two=two)
+        map(lambda _: labeling.fill(_), self.simple)
+
         from histogrammar.plot.bokeh import plot,save,view
         s = Stack.build(one,two)
-        curve = s.bokeh()
-        c = plot(curve)
+        glyph = s.bokeh()
+        c = plot(glyph)
         save(c,"plot_stack.html")
    
         #self.checkHtml("example.html")
