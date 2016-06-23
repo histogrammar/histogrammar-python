@@ -230,8 +230,22 @@ class UserFcn(object):
             return hash((self.expr, self.name))
 
 class CachedFcn(UserFcn):
+    try:
+        import numpy
+        np = numpy
+    except ImportError:
+        np = None
+
     def __call__(self, *args, **kwds):
-        if hasattr(self, "lastArgs") and hasattr(self, "lastKwds") and args == self.lastArgs and kwds == self.lastKwds:
+        if hasattr(self, "lastArgs") and \
+           len(args) == len(self.lastArgs) and \
+           (all(x is y for x, y in zip(args, self.lastArgs)) or \
+            (self.np is not None and all(self.np.array_equal(x, y) for x, y in zip(args, self.lastArgs))) or \
+            (self.np is None and all(x == y for x, y in zip(args, self.lastArgs)))) and \
+           set(kwds.keys()) == set(self.lastKwds.keys()) and \
+           (all(kwds[k] is self.lastKwds[k] for k in kwds) or \
+            (self.np is not None and all(self.np.array_equal(kwds[k], self.lastKwds[k]) for k in kwds)) or \
+            (self.np is None and all(kwds[k] == self.lastKwds[k] for k in kwds))):
             return self.lastReturn
         else:
             self.lastArgs = args
