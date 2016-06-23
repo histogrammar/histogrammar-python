@@ -102,7 +102,7 @@ def numeq(x, y):
     if math.isnan(x) and math.isnan(y):
         return True
     elif math.isinf(x) and math.isinf(y):
-        return True
+        return (x > 0.0) == (y > 0.0)
     elif relativeTolerance > 0.0 and absoluteTolerance > 0.0:
         return abs(x - y) <= max(relativeTolerance * max(abs(x), abs(y)), absoluteTolerance)
     elif relativeTolerance > 0.0:

@@ -35,8 +35,7 @@ class Struct(object):
     def __repr__(self):
         return "Struct({}, {}, {}, {})".format(self.bool, self.int, self.double, repr(self.string))
 
-def ed(x):
-    return Factory.fromJson(x.toJson())
+def ed(x): return Factory.fromJson(x.toJson())
 
 class TestEverything(unittest.TestCase):
     def assertAlmostEqualJSON(self, x, y):
