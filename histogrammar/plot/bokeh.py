@@ -18,7 +18,7 @@
 from __future__ import absolute_import
 
 class HistogramMethods(object):
-    def bokeh(self,glyphType="line",glyphSize=1,fill_color="red",line_color="black",line_alpha=1,fill_alpha=0.1,line_dash='solid'):
+    def bokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
 
         #glyphs
         from bokeh.models.glyphs import Rect, Segment, Line, Patches, Arc
@@ -45,18 +45,18 @@ class HistogramMethods(object):
         source = ColumnDataSource(data=dict(x=x, y=y))
 
         glyph = None
-        if glyphType == "square": glyph = Square(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)   
-        elif glyphType == "diamond": glyph = Diamond(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "cross": glyph = Cross(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "triangle": glyph = Triangle(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "circle": glyph = Circle(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "rect": glyph = Rect(x='x', y='y', width=bin_width, height=0.1, fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
+        if glyphType == "square": glyph = Square(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)   
+        elif glyphType == "diamond": glyph = Diamond(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "cross": glyph = Cross(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "triangle": glyph = Triangle(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "circle": glyph = Circle(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "rect": glyph = Rect(x='x', y='y', width=bin_width, height=0.1, fill_alpha=fillAlpha, line_color=lineColor, fill_color=fillColor)
         elif glyphType == "histogram": 
             h = y
             y = [yy/2 for yy in y]
             source = ColumnDataSource(dict(x=x, y=y, h=h))
-            glyph = Rect(x='x', y='y', width=bin_width, height='h', fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
-        else: glyph = Line(x='x', y='y',line_color=line_color,line_alpha=line_alpha,line_width=glyphSize,line_dash=line_dash)
+            glyph = Rect(x='x', y='y', width=bin_width, height='h', fill_alpha=fillAlpha, line_color=lineColor, fill_color=fillColor)
+        else: glyph = Line(x='x', y='y',line_color=lineColor,line_alpha=lineAlpha,line_width=glyphSize,line_dash=lineDash)
 
         return GlyphRenderer(glyph=glyph,data_source=source)
 
@@ -70,7 +70,7 @@ class SparselyProfileMethods(object):
     pass
 
 class ProfileErrMethods(object):
-    def bokeh(self,glyphType="line",glyphSize=1,fill_color="red",line_color="black",line_alpha=1,fill_alpha=0.1,line_dash='solid'):
+    def bokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
 
         #glyphs
         from bokeh.models.glyphs import Rect, Segment, Line, Patches, Arc
@@ -100,23 +100,23 @@ class ProfileErrMethods(object):
         source = ColumnDataSource(data=dict(x=x, y=y))
 
         glyph = None
-        if glyphType == "square": glyph = Square(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "diamond": glyph = Diamond(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "cross": glyph = Cross(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "triangle": glyph = Triangle(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
-        elif glyphType == "circle": glyph = Circle(x='x', y='y',line_color=line_color,fill_color=fill_color,line_alpha=line_alpha,size=glyphSize,line_dash=line_dash)
+        if glyphType == "square": glyph = Square(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "diamond": glyph = Diamond(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "cross": glyph = Cross(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "triangle": glyph = Triangle(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "circle": glyph = Circle(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
         elif glyphType == "errors":
             w = [bin_width for _ in x]
             h = [sqrt(v.variance/v.entries) if v.entries > 0 else 0.0 for v in self.values]
             source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
-            glyph = Rect(x='x', y='y', width='w', height='h', fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
+            glyph = Rect(x='x', y='y', width='w', height='h', fill_alpha=fillAlpha, line_color=lineColor, fill_color=fillColor)
         elif glyphType == "histogram":
             w = [bin_width for _ in x]
             h = y
             y = [yy/2 for yy in y]
             source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
-            glyph = Rect(x='x', y='y', width='w', height='h', fill_alpha=fill_alpha, line_color=line_color, fill_color=fill_color)
-        else: glyph = Line(x='x', y='y',line_color=line_color,line_alpha=line_alpha,line_width=glyphSize,line_dash=line_dash)
+            glyph = Rect(x='x', y='y', width='w', height='h', fill_alpha=fillAlpha, line_color=lineColor, fill_color=fillColor)
+        else: glyph = Line(x='x', y='y',line_color=lineColor,line_alpha=lineAlpha,line_width=glyphSize,line_dash=lineDash)
 
         return GlyphRenderer(glyph=glyph,data_source=source)
 
