@@ -721,11 +721,11 @@ class TestEverything(unittest.TestCase):
 
     def testPlotHistogram(self):
         one = Histogram(5, -3.0, 7.0, lambda x: x)
-        two = Histogram(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
-        
-        labeling = Label(one=one, two=two)
-        map(lambda _: labeling.fill(_), self.simple)
+        map(lambda _: one.fill(_), self.simple)
 
+        two = Histogram(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
+        map(lambda _: two.fill(_), self.struct)
+        
         from histogrammar.plot.bokeh import plot,save,view
         glyph1 = one.bokeh("histogram")
         glyph2 = two.bokeh()
