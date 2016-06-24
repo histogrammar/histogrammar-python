@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,8 +19,22 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class Fraction(Factory, Container):
+    """Accumulate two aggregators, one containing only entries that pass a given selection (numerator) and another that contains all entries (denominator).
+
+    The aggregator may be a simple :doc:`Count <histogrammar.primitives.count.Count>` to measure the efficiency of a cut, a :doc:`Bin <histogrammar.primitives.bin.Bin>` to plot a turn-on curve, or anything else to be tested with and without a cut.
+
+    As a side effect of NaN values returning false for any comparison, a NaN return value from the selection is treated as a failed cut (the denominator is filled but the numerator is not).
+    """
+
     @staticmethod
     def ed(entries, numerator, denominator):
+        """Create a Fraction that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            numerator: (:doc:`Container <histogrammar.defs.Container>`): the filled numerator.
+            denominator (:doc:`Container <histogrammar.defs.Container>`): the filled denominator.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(numerator, Container):
@@ -38,9 +52,21 @@ class Fraction(Factory, Container):
 
     @staticmethod
     def ing(quantity, value):
+        """Synonym for ``__init__``."""
         return Fraction(quantity, value)
 
     def __init__(self, quantity, value):
+        """Create a Fraction that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning bool or float): computes the quantity of interest from the data and interprets it as a selection (multiplicative factor on weight).
+            value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators for the numerator and denominator.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            numerator (:doc:`Container <histogrammar.defs.Container>`): the sub-aggregator of entries that pass the selection.
+            denominator (:doc:`Container <histogrammar.defs.Container>`): the sub-aggregator of all entries.
+        """
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({}) must be None or a Container".format(value))
         self.entries = 0.0
@@ -53,6 +79,14 @@ class Fraction(Factory, Container):
 
     @staticmethod
     def build(numerator, denominator):
+        """Create a Fraction out of pre-existing containers, which might have been aggregated on different streams.
+
+        Parameters:
+            numerator (:doc:`Container <histogrammar.defs.Container>`): the filled numerator.
+            denominator (:doc:`Container <histogrammar.defs.Container>`): the filled denominator.
+
+        This funciton will attempt to combine the ``numerator`` and ``denominator``, so they must have the same binning/bounds/etc.
+        """
         if not isinstance(numerator, Container):
             raise TypeError("numerator ({}) must be a Container".format(numerator))
         if not isinstance(denominator, Container):
@@ -62,12 +96,14 @@ class Fraction(Factory, Container):
         # return object
         return Fraction.ed(denominator.entries, numerator, denominator)
 
+    @inheritdoc(Container)
     def zero(self):
         out = Fraction(self.quantity, None)
         out.numerator = self.numerator.zero()
         out.denominator = self.denominator.zero()
         return out.specialize()
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Fraction):
             out = Fraction(self.quantity, None)
@@ -77,6 +113,7 @@ class Fraction(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         w = self.quantity(datum)
@@ -94,8 +131,10 @@ class Fraction(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.numerator, self.denominator]
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if getattr(self.numerator, "quantity", None) is not None:
             binsName = self.numerator.quantity.name
@@ -113,6 +152,7 @@ class Fraction(Factory, Container):
                   "sub:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "numerator", "denominator"], ["name", "sub:name"]):
             if isinstance(json["entries"], (int, long, float)):

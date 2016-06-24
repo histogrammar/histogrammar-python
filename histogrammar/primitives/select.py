@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,23 @@ from histogrammar.util import *
 ################################################################ Select
 
 class Select(Factory, Container):
+    """Filter or weight data according to a given selection.
+
+    This primitive is a basic building block, intended to be used in conjunction with anything that needs a user-defined cut. In particular, a standard histogram often has a custom selection, and this can be built by nesting Select -> Bin -> Count.
+
+    Select also resembles :doc:`Fraction <histogrammar.primitives.fraction.Fraction>`, but without the ``denominator``.
+
+    The efficiency of a cut in a Select aggregator named ``x`` is simply ``x.cut.entries / x.entries`` (because all aggregators have an ``entries`` member).
+    """
+
     @staticmethod
     def ed(entries, cut):
+        """Create a Select that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            cut (:doc:`Container <histogrammar.defs.Container>`): the filled sub-aggregator.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(cut, Container):
@@ -34,9 +49,11 @@ class Select(Factory, Container):
 
     @staticmethod
     def ing(quantity, cut):
+        """Synonym for ``__init__``."""
         return Select(quantity, cut)
 
     def __getattr__(self, attr):
+        """Pass on searches for custom methods to the ``value``, so that Limit becomes effectively invisible."""
         if attr.startswith("__") and attr.endswith("__"):
             return getattr(Select, attr)
         elif attr not in self.__dict__ and hasattr(self.__dict__["cut"], attr):
@@ -45,6 +62,15 @@ class Select(Factory, Container):
             return self.__dict__[attr]
 
     def __init__(self, quantity, cut):
+        """Create a Select that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning bool or float): computes the quantity of interest from the data and interprets it as a selection (multiplicative factor on weight).
+            cut (:doc:`Container <histogrammar.defs.Container>`): will only be filled with data that pass the cut, and which are weighted by the cut.
+
+        Other Parameters:
+            entries (float): the number of entries, initially 0.0.
+        """
         if not isinstance(cut, Container):
             raise TypeError("cut ({}) must be a Container".format(cut))
         self.entries = 0.0
@@ -54,11 +80,14 @@ class Select(Factory, Container):
         self.specialize()
 
     def fractionPassing(self):
+        """Fraction of weights that pass the quantity."""
         return self.cut.entries / self.entries
 
+    @inheritdoc(Container)
     def zero(self):
         return Select(self.quantity, self.cut.zero())
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Select):
             out = Select(self.quantity, self.cut + other.cut)
@@ -67,6 +96,7 @@ class Select(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         w = self.quantity(datum)
@@ -81,8 +111,10 @@ class Select(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.cut]
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.cut.name,
@@ -90,6 +122,7 @@ class Select(Factory, Container):
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

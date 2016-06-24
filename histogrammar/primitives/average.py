@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,20 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Average(Factory, Container):
+    """Accumulate the weighted mean of a given quantity.
+
+    Uses the numerically stable weighted mean algorithm described in `"Incremental calculation of weighted mean and variance," <http://www-uxsup.csx.cam.ac.uk/~fanf2/hermes/doc/antiforgery/stats.pdf>`_ Tony Finch, *Univeristy of Cambridge Computing Service,* 2009.
+    """
+
     @staticmethod
     def ed(entries, mean):
+        """Create an Average that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            mean (float): the mean.
+        """
+
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(mean, (int, long, float)):
@@ -33,17 +45,29 @@ class Average(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Average(quantity)
 
     def __init__(self, quantity):
+        """Create an Average that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            mean (float): the running mean, initially 0.0. Note that this value contributes to the total mean with weight zero (because `entries` is initially zero), so this arbitrary choice does not bias the final result.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.mean = 0.0
         super(Average, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Average(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Average):
             out = Average(self.quantity)
@@ -56,6 +80,7 @@ class Average(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -71,14 +96,17 @@ class Average(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mean": floatToJson(self.mean),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mean"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

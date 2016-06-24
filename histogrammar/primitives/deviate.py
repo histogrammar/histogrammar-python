@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,22 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Deviate(Factory, Container):
+    """Accumulate the weighted mean and weighted variance of a given quantity.
+
+    The variance is computed around the mean, not zero.
+
+    Uses the numerically stable weighted mean and weighted variance algorithms described in `"Incremental calculation of weighted mean and variance," <http://www-uxsup.csx.cam.ac.uk/~fanf2/hermes/doc/antiforgery/stats.pdf>`_ Tony Finch, *Univeristy of Cambridge Computing Service,* 2009.
+    """
+
     @staticmethod
     def ed(entries, mean, variance):
+        """Create a Deviate that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            mean (float): the mean.
+            variance (float): the variance.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(mean, (int, long, float)):
@@ -36,9 +50,20 @@ class Deviate(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Deviate(quantity)
 
     def __init__(self, quantity):
+        """Create a Deviate that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            mean (float): the running mean, initially 0.0. Note that this value contributes to the total mean with weight zero (because `entries` is initially zero), so this arbitrary choice does not bias the final result.
+            variance (float): the running variance, initially 0.0. Note that this also contributes nothing to the final result.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.mean = 0.0
@@ -48,13 +73,16 @@ class Deviate(Factory, Container):
 
     @property
     def variance(self):
+        """Weighted variance of the quantity."""
         if self.entries == 0.0:
             return self.varianceTimesEntries
         else:
             return self.varianceTimesEntries/self.entries
 
+    @inheritdoc(Container)
     def zero(self): return Deviate(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Deviate):
             out = Deviate(self.quantity)
@@ -68,6 +96,7 @@ class Deviate(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -84,8 +113,10 @@ class Deviate(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mean": floatToJson(self.mean),
@@ -93,6 +124,7 @@ class Deviate(Factory, Container):
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mean", "variance"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

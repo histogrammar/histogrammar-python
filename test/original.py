@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -593,11 +593,11 @@ class TestEverything(unittest.TestCase):
         self.checkName(three)
 
     def testBagWithLimit(self):
-        one = Limit(Bag(lambda x: x.string), 20)
+        one = Limit(20, Bag(lambda x: x.string))
         for _ in self.struct: one.fill(_)
         self.assertEqual(one.get.values, {"one": 1.0, "two": 1.0, "three": 1.0, "four": 1.0, "five": 1.0, "six": 1.0, "seven": 1.0, "eight": 1.0, "nine": 1.0, "ten": 1.0})
 
-        two = Limit(Bag(lambda x: x.string), 9)
+        two = Limit(9, Bag(lambda x: x.string))
         for _ in self.struct: two.fill(_)
         self.assertTrue(two.saturated)
 

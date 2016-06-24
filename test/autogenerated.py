@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -3122,7 +3122,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(ed(x), ed(pickle.loads(pickle.dumps(x))))
 
     def test_bagLimit(self):
-        x = Limit(Bag(lambda x: x.string), 5)
+        x = Limit(5, Bag(lambda x: x.string))
         self.assertEqual(x, x)
         self.assertEqual(ed(x), ed(x))
         self.assertEqual(hash(x), hash(x))

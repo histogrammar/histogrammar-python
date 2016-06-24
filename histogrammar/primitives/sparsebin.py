@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +21,27 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class SparselyBin(Factory, Container):
+    """Split a quantity into equally spaced bins, creating them whenever their ``entries`` would be non-zero. Exactly one sub-aggregator is filled per datum.
+
+    Use this when you have a distribution of known scale (bin width) but unknown domain (lowest and highest bin index).
+
+    Unlike fixed-domain binning, this aggregator has the potential to use unlimited memory. A large number of *distinct* outliers can generate many unwanted bins.
+
+    Like fixed-domain binning, the bins are indexed by integers, though they are 64-bit and may be negative.
+    """
+
     @staticmethod
     def ed(binWidth, entries, contentType, bins, nanflow, origin):
+        """Create a SparselyBin that is only capable of being added.
+
+        Parameters:
+            binWidth (float): the width of a bin.
+            entries (float): the number of entries.
+            contentType (str): the value's sub-aggregator type (must be provided to determine type for the case when `bins` is empty).
+            bins (dict from int to :doc:`Container <histogrammar.defs.Container>`): the non-empty bin indexes and their values.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
+            origin (float): the left edge of the bin whose index is zero.
+        """
         if not isinstance(binWidth, (int, long, float)):
             raise TypeError("binWidth ({}) must be a number".format(binWidth))
         if not isinstance(entries, (int, long, float)):
@@ -48,9 +67,23 @@ class SparselyBin(Factory, Container):
 
     @staticmethod
     def ing(binWidth, quantity, value=Count(), nanflow=Count(), origin=0.0):
+        """Synonym for ``__init__``."""
         return SparselyBin(binWidth, quantity, value, nanflow, origin)
 
     def __init__(self, binWidth, quantity, value=Count(), nanflow=Count(), origin=0.0):
+        """Create a SparselyBin that is capable of being filled and added.
+
+        Parameters:
+            binWidth (float): the width of a bin; must be strictly greater than zero.
+            quantity (function returning float): computes the quantity of interest from the data.
+            value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators to put in each bin.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is NaN.
+            origin (float): the left edge of the bin whose index is 0.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            bins (dict from int to :doc:`Container <histogrammar.defs.Container>`): the map, probably a hashmap, to fill with values when their `entries` become non-zero.
+        """
         if not isinstance(binWidth, (int, long, float)):
             raise TypeError("binWidth ({}) must be a number".format(binWidth))
         if value is not None and not isinstance(value, Container):
@@ -75,6 +108,7 @@ class SparselyBin(Factory, Container):
         self.specialize()
 
     def histogram(self):
+        """Return a plain histogram by converting all sub-aggregator values into :doc:`Counts <histogrammar.primitives.count.Count>`."""
         out = SparselyBin(self.binWidth, self.quantity, Count(), self.nanflow.copy(), self.origin)
         out.entries = float(self.entries)
         out.contentType = "Count"
@@ -82,8 +116,10 @@ class SparselyBin(Factory, Container):
             out.bins[i] = Count.ed(v.entries)
         return out.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return SparselyBin(self.binWidth, self.quantity, self.value, self.nanflow.zero(), self.origin)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, SparselyBin):
             if self.binWidth != other.binWidth:
@@ -106,53 +142,76 @@ class SparselyBin(Factory, Container):
 
     @property
     def numFilled(self):
+        """The number of non-empty bins."""
         return len(self.bins)
+
     @property
     def num(self):
+        """The number of bins between the first non-empty one (inclusive) and the last non-empty one (exclusive)."""
         if len(self.bins) == 0:
             return 0
         else:
             return 1 + self.maxBin - self.minBin
+
     @property
     def minBin(self):
+        """The first non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
         else:
             return min(self.bins.keys())
+
     @property
     def maxBin(self):
+        """The last non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
         else:
             return max(self.bins.keys())
     @property
     def low(self):
+        """The low edge of the first non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
         else:
             return self.minBin * self.binWidth + self.origin
+
     @property
     def high(self):
+        """The high edge of the last non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
         else:
             return (self.maxBin + 1) * self.binWidth + self.origin
+
     def at(index):
+        """Extract the container at a given index, if it exists."""
         return self.bins.get(index, None)
+
     @property
     def indexes(self):
+        """Get a sequence of filled indexes."""
         return sorted(self.keys)
+
     def range(index):
+        """Get the low and high edge of a bin (given by index number)."""
         return (index * self.binWidth + self.origin, (index + 1) * self.binWidth + self.origin)
     
     def bin(self, x):
+        """Find the bin index associated with numerical value ``x``.
+        
+        @return -9223372036854775808 if ``x`` is ``NaN``; the bin index otherwise.
+        """
         if self.nan(x):
             return MIN_LONG
         else:
             return int(math.floor((x - self.origin) / self.binWidth))
 
-    def nan(self, x): return math.isnan(x)
+    def nan(self, x):
+        """Return ``true`` iff ``x`` is in the nanflow region (equal to ``NaN``)."""
+        return math.isnan(x)
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -173,8 +232,10 @@ class SparselyBin(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.value, self.nanflow] + list(self.bins.values())
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if isinstance(self.value, Container):
             if getattr(self.value, "quantity", None) is not None:
@@ -205,6 +266,7 @@ class SparselyBin(Factory, Container):
                   "bins:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"], ["name", "bins:name"]):
             if isinstance(json["binWidth"], (int, long, float)):

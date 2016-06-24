@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +24,32 @@ MIN_LONG = -2**63
 MAX_LONG = 2**63 - 1
 
 class Sample(Factory, Container):
+    """Accumulate raw numbers, vectors of numbers, or strings, randomly replacing them with Reservoir Sampling when the number of values exceeds a limit.
+
+    Sample collects raw values without attempting to group them by distinct value (as :doc:`Bag <histogrammar.primitives.bag.Bag>` does), up to a given maximum *number* of entries (unlike :doc:`Limit <histogrammar.primitives.limit.Limit>`, which rolls over at a given total weight). The reason for the limit on Sample is purely to conserve memory.
+
+    The maximum number of entries and the data type together determine the size of the working set. If new values are added after this set is full, individual values will be randomly chosen for replacement. The probability of replacement is proportional to an entry's weight and it decreases with time, such that the final sample is a representative subset of all observed values, without preference for early values or late values.
+
+    This algorithm is known as weighted Reservoir Sampling, and it is non-deterministic. Each evaluation will likely result in a different final set.
+
+    Specifically, the algorithm implemented here was described in `"Weighted random sampling with a reservoir," <http://www.sciencedirect.com/science/article/pii/S002001900500298X>`_ Pavlos S. Efraimidis and Paul G. Spirakis, *Information Processing Letters 97 (5): 181-185,* 2005 (doi:10.1016/j.ipl.2005.11.003).
+
+    Although the user-defined function may return scalar numbers, fixed-dimension vectors of numbers, or categorical strings, it may not mix types. Different Sample primitives in an analysis tree may collect different types.
+    """
+
     @staticmethod
     def ed(entries, limit, values, randomSeed=None):
+        """Create a Sample that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            limit (int): the maximum number of entries to store before replacement. This is a strict _number_ of entries, unaffected by weights.
+            values (list of quantity return type, float, float triples): the set of collected values with their weights. Its size is at most ``limit`` and it may contain duplicates.
+            randomSeed (int or None): an optional random seed to make the sampling deterministic.
+
+        Other parameters:
+            randomGenerator (random generator state or ``None``): Python representation of the random generator's state if a ``randomSeed`` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampled instances.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(limit, (int, long, float)):
@@ -45,9 +69,22 @@ class Sample(Factory, Container):
 
     @staticmethod
     def ing(limit, quantity, randomSeed=None):
+        """Synonym for ``__init__``."""
         return Sample(limit, quantity, randomSeed)
 
     def __init__(self, limit, quantity, randomSeed=None):
+        """Create a Sample that is capable of being filled and added.
+
+        Parameters:
+            limit (int): the maximum number of entries to store before replacement. This is a strict _number_ of entries, unaffected by weights.
+            quantity (function returning a float, a tuple of floats, or a str): computes the quantity of interest from the data.
+            randomSeed (int or ``None``): an optional random seed to make the sampling deterministic.
+
+        Other Parameters:
+            entries (float): the number of entries, initially 0.0.
+            values (list of quantity return type, float, float triplets): the set of collected values with their weights and a random number (see algorithm below), sorted by the random number. Its size is at most ``limit`` and it may contain duplicates.
+            randomGenerator (random generator state or ``None``) Python representation of the random generator's state if a ``randomSeed`` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampling instances.
+        """
         if not isinstance(limit, (int, long, float)):
             raise TypeError("limit ({}) must be a number".format(limit))
         if randomSeed is not None and not isinstance(randomSeed, (int, long)):
@@ -68,6 +105,7 @@ class Sample(Factory, Container):
 
     @property
     def limit(self):
+        """The upper limit on the number of samples (including any duplicates)."""
         if hasattr(self, "reservoir"):
             return self.reservoir.limit
         else:
@@ -75,6 +113,7 @@ class Sample(Factory, Container):
 
     @property
     def values(self):
+        """Current set of sampled values."""
         if hasattr(self, "reservoir"):
             return self.reservoir.values
         else:
@@ -82,6 +121,7 @@ class Sample(Factory, Container):
 
     @property
     def size(self):
+        """Number of data points in the sample (saturates at ``limit``)."""
         if hasattr(self, "reservoir"):
             return self.reservoir.size
         else:
@@ -89,11 +129,13 @@ class Sample(Factory, Container):
 
     @property
     def isEmpty(self):
+        """Determine if the sample is empty."""
         if hasattr(self, "reservoir"):
             return self.reservoir.isEmpty
         else:
             return len(self._values) == 0
 
+    @inheritdoc(Container)
     def zero(self):
         if self.randomGenerator is None:
             newseed = None
@@ -101,6 +143,7 @@ class Sample(Factory, Container):
             newseed = self.randomGenerator.randint(-2**63, 2**63 - 1)
         return Sample(self.limit, self.quantity, newseed)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Sample):
             if self.limit != other.limit:
@@ -137,6 +180,7 @@ class Sample(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -151,8 +195,10 @@ class Sample(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "limit": floatToJson(self.limit),
@@ -160,6 +206,7 @@ class Sample(Factory, Container):
         }, name=self.quantity.name, seed=self.randomGenerator.randint(MIN_LONG, MAX_LONG) if self.randomGenerator is not None else None)
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "values"], ["name", "seed"]):
             if isinstance(json["entries"], (int, long, float)):

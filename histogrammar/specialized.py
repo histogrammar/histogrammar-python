@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,29 +30,35 @@ import histogrammar.plot.root
 import histogrammar.plot.bokeh
 
 def Histogram(num, low, high, quantity, selection=unweighted):
+    """Convenience function for creating a conventional histogram."""
     return Select.ing(selection, Bin.ing(num, low, high, quantity,
         Count.ing(), Count.ing(), Count.ing(), Count.ing()))
 
 def SparselyHistogram(binWidth, quantity, selection=unweighted, origin=0.0):
+    "Convenience function for creating a sparsely binned histogram."
     return Select.ing(selection,
         SparselyBin.ing(binWidth, quantity, Count.ing(), Count.ing(), origin))
 
 def Profile(num, low, high, binnedQuantity, averagedQuantity, selection=unweighted):
+    """Convenience function for creating binwise averages."""
     return Select.ing(selection,
         Bin.ing(num, low, high, binnedQuantity,
             Average.ing(averagedQuantity)))
 
 def SparselyProfile(binWidth, binnedQuantity, averagedQuantity, selection=unweighted, origin=0.0):
+    """Convenience function for creating sparsely binned binwise averages."""
     return Select.ing(selection,
         SparselyBin.ing(binWidth, binnedQuantity,
             Average.ing(averagedQuantity), Count.ing(), origin))
 
 def ProfileErr(num, low, high, binnedQuantity, averagedQuantity, selection=unweighted):
+    """Convenience function for creating a physicist's "profile plot," which is a Profile with variances."""
     return Select.ing(selection,
         Bin.ing(num, low, high, binnedQuantity,
             Deviate.ing(averagedQuantity)))
 
 def SparselyProfileErr(binWidth, binnedQuantity, averagedQuantity, selection=unweighted, origin=0.0):
+    """Convenience function for creating a physicist's sparsely binned "profile plot," which is a Profile with variances."""
     return Select.ing(selection,
         SparselyBin.ing(binWidth, binnedQuantity,
             Deviate.ing(averagedQuantity), Count.ing(), origin))
@@ -60,6 +66,7 @@ def SparselyProfileErr(binWidth, binnedQuantity, averagedQuantity, selection=unw
 def TwoDimensionallyHistogram(xnum, xlow, xhigh, xquantity,
                               ynum, ylow, yhigh, yquantity,
                               selection=unweighted):
+    """Convenience function for creating a conventional, two-dimensional histogram."""
     return Select.ing(selection,
         Bin.ing(xnum, xlow, xhigh, xquantity,
             Bin.ing(ynum, ylow, yhigh, yquantity)))
@@ -68,6 +75,7 @@ def TwoDimensionallySparselyHistogram(xbinWidth, xquantity,
                                       ybinWidth, yquantity,
                                       selection=unweighted,
                                       xorigin=0.0, yorigin=0.0):
+    """Convenience function for creating a sparsely binned, two-dimensional histogram."""
     return Select.ing(selection,
         SparselyBin.ing(xbinWidth, xquantity,
             SparselyBin.ing(ybinWidth, yquantity,
@@ -76,6 +84,7 @@ def TwoDimensionallySparselyHistogram(xbinWidth, xquantity,
 class HistogramMethods(Bin,
         histogrammar.plot.root.HistogramMethods,
         histogrammar.plot.bokeh.HistogramMethods):
+    """Methods that are implicitly added to container combinations that look like histograms."""
 
     @property
     def name(self):
@@ -87,23 +96,29 @@ class HistogramMethods(Bin,
 
     @property
     def numericalValues(self):
+        """Bin values as numbers, rather than histogrammar.primitives.count.Count."""
         return [v.entries for v in self.values]
 
     @property
     def numericalOverflow(self):
+        """Overflow as a number, rather than histogrammar.primitives.count.Count."""
         return self.overflow.entries
 
     @property
     def numericalUnderflow(self):
+        """Underflow as a number, rather than histogrammar.primitives.count.Count."""
         return self.underflow.entries
 
     @property
     def numericalNanflow(self):
+        """Nanflow as a number, rather than histogrammar.primitives.count.Count."""
         return self.nanflow.entries
 
 class SparselyHistogramMethods(SparselyBin,
         histogrammar.plot.root.SparselyHistogramMethods,
         histogrammar.plot.bokeh.SparselyHistogramMethods):
+
+    """Methods that are implicitly added to container combinations that look like sparsely binned histograms."""
 
     @property
     def name(self):
@@ -116,6 +131,7 @@ class SparselyHistogramMethods(SparselyBin,
 class ProfileMethods(Bin,
         histogrammar.plot.root.ProfileMethods,
         histogrammar.plot.bokeh.ProfileMethods):
+    '''Methods that are implicitly added to container combinations that look like a physicist's "profile plot."'''
 
     @property
     def name(self):
@@ -127,23 +143,28 @@ class ProfileMethods(Bin,
 
     @property
     def meanValues(self):
+        """Bin means as numbers, rather than histogrammar.primitives.average.Average."""
         return [v.mean for v in self.values]
 
     @property
     def numericalOverflow(self):
+        """Overflow as a number, rather than histogrammar.primitives.count.Count."""
         return self.overflow.entries
 
     @property
     def numericalUnderflow(self):
+        """Underflow as a number, rather than histogrammar.primitives.count.Count."""
         return self.underflow.entries
 
     @property
     def numericalNanflow(self):
+        """Nanflow as a number, rather than histogrammar.primitives.count.Count."""
         return self.nanflow.entries
 
 class SparselyProfileMethods(SparselyBin,
         histogrammar.plot.root.SparselyProfileMethods,
         histogrammar.plot.bokeh.SparselyProfileMethods):
+    '''Methods that are implicitly added to container combinations that look like a sparsely binned physicist's "profile plot."'''
 
     @property
     def name(self):
@@ -157,6 +178,8 @@ class ProfileErrMethods(Bin,
         histogrammar.plot.root.ProfileErrMethods,
         histogrammar.plot.bokeh.ProfileErrMethods):
 
+    '''Methods that are implicitly added to container combinations that look like a physicist's "profile plot."'''
+
     @property
     def name(self):
         return "Bin"
@@ -167,27 +190,34 @@ class ProfileErrMethods(Bin,
 
     @property
     def meanValues(self):
+        """Bin means as numbers, rather than [[org.dianahep.histogrammar.Deviated]]/[[org.dianahep.histogrammar.Deviating]]."""
         return [v.mean for v in self.values]
 
     @property
     def varianceValues(self):
+        """Bin variances as numbers, rather than [[org.dianahep.histogrammar.Deviated]]/[[org.dianahep.histogrammar.Deviating]]."""
         return [v.variance for v in self.values]
 
     @property
     def numericalOverflow(self):
+        """Overflow as a number, rather than histogrammar.primitives.count.Count."""
         return self.overflow.entries
 
     @property
     def numericalUnderflow(self):
+        """Underflow as a number, rather than histogrammar.primitives.count.Count."""
         return self.underflow.entries
 
     @property
     def numericalNanflow(self):
+        """Nanflow as a number, rather than histogrammar.primitives.count.Count."""
         return self.nanflow.entries
 
 class SparselyProfileErrMethods(SparselyBin,
         histogrammar.plot.root.SparselyProfileErrMethods,
         histogrammar.plot.bokeh.SparselyProfileErrMethods):
+
+    '''Methods that are implicitly added to container combinations that look like a sparsely binned physicist's "profile plot."'''
 
     @property
     def name(self):
@@ -200,6 +230,7 @@ class SparselyProfileErrMethods(SparselyBin,
 class StackedHistogramMethods(Stack,
         histogrammar.plot.root.StackedHistogramMethods,
         histogrammar.plot.bokeh.StackedHistogramMethods):
+    """Methods that are implicitly added to container combinations that look like stacked histograms."""
 
     @property
     def name(self):
@@ -212,6 +243,7 @@ class StackedHistogramMethods(Stack,
 class PartitionedHistogramMethods(Partition,
         histogrammar.plot.root.PartitionedHistogramMethods,
         histogrammar.plot.bokeh.PartitionedHistogramMethods):
+    """Methods that are implicitly added to container combinations that look like partitioned histograms."""
 
     @property
     def name(self):
@@ -224,6 +256,7 @@ class PartitionedHistogramMethods(Partition,
 class FractionedHistogramMethods(Fraction,
         histogrammar.plot.root.FractionedHistogramMethods,
         histogrammar.plot.bokeh.FractionedHistogramMethods):
+    """Methods that are implicitly added to container combinations that look like fractioned histograms."""
 
     @property
     def name(self):
@@ -236,6 +269,7 @@ class FractionedHistogramMethods(Fraction,
 class TwoDimensionallyHistogramMethods(Bin,
         histogrammar.plot.root.TwoDimensionallyHistogramMethods,
         histogrammar.plot.bokeh.TwoDimensionallyHistogramMethods):
+    """Convenience function for creating a conventional, two-dimensional histogram."""
 
     @property
     def name(self):
@@ -248,6 +282,7 @@ class TwoDimensionallyHistogramMethods(Bin,
 class SparselyTwoDimensionallyHistogramMethods(SparselyBin,
         histogrammar.plot.root.SparselyTwoDimensionallyHistogramMethods,
         histogrammar.plot.bokeh.SparselyTwoDimensionallyHistogramMethods):
+    """Convenience function for creating a sparsely binned, two-dimensional histogram."""
 
     @property
     def name(self):
@@ -258,6 +293,13 @@ class SparselyTwoDimensionallyHistogramMethods(SparselyBin,
         return SparselyBin
 
 def addImplicitMethods(container):
+    """Adds methods for each of the plotting front-ends on recognized combinations of primitives.
+
+    Every histogrammar.defs.Container's constructor invokes these soon after it is constructed (in its ``specialize`` method), except for early code that can't resolve dependencies. (histogrammar.primitives.count.Count objects created as default parameter values for containers like histogrammar.primitives.bin.Bin are created before the histogrammar.specialized module can be created. These don't get checked by ``addImplicitMethods``, but they don't have any implicit methods to add, either.
+
+    This function emulates Scala's "pimp my library" pattern, though ``addImplicitMethods`` has to be explicitly invoked and binds early, rather than late.
+    """
+
     if isinstance(container, Bin) and all(isinstance(v, Count) for v in container.values):
         container.__class__ = HistogramMethods
 

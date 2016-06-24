@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,19 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Minimize(Factory, Container):
+    """Find the minimum value of a given quantity. If no data are observed, the result is NaN.
+
+    Unlike :doc:`Quantile <histogrammar.primitives.quantile.Quantile>` with a target of 0, Minimize is exact.
+    """
+
     @staticmethod
     def ed(entries, min):
+        """Create a Minimize that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            min (float): the lowest value of the quantity observed or NaN if no data were observed.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(min, (int, long, float)):
@@ -35,17 +46,29 @@ class Minimize(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Minimize(quantity)
 
     def __init__(self, quantity):
+        """Create a Minimize that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0. # 
+            min (float): the lowest value of the quantity observed, initially NaN.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.min = float("nan")
         super(Minimize, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Minimize(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Minimize):
             out = Minimize(self.quantity)
@@ -57,8 +80,10 @@ class Minimize(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -71,12 +96,14 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "min": floatToJson(self.min),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "min"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
@@ -115,8 +142,19 @@ class Minimize(Factory, Container):
 Factory.register(Minimize)
 
 class Maximize(Factory, Container):
+    """Find the maximum value of a given quantity. If no data are observed, the result is NaN.
+
+    Unlike :doc:`Quantile <histogrammar.primitives.quantile.Quantile>` with a target of 1, Maximize is exact.
+    """
+
     @staticmethod
     def ed(entries, max):
+        """Create a Maximize that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            max (float): the highest value of the quantity observed or NaN if no data were observed.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(max, (int, long, float)):
@@ -130,17 +168,29 @@ class Maximize(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Maximize(quantity)
 
     def __init__(self, quantity):
+        """Create a Maximize that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            max (float): the highest value of the quantity observed, initially NaN.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.max = float("nan")
         super(Maximize, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Maximize(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Maximize):
             out = Maximize(self.quantity)
@@ -150,6 +200,7 @@ class Maximize(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -164,14 +215,17 @@ class Maximize(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "max": floatToJson(self.max),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "max"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

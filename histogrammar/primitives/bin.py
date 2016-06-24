@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +21,43 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class Bin(Factory, Container):
+    """Split a quantity into equally spaced bins between a low and high threshold and fill exactly one bin per datum.
+
+    When composed with :doc:`Count <histogrammar.primitives.count.Count>`, this produces a standard histogram:
+
+    ::
+
+        Bin.ing(100, 0, 10, fill_x, Count.ing())
+
+    and when nested, it produces a two-dimensional histogram:
+
+    ::
+
+        Bin.ing(100, 0, 10, fill_x,
+          Bin.ing(100, 0, 10, fill_y, Count.ing()))
+
+    Combining with [Deviate](#deviate-mean-and-variance) produces a physicist's "profile plot:"
+
+    ::
+
+        Bin.ing(100, 0, 10, fill_x, Deviate.ing(fill_y))
+
+    and so on.
+    """
+
     @staticmethod
     def ed(low, high, entries, values, underflow, overflow, nanflow):
+        """Create a Bin that is only capable of being added.
+
+        Parameters:
+            low (float): the minimum-value edge of the first bin.
+            high (float): the maximum-value edge of the last bin; must be strictly greater than `low`.
+            entries (float): the number of entries.
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the filled sub-aggregators, one for each bin.
+            underflow (:doc:`Container <histogrammar.defs.Container>`): the filled underflow bin.
+            overflow (:doc:`Container <histogrammar.defs.Container>`): the filled overflow bin.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): is the filled nanflow bin.
+        """
         if not isinstance(low, (int, long, float)):
             raise TypeError("low ({}) must be a number".format(low))
         if not isinstance(high, (int, long, float)):
@@ -51,9 +86,27 @@ class Bin(Factory, Container):
 
     @staticmethod
     def ing(num, low, high, quantity, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
+        """Synonym for ``__init__``."""
         return Bin(num, low, high, quantity, value, underflow, overflow, nanflow)
 
     def __init__(self, num, low, high, quantity, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
+        """Create a Bin that is capable of being filled and added.
+
+        Parameters:
+            num (int): the number of bins; must be at least one.
+            low (float): the minimum-value edge of the first bin.
+            high (float): the maximum-value edge of the last bin; must be strictly greater than `low`.
+            quantity (function returning float): computes the quantity of interest from the data.
+            value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators to put in each bin.
+            underflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is less than `low`.
+            overflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is greater than or equal to `high`.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is NaN.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the sub-aggregators in each bin.
+        """
+
         if not isinstance(num, (int, long)):
             raise TypeError("num ({}) must be an integer".format(num))
         if not isinstance(low, (int, long, float)):
@@ -88,14 +141,17 @@ class Bin(Factory, Container):
         self.specialize()
 
     def histogram(self):
+        """Return a plain histogram by converting all sub-aggregator values into :doc:`Counts <histogrammar.primitives.count.Count>`."""
         out = Bin(len(self.values), self.low, self.high, self.quantity, None, self.underflow.copy(), self.overflow.copy(), self.nanflow.copy())
         out.entries = float(self.entries)
         for i, v in enumerate(self.values):
             out.values[i] = Count.ed(v.entries)
         return out.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Bin(len(self.values), self.low, self.high, self.quantity, self.values[0].zero(), self.underflow.zero(), self.overflow.zero(), self.nanflow.zero())
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Bin):
             if self.low != other.low:
@@ -116,22 +172,42 @@ class Bin(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     @property
-    def num(self): return len(self.values)
+    def num(self):
+        """Number of bins."""
+        return len(self.values)
 
     def bin(self, x):
+        """Find the bin index associated with numerical value ``x``.
+        
+        @return -1 if ``x`` is out of range; the bin index otherwise.
+        """
         if self.under(x) or self.over(x) or self.nan(x):
             return -1
         else:
             return int(math.floor(self.num * (x - self.low) / (self.high - self.low)))
 
-    def under(self, x): return not math.isnan(x) and x < self.low
-    def over(self, x): return not math.isnan(x) and x >= self.high
-    def nan(self, x): return math.isnan(x)
+    def under(self, x):
+        """Return ``true`` iff ``x`` is in the underflow region (less than ``low``)."""
+        return not math.isnan(x) and x < self.low
+
+    def over(self, x):
+        """Return ``true`` iff ``x`` is in the overflow region (greater than ``high``)."""
+        return not math.isnan(x) and x >= self.high
+
+    def nan(self, x):
+        """Return ``true`` iff ``x`` is in the nanflow region (equal to ``NaN``)."""
+        return math.isnan(x)
 
     @property
-    def indexes(self): return range(self.num)
-    def range(self, index): return ((self.high - self.low) * index / self.num + self.low, (self.high - self.low) * (index + 1) / self.num + self.low)
+    def indexes(self):
+        """Get a sequence of valid indexes."""
+        return range(self.num)
 
+    def range(self, index):
+        """Get the low and high edge of a bin (given by index number)."""
+        return ((self.high - self.low) * index / self.num + self.low, (self.high - self.low) * (index + 1) / self.num + self.low)
+
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -153,8 +229,10 @@ class Bin(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.underflow, self.overflow, self.nanflow] + self.values
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if getattr(self.values[0], "quantity", None) is not None:
             binsName = self.values[0].quantity.name
@@ -179,6 +257,7 @@ class Bin(Factory, Container):
                   "values:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values", "underflow:type", "underflow", "overflow:type", "overflow", "nanflow:type", "nanflow"], ["name", "values:name"]):
             if isinstance(json["low"], (int, long, float)):

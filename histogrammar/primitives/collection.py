@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,8 +22,24 @@ class Collection(object): pass
 ################################################################ Label
 
 class Label(Factory, Container, Collection):
+    """Accumulate any number of aggregators of the same type and label them with strings. Every sub-aggregator is filled with every input datum.
+
+    This primitive simulates a directory of aggregators. For sub-directories, nest collections within the Label collection.
+
+    Note that all sub-aggregators within a Label must have the *same type* (e.g. histograms of different binnings, but all histograms). To collect objects of *different types* with string-based look-up keys, use :doc:`UntypedLabel <histogrammar.primitives.collection.UntypedLabel>`.
+
+    To collect aggregators of the *same type* without naming them, use :doc:`Index <histogrammar.primitives.collection.Index>`. To collect aggregators of *different types* without naming them, use :doc:`Branch <histogrammar.primitives.collection.Branch>`.
+
+    In strongly typed languages, the restriction to a single type allows nested objects to be extracted without casting.
+    """
     @staticmethod
     def ed(entries, **pairs):
+        """Create a Label that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled aggregators.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
@@ -37,9 +53,18 @@ class Label(Factory, Container, Collection):
 
     @staticmethod
     def ing(**pairs):
+        """Synonym for ``__init__``."""
         return Label(**pairs)
 
     def __init__(self, **pairs):
+        """Create a Label that is capable of being filled and added.
+
+        Parameters:
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of aggregators to fill.
+
+        Other Parameters:
+            entries (float): the number of entries, initially 0.0.
+        """
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
             raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
         if any(not isinstance(x, basestring) for x in pairs.keys()):
@@ -58,26 +83,49 @@ class Label(Factory, Container, Collection):
         self.specialize()
 
     @property
-    def pairsMap(self): return self.pairs
+    def pairsMap(self):
+        """Input ``pairs`` as a key-value map."""
+        return self.pairs
+
     @property
-    def size(self): return len(self.pairs)
+    def size(self):
+        """Number of ``pairs``."""
+        return len(self.pairs)
+
     @property
-    def keys(self): return self.pairs.keys()
+    def keys(self):
+        """Iterable over the keys of the ``pairs``."""
+        return self.pairs.keys()
+
     @property
-    def values(self): return list(self.pairs.values())
+    def values(self):
+        """Iterable over the values of the ``pairs``."""
+        return list(self.pairs.values())
+
     @property
-    def keySet(self): return set(self.pairs.keys())
+    def keySet(self):
+        """Set of keys among the ``pairs``."""
+        return set(self.pairs.keys())
 
     def __call__(self, x, *rest):
+        """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.pairs[x]
         else:
             return self.pairs[x](*rest)
-    def get(self, x): return self.pairs.get(x, None)
-    def getOrElse(self, x, default): return self.pairs.get(x, default)
 
+    def get(self, x):
+        """Attempt to get key ``x``, returning ``None`` if it does not exist."""
+        return self.pairs.get(x, None)
+
+    def getOrElse(self, x, default):
+        """Attempt to get key ``x``, returning an alternative if it does not exist."""
+        return self.pairs.get(x, default)
+
+    @inheritdoc(Container)
     def zero(self): return Label(**{k: v.zero() for k, v in self.pairs.items()})
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Label):
             if self.keySet != other.keySet:
@@ -90,6 +138,7 @@ class Label(Factory, Container, Collection):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         for x in self.values:
@@ -99,8 +148,10 @@ class Label(Factory, Container, Collection):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return self.values
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
         "type": self.values[0].name,
@@ -108,6 +159,7 @@ class Label(Factory, Container, Collection):
         }
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
@@ -144,8 +196,23 @@ Factory.register(Label)
 ################################################################ UntypedLabel
 
 class UntypedLabel(Factory, Container, Collection):
+    """Accumulate any number of aggregators of any type and label them with strings. Every sub-aggregator is filled with every input datum.
+
+    This primitive simulates a directory of aggregators. For sub-directories, nest collections within the UntypedLabel.
+
+    Note that sub-aggregators within an UntypedLabel may have *different types*. In strongly typed languages, this flexibility poses a problem: nested objects must be type-cast before they can be used. To collect objects of the *same type* with string-based look-up keys, use :doc:`Label <histogrammar.primitives.collection.Label>`.
+
+    To collect aggregators of the *same type* without naming them, use :doc:`Index <histogrammar.primitives.collection.Index>`. To collect aggregators of *different types* without naming them, use :doc:`Branch <histogrammar.primitives.collection.Branch>`.
+    """
+
     @staticmethod
     def ed(entries, **pairs):
+        """Create an UntypedLabel that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled aggregators.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
@@ -159,9 +226,18 @@ class UntypedLabel(Factory, Container, Collection):
 
     @staticmethod
     def ing(**pairs):
+        """Synonym for ``__init__``."""
         return UntypedLabel(**pairs)
 
     def __init__(self, **pairs):
+        """Create an UntypedLabel that is capable of being filled and added.
+
+        Parameters:
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of aggregators to fill.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+        """
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
             raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
 
@@ -172,26 +248,49 @@ class UntypedLabel(Factory, Container, Collection):
         self.specialize()
 
     @property
-    def pairsMap(self): return self.pairs
+    def pairsMap(self):
+        """Input ``pairs`` as a key-value map."""
+        return self.pairs
+
     @property
-    def size(self): return len(self.pairs)
+    def size(self):
+        """Number of ``pairs``."""
+        return len(self.pairs)
+
     @property
-    def keys(self): return self.pairs.keys()
+    def keys(self):
+        """Iterable over the keys of the ``pairs``."""
+        return self.pairs.keys()
+
     @property
-    def values(self): return list(self.pairs.values())
+    def values(self):
+        """Iterable over the values of the ``pairs``."""
+        return list(self.pairs.values())
+
     @property
-    def keySet(self): return set(self.pairs.keys())
+    def keySet(self):
+        """Set of keys among the ``pairs``."""
+        return set(self.pairs.keys())
 
     def __call__(self, x, *rest):
+        """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.pairs[x]
         else:
             return self.pairs[x](*rest)
-    def get(self, x): return self.pairs.get(x, None)
-    def getOrElse(self, x, default): return self.pairs.get(x, default)
 
+    def get(self, x):
+        """Attempt to get key ``x``, returning ``None`` if it does not exist."""
+        return self.pairs.get(x, None)
+
+    def getOrElse(self, x, default):
+        """Attempt to get key ``x``, returning an alternative if it does not exist."""
+        return self.pairs.get(x, default)
+
+    @inheritdoc(Container)
     def zero(self): return UntypedLabel(**{k: v.zero() for k, v in self.pairs.items()})
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, UntypedLabel):
             if self.keySet != other.keySet:
@@ -204,6 +303,7 @@ class UntypedLabel(Factory, Container, Collection):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         for x in self.values:
@@ -213,14 +313,17 @@ class UntypedLabel(Factory, Container, Collection):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return self.values
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
         "data": {k: {"type": v.name, "data": v.toJsonFragment(False)} for k, v in self.pairs.items()},
         }
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
             if isinstance(json["entries"], (int, long, float)):
@@ -260,8 +363,25 @@ Factory.register(UntypedLabel)
 ################################################################ Index
 
 class Index(Factory, Container, Collection):
+    """Accumulate any number of aggregators of the same type in a list. Every sub-aggregator is filled with every input datum.
+
+    This primitive provides an anonymous collection of aggregators (unless the integer index is taken to have special meaning, but generally such bookkeeping should be encoded in strings). Indexes can be nested to create two-dimensional ordinal grids of aggregators. (Use :doc:`Bin <histogrammar.primitives.bin.Bin>` if the space is to have a metric interpretation.)
+
+    Note that all sub-aggregators within an Index must have the *same type* (e.g. histograms of different binnings, but all histograms). To collect objects of *different types,* still indexed by integer, use :doc:`Branch <histogrammar.primitives.collection.Branch>`.
+
+    To collect aggregators of the *same type* with string-based labels, use :doc:`Label <histogrammar.primitives.collection.Label>`. To collect aggregators of *different types* with string-based labels, use :doc:`UntypedLabel <histogrammar.primitives.collection.UntypedLabel>`.
+
+    In strongly typed languages, the restriction to a single type allows nested objects to be extracted without casting.
+    """
+
     @staticmethod
     def ed(entries, *values):
+        """Create an Index that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):
@@ -275,9 +395,18 @@ class Index(Factory, Container, Collection):
 
     @staticmethod
     def ing(*values):
+        """Synonym for ``__init__``."""
         return Index(*values)
 
     def __init__(self, *values):
+        """Create an Index that is capable of being filled and added.
+
+        Parameters:
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of aggregators to fill.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+        """
         if not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({}) must be a list of Containers".format(values))
         if len(values) < 1:
@@ -293,27 +422,35 @@ class Index(Factory, Container, Collection):
         self.specialize()
 
     @property
-    def size(self): return len(self.values)
+    def size(self):
+        """Number of ``values``."""
+        return len(self.values)
 
     def __call__(self, i, *rest):
+        """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.values[i]
         else:
             return self.values[i](*rest)
+
     def get(self, i):
+        """Attempt to get index ``i``, returning ``None`` if it does not exist."""
         if i < 0 or i >= len(self.values):
             return None
         else:
             return self.values[i]
 
     def getOrElse(self, x, default):
+        """Attempt to get index ``i``, returning an alternative if it does not exist."""
         if i < 0 or i >= len(self.values):
             return default
         else:
             return self.values[i]
 
+    @inheritdoc(Container)
     def zero(self): return Index(*[x.zero() for x in self.values])
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Index):
             if self.size != other.size:
@@ -326,6 +463,7 @@ class Index(Factory, Container, Collection):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         for x in self.values:
@@ -335,8 +473,10 @@ class Index(Factory, Container, Collection):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return self.values
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
         "type": self.values[0].name,
@@ -344,6 +484,7 @@ class Index(Factory, Container, Collection):
         }
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):
@@ -380,8 +521,38 @@ Factory.register(Index)
 ################################################################ Branch
 
 class Branch(Factory, Container, Collection):
+    """Accumulate aggregators of different types, indexed by i0 through i9. Every sub-aggregator is filled with every input datum.
+
+       This primitive provides an anonymous collection of aggregators of *different types,* usually for gluing together various statistics. For instance, if the following associates a sum of weights to every bin in a histogram,
+
+       ::
+
+           Bin.ing(100, 0, 1, lambda d: d.x,
+             Sum.ing(lambda d: d.weight))
+
+       the following would associate the sum of weights and the sum of squared weights to every bin:
+
+       ::
+
+           Bin.ing(100, 0, 1, lambda d: d.x,
+             Branch.ing(Sum.ing(lambda d: d.weight),
+                        Sum.ing(lambda d: d.weight**2)))
+
+       Branch is a basic building block for complex aggregators. The limitation to ten branches, indexed from i0 to i9, is a concession to type inference in statically typed languages. It is not a fundamental limit, but the type-metaprogramming becomes increasingly complex as branches are added. Error messages may be convoluted as the compiler presents internals of the type-metaprogramming in response to a user's simple mistake.
+
+       Therefore, individual implementations may allow more than ten branches, but the Histogrammar standard only requires ten.
+
+       To collect an unlimited number of aggregators of the *same type* without naming them, use :doc:`Index <histogrammar.primitives.collection.Index>`. To collect aggregators of the *same type* with string-based labels, use :doc:`Label <histogrammar.primitives.collection.Label>`. To collect aggregators of *different types* with string-based labels, use :doc:`UntypedLabel <histogrammar.primitives.collection.UntypedLabel>`.
+       """
+
     @staticmethod
     def ed(entries, *values):
+        """Create a Branch that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):
@@ -395,9 +566,18 @@ class Branch(Factory, Container, Collection):
 
     @staticmethod
     def ing(*values):
+        """Synonym for ``__init__``."""
         return Branch(*values)
 
     def __init__(self, *values):
+        """Create a Branch that is capable of being filled and added.
+
+        Parameters:
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of aggregators to fill.
+
+        Other Parameters:
+            entries (float): the number of entries, initially 0.0.
+        """
         if not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({}) must be a list of Containers".format(values))
         if len(values) < 1:
@@ -413,27 +593,35 @@ class Branch(Factory, Container, Collection):
         self.specialize()
 
     @property
-    def size(self): return len(self.values)
+    def size(self):
+        """Return the number of containers."""
+        return len(self.values)
 
     def __call__(self, i, *rest):
+        """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.values[i]
         else:
             return self.values[i](*rest)
+
     def get(self, i):
+        """Attempt to get index ``i``, returning ``None`` if it does not exist."""
         if i < 0 or i >= len(self.values):
             return None
         else:
             return self.values[i]
 
     def getOrElse(self, x, default):
+        """Attempt to get index ``i``, returning an alternative if it does not exist."""
         if i < 0 or i >= len(self.values):
             return default
         else:
             return self.values[i]
 
+    @inheritdoc(Container)
     def zero(self): return Branch(*[x.zero() for x in self.values])
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Branch):
             if self.size != other.size:
@@ -446,6 +634,7 @@ class Branch(Factory, Container, Collection):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         for x in self.values:
@@ -455,14 +644,17 @@ class Branch(Factory, Container, Collection):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return self.values
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
         "data": [{"type": x.name, "data": x.toJsonFragment(False)} for x in self.values],
         }
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
             if isinstance(json["entries"], (int, long, float)):

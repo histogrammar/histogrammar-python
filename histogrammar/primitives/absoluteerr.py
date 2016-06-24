@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,20 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class AbsoluteErr(Factory, Container):
+    """Accumulate the weighted mean absolute error (MAE) of a quantity around zero.
+
+    The MAE is sometimes used as a replacement for the standard deviation, associated with medians, rather than means. However, this aggregator makes no attempt to estimate a median. If used as an "error," it should be used on a quantity whose nominal value is zero, such as a residual.
+    """
+
     @staticmethod
     def ed(entries, mae):
+        """Create an AbsoluteErr that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            mae (float): the mean absolute error.
+        """
+
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(mae, (int, long, float)):
@@ -33,9 +45,20 @@ class AbsoluteErr(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return AbsoluteErr(quantity)
 
     def __init__(self, quantity):
+        """Create an AbsoluteErr that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            mae (float): the mean absolute error.
+        """
+
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.absoluteSum = 0.0
@@ -44,13 +67,16 @@ class AbsoluteErr(Factory, Container):
 
     @property
     def mae(self):
+        """The mean absolute error."""
         if self.entries == 0.0:
             return self.absoluteSum
         else:
             return self.absoluteSum/self.entries
 
+    @inheritdoc(Container)
     def zero(self): return AbsoluteErr(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, AbsoluteErr):
             out = AbsoluteErr(self.quantity)
@@ -60,6 +86,7 @@ class AbsoluteErr(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -73,14 +100,17 @@ class AbsoluteErr(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mae": floatToJson(self.mae),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mae"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,8 +22,24 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMethods):
+    """Split a quantity into bins defined by irregularly spaced bin centers, with exactly one sub-aggregator filled per datum (the closest one).
+
+    Unlike irregular bins defined by explicit ranges, irregular bins defined by bin centers are guaranteed to fully partition the space with no gaps and no overlaps. It could be viewed as cluster scoring in one dimension.
+
+    The first and last bins cover semi-infinite domains, so it is unclear how to interpret them as part of the probability density function (PDF). Finite-width bins approximate the PDF in piecewise steps, but the first and last bins could be taken as zero (an underestimate) or as uniform from the most extreme point to the inner bin edge (an overestimate, but one that is compensated by underestimating the region just beyond the extreme point). For the sake of the latter interpretation, the minimum and maximum values are accumulated along with the bin values.
+    """
+
     @staticmethod
     def ed(entries, bins, min, max, nanflow):
+        """Create a CentrallyBin that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            bins (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the list of bin centers and their accumulated data.
+            min (float): the lowest value of the quantity observed or NaN if no data were observed.
+            max (float): the highest value of the quantity observed or NaN if no data were observed.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
@@ -45,9 +61,25 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
     @staticmethod
     def ing(bins, quantity, value=Count(), nanflow=Count()):
+        """Synonym for ``__init__``."""
         return CentrallyBin(bins, quantity, value, nanflow)
 
     def __init__(self, bins, quantity, value=Count(), nanflow=Count()):
+        """Create a CentrallyBin that is capable of being filled and added.
+
+        Parameters:
+            centers (list of float): the centers of all bins
+            quantity (function returning float): computes the quantity of interest from the data.
+            value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators to put in each bin.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is NaN.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            bins (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the bin centers and sub-aggregators in each bin.
+            min (float): the lowest value of the quantity observed, initially NaN.
+            max (float): the highest value of the quantity observed, initially NaN.
+        """
+
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
             raise TypeError("bins ({}) must be a list of number, Container pairs".format(bins))
         if value is not None and not isinstance(value, Container):
@@ -73,6 +105,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         self.specialize()
 
     def histogram(self):
+        """Return a plain histogram by converting all sub-aggregator values into :doc:`Counts <histogrammar.primitives.count.Count>`."""
         out = CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, Count(), self.nanflow.copy())
         out.entries = self.entries
         for i, v in self.bins:
@@ -81,9 +114,11 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         out.max = self.max
         return out.specialize()
 
+    @inheritdoc(Container)
     def zero(self):
         return CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, self.value, self.nanflow.zero())
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if self.centers != other.centers:
             raise ContainerException("cannot add CentrallyBin because centers are different:\n    {}\nvs\n    {}".format(self.centers, other.centers))
@@ -97,6 +132,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         out.max = maxplus(self.max, other.max)
         return out.specialize()
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -118,8 +154,10 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.nanflow] + [v for c, v in self.bins]
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if getattr(self.bins[0][1], "quantity", None) is not None:
             binsName = self.bins[0][1].quantity.name
@@ -140,6 +178,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
                   "bins:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow"], ["name", "bins:name"]):
             if isinstance(json["entries"], (int, long, float)):

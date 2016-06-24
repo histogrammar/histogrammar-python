@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,19 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Sum(Factory, Container):
+    """Accumulate the (weighted) sum of a given quantity, calculated from the data.
+
+    Sum differs from :doc:`Count <histogrammar.primitives.count.Count>` in that it computes a quantity on the spot, rather than percolating a product of weight metadata from nested primitives. Also unlike weights, the sum can add both positive and negative quantities (weights are always non-negative).
+    """
+
     @staticmethod
     def ed(entries, sum):
+        """Create a Sum that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            sum (float): the sum.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(sum, (int, long, float)):
@@ -33,17 +44,29 @@ class Sum(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Sum(quantity)
 
     def __init__(self, quantity):
+        """Create a Sum that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            sum (float): the running sum, initially 0.0.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.sum = 0.0
         super(Sum, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Sum(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Sum):
             out = Sum(self.quantity)
@@ -53,6 +76,7 @@ class Sum(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -66,14 +90,17 @@ class Sum(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "sum": floatToJson(self.sum),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sum"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
