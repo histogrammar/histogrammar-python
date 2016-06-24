@@ -26,72 +26,74 @@ if sys.version_info[0] > 2:
     basestring = str
     xrange = range
     long = int
-elif sys.version_info[0] == 2 and sys.version_info[1] > 6:
     from functools import total_ordering
 else:
-    # Copyright (c) 2012, Konsta Vesterinen (applies to Python 2.6 implementation of total_ordering only)
-    #
-    # All rights reserved.
-    #
-    # Redistribution and use in source and binary forms, with or without
-    # modification, are permitted provided that the following conditions are met:
-    #
-    # * Redistributions of source code must retain the above copyright notice, this
-    #   list of conditions and the following disclaimer.
-    #
-    # * Redistributions in binary form must reproduce the above copyright notice,
-    #   this list of conditions and the following disclaimer in the documentation
-    #   and/or other materials provided with the distribution.
-    #
-    # * The names of the contributors may not be used to endorse or promote products
-    #   derived from this software without specific prior written permission.
-    #
-    # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-    # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    # DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT,
-    # INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-    # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-    # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-    # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-    # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    if sys.version_info[0] == 2 and sys.version_info[1] > 6:
+        from functools import total_ordering
+    else:
+        # Copyright (c) 2012, Konsta Vesterinen (applies to Python 2.6 implementation of total_ordering only)
+        #
+        # All rights reserved.
+        #
+        # Redistribution and use in source and binary forms, with or without
+        # modification, are permitted provided that the following conditions are met:
+        #
+        # * Redistributions of source code must retain the above copyright notice, this
+        #   list of conditions and the following disclaimer.
+        #
+        # * Redistributions in binary form must reproduce the above copyright notice,
+        #   this list of conditions and the following disclaimer in the documentation
+        #   and/or other materials provided with the distribution.
+        #
+        # * The names of the contributors may not be used to endorse or promote products
+        #   derived from this software without specific prior written permission.
+        #
+        # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+        # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+        # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+        # DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT,
+        # INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+        # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+        # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+        # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+        # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+        # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-    def total_ordering(cls):
-        """
-        Backport to work with Python 2.6
-        Class decorator that fills in missing ordering methods
-        Code from: http://code.activestate.com/recipes/576685/
-        Copied from: https://github.com/kvesteri/total-ordering
-        """
-        convert = {
-            '__lt__': [
-                ('__gt__', lambda self, other: not (self < other or self == other)),
-                ('__le__', lambda self, other: self < other or self == other),
-                ('__ge__', lambda self, other: not self < other)],
-            '__le__': [
-                ('__ge__', lambda self, other: not self <= other or self == other),
-                ('__lt__', lambda self, other: self <= other and not self == other),
-                ('__gt__', lambda self, other: not self <= other)],
-            '__gt__': [
-                ('__lt__', lambda self, other: not (self > other or self == other)),
-                ('__ge__', lambda self, other: self > other or self == other),
-                ('__le__', lambda self, other: not self > other)],
-            '__ge__': [
-                ('__le__', lambda self, other: (not self >= other) or self == other),
-                ('__gt__', lambda self, other: self >= other and not self == other),
-                ('__lt__', lambda self, other: not self >= other)]
-        }
-        roots = set(dir(cls)) & set(convert)
-        if not roots:
-            raise ValueError('must define at least one ordering operation: < > <= >=')
-        root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
-        for opname, opfunc in convert[root]:
-            if opname not in roots:
-                opfunc.__name__ = opname
-                opfunc.__doc__ = getattr(int, opname).__doc__
-                setattr(cls, opname, opfunc)
-        return cls
+        def total_ordering(cls):
+            """
+            Backport to work with Python 2.6
+            Class decorator that fills in missing ordering methods
+            Code from: http://code.activestate.com/recipes/576685/
+            Copied from: https://github.com/kvesteri/total-ordering
+            """
+            convert = {
+                '__lt__': [
+                    ('__gt__', lambda self, other: not (self < other or self == other)),
+                    ('__le__', lambda self, other: self < other or self == other),
+                    ('__ge__', lambda self, other: not self < other)],
+                '__le__': [
+                    ('__ge__', lambda self, other: not self <= other or self == other),
+                    ('__lt__', lambda self, other: self <= other and not self == other),
+                    ('__gt__', lambda self, other: not self <= other)],
+                '__gt__': [
+                    ('__lt__', lambda self, other: not (self > other or self == other)),
+                    ('__ge__', lambda self, other: self > other or self == other),
+                    ('__le__', lambda self, other: not self > other)],
+                '__ge__': [
+                    ('__le__', lambda self, other: (not self >= other) or self == other),
+                    ('__gt__', lambda self, other: self >= other and not self == other),
+                    ('__lt__', lambda self, other: not self >= other)]
+            }
+            roots = set(dir(cls)) & set(convert)
+            if not roots:
+                raise ValueError('must define at least one ordering operation: < > <= >=')
+            root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
+            for opname, opfunc in convert[root]:
+                if opname not in roots:
+                    opfunc.__name__ = opname
+                    opfunc.__doc__ = getattr(int, opname).__doc__
+                    setattr(cls, opname, opfunc)
+            return cls
     
 @total_ordering
 class LessThanEverything(object):
