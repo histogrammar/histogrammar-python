@@ -216,6 +216,11 @@ def save(plot,fname):
     output_file(fname)
     save(plot)
 
-def view(plot):
+def view(plot,show=False):
     from bokeh.plotting import curdoc
-    curdoc().add_root(plot)
+    from bokeh.client import push_session
+    if show:
+        session = push_session(curdoc())
+        session.show(plot)
+    else:
+        curdoc().add_root(plot)
