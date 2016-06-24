@@ -39,12 +39,16 @@ class Sample(Factory, Container):
 
     @staticmethod
     def ed(entries, limit, values, randomSeed=None):
-        """
-        * `entries` (double) is the number of entries.
-        * `limit` (32-bit integer) is the maximum number of entries to store before replacement. This is a strict _number_ of entries, unaffected by weights.
-        * `values` (list of quantity return type, double, double triples) is the set of collected values with their weights. Its size is at most `limit` and it may contain duplicates.
-        * `randomSeed` (long integer or None) an optional random seed to make the sampling deterministic.
-        * `randomGenerator` (random generator state or None) platform-dependent representation of the random generator's state if a `randomSeed` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampled instances.
+        """Create a Sample that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            limit (int): the maximum number of entries to store before replacement. This is a strict _number_ of entries, unaffected by weights.
+            values (list of quantity return type, float, float triples): the set of collected values with their weights. Its size is at most ``limit`` and it may contain duplicates.
+            randomSeed (int or None): an optional random seed to make the sampling deterministic.
+
+        Other parameters:
+            randomGenerator (random generator state or ``None``): Python representation of the random generator's state if a ``randomSeed`` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampled instances.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -69,13 +73,17 @@ class Sample(Factory, Container):
         return Sample(limit, quantity, randomSeed)
 
     def __init__(self, limit, quantity, randomSeed=None):
-        """
-        * `limit` (32-bit integer) is the maximum number of entries to store before replacement. This is a strict _number_ of entries, unaffected by weights.
-        * `quantity` (function returning a double, a vector of doubles, or a string) computes the quantity of interest from the data.
-        * `randomSeed` (long integer or None) an optional random seed to make the sampling deterministic.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `values` (mutable, list of quantity return type, double, double triplets) is the set of collected values with their weights and a random number (see algorithm below), sorted by the random number. Its size is at most `limit` and it may contain duplicates.
-        * `randomGenerator` (random generator state or None) platform-dependent representation of the random generator's state if a `randomSeed` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampling instances.
+        """Create a Sample that is capable of being filled and added.
+
+        Parameters:
+            limit (int): the maximum number of entries to store before replacement. This is a strict _number_ of entries, unaffected by weights.
+            quantity (function returning a float, a tuple of floats, or a str): computes the quantity of interest from the data.
+            randomSeed (int or ``None``): an optional random seed to make the sampling deterministic.
+
+        Other Parameters:
+            entries (float): the number of entries, initially 0.0.
+            values (list of quantity return type, float, float triplets): the set of collected values with their weights and a random number (see algorithm below), sorted by the random number. Its size is at most ``limit`` and it may contain duplicates.
+            randomGenerator (random generator state or ``None``) Python representation of the random generator's state if a ``randomSeed`` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampling instances.
         """
         if not isinstance(limit, (int, long, float)):
             raise TypeError("limit ({}) must be a number".format(limit))

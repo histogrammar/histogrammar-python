@@ -28,10 +28,12 @@ class Partition(Factory, Container):
 
     @staticmethod
     def ed(entries, cuts, nanflow):
-        """
-        * `entries` (double) is the number of entries.
-        * `cuts` (list of double, past-tense aggregator pairs) are the `N + 1` thresholds and sub-aggregator pairs.
-        * `nanflow` (past-tense aggregator) is the filled nanflow bin.
+        """Create a Partition that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            cuts (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the ``N + 1`` thresholds and sub-aggregator pairs.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -52,13 +54,17 @@ class Partition(Factory, Container):
         return Partition(cuts, quantity, value, nanflow)
 
     def __init__(self, thresholds, quantity, value, nanflow=Count()):
-        """
-        * `thresholds` (list of doubles) specifies `N` cut thresholds, so the Partition will fill `N + 1` aggregators in distinct intervals.
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `value` (present-tense aggregator) generates sub-aggregators for each bin.
-        * `nanflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is NaN.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `cuts` (list of double, present-tense aggregator pairs) are the `N + 1` thresholds and sub-aggregators. (The first threshold is minus infinity; the rest are the ones specified by `thresholds`).
+        """Create a Partition that is capable of being filled and added.
+
+        Parameters:
+            thresholds (list of float) specifies ``N`` cut thresholds, so the Partition will fill ``N + 1`` aggregators in distinct intervals.
+            quantity (function returning float): computes the quantity of interest from the data.
+            value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators for each bin.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is NaN.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            cuts (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the ``N + 1`` thresholds and sub-aggregators. (The first threshold is minus infinity; the rest are the ones specified by ``thresholds``).
         """
         if not isinstance(thresholds, (list, tuple)) and not all(isinstance(v, (int, long, float)) for v in thresholds):
             raise TypeError("thresholds ({}) must be a list of numbers".format(thresholds))

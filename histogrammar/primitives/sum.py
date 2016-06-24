@@ -25,9 +25,11 @@ class Sum(Factory, Container):
 
     @staticmethod
     def ed(entries, sum):
-        """
-        * `entries` (double) is the number of entries.
-        * `sum` (double) is the sum.
+        """Create a Sum that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            sum (float): the sum.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -46,10 +48,14 @@ class Sum(Factory, Container):
         return Sum(quantity)
 
     def __init__(self, quantity):
-        """
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `sum` (mutable double) is the running sum, initially 0.0.
+        """Create a Sum that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            sum (float): the running sum, initially 0.0.
         """
         self.quantity = serializable(quantity)
         self.entries = 0.0

@@ -25,9 +25,11 @@ class AbsoluteErr(Factory, Container):
 
     @staticmethod
     def ed(entries, mae):
-        """
-        * `entries` (double) is the number of entries.
-        * `mae` (double) is the mean absolute error.
+        """Create an AbsoluteErr that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            mae (float): the mean absolute error.
         """
 
         if not isinstance(entries, (int, long, float)):
@@ -47,10 +49,14 @@ class AbsoluteErr(Factory, Container):
         return AbsoluteErr(quantity)
 
     def __init__(self, quantity):
-        """
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `mae` (mutable double) is the mean absolute error.
+        """Create an AbsoluteErr that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            mae (float): the mean absolute error.
         """
 
         self.quantity = serializable(quantity)

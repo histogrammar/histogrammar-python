@@ -31,9 +31,11 @@ class Select(Factory, Container):
 
     @staticmethod
     def ed(entries, cut):
-        """
-        * `entries` (double) is the number of entries.
-        * `cut` (past-tense aggregator) is the filled sub-aggregator.
+        """Create a Select that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            cut (:doc:`Container <histogrammar.defs.Container>`): the filled sub-aggregator.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -60,10 +62,14 @@ class Select(Factory, Container):
             return self.__dict__[attr]
 
     def __init__(self, quantity, cut):
-        """
-        * `quantity` (function returning boolean or double) computes the quantity of interest from the data and interprets it as a selection (multiplicative factor on weight).
-        * `cut` (present-tense aggregator) will only be filled with data that pass the cut, and which are weighted by the cut.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
+        """Create a Select that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning bool or float): computes the quantity of interest from the data and interprets it as a selection (multiplicative factor on weight).
+            cut (:doc:`Container <histogrammar.defs.Container>`): will only be filled with data that pass the cut, and which are weighted by the cut.
+
+        Other Parameters:
+            entries (float): the number of entries, initially 0.0.
         """
         if not isinstance(cut, Container):
             raise TypeError("cut ({}) must be a Container".format(cut))

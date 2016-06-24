@@ -47,15 +47,17 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
     @staticmethod
     def ed(entries, num, tailDetail, contentType, bins, min, max, nanflow):
-        """
-        * `entries` (double) is the number of entries.
-        * `num` (32-bit integer) specifies the maximum number of bins before merging.
-        * `tailDetail` (double) is a value between 0.0 and 1.0 (inclusive) for choosing the pair of bins to merge (see above).
-        * `contentType` (string) is the value's sub-aggregator type (must be provided to determine type for the case when `bins` is empty).
-        * `bins` (list of double, past-tense aggregator pairs) is the list of bin centers and bin contents. The domain of each bin is determined as in [CentrallyBin](http://127.0.0.1:4005/docs/specification/#centrallybin-irregular-but-fully-partitioning).
-        * `min` (double) is the lowest value of the quantity observed or NaN if no data were observed.
-        * `max` (double) is the highest value of the quantity observed or NaN if no data were observed.
-        * `nanflow` (past-tense aggregator) is the filled nanflow bin.
+        """Create an AdaptivelyBin that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            num (int): specifies the maximum number of bins before merging.
+            tailDetail (float): a value between 0.0 and 1.0 (inclusive) for choosing the pair of bins to merge (see above).
+            contentType (str): the value's sub-aggregator type (must be provided to determine type for the case when `bins` is empty).
+            bins (list of double, :doc:`Container <histogrammar.defs.Container>`): is the list of bin centers and bin contents. The domain of each bin is determined as in :doc:`CentrallyBin <histogrammar.primitives.centralbin.CentrallyBin>`.
+            min (float): the lowest value of the quantity observed or NaN if no data were observed.
+            max (float): the highest value of the quantity observed or NaN if no data were observed.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
 
         if not isinstance(entries, (int, long, float)):
@@ -95,16 +97,20 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         return AdaptivelyBin(quantity, num, tailDetail, value, nanflow)
 
     def __init__(self, quantity, num=100, tailDetail=0.2, value=Count(), nanflow=Count()):
-        """
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `num` (32-bit integer) specifies the maximum number of bins before merging.
-        * `tailDetail` (double) is a value between 0.0 and 1.0 (inclusive) for choosing the pair of bins to merge (see above).
-        * `value` (present-tense aggregator) generates sub-aggregators to put in each bin.
-        * `nanflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is NaN.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `bins` (mutable list of double, present-tense aggregator pairs) is the list of bin centers and bin contents. The domain of each bin is determined as in [CentrallyBin](http://127.0.0.1:4005/docs/specification/#centrallybin-irregular-but-fully-partitioning).
-        * `min` (mutable double) is the lowest value of the quantity observed, initially NaN.
-        * `max` (mutable double) is the highest value of the quantity observed, initially NaN.
+        """Create an AdaptivelyBin that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+            num (int): specifies the maximum number of bins before merging.
+            tailDetail (float): a value between 0.0 and 1.0 (inclusive) for choosing the pair of bins to merge (see above).
+            value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators to put in each bin.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): is a sub-aggregator to use for data whose quantity is NaN.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            bins (list of float, :doc:`Container <histogrammar.defs.Container>`): the list of bin centers and bin contents. The domain of each bin is determined as in :doc:`CentrallyBin <histogrammar.primitives.centralbin.CentrallyBin>`.
+            min (float): the lowest value of the quantity observed, initially NaN.
+            max (float): the highest value of the quantity observed, initially NaN.
         """
 
         if not isinstance(num, (int, long)):
@@ -133,12 +139,12 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
     @property
     def tailDetail(self):
-        """Clustering hyperparameter, between 0.0 and 1.0 inclusive: use 0.0 to focus on the bulk of the distribution and 1.0 to focus on the tails; see `Clustering1D <histogrammar.util.Clustering1D>`_ for details."""
+        """Clustering hyperparameter, between 0.0 and 1.0 inclusive: use 0.0 to focus on the bulk of the distribution and 1.0 to focus on the tails; see :doc:`Clustering1D <histogrammar.util.Clustering1D>` for details."""
         return self.clustering.tailDetail
 
     @property
     def entries(self):
-        """Every `Container <histogrammar.defs.Container>`_ accumulates a sum of weights of observed data."""
+        """Every :doc:`Container <histogrammar.defs.Container>` accumulates a sum of weights of observed data."""
         return self.clustering.entries
 
     @entries.setter
@@ -169,7 +175,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         self.clustering.max = max
 
     def histogram(self):
-        """Return a plain histogram by converting all sub-aggregator values into `Counts <histogrammar.primitives.count.Count>`_."""
+        """Return a plain histogram by converting all sub-aggregator values into :doc:`Counts <histogrammar.primitives.count.Count>`."""
         out = AdaptivelyBin(self.quantity, self.num, self.tailDetail, Count(), self.nanflow.copy())
         out.clustering.entries = float(self.entries)
         for i, v in self.clustering.values:

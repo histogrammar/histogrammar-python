@@ -39,11 +39,13 @@ class Limit(Factory, Container):
 
     @staticmethod
     def ed(entries, limit, contentType, value):
-        """
-        * `entries` (double) is the number of entries.
-        * `limit` (double) is the maximum number of entries (inclusive).
-        * `contentType` (string) is the value's sub-aggregator type (must be provided to determine type for the case when `value` has been deleted).
-        * `value` (past-tense aggregator or null) is the filled sub-aggregator if unsaturated, null if saturated.
+        """Create a Limit that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            limit (float): the maximum number of entries (inclusive).
+            contentType (str): the value's sub-aggregator type (must be provided to determine type for the case when ``value`` has been deleted).
+            value (:doc:`Container <histogrammar.defs.Container>` or ``None``) is the filled sub-aggregator if unsaturated, ``None`` if saturated.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -56,27 +58,31 @@ class Limit(Factory, Container):
         if entries < 0.0:
             raise ValueError("entries ({}) cannot be negative".format(entries))
 
-        out = Limit(value, limit)
+        out = Limit(limit, value)
         out.entries = entries
         out.contentType = contentType
         return out.specialize()
 
     @staticmethod
-    def ing(value, limit):
+    def ing(limit, value):
         """Synonym for ``__init__``."""
-        return Limit(value, limit)
+        return Limit(limit, value)
 
-    def __init__(self, value, limit):
+    def __init__(self, limit, value):
+        """Create a Limit that is capable of being filled and added.
+
+        Parameters:
+            limit (float): the maximum number of entries (inclusive) before deleting the `value`.
+            value (:doc:`Container <histogrammar.defs.Container>`): will only be filled until its number of entries exceeds the `limit`.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            contentType (str): the value's sub-aggregator type (must be provided to determine type for the case when `value` has been deleted).
         """
-        * `limit` (double) is the maximum number of entries (inclusive) before deleting the `value`.
-        * `value` (present-tense aggregator) will only be filled until its number of entries exceeds the `limit`.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `contentType` (string) is the value's sub-aggregator type (must be provided to determine type for the case when `value` has been deleted).
-        """
-        if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({}) must be None or a Container".format(value))
         if not isinstance(limit, (int, long, float)):
             raise TypeError("limit ({}) must be a number".format(limit))
+        if value is not None and not isinstance(value, Container):
+            raise TypeError("value ({}) must be None or a Container".format(value))
 
         self.entries = 0.0
         self.limit = limit

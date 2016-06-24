@@ -34,10 +34,11 @@ class Label(Factory, Container, Collection):
     """
     @staticmethod
     def ed(entries, **pairs):
-        """
-        * `entries` (double) is the number of entries.
-        * `pairs` (list of string, past-tense aggregator pairs) is the collection of filled aggregators.
-        * `pairsMap` (map of the above, probably a hashmap) is intended for fast look-ups.
+        """Create a Label that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled aggregators.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -56,10 +57,13 @@ class Label(Factory, Container, Collection):
         return Label(**pairs)
 
     def __init__(self, **pairs):
-        """
-        * `pairs` (list of string, present-tense aggregator pairs) is the collection of aggregators to fill.
-        * `pairsMap` (map of the above, probably a hashmap) is intended for fast look-ups.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
+        """Create a Label that is capable of being filled and added.
+
+        Parameters:
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of aggregators to fill.
+
+        Other Parameters:
+            entries (float): the number of entries, initially 0.0.
         """
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
             raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
@@ -203,10 +207,11 @@ class UntypedLabel(Factory, Container, Collection):
 
     @staticmethod
     def ed(entries, **pairs):
-        """
-        * `entries` (double) is the number of entries.
-        * `pairs` (list of string, past-tense aggregator pairs) is the collection of filled aggregators.
-        * `pairsMap` (map of the above, probably a hashmap) is intended for fast look-ups.
+        """Create an UntypedLabel that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled aggregators.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -225,10 +230,13 @@ class UntypedLabel(Factory, Container, Collection):
         return UntypedLabel(**pairs)
 
     def __init__(self, **pairs):
-        """
-        * `pairs` (list of string, present-tense aggregator pairs) is the collection of aggregators to fill.
-        * `pairsMap` (map of the above, probably a hashmap) is intended for fast look-ups.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
+        """Create an UntypedLabel that is capable of being filled and added.
+
+        Parameters:
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of aggregators to fill.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
         """
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
             raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
@@ -368,9 +376,11 @@ class Index(Factory, Container, Collection):
 
     @staticmethod
     def ed(entries, *values):
-        """
-        * `entries` (double) is the number of entries.
-        * `values` (list of past-tense aggregators) is the collection of filled aggregators.
+        """Create an Index that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -389,9 +399,13 @@ class Index(Factory, Container, Collection):
         return Index(*values)
 
     def __init__(self, *values):
-        """
-        * `values` (list of present-tense aggregators) is the collection of aggregators to fill.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
+        """Create an Index that is capable of being filled and added.
+
+        Parameters:
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of aggregators to fill.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
         """
         if not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({}) must be a list of Containers".format(values))
@@ -533,9 +547,11 @@ class Branch(Factory, Container, Collection):
 
     @staticmethod
     def ed(entries, *values):
-        """
-        * `entries` (double) is the number of entries.
-        * `values` (list of past-tense aggregators) is the collection of filled aggregators.
+        """Create a Branch that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -554,9 +570,13 @@ class Branch(Factory, Container, Collection):
         return Branch(*values)
 
     def __init__(self, *values):
-        """
-        * `values` (list of present-tense aggregators) is the collection of aggregators to fill.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
+        """Create a Branch that is capable of being filled and added.
+
+        Parameters:
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of aggregators to fill.
+
+        Other Parameters:
+            entries (float): the number of entries, initially 0.0.
         """
         if not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({}) must be a list of Containers".format(values))

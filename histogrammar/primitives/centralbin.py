@@ -31,12 +31,14 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
     @staticmethod
     def ed(entries, bins, min, max, nanflow):
-        """
-        * `entries` (double) is the number of entries.
-        * `bins` (list of double, past-tense aggregator pairs) is the list of bin centers and their accumulated data.
-        * `min` (double) is the lowest value of the quantity observed or NaN if no data were observed.
-        * `max` (double) is the highest value of the quantity observed or NaN if no data were observed.
-        * `nanflow` (past-tense aggregator) is the filled nanflow bin.
+        """Create a CentrallyBin that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            bins (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the list of bin centers and their accumulated data.
+            min (float): the lowest value of the quantity observed or NaN if no data were observed.
+            max (float): the highest value of the quantity observed or NaN if no data were observed.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -63,15 +65,19 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         return CentrallyBin(bins, quantity, value, nanflow)
 
     def __init__(self, bins, quantity, value=Count(), nanflow=Count()):
-        """
-        * `centers` (list of doubles) is the centers of all bins
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `value` (present-tense aggregator) generates sub-aggregators to put in each bin.
-        * `nanflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is NaN.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `bins` (list of double, present-tense aggregator pairs) are the bin centers and sub-aggregators in each bin.
-        * `min` (mutable double) is the lowest value of the quantity observed, initially NaN.
-        * `max` (mutable double) is the highest value of the quantity observed, initially NaN.
+        """Create a CentrallyBin that is capable of being filled and added.
+
+        Parameters:
+            centers (list of float): the centers of all bins
+            quantity (function returning float): computes the quantity of interest from the data.
+            value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators to put in each bin.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is NaN.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            bins (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the bin centers and sub-aggregators in each bin.
+            min (float): the lowest value of the quantity observed, initially NaN.
+            max (float): the highest value of the quantity observed, initially NaN.
         """
 
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
@@ -99,7 +105,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         self.specialize()
 
     def histogram(self):
-        """Return a plain histogram by converting all sub-aggregator values into `Counts <histogrammar.primitives.count.Count>`_."""
+        """Return a plain histogram by converting all sub-aggregator values into :doc:`Counts <histogrammar.primitives.count.Count>`."""
         out = CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, Count(), self.nanflow.copy())
         out.entries = self.entries
         for i, v in self.bins:

@@ -3123,7 +3123,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(ed(x), ed(pickle.loads(pickle.dumps(x))))
 
     def test_bagLimit(self):
-        x = Limit(Bag(lambda x: x.string), 5)
+        x = Limit(5, Bag(lambda x: x.string))
         self.assertEqual(x, x)
         self.assertEqual(ed(x), ed(x))
         self.assertEqual(hash(x), hash(x))

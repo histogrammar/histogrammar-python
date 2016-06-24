@@ -27,9 +27,11 @@ class Minimize(Factory, Container):
 
     @staticmethod
     def ed(entries, min):
-        """
-        * `entries` (double) is the number of entries.
-        * `min` (double) is the lowest value of the quantity observed or NaN if no data were observed.
+        """Create a Minimize that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            min (float): the lowest value of the quantity observed or NaN if no data were observed.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -48,10 +50,14 @@ class Minimize(Factory, Container):
         return Minimize(quantity)
 
     def __init__(self, quantity):
-        """
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `min` (mutable double) is the lowest value of the quantity observed, initially NaN.
+        """Create a Minimize that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0. # 
+            min (float): the lowest value of the quantity observed, initially NaN.
         """
         self.quantity = serializable(quantity)
         self.entries = 0.0
@@ -143,9 +149,11 @@ class Maximize(Factory, Container):
 
     @staticmethod
     def ed(entries, max):
-        """
-        * `entries` (double) is the number of entries.
-        * `max` (double) is the highest value of the quantity observed or NaN if no data were observed.
+        """Create a Maximize that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            max (float): the highest value of the quantity observed or NaN if no data were observed.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -164,10 +172,14 @@ class Maximize(Factory, Container):
         return Maximize(quantity)
 
     def __init__(self, quantity):
-        """
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `max` (mutable double) is the highest value of the quantity observed, initially NaN.
+        """Create a Maximize that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            max (float): the highest value of the quantity observed, initially NaN.
         """
         self.quantity = serializable(quantity)
         self.entries = 0.0

@@ -27,10 +27,12 @@ class Deviate(Factory, Container):
 
     @staticmethod
     def ed(entries, mean, variance):
-        """
-        * `entries` (double) is the number of entries.
-        * `mean` (double) is the mean.
-        * `variance` (double) is the variance.
+        """Create a Deviate that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            mean (float): the mean.
+            variance (float): the variance.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -52,11 +54,15 @@ class Deviate(Factory, Container):
         return Deviate(quantity)
 
     def __init__(self, quantity):
-        """
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `mean` (mutable double) is the running mean, initially 0.0. Note that this value contributes to the total mean with weight zero (because `entries` is initially zero), so this arbitrary choice does not bias the final result.
-        * `variance` (mutable double) is the running variance, initially 0.0. Note that this also contributes nothing to the final result.
+        """Create a Deviate that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            mean (float): the running mean, initially 0.0. Note that this value contributes to the total mean with weight zero (because `entries` is initially zero), so this arbitrary choice does not bias the final result.
+            variance (float): the running variance, initially 0.0. Note that this also contributes nothing to the final result.
         """
         self.quantity = serializable(quantity)
         self.entries = 0.0

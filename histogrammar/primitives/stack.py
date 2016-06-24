@@ -34,10 +34,12 @@ class Stack(Factory, Container):
 
     @staticmethod
     def ed(entries, cuts, nanflow):
-        """
-        * `entries` (double) is the number of entries.
-        * `cuts` (list of double, past-tense aggregator pairs) are the `N + 1` thresholds and sub-aggregator pairs.
-        * `nanflow` (past-tense aggregator) is the filled nanflow bin.
+        """Create a Stack that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            cuts (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the ``N + 1`` thresholds and sub-aggregator pairs.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -57,13 +59,17 @@ class Stack(Factory, Container):
         return Stack(cuts, quantity, value, nanflow)
 
     def __init__(self, cuts, quantity, value, nanflow=Count()):
-        """
-        * `thresholds` (list of doubles) specifies `N` cut thresholds, so the Stack will fill `N + 1` aggregators, each overlapping the last.
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `value` (present-tense aggregator) generates sub-aggregators for each bin.
-        * `nanflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is NaN.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `cuts` (list of double, present-tense aggregator pairs) are the `N + 1` thresholds and sub-aggregators. (The first threshold is minus infinity; the rest are the ones specified by `thresholds`).
+        """Create a Stack that is capable of being filled and added.
+
+        Parameters:
+            thresholds (list of floats): specifies ``N`` cut thresholds, so the Stack will fill ``N + 1`` aggregators, each overlapping the last.
+            quantity (function returning float): computes the quantity of interest from the data.
+            value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators for each bin.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is NaN.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            cuts (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the ``N + 1`` thresholds and sub-aggregators. (The first threshold is minus infinity; the rest are the ones specified by ``thresholds``).
         """
         if not isinstance(cuts, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in cuts):
             raise TypeError("cuts ({}) must be a list of number, Container pairs".format(cuts))
@@ -83,8 +89,10 @@ class Stack(Factory, Container):
 
     @staticmethod
     def build(*ys):
-        """
-        * `aggregators` (list of aggregators of the same type from any source); the algorithm will attempt to add them, so they must also have the same binning/bounds/etc.
+        """Create a Stack out of pre-existing containers, which might have been aggregated on different streams.
+
+        Parameters:
+            aggregators (list of :doc:`Container <histogrammar.defs.Container>`): this function will attempt to add them, so they must also have the same binning/bounds/etc.
         """
         from functools import reduce
         if not all(isinstance(y, Container) for y in ys):

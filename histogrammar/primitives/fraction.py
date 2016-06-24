@@ -28,10 +28,12 @@ class Fraction(Factory, Container):
 
     @staticmethod
     def ed(entries, numerator, denominator):
-        """
-        * `entries` (double) is the number of entries.
-        * `numerator` (past-tense aggregator) is the filled numerator.
-        * `denominator` (past-tense aggregator) is the filled denominator.
+        """Create a Fraction that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            numerator: (:doc:`Container <histogrammar.defs.Container>`): the filled numerator.
+            denominator (:doc:`Container <histogrammar.defs.Container>`): the filled denominator.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -54,12 +56,16 @@ class Fraction(Factory, Container):
         return Fraction(quantity, value)
 
     def __init__(self, quantity, value):
-        """
-        * `quantity` (function returning boolean or double) computes the quantity of interest from the data and interprets it as a selection (multiplicative factor on weight).
-        * `value` (present-tense aggregator) generates sub-aggregators for the numerator and denominator.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `numerator` (present-tense aggregator) is the sub-aggregator of entries that pass the selection.
-        * `denominator` (present-tense aggregator) is the sub-aggregator of all entries.
+        """Create a Fraction that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning bool or float): computes the quantity of interest from the data and interprets it as a selection (multiplicative factor on weight).
+            value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators for the numerator and denominator.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            numerator (:doc:`Container <histogrammar.defs.Container>`): the sub-aggregator of entries that pass the selection.
+            denominator (:doc:`Container <histogrammar.defs.Container>`): the sub-aggregator of all entries.
         """
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({}) must be None or a Container".format(value))
@@ -73,9 +79,13 @@ class Fraction(Factory, Container):
 
     @staticmethod
     def build(numerator, denominator):
-        """
-        * `numerator` (past-tense aggregator) is the filled numerator.
-        * `denominator` (past-tense aggregator) is the filled denominator.
+        """Create a Fraction out of pre-existing containers, which might have been aggregated on different streams.
+
+        Parameters:
+            numerator (:doc:`Container <histogrammar.defs.Container>`): the filled numerator.
+            denominator (:doc:`Container <histogrammar.defs.Container>`): the filled denominator.
+
+        This funciton will attempt to combine the ``numerator`` and ``denominator``, so they must have the same binning/bounds/etc.
         """
         if not isinstance(numerator, Container):
             raise TypeError("numerator ({}) must be a Container".format(numerator))

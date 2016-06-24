@@ -32,9 +32,11 @@ class Bag(Factory, Container):
 
     @staticmethod
     def ed(entries, values):
-        """
-        * `entries` (double) is the number of entries.
-        * `values` (map from double, vector of doubles, or string to double) is the number of entries for each unique item.
+        """Create a Bag that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            values (dict from float, tuple of floats, or str to float): the number of entries for each unique item.
         """
 
         if not isinstance(entries, (int, long, float)):
@@ -54,10 +56,14 @@ class Bag(Factory, Container):
         return Bag(quantity)
 
     def __init__(self, quantity):
-        """
-        * `quantity` (function returning a double, a vector of doubles, or a string) computes the quantity of interest from the data.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `values` (mutable map from quantity return type to double) is the number of entries for each unique item.
+        """Create a Bag that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning a float, a tuple of floats, or a str): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            values (dict from quantity return type to float): the number of entries for each unique item.
         """
         self.quantity = serializable(quantity)
         self.entries = 0.0

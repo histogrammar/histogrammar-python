@@ -47,14 +47,16 @@ class Bin(Factory, Container):
 
     @staticmethod
     def ed(low, high, entries, values, underflow, overflow, nanflow):
-        """
-        * `low` (double) is the minimum-value edge of the first bin.
-        * `high` (double) is the maximum-value edge of the last bin; must be strictly greater than `low`.
-        * `entries` (double) is the number of entries.
-        * `values` (list of past-tense aggregators) is the filled sub-aggregators, one for each bin.
-        * `underflow` (past-tense aggregator) is the filled underflow bin.
-        * `overflow` (past-tense aggregator) is the filled overflow bin.
-        * `nanflow` (past-tense aggregator) is the filled nanflow bin.
+        """Create a Bin that is only capable of being added.
+
+        Parameters:
+            low (float): the minimum-value edge of the first bin.
+            high (float): the maximum-value edge of the last bin; must be strictly greater than `low`.
+            entries (float): the number of entries.
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the filled sub-aggregators, one for each bin.
+            underflow (:doc:`Container <histogrammar.defs.Container>`): the filled underflow bin.
+            overflow (:doc:`Container <histogrammar.defs.Container>`): the filled overflow bin.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): is the filled nanflow bin.
         """
         if not isinstance(low, (int, long, float)):
             raise TypeError("low ({}) must be a number".format(low))
@@ -88,17 +90,21 @@ class Bin(Factory, Container):
         return Bin(num, low, high, quantity, value, underflow, overflow, nanflow)
 
     def __init__(self, num, low, high, quantity, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
-        """
-        * `num` (32-bit integer) is the number of bins; must be at least one.
-        * `low` (double) is the minimum-value edge of the first bin.
-        * `high` (double) is the maximum-value edge of the last bin; must be strictly greater than `low`.
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `value` (present-tense aggregator) generates sub-aggregators to put in each bin.
-        * `underflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is less than `low`.
-        * `overflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is greater than or equal to `high`.
-        * `nanflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is NaN.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `values` (list of present-tense aggregators) are the sub-aggregators in each bin.
+        """Create a Bin that is capable of being filled and added.
+
+        Parameters:
+            num (int): the number of bins; must be at least one.
+            low (float): the minimum-value edge of the first bin.
+            high (float): the maximum-value edge of the last bin; must be strictly greater than `low`.
+            quantity (function returning float): computes the quantity of interest from the data.
+            value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators to put in each bin.
+            underflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is less than `low`.
+            overflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is greater than or equal to `high`.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is NaN.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the sub-aggregators in each bin.
         """
 
         if not isinstance(num, (int, long)):
@@ -135,7 +141,7 @@ class Bin(Factory, Container):
         self.specialize()
 
     def histogram(self):
-        """Return a plain histogram by converting all sub-aggregator values into `Counts <histogrammar.primitives.count.Count>`_."""
+        """Return a plain histogram by converting all sub-aggregator values into :doc:`Counts <histogrammar.primitives.count.Count>`."""
         out = Bin(len(self.values), self.low, self.high, self.quantity, None, self.underflow.copy(), self.overflow.copy(), self.nanflow.copy())
         out.entries = float(self.entries)
         for i, v in enumerate(self.values):

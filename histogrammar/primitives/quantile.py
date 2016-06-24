@@ -33,10 +33,12 @@ class Quantile(Factory, Container):
 
     @staticmethod
     def ed(entries, target, estimate):
-        """
-        * `entries` (double) is the number of entries.
-        * `target` (double) is the value between 0.0 and 1.0 (inclusive), indicating the quantile approximated.
-        * `estimate` (double) is the best estimate of where `target` of the distribution is below this value and `1.0 - target` of the distribution is above.
+        """Create a Quantile that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            target (float): the value between 0.0 and 1.0 (inclusive), indicating the quantile approximated.
+            estimate (float): the best estimate of where `target` of the distribution is below this value and `1.0 - target` of the distribution is above.
         """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
@@ -57,12 +59,16 @@ class Quantile(Factory, Container):
         return Quantile(target, quantity)
 
     def __init__(self, target, quantity):
-        """
-        * `target` (double) is a value between 0.0 and 1.0 (inclusive), indicating the quantile to approximate.
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `estimate` (mutable double) is the best estimate of where `target` of the distribution is below this value and `1.0 - target` of the distribution is above. Initially, this value is NaN.
-        * `cumulativeDeviation` (mutable double) is the sum of absolute error between observed values and the current `estimate` (which moves). Initially, this value is 0.0.
+        """Create a Quantile that is capable of being filled and added.
+
+        Parameters:
+            target (float): a value between 0.0 and 1.0 (inclusive), indicating the quantile to approximate.
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            estimate (float): the best estimate of where `target` of the distribution is below this value and `1.0 - target` of the distribution is above. Initially, this value is NaN.
+            cumulativeDeviation (float): the sum of absolute error between observed values and the current `estimate` (which moves). Initially, this value is 0.0.
         """
         if not isinstance(target, (int, long, float)):
             raise TypeError("target ({}) must be a number".format(target))

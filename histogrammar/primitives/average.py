@@ -25,9 +25,11 @@ class Average(Factory, Container):
 
     @staticmethod
     def ed(entries, mean):
-        """
-        * `entries` (double) is the number of entries.
-        * `mean` (double) is the mean.
+        """Create an Average that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            mean (float): the mean.
         """
 
         if not isinstance(entries, (int, long, float)):
@@ -47,10 +49,14 @@ class Average(Factory, Container):
         return Average(quantity)
 
     def __init__(self, quantity):
-        """
-        * `quantity` (function returning double) computes the quantity of interest from the data.
-        * `entries` (mutable double) is the number of entries, initially 0.0.
-        * `mean` (mutable double) is the running mean, initially 0.0. Note that this value contributes to the total mean with weight zero (because `entries` is initially zero), so this arbitrary choice does not bias the final result.
+        """Create an Average that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            mean (float): the running mean, initially 0.0. Note that this value contributes to the total mean with weight zero (because `entries` is initially zero), so this arbitrary choice does not bias the final result.
         """
         self.quantity = serializable(quantity)
         self.entries = 0.0

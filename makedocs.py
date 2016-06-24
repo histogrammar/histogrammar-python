@@ -42,7 +42,8 @@ for moduleName, module in modules.items():
             print objName, obj
             documented.append(moduleName + "." + objName)
             if inspect.isclass(obj):
-                open("docs/" + moduleName + "." + objName + ".rst", "w").write('''
+                open("docs/" + moduleName + "." + objName + ".rst", "w").write(''':orphan:
+
 {0}
 {1}
 
@@ -53,7 +54,8 @@ for moduleName, module in modules.items():
     :show-inheritance:
 '''.format(moduleName + "." + objName, "=" * (len(moduleName) + len(objName) + 1)))
             else:
-                open("docs/" + moduleName + "." + objName + ".rst", "w").write('''
+                open("docs/" + moduleName + "." + objName + ".rst", "w").write(''':orphan:
+
 {0}
 {1}
 
