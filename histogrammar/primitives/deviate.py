@@ -67,6 +67,7 @@ class Deviate(Factory, Container):
 
     @property
     def variance(self):
+        """Weighted variance of the quantity."""
         if self.entries == 0.0:
             return self.varianceTimesEntries
         else:
@@ -106,6 +107,7 @@ class Deviate(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
     @inheritdoc(Container)

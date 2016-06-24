@@ -127,28 +127,49 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         self.specialize()
 
     @property
-    def num(self): return self.clustering.num
+    def num(self):
+        """Maximum number of bins (used as a constraint when merging)."""
+        return self.clustering.num
+
     @property
-    def tailDetail(self): return self.clustering.tailDetail
+    def tailDetail(self):
+        """Clustering hyperparameter, between 0.0 and 1.0 inclusive: use 0.0 to focus on the bulk of the distribution and 1.0 to focus on the tails; see `Clustering1D <histogrammar.util.Clustering1D>`_ for details."""
+        return self.clustering.tailDetail
+
     @property
-    def entries(self): return self.clustering.entries
+    def entries(self):
+        """Every `Container <histogrammar.defs.Container>`_ accumulates a sum of weights of observed data."""
+        return self.clustering.entries
+
     @entries.setter
     def entries(self, value):
         self.clustering.entries = value
+
     @property
-    def bins(self): return self.clustering.values
+    def bins(self):
+        """Center of bin, sub-aggregator pairs."""
+        return self.clustering.values
+
     @property
-    def min(self): return self.clustering.min
+    def min(self):
+        """Minimum ``quantity`` observed so far (initially NaN)."""
+        return self.clustering.min
+
     @min.setter
     def min(self, value):
         self.clustering.min = min
+
     @property
-    def max(self): return self.clustering.max
+    def max(self):
+        """Maximum ``quantity`` observed so far (initially NaN)."""
+        return self.clustering.max
+
     @max.setter
     def max(self, value):
         self.clustering.max = max
 
     def histogram(self):
+        """Return a plain histogram by converting all sub-aggregator values into `Counts <histogrammar.primitives.count.Count>`_."""
         out = AdaptivelyBin(self.quantity, self.num, self.tailDetail, Count(), self.nanflow.copy())
         out.clustering.entries = float(self.entries)
         for i, v in self.clustering.values:
@@ -185,6 +206,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.nanflow] + [v for c, v in self.bins]
 
     @inheritdoc(Container)

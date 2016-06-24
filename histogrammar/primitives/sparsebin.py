@@ -102,6 +102,7 @@ class SparselyBin(Factory, Container):
         self.specialize()
 
     def histogram(self):
+        """Return a plain histogram by converting all sub-aggregator values into `Counts <histogrammar.primitives.count.Count>`_."""
         out = SparselyBin(self.binWidth, self.quantity, Count(), self.nanflow.copy(), self.origin)
         out.entries = float(self.entries)
         out.contentType = "Count"
@@ -135,55 +136,74 @@ class SparselyBin(Factory, Container):
 
     @property
     def numFilled(self):
+        """The number of non-empty bins."""
         return len(self.bins)
 
     @property
     def num(self):
+        """The number of bins between the first non-empty one (inclusive) and the last non-empty one (exclusive)."""
         if len(self.bins) == 0:
             return 0
         else:
             return 1 + self.maxBin - self.minBin
+
     @property
     def minBin(self):
+        """The first non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
         else:
             return min(self.bins.keys())
+
     @property
     def maxBin(self):
+        """The last non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
         else:
             return max(self.bins.keys())
     @property
     def low(self):
+        """The low edge of the first non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
         else:
             return self.minBin * self.binWidth + self.origin
+
     @property
     def high(self):
+        """The high edge of the last non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
         else:
             return (self.maxBin + 1) * self.binWidth + self.origin
+
     def at(index):
+        """Extract the container at a given index, if it exists."""
         return self.bins.get(index, None)
 
     @property
     def indexes(self):
+        """Get a sequence of filled indexes."""
         return sorted(self.keys)
 
     def range(index):
+        """Get the low and high edge of a bin (given by index number)."""
         return (index * self.binWidth + self.origin, (index + 1) * self.binWidth + self.origin)
     
     def bin(self, x):
+        """Find the bin index associated with numerical value ``x``.
+        
+        @return -9223372036854775808 if ``x`` is ``NaN``; the bin index otherwise.
+        """
         if self.nan(x):
             return MIN_LONG
         else:
             return int(math.floor((x - self.origin) / self.binWidth))
 
-    def nan(self, x): return math.isnan(x)
+    def nan(self, x):
+        """Return ``true`` iff ``x`` is in the nanflow region (equal to ``NaN``)."""
+        return math.isnan(x)
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -206,6 +226,7 @@ class SparselyBin(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.value, self.nanflow] + list(self.bins.values())
 
     @inheritdoc(Container)

@@ -135,6 +135,7 @@ class Bin(Factory, Container):
         self.specialize()
 
     def histogram(self):
+        """Return a plain histogram by converting all sub-aggregator values into `Counts <histogrammar.primitives.count.Count>`_."""
         out = Bin(len(self.values), self.low, self.high, self.quantity, None, self.underflow.copy(), self.overflow.copy(), self.nanflow.copy())
         out.entries = float(self.entries)
         for i, v in enumerate(self.values):
@@ -165,21 +166,40 @@ class Bin(Factory, Container):
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
     @property
-    def num(self): return len(self.values)
+    def num(self):
+        """Number of bins."""
+        return len(self.values)
 
     def bin(self, x):
+        """Find the bin index associated with numerical value ``x``.
+        
+        @return -1 if ``x`` is out of range; the bin index otherwise.
+        """
         if self.under(x) or self.over(x) or self.nan(x):
             return -1
         else:
             return int(math.floor(self.num * (x - self.low) / (self.high - self.low)))
 
-    def under(self, x): return not math.isnan(x) and x < self.low
-    def over(self, x): return not math.isnan(x) and x >= self.high
-    def nan(self, x): return math.isnan(x)
+    def under(self, x):
+        """Return ``true`` iff ``x`` is in the underflow region (less than ``low``)."""
+        return not math.isnan(x) and x < self.low
+
+    def over(self, x):
+        """Return ``true`` iff ``x`` is in the overflow region (greater than ``high``)."""
+        return not math.isnan(x) and x >= self.high
+
+    def nan(self, x):
+        """Return ``true`` iff ``x`` is in the nanflow region (equal to ``NaN``)."""
+        return math.isnan(x)
 
     @property
-    def indexes(self): return range(self.num)
-    def range(self, index): return ((self.high - self.low) * index / self.num + self.low, (self.high - self.low) * (index + 1) / self.num + self.low)
+    def indexes(self):
+        """Get a sequence of valid indexes."""
+        return range(self.num)
+
+    def range(self, index):
+        """Get the low and high edge of a bin (given by index number)."""
+        return ((self.high - self.low) * index / self.num + self.low, (self.high - self.low) * (index + 1) / self.num + self.low)
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -203,6 +223,7 @@ class Bin(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.underflow, self.overflow, self.nanflow] + self.values
 
     @inheritdoc(Container)

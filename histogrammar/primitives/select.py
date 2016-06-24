@@ -74,6 +74,7 @@ class Select(Factory, Container):
         self.specialize()
 
     def fractionPassing(self):
+        """Fraction of weights that pass the quantity."""
         return self.cut.entries / self.entries
 
     @inheritdoc(Container)
@@ -104,6 +105,7 @@ class Select(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.cut]
 
     @inheritdoc(Container)

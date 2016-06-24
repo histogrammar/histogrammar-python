@@ -70,19 +70,41 @@ class Categorize(Factory, Container):
         self.specialize()
 
     @property
-    def pairsMap(self): return self.pairs
-    @property
-    def size(self): return len(self.pairs)
-    @property
-    def keys(self): return self.pairs.keys()
-    @property
-    def values(self): return list(self.pairs.values())
-    @property
-    def keySet(self): return set(self.pairs.keys())
+    def pairsMap(self):
+        """Input ``pairs`` as a key-value map."""
+        return self.pairs
 
-    def __call__(self, x): return self.pairs[x]
-    def get(self, x): return self.pairs.get(x)
-    def getOrElse(self, x, default): return self.pairs.get(x, default)
+    @property
+    def size(self):
+        """Number of ``pairs``."""
+        return len(self.pairs)
+
+    @property
+    def keys(self):
+        """Iterable over the keys of the ``pairs``."""
+        return self.pairs.keys()
+
+    @property
+    def values(self):
+        """Iterable over the values of the ``pairs``."""
+        return list(self.pairs.values())
+
+    @property
+    def keySet(self):
+        """Set of keys among the ``pairs``."""
+        return set(self.pairs.keys())
+
+    def __call__(self, x):
+        """Attempt to get key ``x``, throwing an exception if it does not exist."""
+        return self.pairs[x]
+
+    def get(self, x):
+        """Attempt to get key ``x``, returning ``None`` if it does not exist."""
+        return self.pairs.get(x)
+
+    def getOrElse(self, x, default):
+        """Attempt to get key ``x``, returning an alternative if it does not exist."""
+        return self.pairs.get(x, default)
 
     @inheritdoc(Container)
     def zero(self): return Categorize(self.quantity, self.value)
@@ -122,6 +144,7 @@ class Categorize(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.value] + list(self.pairs.values())
 
     @inheritdoc(Container)

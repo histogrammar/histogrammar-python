@@ -97,6 +97,7 @@ class Sample(Factory, Container):
 
     @property
     def limit(self):
+        """The upper limit on the number of samples (including any duplicates)."""
         if hasattr(self, "reservoir"):
             return self.reservoir.limit
         else:
@@ -104,6 +105,7 @@ class Sample(Factory, Container):
 
     @property
     def values(self):
+        """Current set of sampled values."""
         if hasattr(self, "reservoir"):
             return self.reservoir.values
         else:
@@ -111,6 +113,7 @@ class Sample(Factory, Container):
 
     @property
     def size(self):
+        """Number of data points in the sample (saturates at ``limit``)."""
         if hasattr(self, "reservoir"):
             return self.reservoir.size
         else:
@@ -118,6 +121,7 @@ class Sample(Factory, Container):
 
     @property
     def isEmpty(self):
+        """Determine if the sample is empty."""
         if hasattr(self, "reservoir"):
             return self.reservoir.isEmpty
         else:
@@ -183,6 +187,7 @@ class Sample(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
     @inheritdoc(Container)

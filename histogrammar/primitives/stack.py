@@ -96,10 +96,14 @@ class Stack(Factory, Container):
         return Stack.ed(entries, cuts, Count.ed(0.0))
 
     @property
-    def thresholds(self): return [k for k, v in self.cuts]
+    def thresholds(self):
+        """Cut thresholds (first items of ``cuts``)."""
+        return [k for k, v in self.cuts]
 
     @property
-    def values(self): return [v for k, v in self.cuts]
+    def values(self):
+        """Sub-aggregators (second items of ``cuts``)."""
+        return [v for k, v in self.cuts]
 
     @inheritdoc(Container)
     def zero(self):
@@ -138,6 +142,7 @@ class Stack(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.nanflow] + self.values
 
     @inheritdoc(Container)

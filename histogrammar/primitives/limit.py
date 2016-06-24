@@ -98,15 +98,19 @@ class Limit(Factory, Container):
             return self.__dict__[attr]
 
     @property
-    def saturated(self): return self.value is None
+    def saturated(self):
+        """True if ``entries`` exceeds ``limit`` and ``value`` is ``None``."""
+        return self.value is None
 
     @property
     def get(self):
+        """Get the value of ``value`` or raise an error if it is ``None``."""
         if self.value is None:
             raise TypeError("get called on Limit whose value is None")
         return self.value
 
     def getOrElse(self, default):
+        """Get the value of ``value`` or return a default if it is ``None``."""
         if self.value is None:
             return default
         else:
@@ -146,6 +150,7 @@ class Limit(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [] if self.value is None else [self.value]
 
     @inheritdoc(Container)

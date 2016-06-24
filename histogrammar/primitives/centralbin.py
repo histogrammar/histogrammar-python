@@ -99,6 +99,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         self.specialize()
 
     def histogram(self):
+        """Return a plain histogram by converting all sub-aggregator values into `Counts <histogrammar.primitives.count.Count>`_."""
         out = CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, Count(), self.nanflow.copy())
         out.entries = self.entries
         for i, v in self.bins:
@@ -147,6 +148,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return [self.nanflow] + [v for c, v in self.bins]
 
     @inheritdoc(Container)

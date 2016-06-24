@@ -79,23 +79,44 @@ class Label(Factory, Container, Collection):
         self.specialize()
 
     @property
-    def pairsMap(self): return self.pairs
+    def pairsMap(self):
+        """Input ``pairs`` as a key-value map."""
+        return self.pairs
+
     @property
-    def size(self): return len(self.pairs)
+    def size(self):
+        """Number of ``pairs``."""
+        return len(self.pairs)
+
     @property
-    def keys(self): return self.pairs.keys()
+    def keys(self):
+        """Iterable over the keys of the ``pairs``."""
+        return self.pairs.keys()
+
     @property
-    def values(self): return list(self.pairs.values())
+    def values(self):
+        """Iterable over the values of the ``pairs``."""
+        return list(self.pairs.values())
+
     @property
-    def keySet(self): return set(self.pairs.keys())
+    def keySet(self):
+        """Set of keys among the ``pairs``."""
+        return set(self.pairs.keys())
 
     def __call__(self, x, *rest):
+        """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.pairs[x]
         else:
             return self.pairs[x](*rest)
-    def get(self, x): return self.pairs.get(x, None)
-    def getOrElse(self, x, default): return self.pairs.get(x, default)
+
+    def get(self, x):
+        """Attempt to get key ``x``, returning ``None`` if it does not exist."""
+        return self.pairs.get(x, None)
+
+    def getOrElse(self, x, default):
+        """Attempt to get key ``x``, returning an alternative if it does not exist."""
+        return self.pairs.get(x, default)
 
     @inheritdoc(Container)
     def zero(self): return Label(**{k: v.zero() for k, v in self.pairs.items()})
@@ -123,6 +144,7 @@ class Label(Factory, Container, Collection):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return self.values
 
     @inheritdoc(Container)
@@ -218,23 +240,44 @@ class UntypedLabel(Factory, Container, Collection):
         self.specialize()
 
     @property
-    def pairsMap(self): return self.pairs
+    def pairsMap(self):
+        """Input ``pairs`` as a key-value map."""
+        return self.pairs
+
     @property
-    def size(self): return len(self.pairs)
+    def size(self):
+        """Number of ``pairs``."""
+        return len(self.pairs)
+
     @property
-    def keys(self): return self.pairs.keys()
+    def keys(self):
+        """Iterable over the keys of the ``pairs``."""
+        return self.pairs.keys()
+
     @property
-    def values(self): return list(self.pairs.values())
+    def values(self):
+        """Iterable over the values of the ``pairs``."""
+        return list(self.pairs.values())
+
     @property
-    def keySet(self): return set(self.pairs.keys())
+    def keySet(self):
+        """Set of keys among the ``pairs``."""
+        return set(self.pairs.keys())
 
     def __call__(self, x, *rest):
+        """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.pairs[x]
         else:
             return self.pairs[x](*rest)
-    def get(self, x): return self.pairs.get(x, None)
-    def getOrElse(self, x, default): return self.pairs.get(x, default)
+
+    def get(self, x):
+        """Attempt to get key ``x``, returning ``None`` if it does not exist."""
+        return self.pairs.get(x, None)
+
+    def getOrElse(self, x, default):
+        """Attempt to get key ``x``, returning an alternative if it does not exist."""
+        return self.pairs.get(x, default)
 
     @inheritdoc(Container)
     def zero(self): return UntypedLabel(**{k: v.zero() for k, v in self.pairs.items()})
@@ -262,6 +305,7 @@ class UntypedLabel(Factory, Container, Collection):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return self.values
 
     @inheritdoc(Container)
@@ -364,21 +408,26 @@ class Index(Factory, Container, Collection):
         self.specialize()
 
     @property
-    def size(self): return len(self.values)
+    def size(self):
+        """Number of ``values``."""
+        return len(self.values)
 
     def __call__(self, i, *rest):
+        """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.values[i]
         else:
             return self.values[i](*rest)
 
     def get(self, i):
+        """Attempt to get index ``i``, returning ``None`` if it does not exist."""
         if i < 0 or i >= len(self.values):
             return None
         else:
             return self.values[i]
 
     def getOrElse(self, x, default):
+        """Attempt to get index ``i``, returning an alternative if it does not exist."""
         if i < 0 or i >= len(self.values):
             return default
         else:
@@ -410,6 +459,7 @@ class Index(Factory, Container, Collection):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return self.values
 
     @inheritdoc(Container)
@@ -523,20 +573,26 @@ class Branch(Factory, Container, Collection):
         self.specialize()
 
     @property
-    def size(self): return len(self.values)
+    def size(self):
+        """Return the number of containers."""
+        return len(self.values)
 
     def __call__(self, i, *rest):
+        """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.values[i]
         else:
             return self.values[i](*rest)
+
     def get(self, i):
+        """Attempt to get index ``i``, returning ``None`` if it does not exist."""
         if i < 0 or i >= len(self.values):
             return None
         else:
             return self.values[i]
 
     def getOrElse(self, x, default):
+        """Attempt to get index ``i``, returning an alternative if it does not exist."""
         if i < 0 or i >= len(self.values):
             return default
         else:
@@ -568,6 +624,7 @@ class Branch(Factory, Container, Collection):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return self.values
 
     @inheritdoc(Container)

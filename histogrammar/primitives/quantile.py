@@ -129,6 +129,7 @@ class Quantile(Factory, Container):
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
     @inheritdoc(Container)
