@@ -27,7 +27,7 @@ class Bag(Factory, Container):
 
     Although the user-defined function may return scalar numbers, fixed-dimension vectors of numbers, or categorical strings, it may not mix types. Different Bag primitives in an analysis tree may collect different types.
 
-    Consider using Bag with [Limit](#limit-keep-detail-until-entries-is-large) for collections that roll over to a mere count when they exceed a limit, or [Sample](#sample-reservoir-sampling) for reservoir sampling.
+    Consider using Bag with :doc:`Limit <histogrammar.primitives.limit.Limit>` for collections that roll over to a mere count when they exceed a limit, or :doc:`Sample <histogrammar.primitives.sample.Sample>` for reservoir sampling.
     """
 
     @staticmethod
@@ -65,8 +65,10 @@ class Bag(Factory, Container):
         super(Bag, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Bag(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Bag):
             out = Bag(self.quantity)
@@ -85,6 +87,7 @@ class Bag(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -105,12 +108,14 @@ class Bag(Factory, Container):
     def children(self):
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "values": [{"w": n, "v": v} for v, n in sorted(self.values.items())],
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "values"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

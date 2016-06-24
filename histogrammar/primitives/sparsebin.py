@@ -21,11 +21,11 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class SparselyBin(Factory, Container):
-    """Split a quantity into equally spaced bins, creating them whenever their `entries` would be non-zero. Exactly one sub-aggregator is filled per datum.
+    """Split a quantity into equally spaced bins, creating them whenever their ``entries`` would be non-zero. Exactly one sub-aggregator is filled per datum.
 
     Use this when you have a distribution of known scale (bin width) but unknown domain (lowest and highest bin index).
 
-    Unlike fixed-domain binning, this aggregator has the potential to use unlimited memory. A large number of _distinct_ outliers can generate many unwanted bins.
+    Unlike fixed-domain binning, this aggregator has the potential to use unlimited memory. A large number of *distinct* outliers can generate many unwanted bins.
 
     Like fixed-domain binning, the bins are indexed by integers, though they are 64-bit and may be negative.
     """
@@ -109,8 +109,10 @@ class SparselyBin(Factory, Container):
             out.bins[i] = Count.ed(v.entries)
         return out.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return SparselyBin(self.binWidth, self.quantity, self.value, self.nanflow.zero(), self.origin)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, SparselyBin):
             if self.binWidth != other.binWidth:
@@ -134,6 +136,7 @@ class SparselyBin(Factory, Container):
     @property
     def numFilled(self):
         return len(self.bins)
+
     @property
     def num(self):
         if len(self.bins) == 0:
@@ -166,9 +169,11 @@ class SparselyBin(Factory, Container):
             return (self.maxBin + 1) * self.binWidth + self.origin
     def at(index):
         return self.bins.get(index, None)
+
     @property
     def indexes(self):
         return sorted(self.keys)
+
     def range(index):
         return (index * self.binWidth + self.origin, (index + 1) * self.binWidth + self.origin)
     
@@ -180,6 +185,7 @@ class SparselyBin(Factory, Container):
 
     def nan(self, x): return math.isnan(x)
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -202,6 +208,7 @@ class SparselyBin(Factory, Container):
     def children(self):
         return [self.value, self.nanflow] + list(self.bins.values())
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if isinstance(self.value, Container):
             if getattr(self.value, "quantity", None) is not None:
@@ -232,6 +239,7 @@ class SparselyBin(Factory, Container):
                   "bins:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"], ["name", "bins:name"]):
             if isinstance(json["binWidth"], (int, long, float)):

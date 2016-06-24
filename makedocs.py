@@ -42,32 +42,20 @@ for moduleName, module in modules.items():
             print objName, obj
             documented.append(moduleName + "." + objName)
             if inspect.isclass(obj):
-                open(moduleName + "." + objName + ".rst", "w").write('''
+                open("docs/" + moduleName + "." + objName + ".rst", "w").write('''
 {0}
 {1}
 
 .. autoclass:: {0}
     :members:
-    :undoc-members:
+    :special-members: __init__, __add__
+    :inherited-members:
     :show-inheritance:
 '''.format(moduleName + "." + objName, "=" * (len(moduleName) + len(objName) + 1)))
             else:
-                open(moduleName + "." + objName + ".rst", "w").write('''
+                open("docs/" + moduleName + "." + objName + ".rst", "w").write('''
 {0}
 {1}
 
 .. autofunction:: {0}
 '''.format(moduleName + "." + objName, "=" * (len(moduleName) + len(objName) + 1)))
-
-documented.sort()
-
-open("index.rst", "w").write('''
-Histogrammar |version|
-======================
-
-:ref:`genindex`
-
-.. toctree::
-   :maxdepth: 2
-
-''' + "\n".join("   " + x for x in documented) + "\n")

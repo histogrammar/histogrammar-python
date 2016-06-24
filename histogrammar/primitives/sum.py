@@ -20,7 +20,7 @@ from histogrammar.util import *
 class Sum(Factory, Container):
     """Accumulate the (weighted) sum of a given quantity, calculated from the data.
 
-    Sum differs from [Count](#count-sum-of-weights) in that it computes a quantity on the spot, rather than percolating a product of weight metadata from nested primitives. Also unlike weights, the sum can add both positive and negative quantities (weights are always non-negative).
+    Sum differs from :doc:`Count <histogrammar.primitives.count.Count>` in that it computes a quantity on the spot, rather than percolating a product of weight metadata from nested primitives. Also unlike weights, the sum can add both positive and negative quantities (weights are always non-negative).
     """
 
     @staticmethod
@@ -57,8 +57,10 @@ class Sum(Factory, Container):
         super(Sum, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Sum(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Sum):
             out = Sum(self.quantity)
@@ -68,6 +70,7 @@ class Sum(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -83,12 +86,14 @@ class Sum(Factory, Container):
     def children(self):
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "sum": floatToJson(self.sum),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sum"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

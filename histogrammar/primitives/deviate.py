@@ -22,7 +22,7 @@ class Deviate(Factory, Container):
 
     The variance is computed around the mean, not zero.
 
-    Uses the numerically stable weighted mean and weighted variance algorithms described in ["Incremental calculation of weighted mean and variance," Tony Finch, _Univeristy of Cambridge Computing Service,_ 2009.](http://www-uxsup.csx.cam.ac.uk/~fanf2/hermes/doc/antiforgery/stats.pdf)
+    Uses the numerically stable weighted mean and weighted variance algorithms described in `"Incremental calculation of weighted mean and variance," <http://www-uxsup.csx.cam.ac.uk/~fanf2/hermes/doc/antiforgery/stats.pdf>`_ Tony Finch, *Univeristy of Cambridge Computing Service,* 2009.
     """
 
     @staticmethod
@@ -72,8 +72,10 @@ class Deviate(Factory, Container):
         else:
             return self.varianceTimesEntries/self.entries
 
+    @inheritdoc(Container)
     def zero(self): return Deviate(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Deviate):
             out = Deviate(self.quantity)
@@ -87,6 +89,7 @@ class Deviate(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -105,6 +108,7 @@ class Deviate(Factory, Container):
     def children(self):
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mean": floatToJson(self.mean),
@@ -112,6 +116,7 @@ class Deviate(Factory, Container):
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mean", "variance"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

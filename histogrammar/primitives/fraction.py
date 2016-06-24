@@ -21,7 +21,7 @@ from histogrammar.primitives.count import *
 class Fraction(Factory, Container):
     """Accumulate two aggregators, one containing only entries that pass a given selection (numerator) and another that contains all entries (denominator).
 
-    The aggregator may be a simple [Count](#count-sum-of-weights) to measure the efficiency of a cut, a [Bin](#bin-regular-binning-for-histograms) to plot a turn-on curve, or anything else to be tested with and without a cut.
+    The aggregator may be a simple :doc:`Count <histogrammar.primitives.count.Count>` to measure the efficiency of a cut, a :doc:`Bin <histogrammar.primitives.bin.Bin>` to plot a turn-on curve, or anything else to be tested with and without a cut.
 
     As a side effect of NaN values returning false for any comparison, a NaN return value from the selection is treated as a failed cut (the denominator is filled but the numerator is not).
     """
@@ -86,12 +86,14 @@ class Fraction(Factory, Container):
         # return object
         return Fraction.ed(denominator.entries, numerator, denominator)
 
+    @inheritdoc(Container)
     def zero(self):
         out = Fraction(self.quantity, None)
         out.numerator = self.numerator.zero()
         out.denominator = self.denominator.zero()
         return out.specialize()
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Fraction):
             out = Fraction(self.quantity, None)
@@ -101,6 +103,7 @@ class Fraction(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         w = self.quantity(datum)
@@ -120,6 +123,7 @@ class Fraction(Factory, Container):
     def children(self):
         return [self.numerator, self.denominator]
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if getattr(self.numerator, "quantity", None) is not None:
             binsName = self.numerator.quantity.name
@@ -137,6 +141,7 @@ class Fraction(Factory, Container):
                   "sub:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "numerator", "denominator"], ["name", "sub:name"]):
             if isinstance(json["entries"], (int, long, float)):

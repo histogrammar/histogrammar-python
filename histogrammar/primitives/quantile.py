@@ -26,9 +26,9 @@ class Quantile(Factory, Container):
 
     The quantile aggregator dynamically minimizes the mean absolute error between the current estimate and the target quantile, with a learning rate that depends on the cumulative deviations. The algorithm is deterministic: the same data always yields the same final estimate.
 
-    This statistic has the best accuracy for quantiles near the middle of the distribution, such as the median (0.5), and the worst accuracy for quantiles near the edges, such as the first or last percentile (0.01 or 0.99). Use the specialized aggregators for the [Minimize](#minimize-minimum-value) (0.0) or [Maximize](#maximize-maximum-value) (1.0) of a distribution, since those aggregators are exact.
+    This statistic has the best accuracy for quantiles near the middle of the distribution, such as the median (0.5), and the worst accuracy for quantiles near the edges, such as the first or last percentile (0.01 or 0.99). Use the specialized aggregators for the :doc:`Minimize <histogrammar.primitives.minmax.Minimize>` (0.0) or :doc:`Maximize <histogrammar.primitives.minmax.Maximize>` (1.0) of a distribution, since those aggregators are exact.
 
-    Another alternative is to use [AdaptivelyBin](#adaptivelybin-for-unknown-distributions) to histogram the distribution and then estimate quantiles from the histogram bins. AdaptivelyBin with `tailDetail == 1.0` maximizes detail on the tails of the distribution (Yael Ben-Haim and Elad Tom-Tov's original algorithm), providing the best estimates of extreme quantiles like 0.01 and 0.99.
+    Another alternative is to use :doc:`AdaptivelyBin <histogrammar.primitives.adaptivebin.AdaptivelyBin>` to histogram the distribution and then estimate quantiles from the histogram bins. AdaptivelyBin with ``tailDetail == 1.0`` maximizes detail on the tails of the distribution (Yael Ben-Haim and Elad Tom-Tov's original algorithm), providing the best estimates of extreme quantiles like 0.01 and 0.99.
     """
 
     @staticmethod
@@ -76,8 +76,10 @@ class Quantile(Factory, Container):
         super(Quantile, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Quantile(self.target, self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Quantile):
             if self.target == other.target:
@@ -102,6 +104,7 @@ class Quantile(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -128,6 +131,7 @@ class Quantile(Factory, Container):
     def children(self):
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "target": floatToJson(self.target),
@@ -135,6 +139,7 @@ class Quantile(Factory, Container):
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "target", "estimate"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

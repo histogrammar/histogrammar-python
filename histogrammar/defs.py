@@ -160,8 +160,6 @@ class Container(object):
         """Used internally to convert the container to JSON without its ``"type"`` header."""
         raise NotImplementedError
 
-    def __repr__(self): raise NotImplementedError
-
 # default weight
 
 unweighted = named("unweighted", lambda datum: 1.0)

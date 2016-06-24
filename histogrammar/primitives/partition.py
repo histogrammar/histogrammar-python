@@ -21,9 +21,9 @@ from histogrammar.primitives.count import *
 class Partition(Factory, Container):
     """Accumulate a suite of aggregators, each between two thresholds, filling exactly one per datum.
 
-    This is a variation on [Stack](#stack-cumulative-filling), which fills `N + 1` aggregators with `N` successively tighter cut thresholds. Partition fills `N + 1` aggregators in the non-overlapping intervals between `N` thresholds.
+    This is a variation on :doc:`Stack <histogrammar.primitives.stack.Stack>`, which fills ``N + 1`` aggregators with ``N`` successively tighter cut thresholds. Partition fills ``N + 1`` aggregators in the non-overlapping intervals between ``N`` thresholds.
 
-    Partition is also similar to [CentrallyBin](#centrallybin-irregular-but-fully-partitioning), in that they both partition a space into irregular subdomains with no gaps and no overlaps. However, CentrallyBin is defined by bin centers and Partition is defined by bin edges, the first and last of which are at negative and positive infinity.
+    Partition is also similar to :doc:`CentrallyBin <histogrammar.primitives.centralbin.CentrallyBin>`, in that they both partition a space into irregular subdomains with no gaps and no overlaps. However, CentrallyBin is defined by bin centers and Partition is defined by bin edges, the first and last of which are at negative and positive infinity.
     """
 
     @staticmethod
@@ -79,12 +79,15 @@ class Partition(Factory, Container):
 
     @property
     def thresholds(self): return [k for k, v in self.cuts]
+
     @property
     def values(self): return [v for k, v in self.cuts]
 
+    @inheritdoc(Container)
     def zero(self):
         return Partition([(x, x.zero()) for x in cuts], self.quantity, None, self.nanflow.zero())
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Partition):
             if self.thresholds != other.thresholds:
@@ -97,6 +100,7 @@ class Partition(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -119,6 +123,7 @@ class Partition(Factory, Container):
     def children(self):
         return [self.nanflow] + self.values
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if getattr(self.cuts[0][1], "quantity", None) is not None:
             binsName = self.cuts[0][1].quantity.name
@@ -137,6 +142,7 @@ class Partition(Factory, Container):
                   "data:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data", "nanflow:type", "nanflow"], ["name", "data:name"]):
             if isinstance(json["entries"], (int, long, float)):

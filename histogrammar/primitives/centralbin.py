@@ -107,9 +107,11 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         out.max = self.max
         return out.specialize()
 
+    @inheritdoc(Container)
     def zero(self):
         return CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, self.value, self.nanflow.zero())
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if self.centers != other.centers:
             raise ContainerException("cannot add CentrallyBin because centers are different:\n    {}\nvs\n    {}".format(self.centers, other.centers))
@@ -123,6 +125,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         out.max = maxplus(self.max, other.max)
         return out.specialize()
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -146,6 +149,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
     def children(self):
         return [self.nanflow] + [v for c, v in self.bins]
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if getattr(self.bins[0][1], "quantity", None) is not None:
             binsName = self.bins[0][1].quantity.name
@@ -166,6 +170,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
                   "bins:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow"], ["name", "bins:name"]):
             if isinstance(json["entries"], (int, long, float)):

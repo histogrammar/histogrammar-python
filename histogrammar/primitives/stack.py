@@ -23,7 +23,7 @@ from histogrammar.primitives.count import *
 class Stack(Factory, Container):
     """Accumulates a suite of aggregators, each filtered with a tighter selection on the same quantity.
 
-    This is a generalization of [Fraction](#fraction-efficiency-plots), which fills two aggregators, one with a cut, the other without. Stack fills `N + 1` aggregators with `N` successively tighter cut thresholds. The first is always filled (like the denominator of Fraction), the second is filled if the computed quantity exceeds its threshold, the next is filled if the computed quantity exceeds a higher threshold, and so on.
+    This is a generalization of :doc:`Fraction <histogrammar.primitives.fraction.Fraction>`, which fills two aggregators, one with a cut, the other without. Stack fills ``N + 1`` aggregators with ``N`` successively tighter cut thresholds. The first is always filled (like the denominator of Fraction), the second is filled if the computed quantity exceeds its threshold, the next is filled if the computed quantity exceeds a higher threshold, and so on.
 
     The thresholds are presented in increasing order and the computed value must be greater than or equal to a threshold to fill the corresponding bin, and therefore the number of entries in each filled bin is greatest in the first and least in the last.
 
@@ -97,12 +97,15 @@ class Stack(Factory, Container):
 
     @property
     def thresholds(self): return [k for k, v in self.cuts]
+
     @property
     def values(self): return [v for k, v in self.cuts]
 
+    @inheritdoc(Container)
     def zero(self):
         return Stack([(x, x.zero()) for x in cuts], self.quantity, None, self.nanflow.zero())
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Stack):
             if self.thresholds != other.thresholds:
@@ -115,6 +118,7 @@ class Stack(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -136,6 +140,7 @@ class Stack(Factory, Container):
     def children(self):
         return [self.nanflow] + self.values
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if getattr(self.cuts[0][1], "quantity", None) is not None:
             binsName = self.cuts[0][1].quantity.name
@@ -154,6 +159,7 @@ class Stack(Factory, Container):
                   "data:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data", "nanflow:type", "nanflow"], ["name", "data:name"]):
             if isinstance(json["entries"], (int, long, float)):

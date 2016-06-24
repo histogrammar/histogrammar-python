@@ -24,7 +24,7 @@ from histogrammar.primitives.count import *
 class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMethods):
     """Adaptively partition a domain into bins and fill them at the same time using a clustering algorithm. Each input datum contributes to exactly one final bin.
 
-    The algorithm is based on ["A streaming parallel decision tree algorithm," Yael Ben-Haim and Elad Tom-Tov, _J. Machine Learning Research 11,_ 2010.](http://www.jmlr.org/papers/volume11/ben-haim10a/ben-haim10a.pdf) with a small modification for display histograms.
+    The algorithm is based on `"A streaming parallel decision tree algorithm," <http://www.jmlr.org/papers/volume11/ben-haim10a/ben-haim10a.pdf>`_ Yael Ben-Haim and Elad Tom-Tov, *J. Machine Learning Research 11,* 2010 with a small modification for display histograms.
 
     Yael Ben-Haim and Elad Tom-Tov's algorithm adds each new data point as a new bin containing a single value, then merges the closest bins if the total number of bins exceeds a maximum (like hierarchical clustering in one dimension).
 
@@ -34,13 +34,13 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
     As a compromise, we introduce a "tail detail" hyperparameter that strikes a balance between the two extremes: the bins that are merged minimize
 
-    ```
-    tailDetail*(pos2 - pos1)/(max - min) + (1.0 - tailDetail)*(entries1 + entries2)/entries
-    ```
+    ::
 
-    where `pos1` and `pos2` are the (ordered) positions of the two bins, `min` and `max` are the minimum and maximum positions of all entries, `entries1` and `entries2` are the number of entries in the two bins, and `entries` is the total number of entries in all bins. The denominators normalize the scales of domain position and number of entries so that `tailDetail` may be unitless and between 0.0 and 1.0 (inclusive).
+        tailDetail*(pos2 - pos1)/(max - min) + (1.0 - tailDetail)*(entries1 + entries2)/entries
 
-    A value of `tailDetail = 0.2` is a good default.
+    where ``pos1`` and ``pos2`` are the (ordered) positions of the two bins, ``min`` and ``max`` are the minimum and maximum positions of all entries, ``entries1`` and ``entries2`` are the number of entries in the two bins, and ``entries`` is the total number of entries in all bins. The denominators normalize the scales of domain position and number of entries so that ``tailDetail`` may be unitless and between 0.0 and 1.0 (inclusive).
+
+    A value of ``tailDetail = 0.2`` is a good default.
 
     This algorithm is deterministic; the same input data yield the same histogram.
     """
@@ -158,9 +158,11 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         out.clustering.contentType = "Count"
         return out.specialize()
 
+    @inheritdoc(Container)
     def zero(self):
         return AdaptivelyBin(self.quantity, self.num, self.tailDetail, self.clustering.value, self.nanflow.zero())
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if self.num != other.num:
             raise ContainerException("cannot add AdaptivelyBin because number of bins is different ({} vs {})".format(self.num, other.num))
@@ -171,6 +173,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         out.clustering = self.clustering.merge(other.clustering)
         return out.specialize()
         
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -184,6 +187,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
     def children(self):
         return [self.nanflow] + [v for c, v in self.bins]
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if isinstance(self.value, Container):
             if getattr(self.value, "quantity", None) is not None:
@@ -216,6 +220,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
                   "bins:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "num", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow", "tailDetail"], ["name", "bins:name"]):
             if isinstance(json["entries"], (int, long, float)):

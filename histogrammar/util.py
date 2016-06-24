@@ -36,6 +36,13 @@ class LessThanEverything(object):
     def __eq__(self, other):
         return self is other
 
+def inheritdoc(cls):
+    def _fn(fn):
+        if fn.__name__ in cls.__dict__:
+            fn.__doc__ = cls.__dict__[fn.__name__].__doc__
+        return fn
+    return _fn
+
 ################################################################ handling key set comparisons with optional keys
 
 def hasKeys(test, required, optional=set()):
@@ -387,7 +394,7 @@ def named(name, fcn):
 class Clustering1D(object):
     """Clusters data in one dimension for adaptive histogramming and approximating quantiles (such as the median) in one pass over the data.
       
-    Adapted from Yael Ben-Haim and Elad Tom-Tov, `"A streaming parallel decision tree algorithm" <http://www.jmlr.org/papers/volume11/ben-haim10a/ben-haim10a.pdf>` *J. Machine Learning Research 11 (2010)*.
+    Adapted from `"A streaming parallel decision tree algorithm," <http://www.jmlr.org/papers/volume11/ben-haim10a/ben-haim10a.pdf>`_ Yael Ben-Haim and Elad Tom-Tov, *J. Machine Learning Research 11,* 2010.
     
     In the original paper, when the cluster-set needs to merge clusters (bins), it does so in increasing distance between neighboring bins. This algorithm also considers the content of the bins: the least-filled bins are merged first.
     

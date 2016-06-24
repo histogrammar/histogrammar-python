@@ -22,7 +22,13 @@ identity = serializable(lambda x: x)
 class Count(Factory, Container):
     """Count entries by accumulating the sum of all observed weights or a sum of transformed weights (e.g. sum of squares of weights).
 
-    An optional `transform` function can be applied to the weights before summing. To accumulate the sum of squares of weights, use `lambda x: x**2`, for instance. This is unlike any other primitive's `quantity` function in that its domain is the _weights_ (always double), not _data_ (any type).
+    An optional ``transform`` function can be applied to the weights before summing. To accumulate the sum of squares of weights, use
+
+    ::
+
+        lambda x: x**2
+
+    for instance. This is unlike any other primitive's ``quantity`` function in that its domain is the *weights* (always double), not *data* (any type).
     """
 
     @staticmethod
@@ -53,8 +59,10 @@ class Count(Factory, Container):
         super(Count, self).__init__()
         self.specialize()
     
+    @inheritdoc(Container)
     def zero(self): return Count(self.transform)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Count):
             out = Count(self.transform)
@@ -63,6 +71,7 @@ class Count(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -77,9 +86,11 @@ class Count(Factory, Container):
     def children(self):
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return floatToJson(self.entries)
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, (int, long, float)):
             return Count.ed(float(json))

@@ -22,20 +22,20 @@ from histogrammar.util import *
 class Limit(Factory, Container):
     """Accumulate an aggregator until its number of entries reaches a predefined limit.
 
-       Limit is intended to roll high-detail descriptions of small datasets over into low-detail descriptions of large datasets. For instance, a scatter plot is useful for small numbers of data points and heatmaps are useful for large ones. The following construction
+    Limit is intended to roll high-detail descriptions of small datasets over into low-detail descriptions of large datasets. For instance, a scatter plot is useful for small numbers of data points and heatmaps are useful for large ones. The following construction
 
-       ```python
-       Bin(xbins, xlow, xhigh, lambda d: d.x,
-         Bin(ybins, ylow, yhigh, lambda d: d.y,
-           Limit(10.0, Bag(lambda d: [d.x, d.y]))))
-       ```
+    ::
 
-       fills a scatter plot in all x-y bins that have fewer than 10 entries and only a number of entries above that. Postprocessing code would use the bin-by-bin numbers of entries to color a heatmap and the raw data points to show outliers in the nearly empty bins.
+        Bin(xbins, xlow, xhigh, lambda d: d.x,
+          Bin(ybins, ylow, yhigh, lambda d: d.y,
+            Limit(10.0, Bag(lambda d: [d.x, d.y]))))
 
-       Limit can effectively swap between two descriptions if it is embedded in a collection, such as [Branch](#branch-tuple-of-different-types). All elements of the collection would be filled until the Limit saturates, leaving only the low-detail one. For instance, one could aggregate several [SparselyBin](#sparselybin-ignore-zeros) histograms, each with a different `binWidth`, and progressively eliminate them in order of increasing `binWidth`.
+    fills a scatter plot in all x-y bins that have fewer than 10 entries and only a number of entries above that. Postprocessing code would use the bin-by-bin numbers of entries to color a heatmap and the raw data points to show outliers in the nearly empty bins.
 
-       Note that Limit saturates when it reaches a specified _total weight,_ not the number of data points in a [Bag](#bag-accumulate-values-for-scatter-plots), so it is not certain to control memory use. However, the total weight is of more use to data analysis. ([Sample](#sample-reservoir-sampling) puts a strict limit on memory use.)
-       """
+    Limit can effectively swap between two descriptions if it is embedded in a collection, such as :doc:`Branch <histogrammar.primitives.collection.Branch>`. All elements of the collection would be filled until the Limit saturates, leaving only the low-detail one. For instance, one could aggregate several :doc:`SparselyBin <histogrammar.primitives.sparsebin.SparselyBin>` histograms, each with a different ``binWidth``, and progressively eliminate them in order of increasing ``binWidth``.
+
+    Note that Limit saturates when it reaches a specified *total weight,* not the number of data points in a :doc:`Bag <histogrammar.primitives.bag.Bag>`, so it is not certain to control memory use. However, the total weight is of more use to data analysis. (:doc:`Sample <histogrammar.primitives.sample.Sample>` puts a strict limit on memory use.)
+    """
 
     @staticmethod
     def ed(entries, limit, contentType, value):
@@ -89,6 +89,7 @@ class Limit(Factory, Container):
         self.specialize()
 
     def __getattr__(self, attr):
+        """Pass on searches for custom methods to the ``value``, so that Limit becomes effectively invisible."""
         if attr.startswith("__") and attr.endswith("__"):
             return getattr(Limit, attr)
         elif attr not in self.__dict__ and hasattr(self.__dict__["value"], attr):
@@ -98,20 +99,24 @@ class Limit(Factory, Container):
 
     @property
     def saturated(self): return self.value is None
+
     @property
     def get(self):
         if self.value is None:
             raise TypeError("get called on Limit whose value is None")
         return self.value
+
     def getOrElse(self, default):
         if self.value is None:
             return default
         else:
             return self.value
 
+    @inheritdoc(Container)
     def zero(self):
         return Limit.ed(0.0, self.limit, self.contentType, None if self.value is None else self.value.zero())
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Limit):
             if self.limit != other.limit:
@@ -128,6 +133,7 @@ class Limit(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if self.entries + weight > self.limit:
@@ -142,6 +148,7 @@ class Limit(Factory, Container):
     def children(self):
         return [] if self.value is None else [self.value]
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
         "limit": floatToJson(self.limit),
@@ -150,6 +157,7 @@ class Limit(Factory, Container):
         }
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "type", "data"]):
             if isinstance(json["entries"], (int, long, float)):

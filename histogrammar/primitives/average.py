@@ -20,7 +20,7 @@ from histogrammar.util import *
 class Average(Factory, Container):
     """Accumulate the weighted mean of a given quantity.
 
-    Uses the numerically stable weighted mean algorithm described in ["Incremental calculation of weighted mean and variance," Tony Finch, _Univeristy of Cambridge Computing Service,_ 2009.](http://www-uxsup.csx.cam.ac.uk/~fanf2/hermes/doc/antiforgery/stats.pdf)
+    Uses the numerically stable weighted mean algorithm described in `"Incremental calculation of weighted mean and variance," <http://www-uxsup.csx.cam.ac.uk/~fanf2/hermes/doc/antiforgery/stats.pdf>`_ Tony Finch, *Univeristy of Cambridge Computing Service,* 2009.
     """
 
     @staticmethod
@@ -58,8 +58,10 @@ class Average(Factory, Container):
         super(Average, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Average(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Average):
             out = Average(self.quantity)
@@ -72,6 +74,7 @@ class Average(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -89,12 +92,14 @@ class Average(Factory, Container):
     def children(self):
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mean": floatToJson(self.mean),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mean"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

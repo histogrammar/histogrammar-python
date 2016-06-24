@@ -23,24 +23,24 @@ from histogrammar.primitives.count import *
 class Bin(Factory, Container):
     """Split a quantity into equally spaced bins between a low and high threshold and fill exactly one bin per datum.
 
-    When composed with [Count](#count-sum-of-weights), this produces a standard histogram:
+    When composed with :doc:`Count <histogrammar.primitives.count.Count>`, this produces a standard histogram:
 
-    ```python
-    Bin.ing(100, 0, 10, fill_x, Count.ing())
-    ```
+    ::
+
+        Bin.ing(100, 0, 10, fill_x, Count.ing())
 
     and when nested, it produces a two-dimensional histogram:
 
-    ```python
-    Bin.ing(100, 0, 10, fill_x,
-      Bin.ing(100, 0, 10, fill_y, Count.ing()))
-    ```
+    ::
+
+        Bin.ing(100, 0, 10, fill_x,
+          Bin.ing(100, 0, 10, fill_y, Count.ing()))
 
     Combining with [Deviate](#deviate-mean-and-variance) produces a physicist's "profile plot:"
 
-    ```python
-    Bin.ing(100, 0, 10, fill_x, Deviate.ing(fill_y))
-    ```
+    ::
+
+        Bin.ing(100, 0, 10, fill_x, Deviate.ing(fill_y))
 
     and so on.
     """
@@ -141,8 +141,10 @@ class Bin(Factory, Container):
             out.values[i] = Count.ed(v.entries)
         return out.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Bin(len(self.values), self.low, self.high, self.quantity, self.values[0].zero(), self.underflow.zero(), self.overflow.zero(), self.nanflow.zero())
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Bin):
             if self.low != other.low:
@@ -179,6 +181,7 @@ class Bin(Factory, Container):
     def indexes(self): return range(self.num)
     def range(self, index): return ((self.high - self.low) * index / self.num + self.low, (self.high - self.low) * (index + 1) / self.num + self.low)
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -202,6 +205,7 @@ class Bin(Factory, Container):
     def children(self):
         return [self.underflow, self.overflow, self.nanflow] + self.values
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if getattr(self.values[0], "quantity", None) is not None:
             binsName = self.values[0].quantity.name
@@ -226,6 +230,7 @@ class Bin(Factory, Container):
                   "values:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values", "underflow:type", "underflow", "overflow:type", "overflow", "nanflow:type", "nanflow"], ["name", "values:name"]):
             if isinstance(json["low"], (int, long, float)):

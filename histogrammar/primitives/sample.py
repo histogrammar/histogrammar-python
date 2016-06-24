@@ -26,13 +26,13 @@ MAX_LONG = 2**63 - 1
 class Sample(Factory, Container):
     """Accumulate raw numbers, vectors of numbers, or strings, randomly replacing them with Reservoir Sampling when the number of values exceeds a limit.
 
-    Sample collects raw values without attempting to group them by distinct value (as [Bag](#bag-accumulate-values-for-scatter-plots) does), up to a given maximum _number_ of entries (unlike [Limit](#limit-keep-detail-until-entries-is-large), which rolls over at a given total weight). The reason for the limit on Sample is purely to conserve memory.
+    Sample collects raw values without attempting to group them by distinct value (as :doc:`Bag <histogrammar.primitives.bag.Bag>` does), up to a given maximum *number* of entries (unlike :doc:`Limit <histogrammar.primitives.limit.Limit>`, which rolls over at a given total weight). The reason for the limit on Sample is purely to conserve memory.
 
     The maximum number of entries and the data type together determine the size of the working set. If new values are added after this set is full, individual values will be randomly chosen for replacement. The probability of replacement is proportional to an entry's weight and it decreases with time, such that the final sample is a representative subset of all observed values, without preference for early values or late values.
 
     This algorithm is known as weighted Reservoir Sampling, and it is non-deterministic. Each evaluation will likely result in a different final set.
 
-    Specifically, the algorithm implemented here was described in ["Weighted random sampling with a reservoir," Pavlos S. Efraimidis and Paul G. Spirakis, _Information Processing Letters 97 (5): 181-185,_ 2005 (doi:10.1016/j.ipl.2005.11.003)](http://www.sciencedirect.com/science/article/pii/S002001900500298X).
+    Specifically, the algorithm implemented here was described in `"Weighted random sampling with a reservoir," <http://www.sciencedirect.com/science/article/pii/S002001900500298X>`_ Pavlos S. Efraimidis and Paul G. Spirakis, *Information Processing Letters 97 (5): 181-185,* 2005 (doi:10.1016/j.ipl.2005.11.003).
 
     Although the user-defined function may return scalar numbers, fixed-dimension vectors of numbers, or categorical strings, it may not mix types. Different Sample primitives in an analysis tree may collect different types.
     """
@@ -123,6 +123,7 @@ class Sample(Factory, Container):
         else:
             return len(self._values) == 0
 
+    @inheritdoc(Container)
     def zero(self):
         if self.randomGenerator is None:
             newseed = None
@@ -130,6 +131,7 @@ class Sample(Factory, Container):
             newseed = self.randomGenerator.randint(-2**63, 2**63 - 1)
         return Sample(self.limit, self.quantity, newseed)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Sample):
             if self.limit != other.limit:
@@ -166,6 +168,7 @@ class Sample(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -182,6 +185,7 @@ class Sample(Factory, Container):
     def children(self):
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "limit": floatToJson(self.limit),
@@ -189,6 +193,7 @@ class Sample(Factory, Container):
         }, name=self.quantity.name, seed=self.randomGenerator.randint(MIN_LONG, MAX_LONG) if self.randomGenerator is not None else None)
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "values"], ["name", "seed"]):
             if isinstance(json["entries"], (int, long, float)):

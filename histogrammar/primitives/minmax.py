@@ -22,7 +22,7 @@ from histogrammar.util import *
 class Minimize(Factory, Container):
     """Find the minimum value of a given quantity. If no data are observed, the result is NaN.
 
-    Unlike [Quantile](#quantile-such-as-median-quartiles-quintiles-etc) with a target of 0, Minimize is exact.
+    Unlike :doc:`Quantile <histogrammar.primitives.quantile.Quantile>` with a target of 0, Minimize is exact.
     """
 
     @staticmethod
@@ -59,8 +59,10 @@ class Minimize(Factory, Container):
         super(Minimize, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Minimize(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Minimize):
             out = Minimize(self.quantity)
@@ -74,6 +76,7 @@ class Minimize(Factory, Container):
     def children(self):
         return []
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -86,12 +89,14 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "min": floatToJson(self.min),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "min"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
@@ -132,7 +137,7 @@ Factory.register(Minimize)
 class Maximize(Factory, Container):
     """Find the maximum value of a given quantity. If no data are observed, the result is NaN.
 
-    Unlike [Quantile](#quantile-such-as-median-quartiles-quintiles-etc) with a target of 1, Maximize is exact.
+    Unlike :doc:`Quantile <histogrammar.primitives.quantile.Quantile>` with a target of 1, Maximize is exact.
     """
 
     @staticmethod
@@ -169,8 +174,10 @@ class Maximize(Factory, Container):
         super(Maximize, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Maximize(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Maximize):
             out = Maximize(self.quantity)
@@ -180,6 +187,7 @@ class Maximize(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -196,12 +204,14 @@ class Maximize(Factory, Container):
     def children(self):
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "max": floatToJson(self.max),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "max"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

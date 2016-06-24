@@ -24,9 +24,9 @@ class Select(Factory, Container):
 
     This primitive is a basic building block, intended to be used in conjunction with anything that needs a user-defined cut. In particular, a standard histogram often has a custom selection, and this can be built by nesting Select -> Bin -> Count.
 
-    Select also resembles [Fraction](#fraction-efficiency-plots), but without the `denominator`.
+    Select also resembles :doc:`Fraction <histogrammar.primitives.fraction.Fraction>`, but without the ``denominator``.
 
-    The efficiency of a cut in a Select aggregator named `x` is simply `x.cut.entries / x.entries` (because all aggregators have an `entries` member).
+    The efficiency of a cut in a Select aggregator named ``x`` is simply ``x.cut.entries / x.entries`` (because all aggregators have an ``entries`` member).
     """
 
     @staticmethod
@@ -51,6 +51,7 @@ class Select(Factory, Container):
         return Select(quantity, cut)
 
     def __getattr__(self, attr):
+        """Pass on searches for custom methods to the ``value``, so that Limit becomes effectively invisible."""
         if attr.startswith("__") and attr.endswith("__"):
             return getattr(Select, attr)
         elif attr not in self.__dict__ and hasattr(self.__dict__["cut"], attr):
@@ -75,9 +76,11 @@ class Select(Factory, Container):
     def fractionPassing(self):
         return self.cut.entries / self.entries
 
+    @inheritdoc(Container)
     def zero(self):
         return Select(self.quantity, self.cut.zero())
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Select):
             out = Select(self.quantity, self.cut + other.cut)
@@ -86,6 +89,7 @@ class Select(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         w = self.quantity(datum)
@@ -102,6 +106,7 @@ class Select(Factory, Container):
     def children(self):
         return [self.cut]
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "type": self.cut.name,
@@ -109,6 +114,7 @@ class Select(Factory, Container):
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):

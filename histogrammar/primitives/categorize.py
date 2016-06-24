@@ -21,9 +21,9 @@ from histogrammar.primitives.count import *
 class Categorize(Factory, Container):
     """Split a given quantity by its categorical value and fill only one category per datum.
 
-    A bar chart may be thought of as a histogram with string-valued (categorical) bins, so this is the equivalent of [Bin](#bin-regular-binning-for-histograms) for bar charts. The order of the strings is deferred to the visualization stage.
+    A bar chart may be thought of as a histogram with string-valued (categorical) bins, so this is the equivalent of :doc:`Bin <histogrammar.primitives.bin.Bin>` for bar charts. The order of the strings is deferred to the visualization stage.
 
-    Unlike [SparselyBin](#sparselybin-ignore-zeros), this aggregator has the potential to use unlimited memory. A large number of _distinct_ categories can generate many unwanted bins.
+    Unlike :doc:`SparselyBin <histogrammar.primitives.sparsebin.SparselyBin>`, this aggregator has the potential to use unlimited memory. A large number of *distinct* categories can generate many unwanted bins.
     """
 
     @staticmethod
@@ -84,8 +84,10 @@ class Categorize(Factory, Container):
     def get(self, x): return self.pairs.get(x)
     def getOrElse(self, x, default): return self.pairs.get(x, default)
 
+    @inheritdoc(Container)
     def zero(self): return Categorize(self.quantity, self.value)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Categorize):
             out = Categorize(self.quantity, self.value)
@@ -103,6 +105,7 @@ class Categorize(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -121,6 +124,7 @@ class Categorize(Factory, Container):
     def children(self):
         return [self.value] + list(self.pairs.values())
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
         if isinstance(self.value, Container):
             if getattr(self.value, "quantity", None) is not None:
@@ -147,6 +151,7 @@ class Categorize(Factory, Container):
                   "data:name": binsName})
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name", "data:name"]):
             if isinstance(json["entries"], (int, long, float)):

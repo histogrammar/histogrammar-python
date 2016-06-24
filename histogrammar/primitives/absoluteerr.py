@@ -67,8 +67,10 @@ class AbsoluteErr(Factory, Container):
         else:
             return self.absoluteSum/self.entries
 
+    @inheritdoc(Container)
     def zero(self): return AbsoluteErr(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, AbsoluteErr):
             out = AbsoluteErr(self.quantity)
@@ -78,6 +80,7 @@ class AbsoluteErr(Factory, Container):
         else:
             raise ContainerException("cannot add {} and {}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         if weight > 0.0:
@@ -93,12 +96,14 @@ class AbsoluteErr(Factory, Container):
     def children(self):
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mae": floatToJson(self.mae),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mae"], ["name"]):
             if isinstance(json["entries"], (int, long, float)):
