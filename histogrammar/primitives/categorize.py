@@ -19,8 +19,20 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class Categorize(Factory, Container):
+    """Split a given quantity by its categorical value and fill only one category per datum.
+
+    A bar chart may be thought of as a histogram with string-valued (categorical) bins, so this is the equivalent of [Bin](#bin-regular-binning-for-histograms) for bar charts. The order of the strings is deferred to the visualization stage.
+
+    Unlike [SparselyBin](#sparselybin-ignore-zeros), this aggregator has the potential to use unlimited memory. A large number of _distinct_ categories can generate many unwanted bins.
+    """
+
     @staticmethod
     def ed(entries, contentType, **pairs):
+        """
+        * `entries` (double) is the number of entries.
+        * `contentType` (string) is the value's sub-aggregator type (must be provided to determine type for the case when `bins` is empty).
+        * `pairs` (map from string to past-tense aggregator) is the non-empty bin categories and their values.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(contentType, basestring):
@@ -38,9 +50,16 @@ class Categorize(Factory, Container):
 
     @staticmethod
     def ing(quantity, value=Count()):
+        """Synonym for ``__init__``."""
         return Categorize(quantity, value)
 
     def __init__(self, quantity, value=Count()):
+        """
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `value` (present-tense aggregator) generates sub-aggregators to put in each bin.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `pairs` (mutable map from string to present-tense aggregator) is the map, probably a hashmap, to fill with values when their `entries` become non-zero.
+        """
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({}) must be None or a Container".format(value))
         self.entries = 0.0

@@ -18,8 +18,18 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Average(Factory, Container):
+    """Accumulate the weighted mean of a given quantity.
+
+    Uses the numerically stable weighted mean algorithm described in ["Incremental calculation of weighted mean and variance," Tony Finch, _Univeristy of Cambridge Computing Service,_ 2009.](http://www-uxsup.csx.cam.ac.uk/~fanf2/hermes/doc/antiforgery/stats.pdf)
+    """
+
     @staticmethod
     def ed(entries, mean):
+        """
+        * `entries` (double) is the number of entries.
+        * `mean` (double) is the mean.
+        """
+
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(mean, (int, long, float)):
@@ -33,9 +43,15 @@ class Average(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Average(quantity)
 
     def __init__(self, quantity):
+        """
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `mean` (mutable double) is the running mean, initially 0.0. Note that this value contributes to the total mean with weight zero (because `entries` is initially zero), so this arbitrary choice does not bias the final result.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.mean = 0.0

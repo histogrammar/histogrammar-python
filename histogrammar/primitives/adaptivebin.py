@@ -22,8 +22,42 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMethods):
+    """Adaptively partition a domain into bins and fill them at the same time using a clustering algorithm. Each input datum contributes to exactly one final bin.
+
+    The algorithm is based on ["A streaming parallel decision tree algorithm," Yael Ben-Haim and Elad Tom-Tov, _J. Machine Learning Research 11,_ 2010.](http://www.jmlr.org/papers/volume11/ben-haim10a/ben-haim10a.pdf) with a small modification for display histograms.
+
+    Yael Ben-Haim and Elad Tom-Tov's algorithm adds each new data point as a new bin containing a single value, then merges the closest bins if the total number of bins exceeds a maximum (like hierarchical clustering in one dimension).
+
+    This tends to provide the most detail on the tails of a distribution (which have the most widely spaced bins), and is therefore a good alternative to [Quantile](#quantile-such-as-median-quartiles-quintiles-etc) for estimating extreme quantiles like 0.01 and 0.99.
+
+    However, a histogram binned this way is less interesting for visualizing a distribution. Usually, the least interesting bins are the ones with the fewest entries, so one can consider merging the bins with the fewest entries, giving no detail on the tails.
+
+    As a compromise, we introduce a "tail detail" hyperparameter that strikes a balance between the two extremes: the bins that are merged minimize
+
+    ```
+    tailDetail*(pos2 - pos1)/(max - min) + (1.0 - tailDetail)*(entries1 + entries2)/entries
+    ```
+
+    where `pos1` and `pos2` are the (ordered) positions of the two bins, `min` and `max` are the minimum and maximum positions of all entries, `entries1` and `entries2` are the number of entries in the two bins, and `entries` is the total number of entries in all bins. The denominators normalize the scales of domain position and number of entries so that `tailDetail` may be unitless and between 0.0 and 1.0 (inclusive).
+
+    A value of `tailDetail = 0.2` is a good default.
+
+    This algorithm is deterministic; the same input data yield the same histogram.
+    """
+
     @staticmethod
     def ed(entries, num, tailDetail, contentType, bins, min, max, nanflow):
+        """
+        * `entries` (double) is the number of entries.
+        * `num` (32-bit integer) specifies the maximum number of bins before merging.
+        * `tailDetail` (double) is a value between 0.0 and 1.0 (inclusive) for choosing the pair of bins to merge (see above).
+        * `contentType` (string) is the value's sub-aggregator type (must be provided to determine type for the case when `bins` is empty).
+        * `bins` (list of double, past-tense aggregator pairs) is the list of bin centers and bin contents. The domain of each bin is determined as in [CentrallyBin](http://127.0.0.1:4005/docs/specification/#centrallybin-irregular-but-fully-partitioning).
+        * `min` (double) is the lowest value of the quantity observed or NaN if no data were observed.
+        * `max` (double) is the highest value of the quantity observed or NaN if no data were observed.
+        * `nanflow` (past-tense aggregator) is the filled nanflow bin.
+        """
+
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(num, (int, long)):
@@ -57,9 +91,22 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
     @staticmethod
     def ing(quantity, num=100, tailDetail=0.2, value=Count(), nanflow=Count()):
+        """Synonym for ``__init__``."""
         return AdaptivelyBin(quantity, num, tailDetail, value, nanflow)
 
     def __init__(self, quantity, num=100, tailDetail=0.2, value=Count(), nanflow=Count()):
+        """
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `num` (32-bit integer) specifies the maximum number of bins before merging.
+        * `tailDetail` (double) is a value between 0.0 and 1.0 (inclusive) for choosing the pair of bins to merge (see above).
+        * `value` (present-tense aggregator) generates sub-aggregators to put in each bin.
+        * `nanflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is NaN.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `bins` (mutable list of double, present-tense aggregator pairs) is the list of bin centers and bin contents. The domain of each bin is determined as in [CentrallyBin](http://127.0.0.1:4005/docs/specification/#centrallybin-irregular-but-fully-partitioning).
+        * `min` (mutable double) is the lowest value of the quantity observed, initially NaN.
+        * `max` (mutable double) is the highest value of the quantity observed, initially NaN.
+        """
+
         if not isinstance(num, (int, long)):
             raise TypeError("num ({}) must be an integer".format(num))
         if not isinstance(tailDetail, (int, long, float)):

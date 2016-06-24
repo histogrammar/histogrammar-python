@@ -20,8 +20,17 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Minimize(Factory, Container):
+    """Find the minimum value of a given quantity. If no data are observed, the result is NaN.
+
+    Unlike [Quantile](#quantile-such-as-median-quartiles-quintiles-etc) with a target of 0, Minimize is exact.
+    """
+
     @staticmethod
     def ed(entries, min):
+        """
+        * `entries` (double) is the number of entries.
+        * `min` (double) is the lowest value of the quantity observed or NaN if no data were observed.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(min, (int, long, float)):
@@ -35,9 +44,15 @@ class Minimize(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Minimize(quantity)
 
     def __init__(self, quantity):
+        """
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `min` (mutable double) is the lowest value of the quantity observed, initially NaN.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.min = float("nan")
@@ -115,8 +130,17 @@ class Minimize(Factory, Container):
 Factory.register(Minimize)
 
 class Maximize(Factory, Container):
+    """Find the maximum value of a given quantity. If no data are observed, the result is NaN.
+
+    Unlike [Quantile](#quantile-such-as-median-quartiles-quintiles-etc) with a target of 1, Maximize is exact.
+    """
+
     @staticmethod
     def ed(entries, max):
+        """
+        * `entries` (double) is the number of entries.
+        * `max` (double) is the highest value of the quantity observed or NaN if no data were observed.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(max, (int, long, float)):
@@ -130,9 +154,15 @@ class Maximize(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Maximize(quantity)
 
     def __init__(self, quantity):
+        """
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `max` (mutable double) is the highest value of the quantity observed, initially NaN.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.max = float("nan")

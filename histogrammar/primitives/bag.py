@@ -21,8 +21,22 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Bag(Factory, Container):
+    """Accumulate raw numbers, vectors of numbers, or strings, with identical values merged.
+
+    A bag is the appropriate data type for scatter plots: a container that collects raw values, maintaining multiplicity but not order. (A "bag" is also known as a "multiset.") Conceptually, it is a mapping from distinct raw values to the number of observations: when two instances of the same raw value are observed, one key is stored and their weights add.
+
+    Although the user-defined function may return scalar numbers, fixed-dimension vectors of numbers, or categorical strings, it may not mix types. Different Bag primitives in an analysis tree may collect different types.
+
+    Consider using Bag with [Limit](#limit-keep-detail-until-entries-is-large) for collections that roll over to a mere count when they exceed a limit, or [Sample](#sample-reservoir-sampling) for reservoir sampling.
+    """
+
     @staticmethod
     def ed(entries, values):
+        """
+        * `entries` (double) is the number of entries.
+        * `values` (map from double, vector of doubles, or string to double) is the number of entries for each unique item.
+        """
+
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(values, dict) and not all(isinstance(k, (int, long, float)) for k, v in values.items()):
@@ -36,9 +50,15 @@ class Bag(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Bag(quantity)
 
     def __init__(self, quantity):
+        """
+        * `quantity` (function returning a double, a vector of doubles, or a string) computes the quantity of interest from the data.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `values` (mutable map from quantity return type to double) is the number of entries for each unique item.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.values = {}

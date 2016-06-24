@@ -21,8 +21,24 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class Stack(Factory, Container):
+    """Accumulates a suite of aggregators, each filtered with a tighter selection on the same quantity.
+
+    This is a generalization of [Fraction](#fraction-efficiency-plots), which fills two aggregators, one with a cut, the other without. Stack fills `N + 1` aggregators with `N` successively tighter cut thresholds. The first is always filled (like the denominator of Fraction), the second is filled if the computed quantity exceeds its threshold, the next is filled if the computed quantity exceeds a higher threshold, and so on.
+
+    The thresholds are presented in increasing order and the computed value must be greater than or equal to a threshold to fill the corresponding bin, and therefore the number of entries in each filled bin is greatest in the first and least in the last.
+
+    Although this aggregation could be visualized as a stack of histograms, stacked histograms usually represent a different thing: data from different sources, rather than different cuts on the same source. For example, it is common to stack Monte Carlo samples from different backgrounds to show that they add up to the observed data. The Stack aggregator does not make plots of this type because aggregation trees in Histogrammar draw data from exactly one source.
+
+    To make plots from different sources in Histogrammar, one must perform separate aggregation runs. It may then be convenient to stack the results of those runs as though they were created with a Stack aggregation, so that plotting code can treat both cases uniformly. For this reason, Stack has an alternate constructor to build a Stack manually from distinct aggregators, even if those aggregators came from different aggregation runs.
+    """
+
     @staticmethod
     def ed(entries, cuts, nanflow):
+        """
+        * `entries` (double) is the number of entries.
+        * `cuts` (list of double, past-tense aggregator pairs) are the `N + 1` thresholds and sub-aggregator pairs.
+        * `nanflow` (past-tense aggregator) is the filled nanflow bin.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(cuts, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in cuts):
@@ -37,9 +53,18 @@ class Stack(Factory, Container):
 
     @staticmethod
     def ing(cuts, quantity, value, nanflow=Count()):
+        """Synonym for ``__init__``."""
         return Stack(cuts, quantity, value, nanflow)
 
     def __init__(self, cuts, quantity, value, nanflow=Count()):
+        """
+        * `thresholds` (list of doubles) specifies `N` cut thresholds, so the Stack will fill `N + 1` aggregators, each overlapping the last.
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `value` (present-tense aggregator) generates sub-aggregators for each bin.
+        * `nanflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is NaN.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `cuts` (list of double, present-tense aggregator pairs) are the `N + 1` thresholds and sub-aggregators. (The first threshold is minus infinity; the rest are the ones specified by `thresholds`).
+        """
         if not isinstance(cuts, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in cuts):
             raise TypeError("cuts ({}) must be a list of number, Container pairs".format(cuts))
         if value is not None and not isinstance(value, Container):
@@ -58,6 +83,9 @@ class Stack(Factory, Container):
 
     @staticmethod
     def build(*ys):
+        """
+        * `aggregators` (list of aggregators of the same type from any source); the algorithm will attempt to add them, so they must also have the same binning/bounds/etc.
+        """
         from functools import reduce
         if not all(isinstance(y, Container) for y in ys):
             raise TypeError("ys must all be Containers")

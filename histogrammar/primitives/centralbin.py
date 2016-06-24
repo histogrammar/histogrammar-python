@@ -22,8 +22,22 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMethods):
+    """Split a quantity into bins defined by irregularly spaced bin centers, with exactly one sub-aggregator filled per datum (the closest one).
+
+    Unlike irregular bins defined by explicit ranges, irregular bins defined by bin centers are guaranteed to fully partition the space with no gaps and no overlaps. It could be viewed as cluster scoring in one dimension.
+
+    The first and last bins cover semi-infinite domains, so it is unclear how to interpret them as part of the probability density function (PDF). Finite-width bins approximate the PDF in piecewise steps, but the first and last bins could be taken as zero (an underestimate) or as uniform from the most extreme point to the inner bin edge (an overestimate, but one that is compensated by underestimating the region just beyond the extreme point). For the sake of the latter interpretation, the minimum and maximum values are accumulated along with the bin values.
+    """
+
     @staticmethod
     def ed(entries, bins, min, max, nanflow):
+        """
+        * `entries` (double) is the number of entries.
+        * `bins` (list of double, past-tense aggregator pairs) is the list of bin centers and their accumulated data.
+        * `min` (double) is the lowest value of the quantity observed or NaN if no data were observed.
+        * `max` (double) is the highest value of the quantity observed or NaN if no data were observed.
+        * `nanflow` (past-tense aggregator) is the filled nanflow bin.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
@@ -45,9 +59,21 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
     @staticmethod
     def ing(bins, quantity, value=Count(), nanflow=Count()):
+        """Synonym for ``__init__``."""
         return CentrallyBin(bins, quantity, value, nanflow)
 
     def __init__(self, bins, quantity, value=Count(), nanflow=Count()):
+        """
+        * `centers` (list of doubles) is the centers of all bins
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `value` (present-tense aggregator) generates sub-aggregators to put in each bin.
+        * `nanflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is NaN.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `bins` (list of double, present-tense aggregator pairs) are the bin centers and sub-aggregators in each bin.
+        * `min` (mutable double) is the lowest value of the quantity observed, initially NaN.
+        * `max` (mutable double) is the highest value of the quantity observed, initially NaN.
+        """
+
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
             raise TypeError("bins ({}) must be a list of number, Container pairs".format(bins))
         if value is not None and not isinstance(value, Container):

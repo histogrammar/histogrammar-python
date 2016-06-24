@@ -20,8 +20,31 @@ from histogrammar.util import *
 ################################################################ Limit
 
 class Limit(Factory, Container):
+    """Accumulate an aggregator until its number of entries reaches a predefined limit.
+
+       Limit is intended to roll high-detail descriptions of small datasets over into low-detail descriptions of large datasets. For instance, a scatter plot is useful for small numbers of data points and heatmaps are useful for large ones. The following construction
+
+       ```python
+       Bin(xbins, xlow, xhigh, lambda d: d.x,
+         Bin(ybins, ylow, yhigh, lambda d: d.y,
+           Limit(10.0, Bag(lambda d: [d.x, d.y]))))
+       ```
+
+       fills a scatter plot in all x-y bins that have fewer than 10 entries and only a number of entries above that. Postprocessing code would use the bin-by-bin numbers of entries to color a heatmap and the raw data points to show outliers in the nearly empty bins.
+
+       Limit can effectively swap between two descriptions if it is embedded in a collection, such as [Branch](#branch-tuple-of-different-types). All elements of the collection would be filled until the Limit saturates, leaving only the low-detail one. For instance, one could aggregate several [SparselyBin](#sparselybin-ignore-zeros) histograms, each with a different `binWidth`, and progressively eliminate them in order of increasing `binWidth`.
+
+       Note that Limit saturates when it reaches a specified _total weight,_ not the number of data points in a [Bag](#bag-accumulate-values-for-scatter-plots), so it is not certain to control memory use. However, the total weight is of more use to data analysis. ([Sample](#sample-reservoir-sampling) puts a strict limit on memory use.)
+       """
+
     @staticmethod
     def ed(entries, limit, contentType, value):
+        """
+        * `entries` (double) is the number of entries.
+        * `limit` (double) is the maximum number of entries (inclusive).
+        * `contentType` (string) is the value's sub-aggregator type (must be provided to determine type for the case when `value` has been deleted).
+        * `value` (past-tense aggregator or null) is the filled sub-aggregator if unsaturated, null if saturated.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(limit, (int, long, float)):
@@ -39,9 +62,17 @@ class Limit(Factory, Container):
         return out.specialize()
 
     @staticmethod
-    def ing(value, limit): return Limit(value, limit)
+    def ing(value, limit):
+        """Synonym for ``__init__``."""
+        return Limit(value, limit)
 
     def __init__(self, value, limit):
+        """
+        * `limit` (double) is the maximum number of entries (inclusive) before deleting the `value`.
+        * `value` (present-tense aggregator) will only be filled until its number of entries exceeds the `limit`.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `contentType` (string) is the value's sub-aggregator type (must be provided to determine type for the case when `value` has been deleted).
+        """
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({}) must be None or a Container".format(value))
         if not isinstance(limit, (int, long, float)):

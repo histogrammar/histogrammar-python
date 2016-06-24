@@ -21,8 +21,25 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class SparselyBin(Factory, Container):
+    """Split a quantity into equally spaced bins, creating them whenever their `entries` would be non-zero. Exactly one sub-aggregator is filled per datum.
+
+    Use this when you have a distribution of known scale (bin width) but unknown domain (lowest and highest bin index).
+
+    Unlike fixed-domain binning, this aggregator has the potential to use unlimited memory. A large number of _distinct_ outliers can generate many unwanted bins.
+
+    Like fixed-domain binning, the bins are indexed by integers, though they are 64-bit and may be negative.
+    """
+
     @staticmethod
     def ed(binWidth, entries, contentType, bins, nanflow, origin):
+        """
+        * `binWidth` (double) is the width of a bin.
+        * `entries` (double) is the number of entries.
+        * `contentType` (string) is the value's sub-aggregator type (must be provided to determine type for the case when `bins` is empty).
+        * `bins` (map from 64-bit integer to past-tense aggregator) is the non-empty bin indexes and their values.
+        * `nanflow` (past-tense aggregator) is the filled nanflow bin.
+        * `origin` (double) is the left edge of the bin whose index is zero.
+        """
         if not isinstance(binWidth, (int, long, float)):
             raise TypeError("binWidth ({}) must be a number".format(binWidth))
         if not isinstance(entries, (int, long, float)):
@@ -48,9 +65,19 @@ class SparselyBin(Factory, Container):
 
     @staticmethod
     def ing(binWidth, quantity, value=Count(), nanflow=Count(), origin=0.0):
+        """Synonym for ``__init__``."""
         return SparselyBin(binWidth, quantity, value, nanflow, origin)
 
     def __init__(self, binWidth, quantity, value=Count(), nanflow=Count(), origin=0.0):
+        """
+        * `binWidth` (double) is the width of a bin; must be strictly greater than zero.
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `value` (present-tense aggregator) generates sub-aggregators to put in each bin.
+        * `nanflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is NaN.
+        * `origin` (double) is the left edge of the bin whose index is 0.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `bins` (mutable map from 64-bit integer to present-tense aggregator) is the map, probably a hashmap, to fill with values when their `entries` become non-zero.
+        """
         if not isinstance(binWidth, (int, long, float)):
             raise TypeError("binWidth ({}) must be a number".format(binWidth))
         if value is not None and not isinstance(value, Container):

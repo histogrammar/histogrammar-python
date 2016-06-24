@@ -18,8 +18,20 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Deviate(Factory, Container):
+    """Accumulate the weighted mean and weighted variance of a given quantity.
+
+    The variance is computed around the mean, not zero.
+
+    Uses the numerically stable weighted mean and weighted variance algorithms described in ["Incremental calculation of weighted mean and variance," Tony Finch, _Univeristy of Cambridge Computing Service,_ 2009.](http://www-uxsup.csx.cam.ac.uk/~fanf2/hermes/doc/antiforgery/stats.pdf)
+    """
+
     @staticmethod
     def ed(entries, mean, variance):
+        """
+        * `entries` (double) is the number of entries.
+        * `mean` (double) is the mean.
+        * `variance` (double) is the variance.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(mean, (int, long, float)):
@@ -36,9 +48,16 @@ class Deviate(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Deviate(quantity)
 
     def __init__(self, quantity):
+        """
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `mean` (mutable double) is the running mean, initially 0.0. Note that this value contributes to the total mean with weight zero (because `entries` is initially zero), so this arbitrary choice does not bias the final result.
+        * `variance` (mutable double) is the running variance, initially 0.0. Note that this also contributes nothing to the final result.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.mean = 0.0

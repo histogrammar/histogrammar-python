@@ -20,8 +20,24 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Quantile(Factory, Container):
+    """Estimate a quantile, such as 0.5 for median, (0.25, 0.75) for quartiles, or (0.2, 0.4, 0.6, 0.8) for quintiles, etc.
+
+    **Note:** this is an inexact heuristic! In general, it is not possible to derive an exact quantile in a single pass over a dataset (without accumulating a large fraction of the dataset in memory). To interpret this statistic, refer to the fill and merge algorithms below.
+
+    The quantile aggregator dynamically minimizes the mean absolute error between the current estimate and the target quantile, with a learning rate that depends on the cumulative deviations. The algorithm is deterministic: the same data always yields the same final estimate.
+
+    This statistic has the best accuracy for quantiles near the middle of the distribution, such as the median (0.5), and the worst accuracy for quantiles near the edges, such as the first or last percentile (0.01 or 0.99). Use the specialized aggregators for the [Minimize](#minimize-minimum-value) (0.0) or [Maximize](#maximize-maximum-value) (1.0) of a distribution, since those aggregators are exact.
+
+    Another alternative is to use [AdaptivelyBin](#adaptivelybin-for-unknown-distributions) to histogram the distribution and then estimate quantiles from the histogram bins. AdaptivelyBin with `tailDetail == 1.0` maximizes detail on the tails of the distribution (Yael Ben-Haim and Elad Tom-Tov's original algorithm), providing the best estimates of extreme quantiles like 0.01 and 0.99.
+    """
+
     @staticmethod
     def ed(entries, target, estimate):
+        """
+        * `entries` (double) is the number of entries.
+        * `target` (double) is the value between 0.0 and 1.0 (inclusive), indicating the quantile approximated.
+        * `estimate` (double) is the best estimate of where `target` of the distribution is below this value and `1.0 - target` of the distribution is above.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(target, (int, long, float)):
@@ -37,9 +53,17 @@ class Quantile(Factory, Container):
 
     @staticmethod
     def ing(target, quantity):
+        """Synonym for ``__init__``."""
         return Quantile(target, quantity)
 
     def __init__(self, target, quantity):
+        """
+        * `target` (double) is a value between 0.0 and 1.0 (inclusive), indicating the quantile to approximate.
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `estimate` (mutable double) is the best estimate of where `target` of the distribution is below this value and `1.0 - target` of the distribution is above. Initially, this value is NaN.
+        * `cumulativeDeviation` (mutable double) is the sum of absolute error between observed values and the current `estimate` (which moves). Initially, this value is 0.0.
+        """
         if not isinstance(target, (int, long, float)):
             raise TypeError("target ({}) must be a number".format(target))
         if target < 0.0 or target > 1.0:

@@ -18,8 +18,17 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Sum(Factory, Container):
+    """Accumulate the (weighted) sum of a given quantity, calculated from the data.
+
+    Sum differs from [Count](#count-sum-of-weights) in that it computes a quantity on the spot, rather than percolating a product of weight metadata from nested primitives. Also unlike weights, the sum can add both positive and negative quantities (weights are always non-negative).
+    """
+
     @staticmethod
     def ed(entries, sum):
+        """
+        * `entries` (double) is the number of entries.
+        * `sum` (double) is the sum.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(sum, (int, long, float)):
@@ -33,9 +42,15 @@ class Sum(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Sum(quantity)
 
     def __init__(self, quantity):
+        """
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `sum` (mutable double) is the running sum, initially 0.0.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.sum = 0.0

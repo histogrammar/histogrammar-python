@@ -19,8 +19,20 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class Fraction(Factory, Container):
+    """Accumulate two aggregators, one containing only entries that pass a given selection (numerator) and another that contains all entries (denominator).
+
+    The aggregator may be a simple [Count](#count-sum-of-weights) to measure the efficiency of a cut, a [Bin](#bin-regular-binning-for-histograms) to plot a turn-on curve, or anything else to be tested with and without a cut.
+
+    As a side effect of NaN values returning false for any comparison, a NaN return value from the selection is treated as a failed cut (the denominator is filled but the numerator is not).
+    """
+
     @staticmethod
     def ed(entries, numerator, denominator):
+        """
+        * `entries` (double) is the number of entries.
+        * `numerator` (past-tense aggregator) is the filled numerator.
+        * `denominator` (past-tense aggregator) is the filled denominator.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(numerator, Container):
@@ -38,9 +50,17 @@ class Fraction(Factory, Container):
 
     @staticmethod
     def ing(quantity, value):
+        """Synonym for ``__init__``."""
         return Fraction(quantity, value)
 
     def __init__(self, quantity, value):
+        """
+        * `quantity` (function returning boolean or double) computes the quantity of interest from the data and interprets it as a selection (multiplicative factor on weight).
+        * `value` (present-tense aggregator) generates sub-aggregators for the numerator and denominator.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `numerator` (present-tense aggregator) is the sub-aggregator of entries that pass the selection.
+        * `denominator` (present-tense aggregator) is the sub-aggregator of all entries.
+        """
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({}) must be None or a Container".format(value))
         self.entries = 0.0
@@ -53,6 +73,10 @@ class Fraction(Factory, Container):
 
     @staticmethod
     def build(numerator, denominator):
+        """
+        * `numerator` (past-tense aggregator) is the filled numerator.
+        * `denominator` (past-tense aggregator) is the filled denominator.
+        """
         if not isinstance(numerator, Container):
             raise TypeError("numerator ({}) must be a Container".format(numerator))
         if not isinstance(denominator, Container):

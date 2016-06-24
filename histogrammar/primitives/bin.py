@@ -21,8 +21,41 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class Bin(Factory, Container):
+    """Split a quantity into equally spaced bins between a low and high threshold and fill exactly one bin per datum.
+
+    When composed with [Count](#count-sum-of-weights), this produces a standard histogram:
+
+    ```python
+    Bin.ing(100, 0, 10, fill_x, Count.ing())
+    ```
+
+    and when nested, it produces a two-dimensional histogram:
+
+    ```python
+    Bin.ing(100, 0, 10, fill_x,
+      Bin.ing(100, 0, 10, fill_y, Count.ing()))
+    ```
+
+    Combining with [Deviate](#deviate-mean-and-variance) produces a physicist's "profile plot:"
+
+    ```python
+    Bin.ing(100, 0, 10, fill_x, Deviate.ing(fill_y))
+    ```
+
+    and so on.
+    """
+
     @staticmethod
     def ed(low, high, entries, values, underflow, overflow, nanflow):
+        """
+        * `low` (double) is the minimum-value edge of the first bin.
+        * `high` (double) is the maximum-value edge of the last bin; must be strictly greater than `low`.
+        * `entries` (double) is the number of entries.
+        * `values` (list of past-tense aggregators) is the filled sub-aggregators, one for each bin.
+        * `underflow` (past-tense aggregator) is the filled underflow bin.
+        * `overflow` (past-tense aggregator) is the filled overflow bin.
+        * `nanflow` (past-tense aggregator) is the filled nanflow bin.
+        """
         if not isinstance(low, (int, long, float)):
             raise TypeError("low ({}) must be a number".format(low))
         if not isinstance(high, (int, long, float)):
@@ -51,9 +84,23 @@ class Bin(Factory, Container):
 
     @staticmethod
     def ing(num, low, high, quantity, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
+        """Synonym for ``__init__``."""
         return Bin(num, low, high, quantity, value, underflow, overflow, nanflow)
 
     def __init__(self, num, low, high, quantity, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
+        """
+        * `num` (32-bit integer) is the number of bins; must be at least one.
+        * `low` (double) is the minimum-value edge of the first bin.
+        * `high` (double) is the maximum-value edge of the last bin; must be strictly greater than `low`.
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `value` (present-tense aggregator) generates sub-aggregators to put in each bin.
+        * `underflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is less than `low`.
+        * `overflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is greater than or equal to `high`.
+        * `nanflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is NaN.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `values` (list of present-tense aggregators) are the sub-aggregators in each bin.
+        """
+
         if not isinstance(num, (int, long)):
             raise TypeError("num ({}) must be an integer".format(num))
         if not isinstance(low, (int, long, float)):

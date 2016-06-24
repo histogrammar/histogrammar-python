@@ -20,8 +20,16 @@ from histogrammar.util import *
 identity = serializable(lambda x: x)
 
 class Count(Factory, Container):
+    """Count entries by accumulating the sum of all observed weights or a sum of transformed weights (e.g. sum of squares of weights).
+
+    An optional `transform` function can be applied to the weights before summing. To accumulate the sum of squares of weights, use `lambda x: x**2`, for instance. This is unlike any other primitive's `quantity` function in that its domain is the _weights_ (always double), not _data_ (any type).
+    """
+
     @staticmethod
     def ed(entries):
+        """
+        * `entries` (double) is the number of entries.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if entries < 0.0:
@@ -32,9 +40,14 @@ class Count(Factory, Container):
 
     @staticmethod
     def ing(transform=identity):
+        """Synonym for ``__init__``."""
         return Count(transform)
 
     def __init__(self, transform=identity):
+        """
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `transform` (function from double to double) transforms each weight.
+        """
         self.entries = 0.0
         self.transform = serializable(transform)
         super(Count, self).__init__()

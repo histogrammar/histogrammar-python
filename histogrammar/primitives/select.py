@@ -20,8 +20,21 @@ from histogrammar.util import *
 ################################################################ Select
 
 class Select(Factory, Container):
+    """Filter or weight data according to a given selection.
+
+    This primitive is a basic building block, intended to be used in conjunction with anything that needs a user-defined cut. In particular, a standard histogram often has a custom selection, and this can be built by nesting Select -> Bin -> Count.
+
+    Select also resembles [Fraction](#fraction-efficiency-plots), but without the `denominator`.
+
+    The efficiency of a cut in a Select aggregator named `x` is simply `x.cut.entries / x.entries` (because all aggregators have an `entries` member).
+    """
+
     @staticmethod
     def ed(entries, cut):
+        """
+        * `entries` (double) is the number of entries.
+        * `cut` (past-tense aggregator) is the filled sub-aggregator.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(cut, Container):
@@ -34,6 +47,7 @@ class Select(Factory, Container):
 
     @staticmethod
     def ing(quantity, cut):
+        """Synonym for ``__init__``."""
         return Select(quantity, cut)
 
     def __getattr__(self, attr):
@@ -45,6 +59,11 @@ class Select(Factory, Container):
             return self.__dict__[attr]
 
     def __init__(self, quantity, cut):
+        """
+        * `quantity` (function returning boolean or double) computes the quantity of interest from the data and interprets it as a selection (multiplicative factor on weight).
+        * `cut` (present-tense aggregator) will only be filled with data that pass the cut, and which are weighted by the cut.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        """
         if not isinstance(cut, Container):
             raise TypeError("cut ({}) must be a Container".format(cut))
         self.entries = 0.0

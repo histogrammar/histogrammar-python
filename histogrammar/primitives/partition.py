@@ -19,8 +19,20 @@ from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class Partition(Factory, Container):
+    """Accumulate a suite of aggregators, each between two thresholds, filling exactly one per datum.
+
+    This is a variation on [Stack](#stack-cumulative-filling), which fills `N + 1` aggregators with `N` successively tighter cut thresholds. Partition fills `N + 1` aggregators in the non-overlapping intervals between `N` thresholds.
+
+    Partition is also similar to [CentrallyBin](#centrallybin-irregular-but-fully-partitioning), in that they both partition a space into irregular subdomains with no gaps and no overlaps. However, CentrallyBin is defined by bin centers and Partition is defined by bin edges, the first and last of which are at negative and positive infinity.
+    """
+
     @staticmethod
     def ed(entries, cuts, nanflow):
+        """
+        * `entries` (double) is the number of entries.
+        * `cuts` (list of double, past-tense aggregator pairs) are the `N + 1` thresholds and sub-aggregator pairs.
+        * `nanflow` (past-tense aggregator) is the filled nanflow bin.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(cuts, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in cuts):
@@ -36,9 +48,18 @@ class Partition(Factory, Container):
 
     @staticmethod
     def ing(cuts, quantity, value, nanflow=Count()):
+        """Synonym for ``__init__``."""
         return Partition(cuts, quantity, value, nanflow)
 
     def __init__(self, thresholds, quantity, value, nanflow=Count()):
+        """
+        * `thresholds` (list of doubles) specifies `N` cut thresholds, so the Partition will fill `N + 1` aggregators in distinct intervals.
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `value` (present-tense aggregator) generates sub-aggregators for each bin.
+        * `nanflow` (present-tense aggregator) is a sub-aggregator to use for data whose quantity is NaN.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `cuts` (list of double, present-tense aggregator pairs) are the `N + 1` thresholds and sub-aggregators. (The first threshold is minus infinity; the rest are the ones specified by `thresholds`).
+        """
         if not isinstance(thresholds, (list, tuple)) and not all(isinstance(v, (int, long, float)) for v in thresholds):
             raise TypeError("thresholds ({}) must be a list of numbers".format(thresholds))
         if value is not None and not isinstance(value, Container):

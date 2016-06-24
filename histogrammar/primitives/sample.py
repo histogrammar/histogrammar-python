@@ -24,8 +24,28 @@ MIN_LONG = -2**63
 MAX_LONG = 2**63 - 1
 
 class Sample(Factory, Container):
+    """Accumulate raw numbers, vectors of numbers, or strings, randomly replacing them with Reservoir Sampling when the number of values exceeds a limit.
+
+    Sample collects raw values without attempting to group them by distinct value (as [Bag](#bag-accumulate-values-for-scatter-plots) does), up to a given maximum _number_ of entries (unlike [Limit](#limit-keep-detail-until-entries-is-large), which rolls over at a given total weight). The reason for the limit on Sample is purely to conserve memory.
+
+    The maximum number of entries and the data type together determine the size of the working set. If new values are added after this set is full, individual values will be randomly chosen for replacement. The probability of replacement is proportional to an entry's weight and it decreases with time, such that the final sample is a representative subset of all observed values, without preference for early values or late values.
+
+    This algorithm is known as weighted Reservoir Sampling, and it is non-deterministic. Each evaluation will likely result in a different final set.
+
+    Specifically, the algorithm implemented here was described in ["Weighted random sampling with a reservoir," Pavlos S. Efraimidis and Paul G. Spirakis, _Information Processing Letters 97 (5): 181-185,_ 2005 (doi:10.1016/j.ipl.2005.11.003)](http://www.sciencedirect.com/science/article/pii/S002001900500298X).
+
+    Although the user-defined function may return scalar numbers, fixed-dimension vectors of numbers, or categorical strings, it may not mix types. Different Sample primitives in an analysis tree may collect different types.
+    """
+
     @staticmethod
     def ed(entries, limit, values, randomSeed=None):
+        """
+        * `entries` (double) is the number of entries.
+        * `limit` (32-bit integer) is the maximum number of entries to store before replacement. This is a strict _number_ of entries, unaffected by weights.
+        * `values` (list of quantity return type, double, double triples) is the set of collected values with their weights. Its size is at most `limit` and it may contain duplicates.
+        * `randomSeed` (long integer or None) an optional random seed to make the sampling deterministic.
+        * `randomGenerator` (random generator state or None) platform-dependent representation of the random generator's state if a `randomSeed` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampled instances.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(limit, (int, long, float)):
@@ -45,9 +65,18 @@ class Sample(Factory, Container):
 
     @staticmethod
     def ing(limit, quantity, randomSeed=None):
+        """Synonym for ``__init__``."""
         return Sample(limit, quantity, randomSeed)
 
     def __init__(self, limit, quantity, randomSeed=None):
+        """
+        * `limit` (32-bit integer) is the maximum number of entries to store before replacement. This is a strict _number_ of entries, unaffected by weights.
+        * `quantity` (function returning a double, a vector of doubles, or a string) computes the quantity of interest from the data.
+        * `randomSeed` (long integer or None) an optional random seed to make the sampling deterministic.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `values` (mutable, list of quantity return type, double, double triplets) is the set of collected values with their weights and a random number (see algorithm below), sorted by the random number. Its size is at most `limit` and it may contain duplicates.
+        * `randomGenerator` (random generator state or None) platform-dependent representation of the random generator's state if a `randomSeed` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampling instances.
+        """
         if not isinstance(limit, (int, long, float)):
             raise TypeError("limit ({}) must be a number".format(limit))
         if randomSeed is not None and not isinstance(randomSeed, (int, long)):

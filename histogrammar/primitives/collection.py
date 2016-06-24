@@ -22,8 +22,23 @@ class Collection(object): pass
 ################################################################ Label
 
 class Label(Factory, Container, Collection):
+    """Accumulate any number of aggregators of the same type and label them with strings. Every sub-aggregator is filled with every input datum.
+
+    This primitive simulates a directory of aggregators. For sub-directories, nest collections within the Label collection.
+
+    Note that all sub-aggregators within a Label must have the _same type_ (e.g. histograms of different binnings, but all histograms). To collect objects of _different types_ with string-based look-up keys, use [UntypedLabel](#untypedlabel-directory-of-different-types).
+
+    To collect aggregators of the _same type_ without naming them, use [Index](#index-list-with-integer-keys). To collect aggregators of _different types_ without naming them, use [Branch](#branch-tuple-of-different-types).
+
+    In strongly typed languages, the restriction to a single type allows nested objects to be extracted without casting.
+    """
     @staticmethod
     def ed(entries, **pairs):
+        """
+        * `entries` (double) is the number of entries.
+        * `pairs` (list of string, past-tense aggregator pairs) is the collection of filled aggregators.
+        * `pairsMap` (map of the above, probably a hashmap) is intended for fast look-ups.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
@@ -37,9 +52,15 @@ class Label(Factory, Container, Collection):
 
     @staticmethod
     def ing(**pairs):
+        """Synonym for ``__init__``."""
         return Label(**pairs)
 
     def __init__(self, **pairs):
+        """
+        * `pairs` (list of string, present-tense aggregator pairs) is the collection of aggregators to fill.
+        * `pairsMap` (map of the above, probably a hashmap) is intended for fast look-ups.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        """
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
             raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
         if any(not isinstance(x, basestring) for x in pairs.keys()):
@@ -144,8 +165,22 @@ Factory.register(Label)
 ################################################################ UntypedLabel
 
 class UntypedLabel(Factory, Container, Collection):
+    """Accumulate any number of aggregators of any type and label them with strings. Every sub-aggregator is filled with every input datum.
+
+    This primitive simulates a directory of aggregators. For sub-directories, nest collections within the UntypedLabel.
+
+    Note that sub-aggregators within an UntypedLabel may have _different types_. In strongly typed languages, this flexibility poses a problem: nested objects must be type-cast before they can be used. To collect objects of the _same type_ with string-based look-up keys, use [Label](#label-directory-with-string-based-keys).
+
+    To collect aggregators of the _same type_ without naming them, use [Index](#index-list-with-integer-keys). To collect aggregators of _different types_ without naming them, use [Branch](#branch-tuple-of-different-types).
+    """
+
     @staticmethod
     def ed(entries, **pairs):
+        """
+        * `entries` (double) is the number of entries.
+        * `pairs` (list of string, past-tense aggregator pairs) is the collection of filled aggregators.
+        * `pairsMap` (map of the above, probably a hashmap) is intended for fast look-ups.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
@@ -159,9 +194,15 @@ class UntypedLabel(Factory, Container, Collection):
 
     @staticmethod
     def ing(**pairs):
+        """Synonym for ``__init__``."""
         return UntypedLabel(**pairs)
 
     def __init__(self, **pairs):
+        """
+        * `pairs` (list of string, present-tense aggregator pairs) is the collection of aggregators to fill.
+        * `pairsMap` (map of the above, probably a hashmap) is intended for fast look-ups.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        """
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
             raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
 
@@ -260,8 +301,23 @@ Factory.register(UntypedLabel)
 ################################################################ Index
 
 class Index(Factory, Container, Collection):
+    """Accumulate any number of aggregators of the same type in a list. Every sub-aggregator is filled with every input datum.
+
+    This primitive provides an anonymous collection of aggregators (unless the integer index is taken to have special meaning, but generally such bookkeeping should be encoded in strings). Indexes can be nested to create two-dimensional ordinal grids of aggregators. (Use [Bin](#bin-regular-binning-for-histograms) if the space is to have a metric interpretation.)
+
+    Note that all sub-aggregators within an Index must have the _same type_ (e.g. histograms of different binnings, but all histograms). To collect objects of _different types,_ still indexed by integer, use [Branch](#branch-tuple-of-different-types).
+
+    To collect aggregators of the _same type_ with string-based labels, use [Label](#label-directory-with-string-based-keys). To collect aggregators of _different types_ with string-based labels, use [UntypedLabel](#untypedlabel-directory-of-different-types).
+
+    In strongly typed languages, the restriction to a single type allows nested objects to be extracted without casting.
+    """
+
     @staticmethod
     def ed(entries, *values):
+        """
+        * `entries` (double) is the number of entries.
+        * `values` (list of past-tense aggregators) is the collection of filled aggregators.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):
@@ -275,9 +331,14 @@ class Index(Factory, Container, Collection):
 
     @staticmethod
     def ing(*values):
+        """Synonym for ``__init__``."""
         return Index(*values)
 
     def __init__(self, *values):
+        """
+        * `values` (list of present-tense aggregators) is the collection of aggregators to fill.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        """
         if not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({}) must be a list of Containers".format(values))
         if len(values) < 1:
@@ -380,8 +441,36 @@ Factory.register(Index)
 ################################################################ Branch
 
 class Branch(Factory, Container, Collection):
+    """Accumulate aggregators of different types, indexed by i0 through i9. Every sub-aggregator is filled with every input datum.
+
+       This primitive provides an anonymous collection of aggregators of _different types,_ usually for gluing together various statistics. For instance, if the following associates a sum of weights to every bin in a histogram,
+
+       ```python
+       Bin.ing(100, 0, 1, lambda d: d.x,
+         Sum.ing(lambda d: d.weight))
+       ```
+
+       the following would associate the sum of weights and the sum of squared weights to every bin:
+
+       ```python
+       Bin.ing(100, 0, 1, lambda d: d.x,
+         Branch.ing(Sum.ing(lambda d: d.weight),
+                    Sum.ing(lambda d: d.weight**2)))
+       ```
+
+       Branch is a basic building block for complex aggregators. The limitation to ten branches, indexed from i0 to i9, is a concession to type inference in statically typed languages. It is not a fundamental limit, but the type-metaprogramming becomes increasingly complex as branches are added. Error messages may be convoluted as the compiler presents internals of the type-metaprogramming in response to a user's simple mistake.
+
+       Therefore, individual implementations may allow more than ten branches, but the Histogrammar standard only requires ten.
+
+       To collect an unlimited number of aggregators of the _same type_ without naming them, use [Index](#index-list-with-integer-keys). To collect aggregators of the _same type_ with string-based labels, use [Label](#label-directory-with-string-based-keys). To collect aggregators of _different types_ with string-based labels, use [UntypedLabel](#untypedlabel-directory-of-different-types).
+       """
+
     @staticmethod
     def ed(entries, *values):
+        """
+        * `entries` (double) is the number of entries.
+        * `values` (list of past-tense aggregators) is the collection of filled aggregators.
+        """
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):
@@ -395,9 +484,14 @@ class Branch(Factory, Container, Collection):
 
     @staticmethod
     def ing(*values):
+        """Synonym for ``__init__``."""
         return Branch(*values)
 
     def __init__(self, *values):
+        """
+        * `values` (list of present-tense aggregators) is the collection of aggregators to fill.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        """
         if not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({}) must be a list of Containers".format(values))
         if len(values) < 1:

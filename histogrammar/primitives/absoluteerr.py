@@ -18,14 +18,16 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class AbsoluteErr(Factory, Container):
-    """Accumulate the weighted Mean Absolute Error (MAE) of a quantity whose nominal value is zero."""
+    """Accumulate the weighted mean absolute error (MAE) of a quantity around zero.
+
+    The MAE is sometimes used as a replacement for the standard deviation, associated with medians, rather than means. However, this aggregator makes no attempt to estimate a median. If used as an "error," it should be used on a quantity whose nominal value is zero, such as a residual.
+    """
 
     @staticmethod
     def ed(entries, mae):
-        """Create an immutable [[org.dianahep.histogrammar.AbsoluteErred]] from arguments (instead of JSON).
-
-        @param entries Weighted number of entries (sum of all observed weights).
-        @param mae Sum of absolute differences of the quantity from zero (Mean Absolute Error).
+        """
+        * `entries` (double) is the number of entries.
+        * `mae` (double) is the mean absolute error.
         """
 
         if not isinstance(entries, (int, long, float)):
@@ -41,14 +43,16 @@ class AbsoluteErr(Factory, Container):
 
     @staticmethod
     def ing(quantity):
-        """Synonym for `__init__`."""
+        """Synonym for ``__init__``."""
         return AbsoluteErr(quantity)
 
     def __init__(self, quantity):
-        """Create an empty, mutable [[org.dianahep.histogrammar.AbsoluteErring]].
-
-        @param quantity Numerical function to track.
         """
+        * `quantity` (function returning double) computes the quantity of interest from the data.
+        * `entries` (mutable double) is the number of entries, initially 0.0.
+        * `mae` (mutable double) is the mean absolute error.
+        """
+
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.absoluteSum = 0.0
@@ -57,7 +61,7 @@ class AbsoluteErr(Factory, Container):
 
     @property
     def mae(self):
-        """Sum of absolute differences of the quantity from zero (Mean Absolute Error)."""
+        """The mean absolute error."""
         if self.entries == 0.0:
             return self.absoluteSum
         else:
