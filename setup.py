@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ setup(name="Histogrammar",
       version=histogrammar.version.__version__,
       scripts=["scripts/hgwatch"],
       description="Composable histogram primitives for distributed data reduction.",
-      author="Jim Pivarski",
+      author="Jim Pivarski (DIANA-HEP)",
       author_email="pivarski@fnal.gov",
       url="https://github.com/diana-hep/histogrammar",
       cmdclass={"test": TestCommand},
