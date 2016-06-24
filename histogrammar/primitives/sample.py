@@ -51,15 +51,15 @@ class Sample(Factory, Container):
             randomGenerator (random generator state or ``None``): Python representation of the random generator's state if a ``randomSeed`` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampled instances.
         """
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(limit, (int, long, float)):
-            raise TypeError("limit ({}) must be a number".format(limit))
+            raise TypeError("limit ({0}) must be a number".format(limit))
         if not isinstance(values, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 3 and isinstance(v[1], (int, long, float)) and isinstance(v[2], (int, long, float)) for v in values):
-            raise TypeError("values ({}) must be a list of quantity return type, number, number triples".format(values))
+            raise TypeError("values ({0}) must be a list of quantity return type, number, number triples".format(values))
         if randomSeed is not None and not isinstance(randomSeed, (int, long)):
-            raise TypeError("randomSeed ({}) must be None or a number".format(randomSeed))
+            raise TypeError("randomSeed ({0}) must be None or a number".format(randomSeed))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Sample(limit, None, randomSeed)
         del out.reservoir
         out.entries = entries
@@ -86,11 +86,11 @@ class Sample(Factory, Container):
             randomGenerator (random generator state or ``None``) Python representation of the random generator's state if a ``randomSeed`` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampling instances.
         """
         if not isinstance(limit, (int, long, float)):
-            raise TypeError("limit ({}) must be a number".format(limit))
+            raise TypeError("limit ({0}) must be a number".format(limit))
         if randomSeed is not None and not isinstance(randomSeed, (int, long)):
-            raise TypeError("randomSeed ({}) must be None or a number".format(randomSeed))
+            raise TypeError("randomSeed ({0}) must be None or a number".format(randomSeed))
         if limit <= 0.0:
-            raise ValueError("limit ({}) cannot be negative".format(limit))
+            raise ValueError("limit ({0}) cannot be negative".format(limit))
         self.entries = 0.0
         self.quantity = serializable(quantity)
         self.reservoir = Reservoir(limit)
@@ -147,7 +147,7 @@ class Sample(Factory, Container):
     def __add__(self, other):
         if isinstance(other, Sample):
             if self.limit != other.limit:
-                raise ContainerException("cannot add Ssample because limit differs ({} vs {})".format(self.limit, other.limit))
+                raise ContainerException("cannot add Ssample because limit differs ({0} vs {1})".format(self.limit, other.limit))
 
             if self.randomGenerator is not None and other.randomGenerator is not None:
                 newSeed = self.randomGenerator.randint(MIN_LONG, MAX_LONG) + other.randomGenerator.randint(MIN_LONG, MAX_LONG)
@@ -178,7 +178,7 @@ class Sample(Factory, Container):
             return out.specialize()
 
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -186,7 +186,7 @@ class Sample(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float, basestring)) and not (isinstance(q, (list, tuple)) and all(isinstance(qi, (int, long, float)) for qi in q)):
-                raise TypeError("function return value ({}) must be boolean, number, string, or list/tuple of numbers".format(q))
+                raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
 
             self.reservoir.update(q, weight, self.randomGenerator)
 
@@ -233,7 +233,7 @@ class Sample(Factory, Container):
                         if isinstance(wv["w"], (int, long, float)):
                             w = float(wv["w"])
                         else:
-                            raise JsonFormatException(wv["w"], "Sample.values {} w".format(i))
+                            raise JsonFormatException(wv["w"], "Sample.values {0} w".format(i))
 
                         if isinstance(wv["v"], basestring):
                             v = wv["v"]
@@ -242,15 +242,15 @@ class Sample(Factory, Container):
                         elif isinstance(wv["v"], (list, tuple)):
                             for j, d in enumerate(wv["v"]):
                                 if not isinstance(d, (int, long, float)):
-                                    raise JsonFormatException(d, "Sample.values {} v {}".format(i, j))
+                                    raise JsonFormatException(d, "Sample.values {0} v {1}".format(i, j))
                             v = tuple(map(float, wv["v"]))
                         else:
-                            raise JsonFormatException(wv["v"], "Sample.values {} v".format(i))
+                            raise JsonFormatException(wv["v"], "Sample.values {0} v".format(i))
 
                         values.append((v, w))
 
                     else:
-                        raise JsonFormatException(wv, "Sample.values {}".format(i))
+                        raise JsonFormatException(wv, "Sample.values {0}".format(i))
 
             else:
                 raise JsonFormatException(json["values"], "Sample.values")
@@ -270,7 +270,7 @@ class Sample(Factory, Container):
             raise JsonFormatException(json, "Sample")
 
     def __repr__(self):
-        return "<Sample size={}>".format(self.size)
+        return "<Sample size={0}>".format(self.size)
 
     def __eq__(self, other):
         return isinstance(other, Sample) and self.entries == other.entries and self.quantity == other.quantity and self.limit == other.limit and self.values == other.values and (self.randomGenerator is None) == (other.randomGenerator is None)

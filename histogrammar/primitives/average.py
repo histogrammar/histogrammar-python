@@ -33,11 +33,11 @@ class Average(Factory, Container):
         """
 
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(mean, (int, long, float)):
-            raise TypeError("mean ({}) must be a number".format(mean))
+            raise TypeError("mean ({0}) must be a number".format(mean))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Average(None)
         out.entries = float(entries)
         out.mean = float(mean)
@@ -78,7 +78,7 @@ class Average(Factory, Container):
                 out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
             return out.specialize()
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -86,7 +86,7 @@ class Average(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float)):
-                raise TypeError("function return value ({}) must be boolean or number".format(q))
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
@@ -134,7 +134,7 @@ class Average(Factory, Container):
             raise JsonFormatException(json, "Average")
         
     def __repr__(self):
-        return "<Average mean={}>".format(self.mean)
+        return "<Average mean={0}>".format(self.mean)
 
     def __eq__(self, other):
         return isinstance(other, Average) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.mean, other.mean)

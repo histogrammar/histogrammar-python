@@ -36,13 +36,13 @@ class Fraction(Factory, Container):
             denominator (:doc:`Container <histogrammar.defs.Container>`): the filled denominator.
         """
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(numerator, Container):
-            raise TypeError("numerator ({}) must be a Container".format(numerator))
+            raise TypeError("numerator ({0}) must be a Container".format(numerator))
         if not isinstance(denominator, Container):
-            raise TypeError("denominatior ({}) must be a Container".format(denominatior))
+            raise TypeError("denominatior ({0}) must be a Container".format(denominatior))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
 
         out = Fraction(None, None)
         out.entries = float(entries)
@@ -68,7 +68,7 @@ class Fraction(Factory, Container):
             denominator (:doc:`Container <histogrammar.defs.Container>`): the sub-aggregator of all entries.
         """
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({}) must be None or a Container".format(value))
+            raise TypeError("value ({0}) must be None or a Container".format(value))
         self.entries = 0.0
         self.quantity = serializable(quantity)
         if value is not None:
@@ -88,9 +88,9 @@ class Fraction(Factory, Container):
         This funciton will attempt to combine the ``numerator`` and ``denominator``, so they must have the same binning/bounds/etc.
         """
         if not isinstance(numerator, Container):
-            raise TypeError("numerator ({}) must be a Container".format(numerator))
+            raise TypeError("numerator ({0}) must be a Container".format(numerator))
         if not isinstance(denominator, Container):
-            raise TypeError("denominatior ({}) must be a Container".format(denominatior))
+            raise TypeError("denominatior ({0}) must be a Container".format(denominatior))
         # check for compatibility
         numerator + denominator
         # return object
@@ -111,14 +111,14 @@ class Fraction(Factory, Container):
             out.denominator = self.denominator + other.denominator
             return out.specialize()
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         w = self.quantity(datum)
         if not isinstance(w, (bool, int, long, float)):
-            raise TypeError("function return value ({}) must be boolean or number".format(w))
+            raise TypeError("function return value ({0}) must be boolean or number".format(w))
         w *= weight
 
         if weight > 0.0:
@@ -190,7 +190,7 @@ class Fraction(Factory, Container):
             raise JsonFormatException(json, "Fraction")
 
     def __repr__(self):
-        return "<Fraction values={}>".format(self.numerator.name)
+        return "<Fraction values={0}>".format(self.numerator.name)
 
     def __eq__(self, other):
         return isinstance(other, Fraction) and numeq(self.entries, other.entries) and self.quantity == other.quantity and self.numerator == other.numerator and self.denominator == other.denominator

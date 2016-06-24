@@ -28,12 +28,12 @@ class ContainerException(Exception):
 class InvalidJsonException(Exception):
     """Exception type for strings that cannot be parsed because they are not proper JSON."""
     def __init__(self, message):
-        super(InvalidJsonException, self).__init__("invalid JSON: {}".format(message))
+        super(InvalidJsonException, self).__init__("invalid JSON: {0}".format(message))
 
 class JsonFormatException(Exception):
     """Exception type for unexpected JSON structure, thrown by ``fromJson`` methods."""
     def __init__(self, x, context):
-        super(JsonFormatException, self).__init__("wrong JSON format for {}: {}".format(context, jsonlib.dumps(x)))
+        super(JsonFormatException, self).__init__("wrong JSON format for {0}: {1}".format(context, jsonlib.dumps(x)))
 
 class Factory(object):
     """Interface for a container factory, always named as imperative verbs, such as "Count" and "Bin".
@@ -90,7 +90,7 @@ class Factory(object):
                 raise JsonFormatException(json["type"], "Factory.type")
 
             if name not in Factory.registered:
-                raise JsonFormatException(json, "unrecognized container (is it a custom container that hasn't been registered?): {}".format(name))
+                raise JsonFormatException(json, "unrecognized container (is it a custom container that hasn't been registered?): {0}".format(name))
 
             return Factory.registered[name].fromJsonFragment(json["data"], None)
 
@@ -143,7 +143,7 @@ class Container(object):
             if memo is None:
                 memo = set()
             if any(x is self for x in memo):
-                raise ContainerException("cannot fill a tree that contains the same aggregator twice: {}".format(self))
+                raise ContainerException("cannot fill a tree that contains the same aggregator twice: {0}".format(self))
             memo.add(self)
             for child in self.children:
                 child._checkForCrossReferences(memo)

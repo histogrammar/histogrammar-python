@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import bisect
-import functools
 import marshal
 import math
 import random
@@ -27,8 +26,74 @@ if sys.version_info[0] > 2:
     basestring = str
     xrange = range
     long = int
+elif sys.version_info[0] == 2 and sys.version_info[1] > 6:
+    from functools import total_ordering
+else:
+    # Copyright (c) 2012, Konsta Vesterinen (applies to Python 2.6 implementation of total_ordering only)
+    #
+    # All rights reserved.
+    #
+    # Redistribution and use in source and binary forms, with or without
+    # modification, are permitted provided that the following conditions are met:
+    #
+    # * Redistributions of source code must retain the above copyright notice, this
+    #   list of conditions and the following disclaimer.
+    #
+    # * Redistributions in binary form must reproduce the above copyright notice,
+    #   this list of conditions and the following disclaimer in the documentation
+    #   and/or other materials provided with the distribution.
+    #
+    # * The names of the contributors may not be used to endorse or promote products
+    #   derived from this software without specific prior written permission.
+    #
+    # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    # DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT,
+    # INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+    # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+    # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+    # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+    # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+    # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-@functools.total_ordering
+    def total_ordering(cls):
+        """
+        Backport to work with Python 2.6
+        Class decorator that fills in missing ordering methods
+        Code from: http://code.activestate.com/recipes/576685/
+        Copied from: https://github.com/kvesteri/total-ordering
+        """
+        convert = {
+            '__lt__': [
+                ('__gt__', lambda self, other: not (self < other or self == other)),
+                ('__le__', lambda self, other: self < other or self == other),
+                ('__ge__', lambda self, other: not self < other)],
+            '__le__': [
+                ('__ge__', lambda self, other: not self <= other or self == other),
+                ('__lt__', lambda self, other: self <= other and not self == other),
+                ('__gt__', lambda self, other: not self <= other)],
+            '__gt__': [
+                ('__lt__', lambda self, other: not (self > other or self == other)),
+                ('__ge__', lambda self, other: self > other or self == other),
+                ('__le__', lambda self, other: not self > other)],
+            '__ge__': [
+                ('__le__', lambda self, other: (not self >= other) or self == other),
+                ('__gt__', lambda self, other: self >= other and not self == other),
+                ('__lt__', lambda self, other: not self >= other)]
+        }
+        roots = set(dir(cls)) & set(convert)
+        if not roots:
+            raise ValueError('must define at least one ordering operation: < > <= >=')
+        root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
+        for opname, opfunc in convert[root]:
+            if opname not in roots:
+                opfunc.__name__ = opname
+                opfunc.__doc__ = getattr(int, opname).__doc__
+                setattr(cls, opname, opfunc)
+        return cls
+    
+@total_ordering
 class LessThanEverything(object):
     """An object that will always float the the beginning of a list in a sort."""
     def __le__(self, other):
@@ -216,7 +281,7 @@ class UserFcn(object):
         else:
             self.name = name
         if expr is not None and not isinstance(expr, (basestring, types.FunctionType)):
-            raise TypeError("quantity ({}) must be a string or function".format(expr))
+            raise TypeError("quantity ({0}) must be a string or function".format(expr))
 
     def __call__(self, *args, **kwds):
         if not hasattr(self, "fcn"):
@@ -240,7 +305,7 @@ class UserFcn(object):
                             try:
                                 v, = set(c.co_names) - set(context.keys())
                             except ValueError:
-                                raise NameError("more than one unrecognized variable names in single-argument function: {}".format(set(c.co_names) - set(context.keys())))
+                                raise NameError("more than one unrecognized variable names in single-argument function: {0}".format(set(c.co_names) - set(context.keys())))
                             varname[0] = v
 
                         context.update({v: datum})
@@ -253,7 +318,7 @@ class UserFcn(object):
                 raise TypeError("immutable container (created from JSON or .ed) cannot be filled")
 
             else:
-                raise TypeError("unrecognized type for function: {}".format(type(self.expr)))
+                raise TypeError("unrecognized type for function: {0}".format(type(self.expr)))
 
         return self.fcn(*args, **kwds)
 
@@ -262,14 +327,14 @@ class UserFcn(object):
             return (deserializeString, (self.__class__, self.expr, self.name))
 
         elif isinstance(self.expr, types.FunctionType):
-            refs = {n: self.expr.__globals__[n] for n in self.expr.__code__.co_names if n in self.expr.__globals__}
+            refs = dict((n, self.expr.__globals__[n]) for n in self.expr.__code__.co_names if n in self.expr.__globals__)
             return (deserializeFunction, (self.__class__, marshal.dumps(self.expr.__code__), self.expr.__name__, self.expr.__defaults__, self.expr.__closure__, refs, self.name))
 
         else:
-            raise TypeError("unrecognized type for function: {}".format(type(self.expr)))
+            raise TypeError("unrecognized type for function: {0}".format(type(self.expr)))
 
     def __repr__(self):
-        return "UserFcn({}, {})".format(self.expr, self.name)
+        return "UserFcn({0}, {1})".format(self.expr, self.name)
 
     def __eq__(self, other):
         out = isinstance(other, UserFcn) and self.name == other.name
@@ -326,7 +391,7 @@ class CachedFcn(UserFcn):
             return self.lastReturn
 
     def __repr__(self):
-        return "CachedFcn({}, {})".format(self.expr, self.name)
+        return "CachedFcn({0}, {1})".format(self.expr, self.name)
 
 def deserializeString(cls, expr, name):
     """Used by Pickle to reconstruct a string-based histogrammar.util.UserFcn from Pickle data."""
@@ -381,7 +446,7 @@ def named(name, fcn):
     Unlike the histogrammar.util.UserFcn constructor, this function avoids duplication (doubly wrapped objects) and commutes with histogrammar.util.cached and histogrammar.util.serializable (they can be applied in any order).
     """
     if isinstance(fcn, UserFcn) and fcn.name is not None:
-        raise ValueError("two names applied to the same function: {} and {}".format(fcn.name, name))
+        raise ValueError("two names applied to the same function: {0} and {1}".format(fcn.name, name))
     elif isinstance(fcn, CachedFcn):
         return CachedFcn(fcn.expr, name)
     elif isinstance(fcn, UserFcn):
@@ -694,7 +759,7 @@ class CentrallyBinMethods(object):
         """Find the lower and upper neighbors of a bin (given by exact bin center)."""
         closestIndex = self.index(center)
         if self.bins[closestIndex][0] != center:
-            raise TypeError("position {} is not the exact center of a bin".format(center))
+            raise TypeError("position {0} is not the exact center of a bin".format(center))
         elif closestIndex == 0:
             return None, self.bins[closestIndex + 1][0]
         elif closestIndex == len(self.bins) - 1:

@@ -38,11 +38,11 @@ class Select(Factory, Container):
             cut (:doc:`Container <histogrammar.defs.Container>`): the filled sub-aggregator.
         """
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(cut, Container):
-            raise TypeError("cut ({}) must be a Container".format(cut))
+            raise TypeError("cut ({0}) must be a Container".format(cut))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Select(None, cut)
         out.entries = entries
         return out.specialize()
@@ -72,7 +72,7 @@ class Select(Factory, Container):
             entries (float): the number of entries, initially 0.0.
         """
         if not isinstance(cut, Container):
-            raise TypeError("cut ({}) must be a Container".format(cut))
+            raise TypeError("cut ({0}) must be a Container".format(cut))
         self.entries = 0.0
         self.quantity = serializable(quantity)
         self.cut = cut
@@ -94,14 +94,14 @@ class Select(Factory, Container):
             out.entries = self.entries + other.entries
             return out.specialize()
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
         w = self.quantity(datum)
         if not isinstance(w, (bool, int, long, float)):
-            raise TypeError("function return value ({}) must be boolean or number".format(w))
+            raise TypeError("function return value ({0}) must be boolean or number".format(w))
         w *= weight
 
         if w > 0.0:
@@ -152,7 +152,7 @@ class Select(Factory, Container):
             raise JsonFormatException(json, "Select")
 
     def __repr__(self):
-        return "<Select cut={}>".format(self.cut.name)
+        return "<Select cut={0}>".format(self.cut.name)
 
     def __eq__(self, other):
         return isinstance(other, Select) and numeq(self.entries, other.entries) and self.cut == other.cut

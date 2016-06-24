@@ -61,27 +61,27 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         """
 
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(num, (int, long)):
-            raise TypeError("num ({}) must be an integer".format(num))
+            raise TypeError("num ({0}) must be an integer".format(num))
         if not isinstance(tailDetail, (int, long, float)):
-            raise TypeError("tailDetail ({}) must be a number".format(tailDetail))
+            raise TypeError("tailDetail ({0}) must be a number".format(tailDetail))
         if not isinstance(contentType, basestring):
-            raise TypeError("contentType ({}) must be a string".format(contentType))
+            raise TypeError("contentType ({0}) must be a string".format(contentType))
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
-            raise TypeError("bins ({}) must be a list of number, Container pairs".format(bins))
+            raise TypeError("bins ({0}) must be a list of number, Container pairs".format(bins))
         if not isinstance(min, (int, long, float)):
-            raise TypeError("min ({}) must be a number".format(min))
+            raise TypeError("min ({0}) must be a number".format(min))
         if not isinstance(max, (int, long, float)):
-            raise TypeError("max ({}) must be a number".format(max))
+            raise TypeError("max ({0}) must be a number".format(max))
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         if num < 2:
-            raise ValueError("number of bins ({}) must be at least two".format(num))
+            raise ValueError("number of bins ({0}) must be at least two".format(num))
         if tailDetail < 0.0 or tailDetail > 1.0:
-            raise ValueError("tailDetail parameter ({}) must be between 0.0 and 1.0 inclusive".format(tailDetail))
+            raise ValueError("tailDetail parameter ({0}) must be between 0.0 and 1.0 inclusive".format(tailDetail))
 
         out = AdaptivelyBin(None, num, tailDetail, None, nanflow)
         out.clustering.entries = float(entries)
@@ -114,17 +114,17 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         """
 
         if not isinstance(num, (int, long)):
-            raise TypeError("num ({}) must be an integer".format(num))
+            raise TypeError("num ({0}) must be an integer".format(num))
         if not isinstance(tailDetail, (int, long, float)):
-            raise TypeError("tailDetail ({}) must be a number".format(tailDetail))
+            raise TypeError("tailDetail ({0}) must be a number".format(tailDetail))
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({}) must be None or a Container".format(value))
+            raise TypeError("value ({0}) must be None or a Container".format(value))
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if num < 2:
-            raise ValueError("number of bins ({}) must be at least two".format(num))
+            raise ValueError("number of bins ({0}) must be at least two".format(num))
         if tailDetail < 0.0 or tailDetail > 1.0:
-            raise ValueError("tailDetail parameter ({}) must be between 0.0 and 1.0 inclusive".format(tailDetail))
+            raise ValueError("tailDetail parameter ({0}) must be between 0.0 and 1.0 inclusive".format(tailDetail))
 
         self.quantity = serializable(quantity)
         self.clustering = Clustering1D(num, tailDetail, value, [], float("nan"), float("nan"), 0.0)
@@ -192,9 +192,9 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
     @inheritdoc(Container)
     def __add__(self, other):
         if self.num != other.num:
-            raise ContainerException("cannot add AdaptivelyBin because number of bins is different ({} vs {})".format(self.num, other.num))
+            raise ContainerException("cannot add AdaptivelyBin because number of bins is different ({0} vs {1})".format(self.num, other.num))
         if self.tailDetail != other.tailDetail:
-            raise ContainerException("cannot add AdaptivelyBin because tailDetail parameter is different ({} vs {})".format(self.num, other.num))
+            raise ContainerException("cannot add AdaptivelyBin because tailDetail parameter is different ({0} vs {1})".format(self.num, other.num))
 
         out = AdaptivelyBin(self.quantity, self.num, self.tailDetail, self.clustering.value, self.nanflow + other.nanflow)
         out.clustering = self.clustering.merge(other.clustering)
@@ -206,7 +206,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float)):
-                raise TypeError("function return value ({}) must be boolean or number".format(q))
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             self.clustering.update(q, datum, weight)
 
@@ -286,12 +286,12 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
                         if isinstance(binpair["center"], (int, long, float)):
                             center = float(binpair["center"])
                         else:
-                            JsonFormatException(binpair["center"], "AdaptivelyBin.bins {} center".format(i))
+                            JsonFormatException(binpair["center"], "AdaptivelyBin.bins {0} center".format(i))
                         
                         bins.append((center, factory.fromJsonFragment(binpair["value"], binsName)))
 
                     else:
-                        raise JsonFormatException(binpair, "AdaptivelyBin.bins {}".format(i))
+                        raise JsonFormatException(binpair, "AdaptivelyBin.bins {0}".format(i))
 
             if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], (int, long, float)):
                 min = float(json["min"])
@@ -328,7 +328,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
             v = self.value.name
         else:
             v = self.contentType
-        return "<AdaptivelyBin bins={} size={} nanflow={}>".format(v, len(self.bins), self.nanflow.name)
+        return "<AdaptivelyBin bins={0} size={1} nanflow={2}>".format(v, len(self.bins), self.nanflow.name)
 
     def __eq__(self, other):
         return isinstance(other, AdaptivelyBin) and self.quantity == other.quantity and self.clustering == other.clustering

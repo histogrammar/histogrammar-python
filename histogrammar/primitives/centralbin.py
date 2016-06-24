@@ -41,17 +41,17 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
             nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
-            raise TypeError("bins ({}) must be a list of number, Container pairs".format(bins))
+            raise TypeError("bins ({0}) must be a list of number, Container pairs".format(bins))
         if not isinstance(min, (int, long, float)):
-            raise TypeError("min ({}) must be a number".format(min))
+            raise TypeError("min ({0}) must be a number".format(min))
         if not isinstance(max, (int, long, float)):
-            raise TypeError("max ({}) must be a number".format(max))
+            raise TypeError("max ({0}) must be a number".format(max))
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = CentrallyBin(bins, None, None, nanflow)
         out.entries = entries
         out.bins = bins
@@ -81,13 +81,13 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         """
 
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
-            raise TypeError("bins ({}) must be a list of number, Container pairs".format(bins))
+            raise TypeError("bins ({0}) must be a list of number, Container pairs".format(bins))
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({}) must be None or a Container".format(value))
+            raise TypeError("value ({0}) must be None or a Container".format(value))
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if len(bins) < 2:
-            raise ValueError("number of bins ({}) must be at least two".format(len(bins)))
+            raise ValueError("number of bins ({0}) must be at least two".format(len(bins)))
 
         self.entries = 0.0
         if value is None:
@@ -121,7 +121,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
     @inheritdoc(Container)
     def __add__(self, other):
         if self.centers != other.centers:
-            raise ContainerException("cannot add CentrallyBin because centers are different:\n    {}\nvs\n    {}".format(self.centers, other.centers))
+            raise ContainerException("cannot add CentrallyBin because centers are different:\n    {0}\nvs\n    {1}".format(self.centers, other.centers))
 
         newbins = [(c1, v1 + v2) for (c1, v1), (_, v2) in zip(self.bins, other.bins)]
 
@@ -138,7 +138,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float)):
-                raise TypeError("function return value ({}) must be boolean or number".format(q))
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             if self.nan(q):
                 self.nanflow.fill(datum, weight)
@@ -210,12 +210,12 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
                         if isinstance(binpair["center"], (int, long, float)):
                             center = float(binpair["center"])
                         else:
-                            JsonFormatException(binpair["center"], "CentrallyBin.bins {} center".format(i))
+                            JsonFormatException(binpair["center"], "CentrallyBin.bins {0} center".format(i))
                         
                         bins.append((center, factory.fromJsonFragment(binpair["value"], binsName)))
 
                     else:
-                        raise JsonFormatException(binpair, "CentrallyBin.bins {}".format(i))
+                        raise JsonFormatException(binpair, "CentrallyBin.bins {0}".format(i))
 
             if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], (int, long, float)):
                 min = float(json["min"])
@@ -241,7 +241,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
             raise JsonFormatException(json, "CentrallyBin")
 
     def __repr__(self):
-        return "<CentrallyBin bins={} size={} nanflow={}>".format(self.bins[0][1].name, len(self.bins), self.nanflow.name)
+        return "<CentrallyBin bins={0} size={1} nanflow={2}>".format(self.bins[0][1].name, len(self.bins), self.nanflow.name)
 
     def __eq__(self, other):
         return isinstance(other, CentrallyBin) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.bins == other.bins and numeq(self.min, other.min) and numeq(self.max, other.max) and self.nanflow == other.nanflow

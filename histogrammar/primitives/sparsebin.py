@@ -43,21 +43,21 @@ class SparselyBin(Factory, Container):
             origin (float): the left edge of the bin whose index is zero.
         """
         if not isinstance(binWidth, (int, long, float)):
-            raise TypeError("binWidth ({}) must be a number".format(binWidth))
+            raise TypeError("binWidth ({0}) must be a number".format(binWidth))
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(contentType, basestring):
-            raise TypeError("contentType ({}) must be a string".format(contentType))
+            raise TypeError("contentType ({0}) must be a string".format(contentType))
         if not isinstance(bins, dict) or not all(isinstance(k, (int, long)) and isinstance(v, Container) for k, v in bins.items()):
-            raise TypeError("bins ({}) must be a map from 64-bit integers to Containers".format(bins))
+            raise TypeError("bins ({0}) must be a map from 64-bit integers to Containers".format(bins))
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if not isinstance(origin, (int, long, float)):
-            raise TypeError("origin ({}) must be a number".format(origin))
+            raise TypeError("origin ({0}) must be a number".format(origin))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         if binWidth <= 0.0:
-            raise ValueError("binWidth ({}) must be greater than zero".format(binWidth))
+            raise ValueError("binWidth ({0}) must be greater than zero".format(binWidth))
 
         out = SparselyBin(binWidth, None, None, nanflow, origin)
         out.entries = entries
@@ -85,15 +85,15 @@ class SparselyBin(Factory, Container):
             bins (dict from int to :doc:`Container <histogrammar.defs.Container>`): the map, probably a hashmap, to fill with values when their `entries` become non-zero.
         """
         if not isinstance(binWidth, (int, long, float)):
-            raise TypeError("binWidth ({}) must be a number".format(binWidth))
+            raise TypeError("binWidth ({0}) must be a number".format(binWidth))
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({}) must be a Container".format(value))
+            raise TypeError("value ({0}) must be a Container".format(value))
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if not isinstance(origin, (int, long, float)):
-            raise TypeError("origin ({}) must be a number".format(origin))
+            raise TypeError("origin ({0}) must be a number".format(origin))
         if binWidth <= 0.0:
-            raise ValueError("binWidth ({}) must be greater than zero".format(binWidth))
+            raise ValueError("binWidth ({0}) must be greater than zero".format(binWidth))
 
         self.binWidth = binWidth
         self.entries = 0.0
@@ -123,9 +123,9 @@ class SparselyBin(Factory, Container):
     def __add__(self, other):
         if isinstance(other, SparselyBin):
             if self.binWidth != other.binWidth:
-                raise ContainerException("cannot add SparselyBins because binWidth differs ({} vs {})".format(self.binWidth, other.binWidth))
+                raise ContainerException("cannot add SparselyBins because binWidth differs ({0} vs {1})".format(self.binWidth, other.binWidth))
             if self.origin != other.origin:
-                raise ContainerException("cannot add SparselyBins because origin differs ({} vs {})".format(self.origin, other.origin))
+                raise ContainerException("cannot add SparselyBins because origin differs ({0} vs {1})".format(self.origin, other.origin))
 
             out = SparselyBin(self.binWidth, self.quantity, self.value, self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
@@ -138,7 +138,7 @@ class SparselyBin(Factory, Container):
             return out.specialize()
 
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @property
     def numFilled(self):
@@ -217,7 +217,7 @@ class SparselyBin(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float)):
-                raise TypeError("function return value ({}) must be boolean or number".format(q))
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             if self.nan(q):
                 self.nanflow.fill(datum, weight)
@@ -258,7 +258,7 @@ class SparselyBin(Factory, Container):
             "binWidth": floatToJson(self.binWidth),
             "entries": floatToJson(self.entries),
             "bins:type": self.value.name if self.value is not None else self.contentType,
-            "bins": {str(i): v.toJsonFragment(True) for i, v in self.bins.items()},
+            "bins": dict((str(i), v.toJsonFragment(True)) for i, v in self.bins.items()),
             "nanflow:type": self.nanflow.name,
             "nanflow": self.nanflow.toJsonFragment(False),
             "origin": self.origin,
@@ -303,7 +303,7 @@ class SparselyBin(Factory, Container):
                     except ValueError:
                         raise JsonFormatException(i, "SparselyBin.bins key must be an integer")
 
-                bins = {int(i): binsFactory.fromJsonFragment(v, binsName) for i, v in json["bins"].items()}
+                bins = dict((int(i), binsFactory.fromJsonFragment(v, binsName)) for i, v in json["bins"].items())
 
             else:
                 raise JsonFormatException(json, "SparselyBin.bins")
@@ -333,7 +333,7 @@ class SparselyBin(Factory, Container):
             contentType = self.value.name
         else:
             contentType = repr(min(self.bins.items())[1])
-        return "<SparselyBin binWidth={} bins={} nanflow={}>".format(self.binWidth, self.value.name if self.value is not None else self.contentType, self.nanflow.name)
+        return "<SparselyBin binWidth={0} bins={1} nanflow={2}>".format(self.binWidth, self.value.name if self.value is not None else self.contentType, self.nanflow.name)
 
     def __eq__(self, other):
         return isinstance(other, SparselyBin) and numeq(self.binWidth, other.binWidth) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.bins == other.bins and self.nanflow == other.nanflow and numeq(self.origin, other.origin)

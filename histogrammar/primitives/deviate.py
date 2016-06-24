@@ -35,13 +35,13 @@ class Deviate(Factory, Container):
             variance (float): the variance.
         """
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(mean, (int, long, float)):
-            raise TypeError("mean ({}) must be a number".format(mean))
+            raise TypeError("mean ({0}) must be a number".format(mean))
         if not isinstance(variance, (int, long, float)):
-            raise TypeError("variance ({}) must be a number".format(variance))
+            raise TypeError("variance ({0}) must be a number".format(variance))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Deviate(None)
         out.entries = float(entries)
         out.mean = float(mean)
@@ -94,7 +94,7 @@ class Deviate(Factory, Container):
             out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + self.entries*self.mean**2 + other.entries*other.mean**2 - 2.0*out.mean*(self.entries*self.mean + other.entries*other.mean) + out.mean*out.mean*out.entries
             return out.specialize()
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -102,7 +102,7 @@ class Deviate(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float)):
-                raise TypeError("function return value ({}) must be boolean or number".format(q))
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
@@ -157,7 +157,7 @@ class Deviate(Factory, Container):
             raise JsonFormatException(json, "Deviate")
         
     def __repr__(self):
-        return "<Deviate mean={} variance={}>".format(self.mean, self.variance)
+        return "<Deviate mean={0} variance={1}>".format(self.mean, self.variance)
 
     def __eq__(self, other):
         return isinstance(other, Deviate) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.mean, other.mean) and numeq(self.variance, other.variance)

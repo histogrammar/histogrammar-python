@@ -62,6 +62,9 @@ class TestEverything(unittest.TestCase):
         else:
             self.assertEqual(x, y)
 
+    def runTest(self):
+        pass
+
     def test_count(self):
         x = Count()
         self.assertEqual(x, x)

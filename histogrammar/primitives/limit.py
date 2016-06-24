@@ -48,15 +48,15 @@ class Limit(Factory, Container):
             value (:doc:`Container <histogrammar.defs.Container>` or ``None``) is the filled sub-aggregator if unsaturated, ``None`` if saturated.
         """
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(limit, (int, long, float)):
-            raise TypeError("limit ({}) must be a number".format(limit))
+            raise TypeError("limit ({0}) must be a number".format(limit))
         if not isinstance(contentType, basestring):
-            raise TypeError("contentType ({}) must be a number".format(contentType))
+            raise TypeError("contentType ({0}) must be a number".format(contentType))
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({}) must be None or a Container".format(value))
+            raise TypeError("value ({0}) must be None or a Container".format(value))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
 
         out = Limit(limit, value)
         out.entries = entries
@@ -80,9 +80,9 @@ class Limit(Factory, Container):
             contentType (str): the value's sub-aggregator type (must be provided to determine type for the case when `value` has been deleted).
         """
         if not isinstance(limit, (int, long, float)):
-            raise TypeError("limit ({}) must be a number".format(limit))
+            raise TypeError("limit ({0}) must be a number".format(limit))
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({}) must be None or a Container".format(value))
+            raise TypeError("value ({0}) must be None or a Container".format(value))
 
         self.entries = 0.0
         self.limit = limit
@@ -130,7 +130,7 @@ class Limit(Factory, Container):
     def __add__(self, other):
         if isinstance(other, Limit):
             if self.limit != other.limit:
-                raise ContainerExeption("cannot add Limit because they have different limits ({} vs {})".format(self.limit, other.limit))
+                raise ContainerExeption("cannot add Limit because they have different limits ({0} vs {1})".format(self.limit, other.limit))
             else:
                 newentries = self.entries + other.entries
                 if newentries > self.limit:
@@ -141,7 +141,7 @@ class Limit(Factory, Container):
                 return Limit.ed(newentries, self.limit, self.contentType, newvalue)
 
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -198,7 +198,7 @@ class Limit(Factory, Container):
             raise JsonFormatException(json, "Limit")
 
     def __repr__(self):
-        return "<Limit value={}>".format("saturated" if self.saturated else self.value.name)
+        return "<Limit value={0}>".format("saturated" if self.saturated else self.value.name)
 
     def __eq__(self, other):
         return isinstance(other, Limit) and numeq(self.entries, other.entries) and numeq(self.limit, other.limit) and self.contentType == other.contentType and self.value == other.value

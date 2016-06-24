@@ -41,13 +41,13 @@ class Quantile(Factory, Container):
             estimate (float): the best estimate of where `target` of the distribution is below this value and `1.0 - target` of the distribution is above.
         """
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(target, (int, long, float)):
-            raise TypeError("target ({}) must be a number".format(target))
+            raise TypeError("target ({0}) must be a number".format(target))
         if not isinstance(estimate, (int, long, float)):
-            raise TypeError("estimate ({}) must be a number".format(estimate))
+            raise TypeError("estimate ({0}) must be a number".format(estimate))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Quantile(target, None)
         out.entries = float(entries)
         out.estimate = float(estimate)
@@ -71,9 +71,9 @@ class Quantile(Factory, Container):
             cumulativeDeviation (float): the sum of absolute error between observed values and the current `estimate` (which moves). Initially, this value is 0.0.
         """
         if not isinstance(target, (int, long, float)):
-            raise TypeError("target ({}) must be a number".format(target))
+            raise TypeError("target ({0}) must be a number".format(target))
         if target < 0.0 or target > 1.0:
-            raise ValueError("target ({}) must be between 0 and 1, inclusive".format(target))
+            raise ValueError("target ({0}) must be between 0 and 1, inclusive".format(target))
         self.target = target
         self.quantity = serializable(quantity)
         self.entries = 0.0
@@ -106,9 +106,9 @@ class Quantile(Factory, Container):
                     out.estimate = (self.estimate*self.entries + other.estimate*other.entries) / (self.entries + other.entries)
                 return out.specialize()
             else:
-                raise ContainerException("cannot add Quantiles because targets do not match ({} vs {})".format(self.target, other.target))
+                raise ContainerException("cannot add Quantiles because targets do not match ({0} vs {1})".format(self.target, other.target))
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -116,7 +116,7 @@ class Quantile(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float)):
-                raise TypeError("function return value ({}) must be boolean or number".format(q))
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
@@ -179,7 +179,7 @@ class Quantile(Factory, Container):
             raise JsonFormatException(json, "Quantile")
 
     def __repr__(self):
-        return "<Quantile target={} estimate={}>".format(self.target, self.estimate)
+        return "<Quantile target={0} estimate={1}>".format(self.target, self.estimate)
 
     def __eq__(self, other):
         return isinstance(other, Quantile) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.target, other.target) and numeq(self.estimate, other.estimate) and numeq(self.cumulativeDeviation, other.cumulativeDeviation)

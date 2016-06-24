@@ -40,11 +40,11 @@ class Bag(Factory, Container):
         """
 
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(values, dict) and not all(isinstance(k, (int, long, float)) for k, v in values.items()):
-            raise TypeError("values ({}) must be a dict from numbers to range type".format(values))
+            raise TypeError("values ({0}) must be a dict from numbers to range type".format(values))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Bag(None)
         out.entries = float(entries)
         out.values = values
@@ -91,7 +91,7 @@ class Bag(Factory, Container):
             return out.specialize()
 
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -99,7 +99,7 @@ class Bag(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float, basestring)) and not (isinstance(q, (list, tuple)) and all(isinstance(qi, (int, long, float)) for qi in q)):
-                raise TypeError("function return value ({}) must be boolean, number, string, or list/tuple of numbers".format(q))
+                raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
             if isinstance(q, list):
                 q = tuple(q)
 
@@ -147,7 +147,7 @@ class Bag(Factory, Container):
                         if isinstance(nv["w"], (int, long, float)):
                             n = float(nv["w"])
                         else:
-                            raise JsonFormatException(nv["w"], "Bag.values {} n".format(i))
+                            raise JsonFormatException(nv["w"], "Bag.values {0} n".format(i))
 
                         if isinstance(nv["v"], basestring):
                             v = nv["v"]
@@ -156,15 +156,15 @@ class Bag(Factory, Container):
                         elif isinstance(nv["v"], (list, tuple)):
                             for j, d in enumerate(nv["v"]):
                                 if not isinstance(d, (int, long, float)):
-                                    raise JsonFormatException(d, "Bag.values {} v {}".format(i, j))
+                                    raise JsonFormatException(d, "Bag.values {0} v {1}".format(i, j))
                             v = tuple(map(float, nv["v"]))
                         else:
-                            raise JsonFormatException(nv["v"], "Bag.values {} v".format(i))
+                            raise JsonFormatException(nv["v"], "Bag.values {0} v".format(i))
 
                         values[v] = n
 
                     else:
-                        raise JsonFormatException(nv, "Bag.values {}".format(i))
+                        raise JsonFormatException(nv, "Bag.values {0}".format(i))
 
             elif json["values"] is None:
                 values = None
@@ -180,7 +180,7 @@ class Bag(Factory, Container):
             raise JsonFormatException(json, "Bag")
         
     def __repr__(self):
-        return "<Bag size={}>".format(len(self.values))
+        return "<Bag size={0}>".format(len(self.values))
 
     def __eq__(self, other):
         return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values

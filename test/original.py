@@ -18,12 +18,7 @@ import math
 import pickle
 import unittest
 
-
 from histogrammar import *
-
-
-
-
 
 class TestEverything(unittest.TestCase):
     simple = [3.4, 2.2, -1.8, 0.0, 7.3, -4.7, 1.6, 0.0, -3.0, -1.7]
@@ -106,6 +101,9 @@ class TestEverything(unittest.TestCase):
 
     def checkName(self, x):
         repr(x)
+
+    def runTest(self):
+        pass
 
     ################################################################ Count
 
@@ -918,7 +916,7 @@ class TestEverything(unittest.TestCase):
         categorizing = Categorize(named("something", lambda x: x.string[0]))
         for _ in self.struct: categorizing.fill(_)
 
-        self.assertEqual({k: v.entries for k, v in categorizing.pairsMap.items()}, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
+        self.assertEqual(dict((k, v.entries) for k, v in categorizing.pairsMap.items()), {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
 
         self.checkJson(categorizing)
         self.checkPickle(categorizing)

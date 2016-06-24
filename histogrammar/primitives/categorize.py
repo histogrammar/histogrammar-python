@@ -36,13 +36,13 @@ class Categorize(Factory, Container):
             pairs (dict from str to :doc:`Container <histogrammar.defs.Container>`): the non-empty bin categories and their values.
         """
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(contentType, basestring):
-            raise TypeError("contentType ({}) must be a string".format(contentType))
+            raise TypeError("contentType ({0}) must be a string".format(contentType))
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
-            raise TypeError("pairs ({}) must be a dict from strings to Containers".format(pairs))
+            raise TypeError("pairs ({0}) must be a dict from strings to Containers".format(pairs))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
 
         out = Categorize(None, None)
         out.entries = float(entries)
@@ -67,7 +67,7 @@ class Categorize(Factory, Container):
             pairs (dict from str to :doc:`Container <histogrammar.defs.Container>`): the map, probably a hashmap, to fill with values when their `entries` become non-zero.
         """
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({}) must be None or a Container".format(value))
+            raise TypeError("value ({0}) must be None or a Container".format(value))
         self.entries = 0.0
         self.quantity = serializable(quantity)
         self.value = value
@@ -131,7 +131,7 @@ class Categorize(Factory, Container):
             return out.specialize()
 
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -139,7 +139,7 @@ class Categorize(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, basestring):
-                raise TypeError("function return value ({}) must be a string".format(q))
+                raise TypeError("function return value ({0}) must be a string".format(q))
 
             if q not in self.pairs:
                 self.pairs[q] = self.value.zero()
@@ -175,7 +175,7 @@ class Categorize(Factory, Container):
         return maybeAdd({
             "entries": floatToJson(self.entries),
             "type": self.value.name if self.value is not None else self.contentType,
-            "data": {k: v.toJsonFragment(True) for k, v in self.pairs.items()},
+            "data": dict((k, v.toJsonFragment(True)) for k, v in self.pairs.items()),
             }, **{"name": None if suppressName else self.quantity.name,
                   "data:name": binsName})
 
@@ -209,7 +209,7 @@ class Categorize(Factory, Container):
                 raise JsonFormatException(json["data:name"], "Categorize.data:name")
 
             if isinstance(json["data"], dict):
-                pairs = {k: factory.fromJsonFragment(v, dataName) for k, v in json["data"].items()}
+                pairs = dict((k, factory.fromJsonFragment(v, dataName)) for k, v in json["data"].items())
             else:
                 raise JsonFormatException(json, "Categorize.data")
 
@@ -221,7 +221,7 @@ class Categorize(Factory, Container):
             raise JsonFormatException(json, "Categorize")
 
     def __repr__(self):
-        return "<Categorize values={} size={}".format(self.values[0].name if self.size > 0 else self.value.name if self.value is not None else self.contentType, self.size)
+        return "<Categorize values={0} size={1}".format(self.values[0].name if self.size > 0 else self.value.name if self.value is not None else self.contentType, self.size)
 
     def __eq__(self, other):
         return isinstance(other, Categorize) and numeq(self.entries, other.entries) and self.quantity == other.quantity and self.pairs == other.pairs

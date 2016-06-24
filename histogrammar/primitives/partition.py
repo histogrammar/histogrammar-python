@@ -36,13 +36,13 @@ class Partition(Factory, Container):
             nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(cuts, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in cuts):
-            raise TypeError("cuts ({}) must be a list of number, Container pairs".format(cuts))
+            raise TypeError("cuts ({0}) must be a list of number, Container pairs".format(cuts))
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
 
         out = Partition(cuts, None, None, nanflow)
         out.entries = float(entries)
@@ -67,11 +67,11 @@ class Partition(Factory, Container):
             cuts (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the ``N + 1`` thresholds and sub-aggregators. (The first threshold is minus infinity; the rest are the ones specified by ``thresholds``).
         """
         if not isinstance(thresholds, (list, tuple)) and not all(isinstance(v, (int, long, float)) for v in thresholds):
-            raise TypeError("thresholds ({}) must be a list of numbers".format(thresholds))
+            raise TypeError("thresholds ({0}) must be a list of numbers".format(thresholds))
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({}) must be None or a Container".format(value))
+            raise TypeError("value ({0}) must be None or a Container".format(value))
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
 
         self.entries = 0.0
         self.quantity = serializable(quantity)
@@ -108,7 +108,7 @@ class Partition(Factory, Container):
             return out.specialize()
 
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -116,7 +116,7 @@ class Partition(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float)):
-                raise TypeError("function return value ({}) must be boolean or number".format(q))
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             if math.isnan(q):
                 self.nanflow.fill(datum, weight)
@@ -191,12 +191,12 @@ class Partition(Factory, Container):
                 for i, elementPair in enumerate(json["data"]):
                     if isinstance(elementPair, dict) and hasKeys(elementPair.keys(), ["atleast", "data"]):
                         if elementPair["atleast"] not in ("nan", "inf", "-inf") and not isinstance(elementPair["atleast"], (int, long, float)):
-                            raise JsonFormatException(json, "Partition.data {} atleast".format(i))
+                            raise JsonFormatException(json, "Partition.data {0} atleast".format(i))
 
                         cuts.append((float(elementPair["atleast"]), factory.fromJsonFragment(elementPair["data"], dataName)))
 
                     else:
-                        raise JsonFormatException(json, "Partition.data {}".format(i))
+                        raise JsonFormatException(json, "Partition.data {0}".format(i))
 
                 out = Partition.ed(entries, cuts, nanflow)
                 out.quantity.name = nameFromParent if name is None else name
@@ -209,7 +209,7 @@ class Partition(Factory, Container):
             raise JsonFormatException(json, "Partition")
 
     def __repr__(self):
-        return "<Partition values={} thresholds=({}) nanflow={}>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)), self.nanflow.name)
+        return "<Partition values={0} thresholds=({1}) nanflow={2}>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)), self.nanflow.name)
 
     def __eq__(self, other):
         return isinstance(other, Partition) and numeq(self.entries, other.entries) and self.quantity == other.quantity and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.cuts, other.cuts)) and self.nanflow == other.nanflow

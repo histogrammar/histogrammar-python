@@ -34,11 +34,11 @@ class Minimize(Factory, Container):
             min (float): the lowest value of the quantity observed or NaN if no data were observed.
         """
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(min, (int, long, float)):
-            raise TypeError("min ({}) must be a number".format(min))
+            raise TypeError("min ({0}) must be a number".format(min))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Minimize(None)
         out.entries = float(entries)
         out.min = float(min)
@@ -76,7 +76,7 @@ class Minimize(Factory, Container):
             out.min = minplus(self.min, other.min)
             return out.specialize()
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @property
     def children(self):
@@ -89,7 +89,7 @@ class Minimize(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float)):
-                raise TypeError("function return value ({}) must be boolean or number".format(q))
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
@@ -131,7 +131,7 @@ class Minimize(Factory, Container):
             raise JsonFormatException(json, "Minimize")
         
     def __repr__(self):
-        return "<Minimize min={}>".format(self.min)
+        return "<Minimize min={0}>".format(self.min)
 
     def __eq__(self, other):
         return isinstance(other, Minimize) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.min, other.min)
@@ -156,11 +156,11 @@ class Maximize(Factory, Container):
             max (float): the highest value of the quantity observed or NaN if no data were observed.
         """
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(max, (int, long, float)):
-            raise TypeError("max ({}) must be a number".format(max))
+            raise TypeError("max ({0}) must be a number".format(max))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Maximize(None)
         out.entries = float(entries)
         out.max = float(max)
@@ -198,7 +198,7 @@ class Maximize(Factory, Container):
             out.max = maxplus(self.max, other.max)
             return out.specialize()
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -206,7 +206,7 @@ class Maximize(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float)):
-                raise TypeError("function return value ({}) must be boolean or number".format(q))
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
@@ -253,7 +253,7 @@ class Maximize(Factory, Container):
             raise JsonFormatException(json, "Maximize")
         
     def __repr__(self):
-        return "<Maximize max={}>".format(self.max)
+        return "<Maximize max={0}>".format(self.max)
 
     def __eq__(self, other):
         return isinstance(other, Maximize) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.max, other.max)

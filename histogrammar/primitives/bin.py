@@ -59,25 +59,25 @@ class Bin(Factory, Container):
             nanflow (:doc:`Container <histogrammar.defs.Container>`): is the filled nanflow bin.
         """
         if not isinstance(low, (int, long, float)):
-            raise TypeError("low ({}) must be a number".format(low))
+            raise TypeError("low ({0}) must be a number".format(low))
         if not isinstance(high, (int, long, float)):
-            raise TypeError("high ({}) must be a number".format(high))
+            raise TypeError("high ({0}) must be a number".format(high))
         if not isinstance(entries, (int, long, float)):
-            raise TypeError("entries ({}) must be a number".format(entries))
+            raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(values, (list, tuple)) and not all(isinstance(v, Container) for v in values):
-            raise TypeError("values ({}) must be a list of Containers".format(values))
+            raise TypeError("values ({0}) must be a list of Containers".format(values))
         if not isinstance(underflow, Container):
-            raise TypeError("underflow ({}) must be a Container".format(underflow))
+            raise TypeError("underflow ({0}) must be a Container".format(underflow))
         if not isinstance(overflow, Container):
-            raise TypeError("overflow ({}) must be a Container".format(overflow))
+            raise TypeError("overflow ({0}) must be a Container".format(overflow))
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if low >= high:
-            raise ValueError("low ({}) must be less than high ({})".format(low, high))
+            raise ValueError("low ({0}) must be less than high ({1})".format(low, high))
         if entries < 0.0:
-            raise ValueError("entries ({}) cannot be negative".format(entries))
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         if len(values) < 1:
-            raise ValueError("values ({}) must have at least one element".format(values))
+            raise ValueError("values ({0}) must have at least one element".format(values))
 
         out = Bin(len(values), low, high, None, None, underflow, overflow, nanflow)
         out.entries = float(entries)
@@ -108,23 +108,23 @@ class Bin(Factory, Container):
         """
 
         if not isinstance(num, (int, long)):
-            raise TypeError("num ({}) must be an integer".format(num))
+            raise TypeError("num ({0}) must be an integer".format(num))
         if not isinstance(low, (int, long, float)):
-            raise TypeError("low ({}) must be a number".format(low))
+            raise TypeError("low ({0}) must be a number".format(low))
         if not isinstance(high, (int, long, float)):
-            raise TypeError("high ({}) must be a number".format(high))
+            raise TypeError("high ({0}) must be a number".format(high))
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({}) must be a Container".format(value))
+            raise TypeError("value ({0}) must be a Container".format(value))
         if not isinstance(underflow, Container):
-            raise TypeError("underflow ({}) must be a Container".format(underflow))
+            raise TypeError("underflow ({0}) must be a Container".format(underflow))
         if not isinstance(overflow, Container):
-            raise TypeError("overflow ({}) must be a Container".format(overflow))
+            raise TypeError("overflow ({0}) must be a Container".format(overflow))
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({}) must be a Container".format(nanflow))
+            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if num < 1:
-            raise ValueError("num ({}) must be least one".format(num))
+            raise ValueError("num ({0}) must be least one".format(num))
         if low >= high:
-            raise ValueError("low ({}) must be less than high ({})".format(low, high))
+            raise ValueError("low ({0}) must be less than high ({1})".format(low, high))
 
         self.entries = 0.0
         self.low = float(low)
@@ -155,11 +155,11 @@ class Bin(Factory, Container):
     def __add__(self, other):
         if isinstance(other, Bin):
             if self.low != other.low:
-                raise ContainerException("cannot add Bins because low differs ({} vs {})".format(self.low, other.low))
+                raise ContainerException("cannot add Bins because low differs ({0} vs {1})".format(self.low, other.low))
             if self.high != other.high:
-                raise ContainerException("cannot add Bins because high differs ({} vs {})".format(self.high, other.high))
+                raise ContainerException("cannot add Bins because high differs ({0} vs {1})".format(self.high, other.high))
             if len(self.values) != len(other.values):
-                raise ContainerException("cannot add Bins because nubmer of values differs ({} vs {})".format(len(self.values), len(other.values)))
+                raise ContainerException("cannot add Bins because nubmer of values differs ({0} vs {1})".format(len(self.values), len(other.values)))
             if len(self.values) == 0:
                 raise ContainerException("cannot add Bins because number of values is zero")
 
@@ -169,7 +169,7 @@ class Bin(Factory, Container):
             return out.specialize()
 
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @property
     def num(self):
@@ -213,7 +213,7 @@ class Bin(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, (bool, int, long, float)):
-                raise TypeError("function return value ({}) must be boolean or number".format(q))
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             if self.under(q):
                 self.underflow.fill(datum, weight)
@@ -323,7 +323,7 @@ class Bin(Factory, Container):
             raise JsonFormatException(json, "Bin")
         
     def __repr__(self):
-        return "<Bin num={} low={} high={} values={} underflow={} overflow={} nanflow={}>".format(len(self.values), self.low, self.high, self.values[0].name, self.underflow.name, self.overflow.name, self.nanflow.name)
+        return "<Bin num={0} low={1} high={2} values={3} underflow={4} overflow={5} nanflow={6}>".format(len(self.values), self.low, self.high, self.values[0].name, self.underflow.name, self.overflow.name, self.nanflow.name)
 
     def __eq__(self, other):
         return isinstance(other, Bin) and numeq(self.low, other.low) and numeq(self.high, other.high) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values and self.underflow == other.underflow and self.overflow == other.overflow and self.nanflow == other.nanflow
