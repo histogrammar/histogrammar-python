@@ -18,8 +18,16 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class AbsoluteErr(Factory, Container):
+    """Accumulate the weighted Mean Absolute Error (MAE) of a quantity whose nominal value is zero."""
+
     @staticmethod
     def ed(entries, mae):
+        """Create an immutable [[org.dianahep.histogrammar.AbsoluteErred]] from arguments (instead of JSON).
+
+        @param entries Weighted number of entries (sum of all observed weights).
+        @param mae Sum of absolute differences of the quantity from zero (Mean Absolute Error).
+        """
+
         if not isinstance(entries, (int, long, float)):
             raise TypeError("entries ({}) must be a number".format(entries))
         if not isinstance(mae, (int, long, float)):
@@ -33,9 +41,14 @@ class AbsoluteErr(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for `__init__`."""
         return AbsoluteErr(quantity)
 
     def __init__(self, quantity):
+        """Create an empty, mutable [[org.dianahep.histogrammar.AbsoluteErring]].
+
+        @param quantity Numerical function to track.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.absoluteSum = 0.0
@@ -44,6 +57,7 @@ class AbsoluteErr(Factory, Container):
 
     @property
     def mae(self):
+        """Sum of absolute differences of the quantity from zero (Mean Absolute Error)."""
         if self.entries == 0.0:
             return self.absoluteSum
         else:
