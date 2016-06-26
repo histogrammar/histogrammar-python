@@ -28,7 +28,7 @@ from histogrammar.util import serializable
 
 import histogrammar.plot.root
 import histogrammar.plot.bokeh
-import histogrammar.plot.matplotib
+import histogrammar.plot.mpl
 
 def Histogram(num, low, high, quantity, selection=unweighted):
     return Select.ing(selection, Bin.ing(num, low, high, quantity,
@@ -77,7 +77,7 @@ def TwoDimensionallySparselyHistogram(xbinWidth, xquantity,
 class HistogramMethods(Bin,
         histogrammar.plot.root.HistogramMethods,
         histogrammar.plot.bokeh.HistogramMethods,
-        histogrammar.plot.matplotlib.HistogramMethods):
+        histogrammar.plot.mpl.HistogramMethods):
 
     @property
     def name(self):
@@ -157,7 +157,8 @@ class SparselyProfileMethods(SparselyBin,
 
 class ProfileErrMethods(Bin,
         histogrammar.plot.root.ProfileErrMethods,
-        histogrammar.plot.bokeh.ProfileErrMethods):
+        histogrammar.plot.bokeh.ProfileErrMethods,
+        histogrammar.plot.mpl.ProfileErrMethods):
 
     @property
     def name(self):
