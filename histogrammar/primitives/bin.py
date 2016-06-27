@@ -265,7 +265,7 @@ class Bin(Factory, Container):
         numpy.multiply(q, self.num, q)
         numpy.divide(q, self.high - self.low, q)
 
-        selection = numpy.empty(q.shape, dtype=numpy.bool)        
+        selection = numpy.empty(q.shape, dtype=numpy.bool)
 
         numpy.less(q, 0.0, selection)
         self.underflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)

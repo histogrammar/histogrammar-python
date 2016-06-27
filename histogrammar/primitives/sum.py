@@ -88,6 +88,41 @@ class Sum(Factory, Container):
             self.entries += weight
             self.sum += q * weight
 
+    def fillnp(self, data, weight=1.0):
+        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+
+        This primitive is optimized with Numpy.
+
+        The container is changed in-place.
+        """
+        self._checkForCrossReferences()
+
+        import numpy
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.array(data)
+        assert len(data.shape) == 1
+        length = data.shape[0]
+
+        q = self.quantity(data)
+        assert isinstance(q, numpy.ndarray)
+        assert len(q.shape) == 1
+        assert q.shape[0] == length
+
+        if isinstance(weight, numpy.ndarray):
+            assert len(weight.shape) == 1
+            assert weight.shape[0] == length
+
+        if isinstance(weight, numpy.ndarray):
+            selection = weight > 0.0
+            self.entries += float(weight[selection].sum())
+            q = q[selection]
+            weight = weight[selection]
+        elif self.weight > 0.0:
+            self.entries += float(weight * length)
+
+        numpy.multiply(q, weight, q)
+        self.sum += float(q.sum())
+
     @property
     def children(self):
         """List of sub-aggregators, to make it possible to walk the tree."""

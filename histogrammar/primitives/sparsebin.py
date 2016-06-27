@@ -230,6 +230,62 @@ class SparselyBin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def fillnp(self, data, weight=1.0):
+        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+
+        This primitive is optimized with Numpy.
+
+        The container is changed in-place.
+        """
+        self._checkForCrossReferences()
+
+        import numpy
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.array(data)
+        assert len(data.shape) == 1
+        length = data.shape[0]
+
+        q = self.quantity(data)
+        assert isinstance(q, numpy.ndarray)
+        assert len(q.shape) == 1
+        assert q.shape[0] == length
+
+        if isinstance(weight, numpy.ndarray):
+            assert len(weight.shape) == 1
+            assert weight.shape[0] == length
+
+        selection = numpy.isnan(q)
+        self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+        
+        numpy.bitwise_not(selection, selection)
+        data = data[selection]
+        q = q[selection]
+        if isinstance(weight, numpy.ndarray):
+            weight = weight[selection]
+
+        q = numpy.array(q, dtype=float)
+        numpy.subtract(q, self.low, q)
+        numpy.multiply(q, self.num, q)
+        numpy.divide(q, self.high - self.low, q)
+
+        numpy.floor(q, q)
+        q = numpy.array(q, dtype=numpy.int64)
+        u = numpy.unique(q)
+        selection = numpy.empty(q.shape, dtype=numpy.bool)
+        for index in u:
+            bin = self.bins.get(index)
+            if bin is None:
+                bin = self.value.zero()
+                self.bins[index] = bin
+
+            numpy.equal(q, index, selection)
+            bin.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+
+        if isinstance(weight, numpy.ndarray):
+            self.entries += float(weight[weight > 0.0].sum())
+        elif weight > 0.0:
+            self.entries += float(weight * length)
+
     @property
     def children(self):
         """List of sub-aggregators, to make it possible to walk the tree."""
