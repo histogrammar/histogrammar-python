@@ -136,9 +136,7 @@ class Select(Factory, Container):
         numpy.multiply(w, weight, w)
 
         selection = (w > 0.0)
-        data = data[selection]
-        w = w[selection]
-        self.cut.fillnp(data, w)
+        self.cut.fillnp(data[selection], w[selection])
 
         if isinstance(weight, numpy.ndarray):
             self.entries += float(weight.sum())

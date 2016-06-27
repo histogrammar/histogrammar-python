@@ -257,24 +257,28 @@ class Bin(Factory, Container):
         numpy.bitwise_not(selection, selection)
         data = data[selection]
         q = q[selection]
+        if isinstance(weight, numpy.ndarray):
+            weight = weight[selection]
 
-        selection = numpy.empty(q.shape, dtype=numpy.bool)
-        selection2 = numpy.empty(q.shape, dtype=numpy.bool)
+        q = numpy.array(q, dtype=float)
+        numpy.subtract(q, self.low, q)
+        numpy.multiply(q, self.num, q)
+        numpy.divide(q, self.high - self.low, q)
 
-        numpy.less(q, self.low, selection)
+        selection = numpy.empty(q.shape, dtype=numpy.bool)        
+
+        numpy.less(q, 0.0, selection)
         self.underflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
-        numpy.greater_equal(q, self.high, selection)
+        numpy.greater_equal(q, self.num, selection)
         self.overflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
-        for index in xrange(len(self.values)):
-            low, high = self.range(index)
+        numpy.floor(q, q)
+        q = numpy.array(q, dtype=int)
 
-            numpy.greater_equal(q, low, selection)
-            numpy.less(q, high, selection2)
-            numpy.bitwise_and(selection, selection2, selection)
-
-            self.values[index].fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+        for index, value in enumerate(self.values):
+            numpy.equal(q, index, selection)
+            value.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
         if isinstance(weight, numpy.ndarray):
             self.entries += float(weight.sum())
