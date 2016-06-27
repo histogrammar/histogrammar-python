@@ -109,6 +109,38 @@ class Select(Factory, Container):
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
 
+    def fillnp(self, data, weight=1.0):
+        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+
+        This primitive is optimized with Numpy.
+
+        The container is changed in-place.
+        """
+        self._checkForCrossReferences()
+
+        import numpy
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.array(data)
+        assert len(data.shape) == 1
+        length = data.shape[0]
+
+        w = self.quantity(data)
+        assert isinstance(w, numpy.ndarray)
+        assert len(w.shape) == 1
+        assert w.shape[0] == length
+
+        numpy.multiply(w, weight, w)
+
+        selection = (w > 0.0)
+        data = data[selection]
+        w = w[selection]
+        self.cut.fillnp(data, w)
+
+        if isinstance(weight, numpy.ndarray):
+            self.entries += weight.sum()
+        else:
+            self.entries += weight * length
+
     @property
     def children(self):
         """List of sub-aggregators, to make it possible to walk the tree."""
