@@ -123,11 +123,13 @@ class AbsoluteErr(Factory, Container):
             assert weight.shape[0] == length
 
         if isinstance(weight, numpy.ndarray):
-            self.entries += weight.sum()
+            self.entries += float(weight.sum())
         else:
-            self.entries += weight * length
+            self.entries += float(weight * length)
 
-        self.absoluteSum += numpy.absolute(q * weight).sum()
+        numpy.absolute(q, q)
+        numpy.multiply(q, weight, q)
+        self.absoluteSum += float(q.sum())
 
     @property
     def children(self):

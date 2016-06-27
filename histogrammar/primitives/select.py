@@ -141,9 +141,9 @@ class Select(Factory, Container):
         self.cut.fillnp(data, w)
 
         if isinstance(weight, numpy.ndarray):
-            self.entries += weight.sum()
+            self.entries += float(weight.sum())
         else:
-            self.entries += weight * length
+            self.entries += float(weight * length)
 
     @property
     def children(self):
