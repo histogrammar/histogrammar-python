@@ -88,6 +88,28 @@ class Count(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += t
 
+    def fillnp(self, data, weight=1.0):
+        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+
+        This primitive is optimized with Numpy.
+
+        The container is changed in-place.
+        """
+        self._checkForCrossReferences()
+
+        import numpy
+
+        if self.transform is identity:
+            if isinstance(weight, numpy.ndarray):
+                self.entries += weight.sum()
+            else:
+                self.entries += weight * len(data)
+        else:
+            if isinstance(weight, numpy.ndarray):
+                self.entries += self.transform(weight).sum()
+            else:
+                self.entries += self.transform(weight * numpy.ones(len(data))).sum()
+
     @property
     def children(self):
         """List of sub-aggregators, to make it possible to walk the tree."""

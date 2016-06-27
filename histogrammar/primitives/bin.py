@@ -227,6 +227,56 @@ class Bin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def fillnp(self, data, weight=1.0):
+        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+
+        This primitive is optimized with Numpy.
+
+        The container is changed in-place.
+        """
+        self._checkForCrossReferences()
+
+        import numpy
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.array(data)
+        assert len(data.shape) == 1
+        length = data.shape[0]
+
+        q = self.quantity(data)
+        assert isinstance(q, numpy.ndarray)
+        assert len(q.shape) == 1
+        assert q.shape[0] == length
+
+        selection = numpy.isnan(q)
+        self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+        
+        numpy.bitwise_not(selection, selection)
+        data = data[selection]
+        q = q[selection]
+
+        selection = numpy.empty(q.shape, dtype=numpy.bool)
+        selection2 = numpy.empty(q.shape, dtype=numpy.bool)
+
+        numpy.less(q, self.low, selection)
+        self.underflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+
+        numpy.greater_equal(q, self.high, selection)
+        self.overflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+
+        for index in xrange(len(self.values)):
+            low, high = self.range(index)
+
+            numpy.greater_equal(q, low, selection)
+            numpy.less(q, high, selection2)
+            numpy.bitwise_and(selection, selection2, selection)
+
+            self.values[index].fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+
+        if isinstance(weight, numpy.ndarray):
+            self.entries += weight.sum()
+        else:
+            self.entries += weight * length
+
     @property
     def children(self):
         """List of sub-aggregators, to make it possible to walk the tree."""

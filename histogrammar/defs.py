@@ -121,13 +121,23 @@ class Container(object):
         raise NotImplementedError
 
     def fill(self, datum, weight=1.0):
-        """Entry point for the general user to pass data into the container for aggregation.
+        """Increment the aggregator by providing one ``datum`` to the fill rule with a given ``weight``.
       
         Usually all containers in a collection of histograms take the same input data by passing it recursively through the tree. Quantities to plot are specified by the individual container's lambda functions.
       
         The container is changed in-place.
         """
         raise NotImplementedError
+
+    def fillnp(self, data, weight=1.0):
+        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+
+        This primitive has no Numpy-accelerated version, so ``fillnp`` simply calls ``fill``.
+
+        The container is changed in-place.
+        """
+        for datum in data:
+            self.fill(datum, weight)
 
     def copy(self):
         """Copy this container, making a clone with no reference to the original. """
