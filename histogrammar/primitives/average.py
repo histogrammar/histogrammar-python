@@ -127,7 +127,8 @@ class Average(Factory, Container):
 
         ca_plus_cb = self.entries
         if ca_plus_cb > 0.0:
-            self.mean = float((ca*ma + (ca_plus_cb - ca)*numpy.average(q, weights=(weight if isinstance(weight, numpy.ndarray) else None))) / ca_plus_cb)
+            mb = numpy.average(q, weights=(weight if isinstance(weight, numpy.ndarray) else None))
+            self.mean = float((ca*ma + (ca_plus_cb - ca)*mb) / ca_plus_cb)
 
     @property
     def children(self):
