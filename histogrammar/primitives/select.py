@@ -124,6 +124,10 @@ class Select(Factory, Container):
         assert len(data.shape) == 1
         length = data.shape[0]
 
+        if isinstance(weight, numpy.ndarray):
+            assert len(weight.shape) == 1
+            assert weight.shape[0] == length
+
         w = self.quantity(data)
         assert isinstance(w, numpy.ndarray)
         assert len(w.shape) == 1

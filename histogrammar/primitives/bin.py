@@ -247,6 +247,10 @@ class Bin(Factory, Container):
         assert len(q.shape) == 1
         assert q.shape[0] == length
 
+        if isinstance(weight, numpy.ndarray):
+            assert len(weight.shape) == 1
+            assert weight.shape[0] == length
+
         selection = numpy.isnan(q)
         self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
         
