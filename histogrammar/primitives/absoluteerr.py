@@ -123,8 +123,11 @@ class AbsoluteErr(Factory, Container):
             assert weight.shape[0] == length
 
         if isinstance(weight, numpy.ndarray):
-            self.entries += float(weight.sum())
-        else:
+            selection = weight > 0.0
+            self.entries += float(weight[selection].sum())
+            q = q[selection]
+            weight = weight[selection]
+        elif self.weight > 0.0:
             self.entries += float(weight * length)
 
         numpy.absolute(q, q)

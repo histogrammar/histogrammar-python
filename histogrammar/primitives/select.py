@@ -99,15 +99,16 @@ class Select(Factory, Container):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
-        w = self.quantity(datum)
-        if not isinstance(w, (bool, int, long, float)):
-            raise TypeError("function return value ({0}) must be boolean or number".format(w))
-        w *= weight
+        if weight > 0.0:
+            w = self.quantity(datum)
+            if not isinstance(w, (bool, int, long, float)):
+                raise TypeError("function return value ({0}) must be boolean or number".format(w))
+            w *= weight
 
-        if w > 0.0:
-            self.cut.fill(datum, w)
-        # no possibility of exception from here on out (for rollback)
-        self.entries += weight
+            if w > 0.0:
+                self.cut.fill(datum, w)
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
 
     def fillnp(self, data, weight=1.0):
         """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
@@ -139,8 +140,8 @@ class Select(Factory, Container):
         self.cut.fillnp(data[selection], w[selection])
 
         if isinstance(weight, numpy.ndarray):
-            self.entries += float(weight.sum())
-        else:
+            self.entries += float(weight[weight > 0.0].sum())
+        elif weight > 0.0:
             self.entries += float(weight * length)
 
     @property

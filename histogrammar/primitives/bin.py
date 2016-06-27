@@ -281,8 +281,8 @@ class Bin(Factory, Container):
             value.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
         if isinstance(weight, numpy.ndarray):
-            self.entries += float(weight.sum())
-        else:
+            self.entries += float(weight[weight > 0.0].sum())
+        elif weight > 0.0:
             self.entries += float(weight * length)
 
     @property

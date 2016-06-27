@@ -116,18 +116,53 @@ class Fraction(Factory, Container):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
-        w = self.quantity(datum)
-        if not isinstance(w, (bool, int, long, float)):
-            raise TypeError("function return value ({0}) must be boolean or number".format(w))
-        w *= weight
-
         if weight > 0.0:
-            self.denominator.fill(datum, weight)
-        if w > 0.0:
-            self.numerator.fill(datum, w)
+            w = self.quantity(datum)
+            if not isinstance(w, (bool, int, long, float)):
+                raise TypeError("function return value ({0}) must be boolean or number".format(w))
+            w *= weight
 
-        # no possibility of exception from here on out (for rollback)
-        self.entries += weight
+            self.denominator.fill(datum, weight)
+            if w > 0.0:
+                self.numerator.fill(datum, w)
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
+
+    def fillnp(self, data, weight=1.0):
+        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+
+        This primitive is optimized with Numpy.
+
+        The container is changed in-place.
+        """
+        self._checkForCrossReferences()
+
+        import numpy
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.array(data)
+        assert len(data.shape) == 1
+        length = data.shape[0]
+
+        if isinstance(weight, numpy.ndarray):
+            assert len(weight.shape) == 1
+            assert weight.shape[0] == length
+
+        w = self.quantity(data)
+        assert isinstance(w, numpy.ndarray)
+        assert len(w.shape) == 1
+        assert w.shape[0] == length
+
+        numpy.multiply(w, weight, w)
+
+        selection = (w > 0.0)
+        self.numerator.fillnp(data[selection], w[selection])
+        self.denominator.fillnp(data, weight)
+
+        if isinstance(weight, numpy.ndarray):
+            self.entries += float(weight[weight > 0.0].sum())
+        elif weight > 0.0:
+            self.entries += float(weight * length)
 
     @property
     def children(self):

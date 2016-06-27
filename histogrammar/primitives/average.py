@@ -121,13 +121,14 @@ class Average(Factory, Container):
         ca, ma = self.entries, self.mean
 
         if isinstance(weight, numpy.ndarray):
-            self.entries += float(weight.sum())
-        else:
+            selection = weight > 0.0
+            self.entries += float(weight[selection].sum())
+        elif weight > 0.0:
             self.entries += float(weight * length)
 
         ca_plus_cb = self.entries
         if ca_plus_cb > 0.0:
-            mb = numpy.average(q, weights=(weight if isinstance(weight, numpy.ndarray) else None))
+            mb = numpy.average(q, weights=(weight[selection] if isinstance(weight, numpy.ndarray) else None))
             self.mean = float((ca*ma + (ca_plus_cb - ca)*mb) / ca_plus_cb)
 
     @property

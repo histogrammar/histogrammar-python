@@ -96,6 +96,44 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
+    def fillnp(self, data, weight=1.0):
+        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+
+        This primitive is optimized with Numpy.
+
+        The container is changed in-place.
+        """
+        self._checkForCrossReferences()
+
+        import numpy
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.array(data)
+        assert len(data.shape) == 1
+        length = data.shape[0]
+
+        q = self.quantity(data)
+        assert isinstance(q, numpy.ndarray)
+        assert len(q.shape) == 1
+        assert q.shape[0] == length
+
+        if isinstance(weight, numpy.ndarray):
+            assert len(weight.shape) == 1
+            assert weight.shape[0] == length
+        
+        if isinstance(weight, numpy.ndarray):
+            selection = weight > 0.0
+            self.entries += float(weight[selection].sum())
+            q = q[selection]
+        elif self.weight > 0.0:
+            self.entries += float(weight * length)
+
+        if math.isnan(self.min):
+            if q.shape[0] > 0:
+                self.min = float(q.min())
+        else:
+            if q.shape[0] > 0:
+                self.min = min(self.min, float(q.min()))
+
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
@@ -212,6 +250,44 @@ class Maximize(Factory, Container):
             self.entries += weight
             if math.isnan(self.max) or q > self.max:
                 self.max = q
+
+    def fillnp(self, data, weight=1.0):
+        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+
+        This primitive is optimized with Numpy.
+
+        The container is changed in-place.
+        """
+        self._checkForCrossReferences()
+
+        import numpy
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.array(data)
+        assert len(data.shape) == 1
+        length = data.shape[0]
+
+        q = self.quantity(data)
+        assert isinstance(q, numpy.ndarray)
+        assert len(q.shape) == 1
+        assert q.shape[0] == length
+
+        if isinstance(weight, numpy.ndarray):
+            assert len(weight.shape) == 1
+            assert weight.shape[0] == length
+        
+        if isinstance(weight, numpy.ndarray):
+            selection = weight > 0.0
+            self.entries += float(weight[selection].sum())
+            q = q[selection]
+        elif self.weight > 0.0:
+            self.entries += float(weight * length)
+
+        if math.isnan(self.max):
+            if q.shape[0] > 0:
+                self.max = float(q.max())
+        else:
+            if q.shape[0] > 0:
+                self.max = max(self.max, float(q.max()))
 
     @property
     def children(self):

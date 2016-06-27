@@ -146,13 +146,46 @@ class Limit(Factory, Container):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
-        if self.entries + weight > self.limit:
+        if weight > 0.0:
+            if self.entries + weight > self.limit:
+                self.value = None
+            elif self.value is not None:
+                self.value.fill(datum, weight)
+
+            # no possibility of exception from here on out (for rollback)
+            self.entries += weight
+
+    def fillnp(self, data, weight=1.0):
+        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+
+        This primitive is optimized with Numpy.
+
+        The container is changed in-place.
+        """
+        self._checkForCrossReferences()
+
+        import numpy
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.array(data)
+        assert len(data.shape) == 1
+        length = data.shape[0]
+
+        if isinstance(weight, numpy.ndarray):
+            assert len(weight.shape) == 1
+            assert weight.shape[0] == length
+
+        if isinstance(weight, numpy.ndarray):
+            newentries = weight[weight > 0.0].sum()
+        elif weight > 0.0:
+            newentries = weight * length
+        else:
+            newentries = 0.0
+
+        if self.entries + newentries > self.limit:
             self.value = None
         elif self.value is not None:
-            self.value.fill(datum, weight)
-
-        # no possibility of exception from here on out (for rollback)
-        self.entries += weight
+            self.value.fillnp(data, weight)
+            self.entries += float(newentries)
 
     @property
     def children(self):

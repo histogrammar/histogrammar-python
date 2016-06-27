@@ -101,13 +101,13 @@ class Count(Factory, Container):
 
         if self.transform is identity:
             if isinstance(weight, numpy.ndarray):
-                self.entries += float(weight.sum())
-            else:
+                self.entries += float(weight[weight > 0.0].sum())
+            elif weight > 0.0:
                 self.entries += float(weight * len(data))
         else:
             if isinstance(weight, numpy.ndarray):
-                self.entries += float(self.transform(weight).sum())
-            else:
+                self.entries += float(self.transform(weight[weight > 0.0]).sum())
+            elif weight > 0.0:
                 self.entries += float(self.transform(weight * numpy.ones(len(data))).sum())
 
     @property
