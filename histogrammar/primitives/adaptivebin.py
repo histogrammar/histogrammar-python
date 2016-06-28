@@ -333,6 +333,8 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
     def __eq__(self, other):
         return isinstance(other, AdaptivelyBin) and self.quantity == other.quantity and self.clustering == other.clustering
 
+    def __ne__(self, other): return not self == other
+
     def __hash__(self):
         return hash((self.quantity, self.clustering))
 

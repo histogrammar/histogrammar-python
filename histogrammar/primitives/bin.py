@@ -239,7 +239,7 @@ class Bin(Factory, Container):
         import numpy
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self.computenp(data)
+        q = self._computenp(data)
 
         length = data.shape[0]
         selection = numpy.isnan(q)
@@ -373,6 +373,8 @@ class Bin(Factory, Container):
 
     def __eq__(self, other):
         return isinstance(other, Bin) and numeq(self.low, other.low) and numeq(self.high, other.high) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values and self.underflow == other.underflow and self.overflow == other.overflow and self.nanflow == other.nanflow
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.low, self.high, self.quantity, self.entries, tuple(self.values), self.underflow, self.overflow, self.nanflow))

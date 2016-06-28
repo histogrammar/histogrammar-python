@@ -204,6 +204,8 @@ class Label(Factory, Container, Collection):
     def __eq__(self, other):
         return isinstance(other, Label) and numeq(self.entries, other.entries) and self.pairs == other.pairs
 
+    def __ne__(self, other): return not self == other
+
     def __hash__(self):
         return hash((self.entries, tuple(sorted(self.pairs.items()))))
 
@@ -387,6 +389,8 @@ class UntypedLabel(Factory, Container, Collection):
     def __eq__(self, other):
         return isinstance(other, UntypedLabel) and numeq(self.entries, other.entries) and self.pairs == other.pairs
 
+    def __ne__(self, other): return not self == other
+
     def __hash__(self):
         return hash((self.entries, tuple(sorted(self.pairs.items()))))
 
@@ -560,6 +564,8 @@ class Index(Factory, Container, Collection):
 
     def __eq__(self, other):
         return isinstance(other, Index) and numeq(self.entries, other.entries) and self.values == other.values
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.entries, tuple(self.values)))
@@ -749,6 +755,8 @@ class Branch(Factory, Container, Collection):
 
     def __eq__(self, other):
         return isinstance(other, Branch) and numeq(self.entries, other.entries) and self.values == other.values
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.entries, tuple(self.values)))

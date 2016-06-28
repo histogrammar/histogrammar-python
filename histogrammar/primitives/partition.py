@@ -141,7 +141,7 @@ class Partition(Factory, Container):
         import numpy
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self.computenp(data)
+        q = self._computenp(data)
 
         length = data.shape[0]
         selection = numpy.isnan(q)
@@ -248,6 +248,8 @@ class Partition(Factory, Container):
 
     def __eq__(self, other):
         return isinstance(other, Partition) and numeq(self.entries, other.entries) and self.quantity == other.quantity and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.cuts, other.cuts)) and self.nanflow == other.nanflow
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.entries, self.quantity, self.cuts, self.nanflow))

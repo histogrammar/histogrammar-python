@@ -167,7 +167,7 @@ class Limit(Factory, Container):
         import numpy
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self.computenp(data)
+        q = self._computenp(data)
 
         if isinstance(weight, numpy.ndarray):
             newentries = weight.sum()
@@ -228,6 +228,8 @@ class Limit(Factory, Container):
 
     def __eq__(self, other):
         return isinstance(other, Limit) and numeq(self.entries, other.entries) and numeq(self.limit, other.limit) and self.contentType == other.contentType and self.value == other.value
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.entries, self.limit, self.contentType, self.value))

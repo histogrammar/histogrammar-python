@@ -164,7 +164,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         import numpy
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self.computenp(data)
+        q = self._computenp(data)
 
         length = data.shape[0]
         selection = numpy.isnan(q)
@@ -292,6 +292,8 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
     def __eq__(self, other):
         return isinstance(other, CentrallyBin) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.bins == other.bins and numeq(self.min, other.min) and numeq(self.max, other.max) and self.nanflow == other.nanflow
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.quantity, self.entries, tuple(self.bins), self.min, self.max, self.nanflow))

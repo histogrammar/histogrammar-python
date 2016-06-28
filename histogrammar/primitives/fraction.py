@@ -141,7 +141,7 @@ class Fraction(Factory, Container):
         import numpy
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        w = self.computenp(data)
+        w = self._computenp(data)
 
         numpy.multiply(w, weight, w)
 
@@ -216,6 +216,8 @@ class Fraction(Factory, Container):
 
     def __eq__(self, other):
         return isinstance(other, Fraction) and numeq(self.entries, other.entries) and self.quantity == other.quantity and self.numerator == other.numerator and self.denominator == other.denominator
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.entries, self.quantity, self.numerator, self.denominator))

@@ -275,6 +275,8 @@ class Sample(Factory, Container):
     def __eq__(self, other):
         return isinstance(other, Sample) and self.entries == other.entries and self.quantity == other.quantity and self.limit == other.limit and self.values == other.values and (self.randomGenerator is None) == (other.randomGenerator is None)
 
+    def __ne__(self, other): return not self == other
+
     def __hash__(self):
         return hash((self.entries, self.quantity, self.limit, tuple(self.values), (self.randomGenerator is None)))
 

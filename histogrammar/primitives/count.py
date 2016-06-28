@@ -132,6 +132,8 @@ class Count(Factory, Container):
     def __eq__(self, other):
         return isinstance(other, Count) and numeq(self.entries, other.entries) and self.transform == other.transform
 
+    def __ne__(self, other): return not self == other
+
     def __hash__(self):
         return hash((self.entries, self.transform))
 

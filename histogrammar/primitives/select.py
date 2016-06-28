@@ -122,7 +122,7 @@ class Select(Factory, Container):
         import numpy
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        w = self.computenp(data)
+        w = self._computenp(data)
 
         numpy.multiply(w, weight, w)
 
@@ -178,6 +178,8 @@ class Select(Factory, Container):
 
     def __eq__(self, other):
         return isinstance(other, Select) and numeq(self.entries, other.entries) and self.cut == other.cut
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.entries, self.cut))

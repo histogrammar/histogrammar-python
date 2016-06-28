@@ -100,7 +100,7 @@ class Sum(Factory, Container):
         import numpy
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self.computenp(data)
+        q = self._computenp(data)
 
         self._entriesnp(weight, data.shape[0])
         numpy.multiply(q, weight, q)
@@ -150,6 +150,8 @@ class Sum(Factory, Container):
 
     def __eq__(self, other):
         return isinstance(other, Sum) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.sum, other.sum)
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.sum))

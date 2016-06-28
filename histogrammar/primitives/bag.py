@@ -185,6 +185,8 @@ class Bag(Factory, Container):
     def __eq__(self, other):
         return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values
 
+    def __ne__(self, other): return not self == other
+
     def __hash__(self):
        return hash((self.quantity, self.entries, tuple(self.values.items())))
 

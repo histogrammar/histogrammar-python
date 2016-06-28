@@ -226,6 +226,8 @@ class Categorize(Factory, Container):
     def __eq__(self, other):
         return isinstance(other, Categorize) and numeq(self.entries, other.entries) and self.quantity == other.quantity and self.pairs == other.pairs
 
+    def __ne__(self, other): return not self == other
+
     def __hash__(self):
         return hash((self.entries, self.quantity, tuple(sorted(self.pairs.items()))))
 

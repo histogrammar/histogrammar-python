@@ -184,6 +184,8 @@ class Quantile(Factory, Container):
     def __eq__(self, other):
         return isinstance(other, Quantile) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.target, other.target) and numeq(self.estimate, other.estimate) and numeq(self.cumulativeDeviation, other.cumulativeDeviation)
 
+    def __ne__(self, other): return not self == other
+
     def __hash__(self):
         return hash((self.quantity, self.entries, self.target, self.estimate))
 

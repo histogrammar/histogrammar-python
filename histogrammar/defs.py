@@ -175,7 +175,7 @@ class Container(object):
 
     def _computenp(self, data):
         import numpy
-        q = self.quantity
+        q = self.quantity(data)
         if not isinstance(q, numpy.ndarray):
             q = numpy.ones(data.shape[0], dtype=type(q)) * q
         assert len(q.shape) == 1

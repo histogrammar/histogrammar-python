@@ -106,11 +106,11 @@ class Average(Factory, Container):
         import numpy
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self.computenp(data)
+        q = self._computenp(data)
 
         ca, ma = self.entries, self.mean
 
-        self._entriesnp(weight, length)
+        self._entriesnp(weight, data.shape[0])
 
         ca_plus_cb = self.entries
         if ca_plus_cb > 0.0:
@@ -161,6 +161,8 @@ class Average(Factory, Container):
 
     def __eq__(self, other):
         return isinstance(other, Average) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.mean, other.mean)
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.mean))

@@ -108,9 +108,13 @@ class Minimize(Factory, Container):
         import numpy
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self.computenp(data)
+        q = self._computenp(data)
 
         self._entriesnp(weight, data.shape[0])
+
+        selection = numpy.isnan(q)
+        numpy.bitwise_not(selection, selection)
+        q = q[selection]
 
         if math.isnan(self.min):
             if q.shape[0] > 0:
@@ -158,6 +162,8 @@ class Minimize(Factory, Container):
 
     def __eq__(self, other):
         return isinstance(other, Minimize) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.min, other.min)
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.min))
@@ -248,9 +254,13 @@ class Maximize(Factory, Container):
         import numpy
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self.computenp(data)
+        q = self._computenp(data)
 
         self._entriesnp(weight, data.shape[0])
+
+        selection = numpy.isnan(q)
+        numpy.bitwise_not(selection, selection)
+        q = q[selection]
 
         if math.isnan(self.max):
             if q.shape[0] > 0:
@@ -303,6 +313,8 @@ class Maximize(Factory, Container):
 
     def __eq__(self, other):
         return isinstance(other, Maximize) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.max, other.max)
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.max))
