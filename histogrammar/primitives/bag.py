@@ -133,7 +133,7 @@ class Bag(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "values"], ["name"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = json["entries"]
             else:
                 raise JsonFormatException(json["entries"], "Bag.entries")
@@ -152,18 +152,18 @@ class Bag(Factory, Container):
                 values = {}
                 for i, nv in enumerate(json["values"]):
                     if isinstance(nv, dict) and hasKeys(nv.keys(), ["w", "v"]):
-                        if isinstance(nv["w"], (int, long, float)):
+                        if nv["w"] in ("nan", "inf", "-inf") or isinstance(nv["w"], (int, long, float)):
                             n = float(nv["w"])
                         else:
                             raise JsonFormatException(nv["w"], "Bag.values {0} n".format(i))
 
                         if isinstance(nv["v"], basestring):
                             v = nv["v"]
-                        elif isinstance(nv["v"], (int, long, float)):
+                        elif nv["v"] in ("nan", "inf", "-inf") or isinstance(nv["v"], (int, long, float)):
                             v = float(nv["v"])
                         elif isinstance(nv["v"], (list, tuple)):
                             for j, d in enumerate(nv["v"]):
-                                if not isinstance(d, (int, long, float)):
+                                if d not in ("nan", "inf", "-inf") and not isinstance(d, (int, long, float)):
                                     raise JsonFormatException(d, "Bag.values {0} v {1}".format(i, j))
                             v = tuple(map(float, nv["v"]))
                         else:

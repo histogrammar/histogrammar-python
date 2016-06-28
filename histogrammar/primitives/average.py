@@ -134,7 +134,7 @@ class Average(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mean"], ["name"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Average.entries")
@@ -146,7 +146,7 @@ class Average(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Average.name")
 
-            if isinstance(json["mean"], (int, long, float)):
+            if json["mean"] in ("nan", "inf", "-inf") or isinstance(json["mean"], (int, long, float)):
                 mean = float(json["mean"])
             else:
                 raise JsonFormatException(json["mean"], "Average.mean")

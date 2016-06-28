@@ -126,40 +126,12 @@ class Container(object):
         """
         raise NotImplementedError
 
-    def fillnp(self, data, weight=1.0):
+    def fillnp(self, data, weight=1.0, lengthAssertion=None):
         """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
-
-        This primitive has no Numpy-accelerated version, so ``fillnp`` simply calls ``fill``.
 
         The container is changed in-place.
         """
-
-        import numpy
-        data, weight = self._normalizenp(data, weight)
-
-        if numpy.issubdtype(data.dtype, numpy.number) or numpy.issubdtype(data.dtype, numpy.bool_):
-            if isinstance(weight, numpy.ndarray):
-                for d, w in zip(data, weight):
-                    self.fill(float(d), float(w))
-            else:
-                for datum in data:
-                    self.fill(float(datum), float(weight))
-
-        elif numpy.issubdtype(data.dtype, numpy.string_):
-            if isinstance(weight, numpy.ndarray):
-                for d, w in zip(data, weight):
-                    self.fill(str(d), float(w))
-            else:
-                for datum in data:
-                    self.fill(str(datum), float(weight))
-
-        else:
-            if isinstance(weight, numpy.ndarray):
-                for d, w in zip(data, weight):
-                    self.fill(d, float(w))
-            else:
-                for datum in data:
-                    self.fill(datum, float(weight))
+        raise NotImplementedError
 
     def copy(self):
         """Copy this container, making a clone with no reference to the original. """
@@ -181,35 +153,31 @@ class Container(object):
                 child._checkForCrossReferences(memo)
             self._checkedForCrossReferences = True
 
-    def _normalizenp(self, data, weight):
-        import numpy
-        if not isinstance(data, numpy.ndarray):
-            data = numpy.array(data)
-        assert len(data.shape) == 1
-        if isinstance(weight, numpy.ndarray):
-            assert len(weight.shape) == 1
-            assert weight.shape[0] == data.shape[0]
-            selection = weight > 0.0
-            data = data[selection]
-            weight = weight[selection]
-            del selection
-        return data, weight
+    def _checkweightnp(self, weight, lengthAssertion):
+        assert len(weight.shape) == 1
+        if lengthAssertion is not None:
+            assert weight.shape[0] == lengthAssertion
+        weightselection = weight > 0.0
+        return weightselection, weight[weightselection]
 
-    def _computenp(self, data):
+    def _checkqnp(self, q, lengthAssertion):
         import numpy
-        q = self.quantity(data)
-        if not isinstance(q, numpy.ndarray):
-            q = numpy.ones(data.shape[0], dtype=type(q)) * q
-        assert len(q.shape) == 1
-        assert q.shape[0] == data.shape[0]
+        if isinstance(q, numpy.ndarray):
+            assert len(q.shape) == 1
+            if lengthAssertion is not None:
+                assert q.shape[0] == lengthAssertion
+        else:
+            if lengthAssertion is None:
+                raise ValueError("lengthAssertion needed because there is no Numpy array from which to infer dataset size")
+            q = numpy.ones(lengthAssertion, dtype=type(q)) * q
         return q
 
     def _entriesnp(self, weight, length):
         import numpy
         if isinstance(weight, numpy.ndarray):
-            self.entries += float(weight.sum())
+            return float(weight.sum())
         else:
-            self.entries += float(weight * length)
+            return float(weight * length)
 
     def toJson(self):
         """Convert this container to dicts and lists representing JSON (dropping its ``fill`` method).

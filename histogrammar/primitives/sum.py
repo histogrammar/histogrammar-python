@@ -90,21 +90,26 @@ class Sum(Factory, Container):
             self.entries += weight
             self.sum += q * weight
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
-
-        This primitive is optimized with Numpy.
-
-        The container is changed in-place.
-        """
+    @inheritdoc(Container)
+    def fillnp(self, data, weight=1.0, lengthAssertion=None):
         self._checkForCrossReferences()
 
         import numpy
-        data, weight = self._normalizenp(data, weight)
-        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self._computenp(data)
+        if isinstance(weight, numpy.ndarray):
+            weightselection, weight = self._checkweightnp(weight, lengthAssertion)
+        else:
+            weightselection = None
+            if weight <= 0.0: return
 
-        self._entriesnp(weight, data.shape[0])
+        q = self._checkqnp(self.quantity(data), lengthAssertion)
+        assert isinstance(q, numpy.ndarray)
+        assert len(q.shape) == 1
+        if lengthAssertion is not None:
+            assert q.shape[0] == lengthAssertion
+        if weightselection is not None:
+            q = q[weightselection]
+
+        self.entries += self._entriesnp(weight, q.shape[0])
         numpy.multiply(q, weight, q)
         self.sum += float(q.sum())
 
@@ -123,7 +128,7 @@ class Sum(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sum"], ["name"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Sum.entries")
@@ -135,7 +140,7 @@ class Sum(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Sum.name")
 
-            if isinstance(json["sum"], (int, long, float)):
+            if json["sum"] in ("nan", "inf", "-inf") or isinstance(json["sum"], (int, long, float)):
                 sum = float(json["sum"])
             else:
                 raise JsonFormatException(json["sum"], "Sum.sum")

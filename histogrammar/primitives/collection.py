@@ -178,7 +178,7 @@ class Label(Factory, Container, Collection):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Label.entries")
@@ -360,7 +360,7 @@ class UntypedLabel(Factory, Container, Collection):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "UntypedLabel.entries")
@@ -539,7 +539,7 @@ class Index(Factory, Container, Collection):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Index.entries")
@@ -727,7 +727,7 @@ class Branch(Factory, Container, Collection):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Branch.entries")

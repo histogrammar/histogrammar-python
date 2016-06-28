@@ -219,7 +219,7 @@ class Sample(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "values"], ["name", "seed"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = json["entries"]
             else:
                 raise JsonFormatException(json["entries"], "Sample.entries")
@@ -231,7 +231,7 @@ class Sample(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Sample.name")
 
-            if isinstance(json["limit"], (int, long, float)):
+            if json["limit"] in ("nan", "inf", "-inf") or isinstance(json["limit"], (int, long, float)):
                 limit = json["limit"]
             else:
                 raise JsonFormatException(json["limit"], "Sample.limit")
@@ -240,18 +240,18 @@ class Sample(Factory, Container):
                 values = []
                 for i, wv in enumerate(json["values"]):
                     if isinstance(wv, dict) and hasKeys(wv.keys(), ["w", "v"]):
-                        if isinstance(wv["w"], (int, long, float)):
+                        if wv["w"] in ("nan", "inf", "-inf") or isinstance(wv["w"], (int, long, float)):
                             w = float(wv["w"])
                         else:
                             raise JsonFormatException(wv["w"], "Sample.values {0} w".format(i))
 
                         if isinstance(wv["v"], basestring):
                             v = wv["v"]
-                        elif isinstance(wv["v"], (int, long, float)):
+                        elif wv["v"] in ("nan", "inf", "-inf") or isinstance(wv["v"], (int, long, float)):
                             v = float(wv["v"])
                         elif isinstance(wv["v"], (list, tuple)):
                             for j, d in enumerate(wv["v"]):
-                                if not isinstance(d, (int, long, float)):
+                                if d not in ("nan", "inf", "-inf") and not isinstance(d, (int, long, float)):
                                     raise JsonFormatException(d, "Sample.values {0} v {1}".format(i, j))
                             v = tuple(map(float, wv["v"]))
                         else:

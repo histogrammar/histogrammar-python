@@ -134,7 +134,7 @@ class AbsoluteErr(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mae"], ["name"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "AbsoluteErr.entries")
@@ -146,7 +146,7 @@ class AbsoluteErr(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "AbsoluteErr.name")
 
-            if isinstance(json["mae"], (int, long, float)):
+            if json["mae"] in ("nan", "inf", "-inf") or isinstance(json["mae"], (int, long, float)):
                 mae = float(json["mae"])
             else:
                 raise JsonFormatException(json["mae"], "AbsoluteErr.mae")

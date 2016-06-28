@@ -155,7 +155,7 @@ class Deviate(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mean", "variance"], ["name"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Deviate.entries")
@@ -167,12 +167,12 @@ class Deviate(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Deviate.name")
 
-            if isinstance(json["mean"], (int, long, float)):
+            if json["mean"] in ("nan", "inf", "-inf") or isinstance(json["mean"], (int, long, float)):
                 mean = float(json["mean"])
             else:
                 raise JsonFormatException(json["mean"], "Deviate.mean")
 
-            if isinstance(json["variance"], (int, long, float)):
+            if json["variance"] in ("nan", "inf", "-inf") or isinstance(json["variance"], (int, long, float)):
                 variance = float(json["variance"])
             else:
                 raise JsonFormatException(json["variance"], "Deviate.variance")

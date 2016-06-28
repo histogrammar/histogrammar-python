@@ -324,12 +324,12 @@ class SparselyBin(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"], ["name", "bins:name"]):
-            if isinstance(json["binWidth"], (int, long, float)):
+            if json["binWidth"] in ("nan", "inf", "-inf") or isinstance(json["binWidth"], (int, long, float)):
                 binWidth = float(json["binWidth"])
             else:
                 raise JsonFormatException(json, "SparselyBin.binWidth")
 
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "SparselyBin.entries")
@@ -369,7 +369,7 @@ class SparselyBin(Factory, Container):
                 raise JsonFormatException(json, "Bin.nanflow:type")
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
 
-            if isinstance(json["origin"], (int, long, float)):
+            if json["origin"] in ("nan", "inf", "-inf") or isinstance(json["origin"], (int, long, float)):
                 origin = json["origin"]
             else:
                 raise JsonFormatException(json, "SparselyBin.origin")

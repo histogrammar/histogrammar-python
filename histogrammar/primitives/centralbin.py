@@ -245,7 +245,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow"], ["name", "bins:name"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "CentrallyBin.entries")
@@ -271,7 +271,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
                 bins = []
                 for i, binpair in enumerate(json["bins"]):
                     if isinstance(binpair, dict) and hasKeys(binpair.keys(), ["center", "value"]):
-                        if isinstance(binpair["center"], (int, long, float)):
+                        if binpair["center"] in ("nan", "inf", "-inf") or isinstance(binpair["center"], (int, long, float)):
                             center = float(binpair["center"])
                         else:
                             JsonFormatException(binpair["center"], "CentrallyBin.bins {0} center".format(i))

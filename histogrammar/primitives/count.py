@@ -90,27 +90,32 @@ class Count(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += t
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
-
-        This primitive is optimized with Numpy.
-
-        The container is changed in-place.
-        """
+    @inheritdoc(Container)
+    def fillnp(self, data, weight=1.0, lengthAssertion=None):
         self._checkForCrossReferences()
 
+        if lengthAssertion is None:
+            raise ValueError("lengthAssertion needed because there is no Numpy array from which to infer dataset size")
+        
         import numpy
+        if isinstance(weight, numpy.ndarray):
+            assert len(weight.shape) == 1
+            assert weight.shape[0] == lengthAssertion
 
-        if self.transform is identity:
-            if isinstance(weight, numpy.ndarray):
+            if self.transform is identity:
                 self.entries += float(weight[weight > 0.0].sum())
-            elif weight > 0.0:
-                self.entries += float(weight * len(data))
-        else:
-            if isinstance(weight, numpy.ndarray):
-                self.entries += float(self.transform(weight[weight > 0.0]).sum())
-            elif weight > 0.0:
-                self.entries += float(self.transform(weight * numpy.ones(len(data))).sum())
+            else:
+                weight = weight[weight > 0.0]
+                transformed = self.transform(weight)
+                assert len(transformed.shape) == 1
+                assert transformed.shape[0] == weight.shape[0]
+                self.entries += float(transformed.sum())
+                
+        elif weight > 0.0:
+            if self.transform is identity:
+                self.entries += float(weight * lengthAssertion)
+            else:
+                self.entries += float(self.transform(numpy.array([weight]))[0] * lengthAssertion)
 
     @property
     def children(self):
@@ -123,7 +128,7 @@ class Count(Factory, Container):
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, (int, long, float)):
+        if json in ("nan", "inf", "-inf") or isinstance(json, (int, long, float)):
             return Count.ed(float(json))
         else:
             raise JsonFormatException(json, "Count")

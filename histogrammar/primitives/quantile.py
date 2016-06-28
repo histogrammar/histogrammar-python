@@ -151,7 +151,7 @@ class Quantile(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "target", "estimate"], ["name"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Quantile.entries")
@@ -163,7 +163,7 @@ class Quantile(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "AbsoluteErr.name")
 
-            if isinstance(json["target"], (int, long, float)):
+            if json["target"] in ("nan", "inf", "-inf") or isinstance(json["target"], (int, long, float)):
                 target = float(json["target"])
             else:
                 raise JsonFormatException(json["target"], "Quantile.target")

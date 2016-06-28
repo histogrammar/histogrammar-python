@@ -330,17 +330,17 @@ class Bin(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values", "underflow:type", "underflow", "overflow:type", "overflow", "nanflow:type", "nanflow"], ["name", "values:name"]):
-            if isinstance(json["low"], (int, long, float)):
+            if json["low"] in ("nan", "inf", "-inf") or isinstance(json["low"], (int, long, float)):
                 low = float(json["low"])
             else:
                 raise JsonFormatException(json, "Bin.low")
 
-            if isinstance(json["high"], (int, long, float)):
+            if json["high"] in ("nan", "inf", "-inf") or isinstance(json["high"], (int, long, float)):
                 high = float(json["high"])
             else:
                 raise JsonFormatException(json, "Bin.high")
 
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Bin.entries")

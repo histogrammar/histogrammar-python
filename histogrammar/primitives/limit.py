@@ -198,12 +198,12 @@ class Limit(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "type", "data"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Limit.entries")
 
-            if isinstance(json["limit"], (int, long, float)):
+            if json["limit"] in ("nan", "inf", "-inf") or isinstance(json["limit"], (int, long, float)):
                 limit = float(json["limit"])
             else:
                 raise JsonFormatException(json, "Limit.limit")
