@@ -130,7 +130,7 @@ class Deviate(Factory, Container):
 
         ca, ma, sa = self.entries, self.mean, self.varianceTimesEntries
 
-        self._entriesnp(weight, data.shape[0])
+        self.entries += self._entriesnp(weight, q.shape[0])
 
         ca_plus_cb = self.entries
         if ca_plus_cb > 0.0:
