@@ -102,10 +102,6 @@ class Sum(Factory, Container):
             if weight <= 0.0: return
 
         q = self._checkqnp(self.quantity(data), lengthAssertion)
-        assert isinstance(q, numpy.ndarray)
-        assert len(q.shape) == 1
-        if lengthAssertion is not None:
-            assert q.shape[0] == lengthAssertion
         if weightselection is not None:
             q = q[weightselection]
 

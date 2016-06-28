@@ -145,9 +145,8 @@ class TestEverything(unittest.TestCase):
 
     def testSum(self):
         with Numpy() as numpy:
-            good = lambda x: x**3
             sys.stderr.write("\n")
-            # self.compare("Sum no data", Sum(lambda x: x["empty"]**3), self.data)
+            self.compare("Sum no data", Sum(lambda x: x["empty"]**3), self.data, 1.0, Sum(lambda x: x**3), self.empty)
             self.compare("Sum noholes w/o weights", Sum(lambda x: x["noholes"]**3), self.data, 1.0, Sum(lambda x: x**3), self.noholes)
             self.compare("Sum noholes const weight", Sum(lambda x: x["noholes"]**3), self.data, 1.5, Sum(lambda x: x**3), self.noholes)
             self.compare("Sum noholes positive weights", Sum(lambda x: x["noholes"]**3), self.data, self.positive, Sum(lambda x: x**3), self.noholes)
@@ -159,31 +158,30 @@ class TestEverything(unittest.TestCase):
             self.compare("Sum holes with weights", Sum(lambda x: x["withholes"]**3), self.data, self.noholes, Sum(lambda x: x**3), self.withholes)
             self.compare("Sum holes with holes", Sum(lambda x: x["withholes"]**3), self.data, self.withholes, Sum(lambda x: x**3), self.withholes)
             self.assertRaises(AssertionError, lambda: Sum(lambda x: x[:self.SIZE//2]).fillnp(self.noholes, lengthAssertion=self.SIZE))
-            self.assertRaises(AssertionError, lambda: Sum(good).fillnp(self.noholes, self.noholes[:self.SIZE//2], lengthAssertion=self.SIZE))
+            self.assertRaises(AssertionError, lambda: Sum(lambda x: x["noholes"]).fillnp(self.data, self.noholes[:self.SIZE//2], lengthAssertion=self.SIZE))
 
-    # def testAverage(self):
-    #     with Numpy() as numpy:
-    #         good = lambda x: x**3
-    #         sys.stderr.write("\n")
-    #         self.compare("Average no data", Average(good), self.empty)
-    #         self.compare("Average noholes w/o weights", Average(good), self.noholes)
-    #         self.compare("Average noholes const weight", Average(good), self.noholes, 1.5)
-    #         self.compare("Average noholes positive weights", Average(good), self.noholes, self.positive)
-    #         self.compare("Average noholes with weights", Average(good), self.noholes, self.noholes)
-    #         self.compare("Average noholes with holes", Average(good), self.noholes, self.withholes)
-    #         self.compare("Average holes w/o weights", Average(good), self.withholes)
-    #         self.compare("Average holes const weight", Average(good), self.withholes, 1.5)
-    #         self.compare("Average holes positive weights", Average(good), self.withholes, self.positive)
-    #         self.compare("Average holes with weights", Average(good), self.withholes, self.noholes)
-    #         self.compare("Average holes with holes", Average(good), self.withholes, self.withholes)
-    #         self.assertRaises(AssertionError, lambda: Average(lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
-    #         self.assertRaises(AssertionError, lambda: Average(good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
+    def testAverage(self):
+        with Numpy() as numpy:
+            sys.stderr.write("\n")
+            self.compare("Average no data", Average(lambda x: x["empty"]**3), self.data, 1.0, Average(lambda x: x**3), self.empty)
+            self.compare("Average noholes w/o weights", Average(lambda x: x["noholes"]**3), self.data, 1.0, Average(lambda x: x**3), self.noholes)
+            self.compare("Average noholes const weight", Average(lambda x: x["noholes"]**3), self.data, 1.5, Average(lambda x: x**3), self.noholes)
+            self.compare("Average noholes positive weights", Average(lambda x: x["noholes"]**3), self.data, self.positive, Average(lambda x: x**3), self.noholes)
+            self.compare("Average noholes with weights", Average(lambda x: x["noholes"]**3), self.data, self.noholes, Average(lambda x: x**3), self.noholes)
+            self.compare("Average noholes with holes", Average(lambda x: x["noholes"]**3), self.data, self.withholes, Average(lambda x: x**3), self.noholes)
+            self.compare("Average holes w/o weights", Average(lambda x: x["withholes"]**3), self.data, 1.0, Average(lambda x: x**3), self.withholes)
+            self.compare("Average holes const weight", Average(lambda x: x["withholes"]**3), self.data, 1.5, Average(lambda x: x**3), self.withholes)
+            self.compare("Average holes positive weights", Average(lambda x: x["withholes"]**3), self.data, self.positive, Average(lambda x: x**3), self.withholes)
+            self.compare("Average holes with weights", Average(lambda x: x["withholes"]**3), self.data, self.noholes, Average(lambda x: x**3), self.withholes)
+            self.compare("Average holes with holes", Average(lambda x: x["withholes"]**3), self.data, self.withholes, Average(lambda x: x**3), self.withholes)
+            self.assertRaises(AssertionError, lambda: Average(lambda x: x[:self.SIZE//2]).fillnp(self.noholes, lengthAssertion=self.SIZE))
+            self.assertRaises(AssertionError, lambda: Average(lambda x: x["noholes"]).fillnp(self.data, self.noholes[:self.SIZE//2], lengthAssertion=self.SIZE))
 
     # def testDeviate(self):
     #     with Numpy() as numpy:
     #         good = lambda x: x**3
     #         sys.stderr.write("\n")
-    #         self.compare("Deviate no data", Deviate(good), self.empty)
+    #         self.compare("Deviate no data", Deviate(empty), self.data)
     #         self.compare("Deviate noholes w/o weights", Deviate(good), self.noholes)
     #         self.compare("Deviate noholes const weight", Deviate(good), self.noholes, 1.5)
     #         self.compare("Deviate noholes positive weights", Deviate(good), self.noholes, self.positive)
