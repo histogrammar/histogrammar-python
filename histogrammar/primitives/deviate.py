@@ -113,19 +113,20 @@ class Deviate(Factory, Container):
             self.mean += shift
             self.varianceTimesEntries += weight * delta * (q - self.mean)
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
-
-        This primitive is optimized with Numpy.
-
-        The container is changed in-place.
-        """
+    @inheritdoc(Container)
+    def fillnp(self, data, weight=1.0, lengthAssertion=None):
         self._checkForCrossReferences()
 
         import numpy
-        data, weight = self._normalizenp(data, weight)
-        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self._computenp(data)
+        if isinstance(weight, numpy.ndarray):
+            weightselection, weight = self._checkweightnp(weight, lengthAssertion)
+        else:
+            weightselection = None
+            if weight <= 0.0: return
+
+        q = self._checkqnp(self.quantity(data), lengthAssertion)
+        if weightselection is not None:
+            q = q[weightselection]
 
         ca, ma, sa = self.entries, self.mean, self.varianceTimesEntries
 

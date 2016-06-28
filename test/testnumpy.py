@@ -177,23 +177,22 @@ class TestEverything(unittest.TestCase):
             self.assertRaises(AssertionError, lambda: Average(lambda x: x[:self.SIZE//2]).fillnp(self.noholes, lengthAssertion=self.SIZE))
             self.assertRaises(AssertionError, lambda: Average(lambda x: x["noholes"]).fillnp(self.data, self.noholes[:self.SIZE//2], lengthAssertion=self.SIZE))
 
-    # def testDeviate(self):
-    #     with Numpy() as numpy:
-    #         good = lambda x: x**3
-    #         sys.stderr.write("\n")
-    #         self.compare("Deviate no data", Deviate(empty), self.data)
-    #         self.compare("Deviate noholes w/o weights", Deviate(good), self.noholes)
-    #         self.compare("Deviate noholes const weight", Deviate(good), self.noholes, 1.5)
-    #         self.compare("Deviate noholes positive weights", Deviate(good), self.noholes, self.positive)
-    #         self.compare("Deviate noholes with weights", Deviate(good), self.noholes, self.noholes)
-    #         self.compare("Deviate noholes with holes", Deviate(good), self.noholes, self.withholes)
-    #         self.compare("Deviate holes w/o weights", Deviate(good), self.withholes)
-    #         self.compare("Deviate holes const weight", Deviate(good), self.withholes, 1.5)
-    #         self.compare("Deviate holes positive weights", Deviate(good), self.withholes, self.positive)
-    #         self.compare("Deviate holes with weights", Deviate(good), self.withholes, self.noholes)
-    #         self.compare("Deviate holes with holes", Deviate(good), self.withholes, self.withholes)
-    #         self.assertRaises(AssertionError, lambda: Deviate(lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
-    #         self.assertRaises(AssertionError, lambda: Deviate(good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
+    def testDeviate(self):
+        with Numpy() as numpy:
+            sys.stderr.write("\n")
+            self.compare("Deviate no data", Deviate(lambda x: x["empty"]**3), self.data, 1.0, Deviate(lambda x: x**3), self.empty)
+            self.compare("Deviate noholes w/o weights", Deviate(lambda x: x["noholes"]**3), self.data, 1.0, Deviate(lambda x: x**3), self.noholes)
+            self.compare("Deviate noholes const weight", Deviate(lambda x: x["noholes"]**3), self.data, 1.5, Deviate(lambda x: x**3), self.noholes)
+            self.compare("Deviate noholes positive weights", Deviate(lambda x: x["noholes"]**3), self.data, self.positive, Deviate(lambda x: x**3), self.noholes)
+            self.compare("Deviate noholes with weights", Deviate(lambda x: x["noholes"]**3), self.data, self.noholes, Deviate(lambda x: x**3), self.noholes)
+            self.compare("Deviate noholes with holes", Deviate(lambda x: x["noholes"]**3), self.data, self.withholes, Deviate(lambda x: x**3), self.noholes)
+            self.compare("Deviate holes w/o weights", Deviate(lambda x: x["withholes"]**3), self.data, 1.0, Deviate(lambda x: x**3), self.withholes)
+            self.compare("Deviate holes const weight", Deviate(lambda x: x["withholes"]**3), self.data, 1.5, Deviate(lambda x: x**3), self.withholes)
+            self.compare("Deviate holes positive weights", Deviate(lambda x: x["withholes"]**3), self.data, self.positive, Deviate(lambda x: x**3), self.withholes)
+            self.compare("Deviate holes with weights", Deviate(lambda x: x["withholes"]**3), self.data, self.noholes, Deviate(lambda x: x**3), self.withholes)
+            self.compare("Deviate holes with holes", Deviate(lambda x: x["withholes"]**3), self.data, self.withholes, Deviate(lambda x: x**3), self.withholes)
+            self.assertRaises(AssertionError, lambda: Deviate(lambda x: x[:self.SIZE//2]).fillnp(self.noholes, lengthAssertion=self.SIZE))
+            self.assertRaises(AssertionError, lambda: Deviate(lambda x: x["noholes"]).fillnp(self.data, self.noholes[:self.SIZE//2], lengthAssertion=self.SIZE))
 
     # def testAbsoluteErr(self):
     #     with Numpy() as numpy:
