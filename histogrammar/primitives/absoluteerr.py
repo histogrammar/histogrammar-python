@@ -108,28 +108,11 @@ class AbsoluteErr(Factory, Container):
         self._checkForCrossReferences()
 
         import numpy
-        if not isinstance(data, numpy.ndarray):
-            data = numpy.array(data)
-        assert len(data.shape) == 1
-        length = data.shape[0]
+        data, weight = self._normalizenp(data, weight)
+        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
+        q = self.computenp(data)
 
-        q = self.quantity(data)
-        assert isinstance(q, numpy.ndarray)
-        assert len(q.shape) == 1
-        assert q.shape[0] == length
-
-        if isinstance(weight, numpy.ndarray):
-            assert len(weight.shape) == 1
-            assert weight.shape[0] == length
-
-        if isinstance(weight, numpy.ndarray):
-            selection = weight > 0.0
-            self.entries += float(weight[selection].sum())
-            q = q[selection]
-            weight = weight[selection]
-        elif self.weight > 0.0:
-            self.entries += float(weight * length)
-
+        self._entriesnp(weight, data.shape[0])
         numpy.absolute(q, q)
         numpy.multiply(q, weight, q)
         self.absoluteSum += float(q.sum())

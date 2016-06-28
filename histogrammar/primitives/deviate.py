@@ -121,33 +121,19 @@ class Deviate(Factory, Container):
         self._checkForCrossReferences()
 
         import numpy
-        if not isinstance(data, numpy.ndarray):
-            data = numpy.array(data)
-        assert len(data.shape) == 1
-        length = data.shape[0]
-
-        q = self.quantity(data)
-        assert isinstance(q, numpy.ndarray)
-        assert len(q.shape) == 1
-        assert q.shape[0] == length
-
-        if isinstance(weight, numpy.ndarray):
-            assert len(weight.shape) == 1
-            assert weight.shape[0] == length
+        data, weight = self._normalizenp(data, weight)
+        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
+        q = self.computenp(data)
 
         ca, ma, sa = self.entries, self.mean, self.varianceTimesEntries
 
-        if isinstance(weight, numpy.ndarray):
-            selection = weight > 0.0
-            self.entries += float(weight[selection].sum())
-        elif weight > 0.0:
-            self.entries += float(weight * length)
+        self._entriesnp(weight, data.shape[0])
 
         ca_plus_cb = self.entries
         if ca_plus_cb > 0.0:
             cb = ca_plus_cb - ca
-            mb = numpy.average(q, weights=(weight[selection] if isinstance(weight, numpy.ndarray) else None))
-            sb = cb*numpy.average((q - mb)**2, weights=(weight[selection] if isinstance(weight, numpy.ndarray) else None))
+            mb = numpy.average(q, weights=(weight if isinstance(weight, numpy.ndarray) else None))
+            sb = cb*numpy.average((q - mb)**2, weights=(weight if isinstance(weight, numpy.ndarray) else None))
             self.mean = float((ca*ma + (ca_plus_cb - ca)*mb) / ca_plus_cb)
             self.varianceTimesEntries = float(sa + sb + ca*ma**2 + cb*mb**2 - 2.0*self.mean*(ca*ma + cb*mb) + self.mean*self.mean*ca_plus_cb)
 

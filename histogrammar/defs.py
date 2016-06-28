@@ -159,6 +159,36 @@ class Container(object):
                 child._checkForCrossReferences(memo)
             self._checkedForCrossReferences = True
 
+    def _normalizenp(self, data, weight):
+        import numpy
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.array(data)
+        assert len(data.shape) == 1
+        if isinstance(weight, numpy.ndarray):
+            assert len(weight.shape) == 1
+            assert weight.shape[0] == data.shape[0]
+            selection = weight > 0.0
+            data = data[selection]
+            weight = weight[selection]
+            del selection
+        return data, weight
+
+    def _computenp(self, data):
+        import numpy
+        q = self.quantity
+        if not isinstance(q, numpy.ndarray):
+            q = numpy.ones(data.shape[0], dtype=type(q)) * q
+        assert len(q.shape) == 1
+        assert q.shape[0] == data.shape[0]
+        return q
+
+    def _entriesnp(self, weight, length):
+        import numpy
+        if isinstance(weight, numpy.ndarray):
+            self.entries += float(weight.sum())
+        else:
+            self.entries += float(weight * length)
+
     def toJson(self):
         """Convert this container to dicts and lists representing JSON (dropping its ``fill`` method).
        

@@ -165,21 +165,14 @@ class Limit(Factory, Container):
         self._checkForCrossReferences()
 
         import numpy
-        if not isinstance(data, numpy.ndarray):
-            data = numpy.array(data)
-        assert len(data.shape) == 1
-        length = data.shape[0]
+        data, weight = self._normalizenp(data, weight)
+        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
+        q = self.computenp(data)
 
         if isinstance(weight, numpy.ndarray):
-            assert len(weight.shape) == 1
-            assert weight.shape[0] == length
-
-        if isinstance(weight, numpy.ndarray):
-            newentries = weight[weight > 0.0].sum()
-        elif weight > 0.0:
-            newentries = weight * length
+            newentries = weight.sum()
         else:
-            newentries = 0.0
+            newentries = weight * data.shape[0]
 
         if self.entries + newentries > self.limit:
             self.value = None

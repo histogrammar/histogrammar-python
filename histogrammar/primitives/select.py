@@ -120,29 +120,16 @@ class Select(Factory, Container):
         self._checkForCrossReferences()
 
         import numpy
-        if not isinstance(data, numpy.ndarray):
-            data = numpy.array(data)
-        assert len(data.shape) == 1
-        length = data.shape[0]
-
-        if isinstance(weight, numpy.ndarray):
-            assert len(weight.shape) == 1
-            assert weight.shape[0] == length
-
-        w = self.quantity(data)
-        assert isinstance(w, numpy.ndarray)
-        assert len(w.shape) == 1
-        assert w.shape[0] == length
+        data, weight = self._normalizenp(data, weight)
+        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
+        w = self.computenp(data)
 
         numpy.multiply(w, weight, w)
 
         selection = (w > 0.0)
         self.cut.fillnp(data[selection], w[selection])
 
-        if isinstance(weight, numpy.ndarray):
-            self.entries += float(weight[weight > 0.0].sum())
-        elif weight > 0.0:
-            self.entries += float(weight * length)
+        self._entriesnp(weight, data.shape[0])
 
     @property
     def children(self):

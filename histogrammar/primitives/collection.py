@@ -155,16 +155,13 @@ class Label(Factory, Container, Collection):
         The container is changed in-place.
         """
         self._checkForCrossReferences()
-        import numpy
 
+        import numpy
+        data, weight = self._normalizenp(data, weight)
         for x in self.values:
             x.fillnp(data, weight)
-        
-        if isinstance(weight, numpy.ndarray):
-            self.entries += float(weight[weight > 0.0].sum())
-        elif weight > 0.0:
-            self.entries += float(weight * length)
-        
+        self._entriesnp(weight, data.shape[0])
+
     @property
     def children(self):
         """List of sub-aggregators, to make it possible to walk the tree."""
@@ -339,15 +336,12 @@ class UntypedLabel(Factory, Container, Collection):
         The container is changed in-place.
         """
         self._checkForCrossReferences()
-        import numpy
 
+        import numpy
+        data, weight = self._normalizenp(data, weight)
         for x in self.values:
             x.fillnp(data, weight)
-        
-        if isinstance(weight, numpy.ndarray):
-            self.entries += float(weight[weight > 0.0].sum())
-        elif weight > 0.0:
-            self.entries += float(weight * length)
+        self._entriesnp(weight, data.shape[0])
 
     @property
     def children(self):
@@ -518,15 +512,12 @@ class Index(Factory, Container, Collection):
         The container is changed in-place.
         """
         self._checkForCrossReferences()
-        import numpy
 
+        import numpy
+        data, weight = self._normalizenp(data, weight)
         for x in self.values:
             x.fillnp(data, weight)
-        
-        if isinstance(weight, numpy.ndarray):
-            self.entries += float(weight[weight > 0.0].sum())
-        elif weight > 0.0:
-            self.entries += float(weight * length)
+        self._entriesnp(weight, data.shape[0])
 
     @property
     def children(self):
@@ -708,15 +699,12 @@ class Branch(Factory, Container, Collection):
         The container is changed in-place.
         """
         self._checkForCrossReferences()
-        import numpy
 
+        import numpy
+        data, weight = self._normalizenp(data, weight)
         for x in self.values:
             x.fillnp(data, weight)
-        
-        if isinstance(weight, numpy.ndarray):
-            self.entries += float(weight[weight > 0.0].sum())
-        elif weight > 0.0:
-            self.entries += float(weight * length)
+        self._entriesnp(weight, data.shape[0])
 
     @property
     def children(self):

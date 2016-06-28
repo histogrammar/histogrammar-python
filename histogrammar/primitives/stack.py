@@ -158,20 +158,11 @@ class Stack(Factory, Container):
         self._checkForCrossReferences()
 
         import numpy
-        if not isinstance(data, numpy.ndarray):
-            data = numpy.array(data)
-        assert len(data.shape) == 1
+        data, weight = self._normalizenp(data, weight)
+        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
+        q = self.computenp(data)
+
         length = data.shape[0]
-
-        if isinstance(weight, numpy.ndarray):
-            assert len(weight.shape) == 1
-            assert weight.shape[0] == length
-
-        q = self.quantity(data)
-        assert isinstance(q, numpy.ndarray)
-        assert len(q.shape) == 1
-        assert q.shape[0] == length
-
         selection = numpy.isnan(q)
         self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
@@ -186,10 +177,7 @@ class Stack(Factory, Container):
             numpy.greater_equal(q, threshold, selection)
             sub.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
-        if isinstance(weight, numpy.ndarray):
-            self.entries += float(weight[weight > 0.0].sum())
-        elif weight > 0.0:
-            self.entries += float(weight * length)
+        self._entriesnp(weight, length)
 
     @property
     def children(self):
