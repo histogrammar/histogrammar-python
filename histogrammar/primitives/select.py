@@ -101,7 +101,9 @@ class Select(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             w = self.quantity(datum)
-            if not isinstance(w, (bool, int, long, float)):
+            try:
+                w = float(w)
+            except:
                 raise TypeError("function return value ({0}) must be boolean or number".format(w))
             w *= weight
 

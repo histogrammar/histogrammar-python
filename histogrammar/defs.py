@@ -133,8 +133,33 @@ class Container(object):
 
         The container is changed in-place.
         """
-        for datum in data:
-            self.fill(datum, weight)
+
+        import numpy
+        data, weight = self._normalizenp(data, weight)
+
+        if numpy.issubdtype(data.dtype, numpy.number) or numpy.issubdtype(data.dtype, numpy.bool_):
+            if isinstance(weight, numpy.ndarray):
+                for d, w in zip(data, weight):
+                    self.fill(float(d), float(w))
+            else:
+                for datum in data:
+                    self.fill(float(datum), float(weight))
+
+        elif numpy.issubdtype(data.dtype, numpy.string_):
+            if isinstance(weight, numpy.ndarray):
+                for d, w in zip(data, weight):
+                    self.fill(str(d), float(w))
+            else:
+                for datum in data:
+                    self.fill(str(datum), float(weight))
+
+        else:
+            if isinstance(weight, numpy.ndarray):
+                for d, w in zip(data, weight):
+                    self.fill(d, float(w))
+            else:
+                for datum in data:
+                    self.fill(datum, float(weight))
 
     def copy(self):
         """Copy this container, making a clone with no reference to the original. """

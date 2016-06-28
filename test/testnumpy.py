@@ -100,171 +100,237 @@ class TestEverything(unittest.TestCase):
 
     ################################################################ Count
     
-    def testCount(self):
-        with Numpy() as numpy:
-            print("")
-            self.compare("Count no data", Count(), self.empty)
-            self.compare("Count noholes w/o weights", Count(), self.noholes)
-            self.compare("Count noholes const weight", Count(), self.noholes, 1.5)
-            self.compare("Count noholes positive weights", Count(), self.noholes, self.positive)
-            self.compare("Count noholes with weights", Count(), self.noholes, self.noholes)
-            self.compare("Count noholes with holes", Count(), self.noholes, self.withholes)
-            self.compare("Count holes w/o weights", Count(), self.withholes)
-            self.compare("Count holes const weight", Count(), self.withholes, 1.5)
-            self.compare("Count holes positive weights", Count(), self.withholes, self.positive)
-            self.compare("Count holes with weights", Count(), self.withholes, self.noholes)
-            self.compare("Count holes with holes", Count(), self.withholes, self.withholes)
+    # def testCount(self):
+    #     with Numpy() as numpy:
+    #         print("")
+    #         self.compare("Count no data", Count(), self.empty)
+    #         self.compare("Count noholes w/o weights", Count(), self.noholes)
+    #         self.compare("Count noholes const weight", Count(), self.noholes, 1.5)
+    #         self.compare("Count noholes positive weights", Count(), self.noholes, self.positive)
+    #         self.compare("Count noholes with weights", Count(), self.noholes, self.noholes)
+    #         self.compare("Count noholes with holes", Count(), self.noholes, self.withholes)
+    #         self.compare("Count holes w/o weights", Count(), self.withholes)
+    #         self.compare("Count holes const weight", Count(), self.withholes, 1.5)
+    #         self.compare("Count holes positive weights", Count(), self.withholes, self.positive)
+    #         self.compare("Count holes with weights", Count(), self.withholes, self.noholes)
+    #         self.compare("Count holes with holes", Count(), self.withholes, self.withholes)
 
-    def testSum(self):
+    # def testSum(self):
+    #     with Numpy() as numpy:
+    #         good = lambda x: x**3
+    #         print("")
+    #         self.compare("Sum no data", Sum(good), self.empty)
+    #         self.compare("Sum noholes w/o weights", Sum(good), self.noholes)
+    #         self.compare("Sum noholes const weight", Sum(good), self.noholes, 1.5)
+    #         self.compare("Sum noholes positive weights", Sum(good), self.noholes, self.positive)
+    #         self.compare("Sum noholes with weights", Sum(good), self.noholes, self.noholes)
+    #         self.compare("Sum noholes with holes", Sum(good), self.noholes, self.withholes)
+    #         self.compare("Sum holes w/o weights", Sum(good), self.withholes)
+    #         self.compare("Sum holes const weight", Sum(good), self.withholes, 1.5)
+    #         self.compare("Sum holes positive weights", Sum(good), self.withholes, self.positive)
+    #         self.compare("Sum holes with weights", Sum(good), self.withholes, self.noholes)
+    #         self.compare("Sum holes with holes", Sum(good), self.withholes, self.withholes)
+    #         self.assertRaises(AssertionError, lambda: Sum(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+    #         self.assertRaises(AssertionError, lambda: Sum(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+
+    # def testAverage(self):
+    #     with Numpy() as numpy:
+    #         good = lambda x: x**3
+    #         print("")
+    #         self.compare("Average no data", Average(good), self.empty)
+    #         self.compare("Average noholes w/o weights", Average(good), self.noholes)
+    #         self.compare("Average noholes const weight", Average(good), self.noholes, 1.5)
+    #         self.compare("Average noholes positive weights", Average(good), self.noholes, self.positive)
+    #         self.compare("Average noholes with weights", Average(good), self.noholes, self.noholes)
+    #         self.compare("Average noholes with holes", Average(good), self.noholes, self.withholes)
+    #         self.compare("Average holes w/o weights", Average(good), self.withholes)
+    #         self.compare("Average holes const weight", Average(good), self.withholes, 1.5)
+    #         self.compare("Average holes positive weights", Average(good), self.withholes, self.positive)
+    #         self.compare("Average holes with weights", Average(good), self.withholes, self.noholes)
+    #         self.compare("Average holes with holes", Average(good), self.withholes, self.withholes)
+    #         self.assertRaises(AssertionError, lambda: Average(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+    #         self.assertRaises(AssertionError, lambda: Average(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+
+    # def testDeviate(self):
+    #     with Numpy() as numpy:
+    #         good = lambda x: x**3
+    #         print("")
+    #         self.compare("Deviate no data", Deviate(good), self.empty)
+    #         self.compare("Deviate noholes w/o weights", Deviate(good), self.noholes)
+    #         self.compare("Deviate noholes const weight", Deviate(good), self.noholes, 1.5)
+    #         self.compare("Deviate noholes positive weights", Deviate(good), self.noholes, self.positive)
+    #         self.compare("Deviate noholes with weights", Deviate(good), self.noholes, self.noholes)
+    #         self.compare("Deviate noholes with holes", Deviate(good), self.noholes, self.withholes)
+    #         self.compare("Deviate holes w/o weights", Deviate(good), self.withholes)
+    #         self.compare("Deviate holes const weight", Deviate(good), self.withholes, 1.5)
+    #         self.compare("Deviate holes positive weights", Deviate(good), self.withholes, self.positive)
+    #         self.compare("Deviate holes with weights", Deviate(good), self.withholes, self.noholes)
+    #         self.compare("Deviate holes with holes", Deviate(good), self.withholes, self.withholes)
+    #         self.assertRaises(AssertionError, lambda: Deviate(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+    #         self.assertRaises(AssertionError, lambda: Deviate(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+
+    # def testAbsoluteErr(self):
+    #     with Numpy() as numpy:
+    #         good = lambda x: x**3
+    #         print("")
+    #         self.compare("AbsoluteErr no data", AbsoluteErr(good), self.empty)
+    #         self.compare("AbsoluteErr noholes w/o weights", AbsoluteErr(good), self.noholes)
+    #         self.compare("AbsoluteErr noholes const weight", AbsoluteErr(good), self.noholes, 1.5)
+    #         self.compare("AbsoluteErr noholes positive weights", AbsoluteErr(good), self.noholes, self.positive)
+    #         self.compare("AbsoluteErr noholes with weights", AbsoluteErr(good), self.noholes, self.noholes)
+    #         self.compare("AbsoluteErr noholes with holes", AbsoluteErr(good), self.noholes, self.withholes)
+    #         self.compare("AbsoluteErr holes w/o weights", AbsoluteErr(good), self.withholes)
+    #         self.compare("AbsoluteErr holes const weight", AbsoluteErr(good), self.withholes, 1.5)
+    #         self.compare("AbsoluteErr holes positive weights", AbsoluteErr(good), self.withholes, self.positive)
+    #         self.compare("AbsoluteErr holes with weights", AbsoluteErr(good), self.withholes, self.noholes)
+    #         self.compare("AbsoluteErr holes with holes", AbsoluteErr(good), self.withholes, self.withholes)
+    #         self.assertRaises(AssertionError, lambda: AbsoluteErr(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+    #         self.assertRaises(AssertionError, lambda: AbsoluteErr(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+
+    # def testMinimize(self):
+    #     with Numpy() as numpy:
+    #         good = lambda x: x**3
+    #         print("")
+    #         self.compare("Minimize no data", Minimize(good), self.empty)
+    #         self.compare("Minimize noholes w/o weights", Minimize(good), self.noholes)
+    #         self.compare("Minimize noholes const weight", Minimize(good), self.noholes, 1.5)
+    #         self.compare("Minimize noholes positive weights", Minimize(good), self.noholes, self.positive)
+    #         self.compare("Minimize noholes with weights", Minimize(good), self.noholes, self.noholes)
+    #         self.compare("Minimize noholes with holes", Minimize(good), self.noholes, self.withholes)
+    #         self.compare("Minimize holes w/o weights", Minimize(good), self.withholes)
+    #         self.compare("Minimize holes const weight", Minimize(good), self.withholes, 1.5)
+    #         self.compare("Minimize holes positive weights", Minimize(good), self.withholes, self.positive)
+    #         self.compare("Minimize holes with weights", Minimize(good), self.withholes, self.noholes)
+    #         self.compare("Minimize holes with holes", Minimize(good), self.withholes, self.withholes)
+    #         self.assertRaises(AssertionError, lambda: Minimize(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+    #         self.assertRaises(AssertionError, lambda: Minimize(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+
+    # def testMaximize(self):
+    #     with Numpy() as numpy:
+    #         good = lambda x: x**3
+    #         print("")
+    #         self.compare("Maximize no data", Maximize(good), self.empty)
+    #         self.compare("Maximize noholes w/o weights", Maximize(good), self.noholes)
+    #         self.compare("Maximize noholes const weight", Maximize(good), self.noholes, 1.5)
+    #         self.compare("Maximize noholes positive weights", Maximize(good), self.noholes, self.positive)
+    #         self.compare("Maximize noholes with weights", Maximize(good), self.noholes, self.noholes)
+    #         self.compare("Maximize noholes with holes", Maximize(good), self.noholes, self.withholes)
+    #         self.compare("Maximize holes w/o weights", Maximize(good), self.withholes)
+    #         self.compare("Maximize holes const weight", Maximize(good), self.withholes, 1.5)
+    #         self.compare("Maximize holes positive weights", Maximize(good), self.withholes, self.positive)
+    #         self.compare("Maximize holes with weights", Maximize(good), self.withholes, self.noholes)
+    #         self.compare("Maximize holes with holes", Maximize(good), self.withholes, self.withholes)
+    #         self.assertRaises(AssertionError, lambda: Maximize(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+    #         self.assertRaises(AssertionError, lambda: Maximize(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+
+    # def testBin(self):
+    #     with Numpy() as numpy:
+    #         good = lambda x: x**3
+    #         print("")
+    #         self.compare("Bin no data", Bin(100, -3.0, 3.0, good), self.empty)
+    #         self.compare("Bin noholes w/o weights", Bin(100, -3.0, 3.0, good), self.noholes)
+    #         self.compare("Bin noholes const weight", Bin(100, -3.0, 3.0, good), self.noholes, 1.5)
+    #         self.compare("Bin noholes positive weights", Bin(100, -3.0, 3.0, good), self.noholes, self.positive)
+    #         self.compare("Bin noholes with weights", Bin(100, -3.0, 3.0, good), self.noholes, self.noholes)
+    #         self.compare("Bin noholes with holes", Bin(100, -3.0, 3.0, good), self.noholes, self.withholes)
+    #         self.compare("Bin holes w/o weights", Bin(100, -3.0, 3.0, good), self.withholes)
+    #         self.compare("Bin holes const weight", Bin(100, -3.0, 3.0, good), self.withholes, 1.5)
+    #         self.compare("Bin holes positive weights", Bin(100, -3.0, 3.0, good), self.withholes, self.positive)
+    #         self.compare("Bin holes with weights", Bin(100, -3.0, 3.0, good), self.withholes, self.noholes)
+    #         self.compare("Bin holes with holes", Bin(100, -3.0, 3.0, good), self.withholes, self.withholes)
+    #         self.assertRaises(AssertionError, lambda: Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+    #         self.assertRaises(AssertionError, lambda: Bin(100, -3.0, 3.0, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+
+    # def testSparselyBin(self):
+    #     with Numpy() as numpy:
+    #         good = lambda x: x**3
+    #         print("")
+    #         self.compare("SparselyBin no data", SparselyBin(0.1, good), self.empty)
+    #         self.compare("SparselyBin noholes w/o weights", SparselyBin(0.1, good), self.noholes)
+    #         self.compare("SparselyBin noholes const weight", SparselyBin(0.1, good), self.noholes, 1.5)
+    #         self.compare("SparselyBin noholes positive weights", SparselyBin(0.1, good), self.noholes, self.positive)
+    #         self.compare("SparselyBin noholes with weights", SparselyBin(0.1, good), self.noholes, self.noholes)
+    #         self.compare("SparselyBin noholes with holes", SparselyBin(0.1, good), self.noholes, self.withholes)
+    #         self.compare("SparselyBin holes w/o weights", SparselyBin(0.1, good), self.withholes)
+    #         self.compare("SparselyBin holes const weight", SparselyBin(0.1, good), self.withholes, 1.5)
+    #         self.compare("SparselyBin holes positive weights", SparselyBin(0.1, good), self.withholes, self.positive)
+    #         self.compare("SparselyBin holes with weights", SparselyBin(0.1, good), self.withholes, self.noholes)
+    #         self.compare("SparselyBin holes with holes", SparselyBin(0.1, good), self.withholes, self.withholes)
+    #         self.assertRaises(AssertionError, lambda: SparselyBin(0.1, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+    #         self.assertRaises(AssertionError, lambda: SparselyBin(0.1, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+
+    # def testCentrallyBin(self):
+    #     with Numpy() as numpy:
+    #         good = lambda x: x**3
+    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+    #         print("")
+    #         self.compare("CentrallyBin no data", CentrallyBin(centers, good), self.empty)
+    #         self.compare("CentrallyBin noholes w/o weights", CentrallyBin(centers, good), self.noholes)
+    #         self.compare("CentrallyBin noholes const weight", CentrallyBin(centers, good), self.noholes, 1.5)
+    #         self.compare("CentrallyBin noholes positive weights", CentrallyBin(centers, good), self.noholes, self.positive)
+    #         self.compare("CentrallyBin noholes with weights", CentrallyBin(centers, good), self.noholes, self.noholes)
+    #         self.compare("CentrallyBin noholes with holes", CentrallyBin(centers, good), self.noholes, self.withholes)
+    #         self.compare("CentrallyBin holes w/o weights", CentrallyBin(centers, good), self.withholes)
+    #         self.compare("CentrallyBin holes const weight", CentrallyBin(centers, good), self.withholes, 1.5)
+    #         self.compare("CentrallyBin holes positive weights", CentrallyBin(centers, good), self.withholes, self.positive)
+    #         self.compare("CentrallyBin holes with weights", CentrallyBin(centers, good), self.withholes, self.noholes)
+    #         self.compare("CentrallyBin holes with holes", CentrallyBin(centers, good), self.withholes, self.withholes)
+    #         self.assertRaises(AssertionError, lambda: CentrallyBin(centers, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+    #         self.assertRaises(AssertionError, lambda: CentrallyBin(centers, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+
+    def testFraction(self):
         with Numpy() as numpy:
+            boolean = lambda x: x**2 > 1.5
+            positive = lambda x: x**2
             good = lambda x: x**3
             print("")
-            self.compare("Sum no data", Sum(good), self.empty)
-            self.compare("Sum noholes w/o weights", Sum(good), self.noholes)
-            self.compare("Sum noholes const weight", Sum(good), self.noholes, 1.5)
-            self.compare("Sum noholes positive weights", Sum(good), self.noholes, self.positive)
-            self.compare("Sum noholes with weights", Sum(good), self.noholes, self.noholes)
-            self.compare("Sum noholes with holes", Sum(good), self.noholes, self.withholes)
-            self.compare("Sum holes w/o weights", Sum(good), self.withholes)
-            self.compare("Sum holes const weight", Sum(good), self.withholes, 1.5)
-            self.compare("Sum holes positive weights", Sum(good), self.withholes, self.positive)
-            self.compare("Sum holes with weights", Sum(good), self.withholes, self.noholes)
-            self.compare("Sum holes with holes", Sum(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Sum(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Sum(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
 
-    def testAverage(self):
-        with Numpy() as numpy:
-            good = lambda x: x**3
-            print("")
-            self.compare("Average no data", Average(good), self.empty)
-            self.compare("Average noholes w/o weights", Average(good), self.noholes)
-            self.compare("Average noholes const weight", Average(good), self.noholes, 1.5)
-            self.compare("Average noholes positive weights", Average(good), self.noholes, self.positive)
-            self.compare("Average noholes with weights", Average(good), self.noholes, self.noholes)
-            self.compare("Average noholes with holes", Average(good), self.noholes, self.withholes)
-            self.compare("Average holes w/o weights", Average(good), self.withholes)
-            self.compare("Average holes const weight", Average(good), self.withholes, 1.5)
-            self.compare("Average holes positive weights", Average(good), self.withholes, self.positive)
-            self.compare("Average holes with weights", Average(good), self.withholes, self.noholes)
-            self.compare("Average holes with holes", Average(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Average(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Average(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.compare("Fraction boolean no data", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.empty)
+            self.compare("Fraction boolean noholes w/o weights", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.noholes)
+            self.compare("Fraction boolean noholes const weight", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.noholes, 1.5)
+            self.compare("Fraction boolean noholes positive weights", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.noholes, self.positive)
+            self.compare("Fraction boolean noholes with weights", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.noholes, self.noholes)
+            self.compare("Fraction boolean noholes with holes", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.noholes, self.withholes)
+            self.compare("Fraction boolean holes w/o weights", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.withholes)
+            self.compare("Fraction boolean holes const weight", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.withholes, 1.5)
+            self.compare("Fraction boolean holes positive weights", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
+            self.compare("Fraction boolean holes with weights", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
+            self.compare("Fraction boolean holes with holes", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
+            self.assertRaises(AssertionError, lambda: Fraction(boolean, Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE/2])).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Fraction(boolean, Bin(100, -3.0, 3.0, good)).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
 
-    def testDeviate(self):
-        with Numpy() as numpy:
-            good = lambda x: x**3
-            print("")
-            self.compare("Deviate no data", Deviate(good), self.empty)
-            self.compare("Deviate noholes w/o weights", Deviate(good), self.noholes)
-            self.compare("Deviate noholes const weight", Deviate(good), self.noholes, 1.5)
-            self.compare("Deviate noholes positive weights", Deviate(good), self.noholes, self.positive)
-            self.compare("Deviate noholes with weights", Deviate(good), self.noholes, self.noholes)
-            self.compare("Deviate noholes with holes", Deviate(good), self.noholes, self.withholes)
-            self.compare("Deviate holes w/o weights", Deviate(good), self.withholes)
-            self.compare("Deviate holes const weight", Deviate(good), self.withholes, 1.5)
-            self.compare("Deviate holes positive weights", Deviate(good), self.withholes, self.positive)
-            self.compare("Deviate holes with weights", Deviate(good), self.withholes, self.noholes)
-            self.compare("Deviate holes with holes", Deviate(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Deviate(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Deviate(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.compare("Fraction positive no data", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.empty)
+            self.compare("Fraction positive noholes w/o weights", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.noholes)
+            self.compare("Fraction positive noholes const weight", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.noholes, 1.5)
+            self.compare("Fraction positive noholes positive weights", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.noholes, self.positive)
+            self.compare("Fraction positive noholes with weights", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.noholes, self.noholes)
+            self.compare("Fraction positive noholes with holes", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.noholes, self.withholes)
+            self.compare("Fraction positive holes w/o weights", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.withholes)
+            self.compare("Fraction positive holes const weight", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.withholes, 1.5)
+            self.compare("Fraction positive holes positive weights", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
+            self.compare("Fraction positive holes with weights", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
+            self.compare("Fraction positive holes with holes", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
+            self.assertRaises(AssertionError, lambda: Fraction(positive, Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE/2])).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Fraction(positive, Bin(100, -3.0, 3.0, good)).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
 
-    def testAbsoluteErr(self):
-        with Numpy() as numpy:
-            good = lambda x: x**3
-            print("")
-            self.compare("AbsoluteErr no data", AbsoluteErr(good), self.empty)
-            self.compare("AbsoluteErr noholes w/o weights", AbsoluteErr(good), self.noholes)
-            self.compare("AbsoluteErr noholes const weight", AbsoluteErr(good), self.noholes, 1.5)
-            self.compare("AbsoluteErr noholes positive weights", AbsoluteErr(good), self.noholes, self.positive)
-            self.compare("AbsoluteErr noholes with weights", AbsoluteErr(good), self.noholes, self.noholes)
-            self.compare("AbsoluteErr noholes with holes", AbsoluteErr(good), self.noholes, self.withholes)
-            self.compare("AbsoluteErr holes w/o weights", AbsoluteErr(good), self.withholes)
-            self.compare("AbsoluteErr holes const weight", AbsoluteErr(good), self.withholes, 1.5)
-            self.compare("AbsoluteErr holes positive weights", AbsoluteErr(good), self.withholes, self.positive)
-            self.compare("AbsoluteErr holes with weights", AbsoluteErr(good), self.withholes, self.noholes)
-            self.compare("AbsoluteErr holes with holes", AbsoluteErr(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: AbsoluteErr(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: AbsoluteErr(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
-
-    def testMinimize(self):
-        with Numpy() as numpy:
-            good = lambda x: x**3
-            print("")
-            self.compare("Minimize no data", Minimize(good), self.empty)
-            self.compare("Minimize noholes w/o weights", Minimize(good), self.noholes)
-            self.compare("Minimize noholes const weight", Minimize(good), self.noholes, 1.5)
-            self.compare("Minimize noholes positive weights", Minimize(good), self.noholes, self.positive)
-            self.compare("Minimize noholes with weights", Minimize(good), self.noholes, self.noholes)
-            self.compare("Minimize noholes with holes", Minimize(good), self.noholes, self.withholes)
-            self.compare("Minimize holes w/o weights", Minimize(good), self.withholes)
-            self.compare("Minimize holes const weight", Minimize(good), self.withholes, 1.5)
-            self.compare("Minimize holes positive weights", Minimize(good), self.withholes, self.positive)
-            self.compare("Minimize holes with weights", Minimize(good), self.withholes, self.noholes)
-            self.compare("Minimize holes with holes", Minimize(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Minimize(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Minimize(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
-
-    def testMaximize(self):
-        with Numpy() as numpy:
-            good = lambda x: x**3
-            print("")
-            self.compare("Maximize no data", Maximize(good), self.empty)
-            self.compare("Maximize noholes w/o weights", Maximize(good), self.noholes)
-            self.compare("Maximize noholes const weight", Maximize(good), self.noholes, 1.5)
-            self.compare("Maximize noholes positive weights", Maximize(good), self.noholes, self.positive)
-            self.compare("Maximize noholes with weights", Maximize(good), self.noholes, self.noholes)
-            self.compare("Maximize noholes with holes", Maximize(good), self.noholes, self.withholes)
-            self.compare("Maximize holes w/o weights", Maximize(good), self.withholes)
-            self.compare("Maximize holes const weight", Maximize(good), self.withholes, 1.5)
-            self.compare("Maximize holes positive weights", Maximize(good), self.withholes, self.positive)
-            self.compare("Maximize holes with weights", Maximize(good), self.withholes, self.noholes)
-            self.compare("Maximize holes with holes", Maximize(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Maximize(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Maximize(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
-
-    def testBin(self):
-        with Numpy() as numpy:
-            good = lambda x: x**3
-            print("")
-            self.compare("Bin no data", Bin(100, -3.0, 3.0, good), self.empty)
-            self.compare("Bin noholes w/o weights", Bin(100, -3.0, 3.0, good), self.noholes)
-            self.compare("Bin noholes const weight", Bin(100, -3.0, 3.0, good), self.noholes, 1.5)
-            self.compare("Bin noholes positive weights", Bin(100, -3.0, 3.0, good), self.noholes, self.positive)
-            self.compare("Bin noholes with weights", Bin(100, -3.0, 3.0, good), self.noholes, self.noholes)
-            self.compare("Bin noholes with holes", Bin(100, -3.0, 3.0, good), self.noholes, self.withholes)
-            self.compare("Bin holes w/o weights", Bin(100, -3.0, 3.0, good), self.withholes)
-            self.compare("Bin holes const weight", Bin(100, -3.0, 3.0, good), self.withholes, 1.5)
-            self.compare("Bin holes positive weights", Bin(100, -3.0, 3.0, good), self.withholes, self.positive)
-            self.compare("Bin holes with weights", Bin(100, -3.0, 3.0, good), self.withholes, self.noholes)
-            self.compare("Bin holes with holes", Bin(100, -3.0, 3.0, good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Bin(100, -3.0, 3.0, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
-
-    def testSparselyBin(self):
-        with Numpy() as numpy:
-            good = lambda x: x**3
-            print("")
-            self.compare("SparselyBin no data", SparselyBin(0.1, good), self.empty)
-            self.compare("SparselyBin noholes w/o weights", SparselyBin(0.1, good), self.noholes)
-            self.compare("SparselyBin noholes const weight", SparselyBin(0.1, good), self.noholes, 1.5)
-            self.compare("SparselyBin noholes positive weights", SparselyBin(0.1, good), self.noholes, self.positive)
-            self.compare("SparselyBin noholes with weights", SparselyBin(0.1, good), self.noholes, self.noholes)
-            self.compare("SparselyBin noholes with holes", SparselyBin(0.1, good), self.noholes, self.withholes)
-            self.compare("SparselyBin holes w/o weights", SparselyBin(0.1, good), self.withholes)
-            self.compare("SparselyBin holes const weight", SparselyBin(0.1, good), self.withholes, 1.5)
-            self.compare("SparselyBin holes positive weights", SparselyBin(0.1, good), self.withholes, self.positive)
-            self.compare("SparselyBin holes with weights", SparselyBin(0.1, good), self.withholes, self.noholes)
-            self.compare("SparselyBin holes with holes", SparselyBin(0.1, good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: SparselyBin(0.1, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: SparselyBin(0.1, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.compare("Fraction good no data", Fraction(good, Bin(100, -3.0, 3.0, good)), self.empty)
+            self.compare("Fraction good noholes w/o weights", Fraction(good, Bin(100, -3.0, 3.0, good)), self.noholes)
+            self.compare("Fraction good noholes const weight", Fraction(good, Bin(100, -3.0, 3.0, good)), self.noholes, 1.5)
+            self.compare("Fraction good noholes positive weights", Fraction(good, Bin(100, -3.0, 3.0, good)), self.noholes, self.positive)
+            self.compare("Fraction good noholes with weights", Fraction(good, Bin(100, -3.0, 3.0, good)), self.noholes, self.noholes)
+            self.compare("Fraction good noholes with holes", Fraction(good, Bin(100, -3.0, 3.0, good)), self.noholes, self.withholes)
+            self.compare("Fraction good holes w/o weights", Fraction(good, Bin(100, -3.0, 3.0, good)), self.withholes)
+            self.compare("Fraction good holes const weight", Fraction(good, Bin(100, -3.0, 3.0, good)), self.withholes, 1.5)
+            self.compare("Fraction good holes positive weights", Fraction(good, Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
+            self.compare("Fraction good holes with weights", Fraction(good, Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
+            self.compare("Fraction good holes with holes", Fraction(good, Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
+            self.assertRaises(AssertionError, lambda: Fraction(good, Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE/2])).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Fraction(good, Bin(100, -3.0, 3.0, good)).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
 
 
 
 
 
-# | SparselySparselyBin            | untested
-# | CentrallySparselyBin           | untested
 # | Fraction               | untested
 # | Stack                  | untested
 # | Partition              | untested

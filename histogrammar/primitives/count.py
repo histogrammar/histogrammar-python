@@ -82,7 +82,9 @@ class Count(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             t = self.transform(weight)
-            if not isinstance(t, (bool, int, long, float)):
+            try:
+                t = float(t)
+            except:
                 raise TypeError("function return value ({0}) must be boolean or number".format(t))
 
             # no possibility of exception from here on out (for rollback)

@@ -118,7 +118,9 @@ class Fraction(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             w = self.quantity(datum)
-            if not isinstance(w, (bool, int, long, float)):
+            try:
+                w = float(w)
+            except:
                 raise TypeError("function return value ({0}) must be boolean or number".format(w))
             w *= weight
 
@@ -142,12 +144,15 @@ class Fraction(Factory, Container):
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
         w = self._computenp(data)
+        if numpy.issubdtype(w.dtype, numpy.bool_):
+            w = numpy.array(w, dtype=float)
 
         numpy.multiply(w, weight, w)
 
+        self.denominator.fillnp(data, weight)
+
         selection = (w > 0.0)
         self.numerator.fillnp(data[selection], w[selection])
-        self.denominator.fillnp(data, weight)
 
         self._entriesnp(weight, data.shape[0])
 

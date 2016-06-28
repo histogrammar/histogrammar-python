@@ -91,7 +91,9 @@ class AbsoluteErr(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
-            if not isinstance(q, (bool, int, long, float)):
+            try:
+                q = float(q)
+            except:
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)

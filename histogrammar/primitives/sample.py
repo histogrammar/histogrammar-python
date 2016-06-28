@@ -185,8 +185,18 @@ class Sample(Factory, Container):
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
-            if not isinstance(q, (bool, int, long, float, basestring)) and not (isinstance(q, (list, tuple)) and all(isinstance(qi, (int, long, float)) for qi in q)):
-                raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
+            if isinstance(q, basestring):
+                pass
+            elif isinstance(q, (list, tuple)):
+                try:
+                    q = tuple(float(qi) for qi in q)
+                except:
+                    raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
+            else:
+                try:
+                    q = float(q)
+                except:
+                    raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
 
             self.reservoir.update(q, weight, self.randomGenerator)
 

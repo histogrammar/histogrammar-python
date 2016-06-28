@@ -137,7 +137,9 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         self._checkForCrossReferences()
         if weight > 0.0:
             q = self.quantity(datum)
-            if not isinstance(q, (bool, int, long, float)):
+            try:
+                q = float(q)
+            except:
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             if self.nan(q):
@@ -197,6 +199,20 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
                 numpy.bitwise_and(selection, selection2, selection)
 
             self.bins[index][1].fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+
+        if math.isnan(self.min):
+            if q.shape[0] > 0:
+                self.min = float(q.min())
+        else:
+            if q.shape[0] > 0:
+                self.min = min(self.min, float(q.min()))
+
+        if math.isnan(self.max):
+            if q.shape[0] > 0:
+                self.max = float(q.max())
+        else:
+            if q.shape[0] > 0:
+                self.max = max(self.max, float(q.max()))
 
         self._entriesnp(originalweight, length)
 
