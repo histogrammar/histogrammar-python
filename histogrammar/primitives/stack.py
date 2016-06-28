@@ -115,7 +115,7 @@ class Stack(Factory, Container):
 
     @inheritdoc(Container)
     def zero(self):
-        return Stack([(x, x.zero()) for x in cuts], self.quantity, None, self.nanflow.zero())
+        return Stack([(c, v.zero()) for c, v in self.cuts], self.quantity, None, self.nanflow.zero())
 
     @inheritdoc(Container)
     def __add__(self, other):

@@ -95,7 +95,7 @@ class Partition(Factory, Container):
 
     @inheritdoc(Container)
     def zero(self):
-        return Partition([(x, x.zero()) for x in cuts], self.quantity, None, self.nanflow.zero())
+        return Partition([(c, v.zero()) for c, v in self.cuts], self.quantity, None, self.nanflow.zero())
 
     @inheritdoc(Container)
     def __add__(self, other):
@@ -160,7 +160,8 @@ class Partition(Factory, Container):
         selection2 = numpy.empty(q.shape, dtype=numpy.bool)
         for (low, sub), (high, _) in zip(self.cuts, self.cuts[1:] + ((float("nan"), None),)):
             numpy.greater_equal(q, low, selection)
-            numpy.less(q, high, selection2)
+            numpy.greater_equal(q, high, selection2)
+            numpy.bitwise_not(selection2, selection2)
             numpy.bitwise_and(selection, selection2, selection)
 
             sub.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)

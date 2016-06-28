@@ -125,6 +125,8 @@ class Select(Factory, Container):
         data, weight = self._normalizenp(data, weight)
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
         w = self._computenp(data)
+        if numpy.issubdtype(w.dtype, numpy.bool_):
+            w = numpy.array(w, dtype=float)
 
         numpy.multiply(w, weight, w)
 

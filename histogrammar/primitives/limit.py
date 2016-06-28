@@ -178,7 +178,8 @@ class Limit(Factory, Container):
             self.value = None
         elif self.value is not None:
             self.value.fillnp(data, weight)
-            self.entries += float(newentries)
+
+        self.entries += float(newentries)
 
     @property
     def children(self):
