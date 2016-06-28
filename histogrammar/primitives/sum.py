@@ -106,6 +106,7 @@ class Sum(Factory, Container):
             q = q[weightselection]
 
         self.entries += self._entriesnp(weight, q.shape[0])
+
         numpy.multiply(q, weight, q)
         self.sum += float(q.sum())
 

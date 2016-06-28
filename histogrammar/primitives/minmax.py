@@ -98,21 +98,22 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
-
-        This primitive is optimized with Numpy.
-
-        The container is changed in-place.
-        """
+    @inheritdoc(Container)
+    def fillnp(self, data, weight=1.0, lengthAssertion=None):
         self._checkForCrossReferences()
 
         import numpy
-        data, weight = self._normalizenp(data, weight)
-        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self._computenp(data)
+        if isinstance(weight, numpy.ndarray):
+            weightselection, weight = self._checkweightnp(weight, lengthAssertion)
+        else:
+            weightselection = None
+            if weight <= 0.0: return
 
-        self._entriesnp(weight, data.shape[0])
+        q = self._checkqnp(self.quantity(data), lengthAssertion)
+        if weightselection is not None:
+            q = q[weightselection]
+
+        self.entries += self._entriesnp(weight, q.shape[0])
 
         selection = numpy.isnan(q)
         numpy.bitwise_not(selection, selection)
@@ -246,21 +247,22 @@ class Maximize(Factory, Container):
             if math.isnan(self.max) or q > self.max:
                 self.max = q
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
-
-        This primitive is optimized with Numpy.
-
-        The container is changed in-place.
-        """
+    @inheritdoc(Container)
+    def fillnp(self, data, weight=1.0, lengthAssertion=None):
         self._checkForCrossReferences()
 
         import numpy
-        data, weight = self._normalizenp(data, weight)
-        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self._computenp(data)
+        if isinstance(weight, numpy.ndarray):
+            weightselection, weight = self._checkweightnp(weight, lengthAssertion)
+        else:
+            weightselection = None
+            if weight <= 0.0: return
 
-        self._entriesnp(weight, data.shape[0])
+        q = self._checkqnp(self.quantity(data), lengthAssertion)
+        if weightselection is not None:
+            q = q[weightselection]
+
+        self.entries += self._entriesnp(weight, q.shape[0])
 
         selection = numpy.isnan(q)
         numpy.bitwise_not(selection, selection)
