@@ -121,6 +121,18 @@ class TestEverything(unittest.TestCase):
             self.compare("Count holes with weights", Count(), self.withholes, self.noholes)
             self.compare("Count holes with holes", Count(), self.withholes, self.withholes)
 
+            self.compare("Count transform no data", Count(lambda x: x**2), self.empty)
+            self.compare("Count transform noholes w/o weights", Count(lambda x: x**2), self.noholes)
+            self.compare("Count transform noholes const weight", Count(lambda x: x**2), self.noholes, 1.5)
+            self.compare("Count transform noholes positive weights", Count(lambda x: x**2), self.noholes, self.positive)
+            self.compare("Count transform noholes with weights", Count(lambda x: x**2), self.noholes, self.noholes)
+            self.compare("Count transform noholes with holes", Count(lambda x: x**2), self.noholes, self.withholes)
+            self.compare("Count transform holes w/o weights", Count(lambda x: x**2), self.withholes)
+            self.compare("Count transform holes const weight", Count(lambda x: x**2), self.withholes, 1.5)
+            self.compare("Count transform holes positive weights", Count(lambda x: x**2), self.withholes, self.positive)
+            self.compare("Count transform holes with weights", Count(lambda x: x**2), self.withholes, self.noholes)
+            self.compare("Count transform holes with holes", Count(lambda x: x**2), self.withholes, self.withholes)
+
     def testSum(self):
         with Numpy() as numpy:
             good = lambda x: x**3
@@ -233,19 +245,20 @@ class TestEverything(unittest.TestCase):
         with Numpy() as numpy:
             good = lambda x: x**3
             sys.stderr.write("\n")
-            self.compare("Bin no data", Bin(100, -3.0, 3.0, good), self.empty)
-            self.compare("Bin noholes w/o weights", Bin(100, -3.0, 3.0, good), self.noholes)
-            self.compare("Bin noholes const weight", Bin(100, -3.0, 3.0, good), self.noholes, 1.5)
-            self.compare("Bin noholes positive weights", Bin(100, -3.0, 3.0, good), self.noholes, self.positive)
-            self.compare("Bin noholes with weights", Bin(100, -3.0, 3.0, good), self.noholes, self.noholes)
-            self.compare("Bin noholes with holes", Bin(100, -3.0, 3.0, good), self.noholes, self.withholes)
-            self.compare("Bin holes w/o weights", Bin(100, -3.0, 3.0, good), self.withholes)
-            self.compare("Bin holes const weight", Bin(100, -3.0, 3.0, good), self.withholes, 1.5)
-            self.compare("Bin holes positive weights", Bin(100, -3.0, 3.0, good), self.withholes, self.positive)
-            self.compare("Bin holes with weights", Bin(100, -3.0, 3.0, good), self.withholes, self.noholes)
-            self.compare("Bin holes with holes", Bin(100, -3.0, 3.0, good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Bin(100, -3.0, 3.0, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            for bins in [10, 100, 1000]:
+                self.compare("Bin ({0} bins) no data".format(bins), Bin(bins, -3.0, 3.0, good), self.empty)
+                self.compare("Bin ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, good), self.noholes)
+                self.compare("Bin ({0} bins) noholes const weight".format(bins), Bin(bins, -3.0, 3.0, good), self.noholes, 1.5)
+                self.compare("Bin ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, good), self.noholes, self.positive)
+                self.compare("Bin ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, good), self.noholes, self.noholes)
+                self.compare("Bin ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, good), self.noholes, self.withholes)
+                self.compare("Bin ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes)
+                self.compare("Bin ({0} bins) holes const weight".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes, 1.5)
+                self.compare("Bin ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes, self.positive)
+                self.compare("Bin ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes, self.noholes)
+                self.compare("Bin ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes, self.withholes)
+                self.assertRaises(AssertionError, lambda: Bin(bins, -3.0, 3.0, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+                self.assertRaises(AssertionError, lambda: Bin(bins, -3.0, 3.0, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
 
     def testSparselyBin(self):
         with Numpy() as numpy:
@@ -539,8 +552,8 @@ class TestEverything(unittest.TestCase):
 
     def testZZZ(self):
         self.scorecard.sort()
-        sys.stderr.write("\n-----------------------------------------+----------------------------\n")
-        sys.stderr.write("Numpy/PurePython comparison              | Speedup factor\n")
-        sys.stderr.write("-----------------------------------------+----------------------------\n")
+        sys.stderr.write("\n----------------------------------------------+----------------------------\n")
+        sys.stderr.write("Numpy/PurePython comparison                   | Speedup factor\n")
+        sys.stderr.write("----------------------------------------------+----------------------------\n")
         for score, name in self.scorecard:
             sys.stderr.write("{0:45s} | {1:g}\n".format(name, score))
