@@ -248,7 +248,7 @@ class Partition(Factory, Container):
             raise JsonFormatException(json, "Partition")
 
     def __repr__(self):
-        return "<Partition values={0} thresholds=({1}) nanflow={2}>".format(self.cuts[0][1].name, ", ".join(map(str, self.thresholds)), self.nanflow.name)
+        return "<Partition values={0} thresholds=({1}) nanflow={2}>".format(self.cuts[0][1].name, ", ".join([str(x) for x in self.thresholds]), self.nanflow.name)
 
     def __eq__(self, other):
         return isinstance(other, Partition) and numeq(self.entries, other.entries) and self.quantity == other.quantity and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.cuts, other.cuts)) and self.nanflow == other.nanflow

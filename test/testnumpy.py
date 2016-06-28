@@ -38,30 +38,39 @@ class Numpy(object):
         import numpy
         numpy.seterr(**self.errstate)
 
+def makeSamples(SIZE, HOLES):
+    try:
+        with Numpy() as numpy:
+            empty = numpy.array([], dtype=float)
+
+            if numpy is not None:
+                rand = random.Random(12345)
+
+                positive = numpy.array([abs(rand.gauss(0, 1)) + 1e-12 for i in xrange(SIZE)])
+                assert all(x > 0.0 for x in positive)
+
+                noholes = numpy.array([rand.gauss(0, 1) for i in xrange(SIZE)])
+
+                withholes = numpy.array([rand.gauss(0, 1) for i in xrange(SIZE)])
+                for i in xrange(HOLES):
+                    withholes[rand.randint(0, SIZE)] = float("nan")
+                for i in xrange(HOLES):
+                    withholes[rand.randint(0, SIZE)] = float("inf")
+                for i in xrange(HOLES):
+                    withholes[rand.randint(0, SIZE)] = float("-inf")
+
+            return empty, positive, noholes, withholes
+
+    except ImportError:
+        return None, None, None, None
+
 class TestEverything(unittest.TestCase):
     def runTest(self):
         pass
         
-    with Numpy() as numpy:
-        empty = numpy.array([], dtype=float)
-
-        SIZE = 10000
-        HOLES = 100
-        if numpy is not None:
-            rand = random.Random(12345)
-
-            positive = numpy.array([abs(rand.gauss(0, 1)) + 1e-12 for i in xrange(SIZE)])
-            assert all(x > 0.0 for x in positive)
-
-            noholes = numpy.array([rand.gauss(0, 1) for i in xrange(SIZE)])
-
-            withholes = numpy.array([rand.gauss(0, 1) for i in xrange(SIZE)])
-            for i in xrange(HOLES):
-                withholes[rand.randint(0, SIZE)] = float("nan")
-            for i in xrange(HOLES):
-                withholes[rand.randint(0, SIZE)] = float("inf")
-            for i in xrange(HOLES):
-                withholes[rand.randint(0, SIZE)] = float("-inf")
+    SIZE = 10000
+    HOLES = 100
+    empty, positive, noholes, withholes = makeSamples(SIZE, HOLES)
 
     def twosigfigs(self, number):
         return round(number, 1 - int(math.floor(math.log10(number))))
@@ -148,8 +157,8 @@ class TestEverything(unittest.TestCase):
             self.compare("Sum holes positive weights", Sum(good), self.withholes, self.positive)
             self.compare("Sum holes with weights", Sum(good), self.withholes, self.noholes)
             self.compare("Sum holes with holes", Sum(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Sum(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Sum(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: Sum(lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Sum(good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testAverage(self):
         with Numpy() as numpy:
@@ -166,8 +175,8 @@ class TestEverything(unittest.TestCase):
             self.compare("Average holes positive weights", Average(good), self.withholes, self.positive)
             self.compare("Average holes with weights", Average(good), self.withholes, self.noholes)
             self.compare("Average holes with holes", Average(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Average(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Average(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: Average(lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Average(good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testDeviate(self):
         with Numpy() as numpy:
@@ -184,8 +193,8 @@ class TestEverything(unittest.TestCase):
             self.compare("Deviate holes positive weights", Deviate(good), self.withholes, self.positive)
             self.compare("Deviate holes with weights", Deviate(good), self.withholes, self.noholes)
             self.compare("Deviate holes with holes", Deviate(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Deviate(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Deviate(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: Deviate(lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Deviate(good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testAbsoluteErr(self):
         with Numpy() as numpy:
@@ -202,8 +211,8 @@ class TestEverything(unittest.TestCase):
             self.compare("AbsoluteErr holes positive weights", AbsoluteErr(good), self.withholes, self.positive)
             self.compare("AbsoluteErr holes with weights", AbsoluteErr(good), self.withholes, self.noholes)
             self.compare("AbsoluteErr holes with holes", AbsoluteErr(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: AbsoluteErr(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: AbsoluteErr(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: AbsoluteErr(lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: AbsoluteErr(good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testMinimize(self):
         with Numpy() as numpy:
@@ -220,8 +229,8 @@ class TestEverything(unittest.TestCase):
             self.compare("Minimize holes positive weights", Minimize(good), self.withholes, self.positive)
             self.compare("Minimize holes with weights", Minimize(good), self.withholes, self.noholes)
             self.compare("Minimize holes with holes", Minimize(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Minimize(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Minimize(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: Minimize(lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Minimize(good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testMaximize(self):
         with Numpy() as numpy:
@@ -238,8 +247,8 @@ class TestEverything(unittest.TestCase):
             self.compare("Maximize holes positive weights", Maximize(good), self.withholes, self.positive)
             self.compare("Maximize holes with weights", Maximize(good), self.withholes, self.noholes)
             self.compare("Maximize holes with holes", Maximize(good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Maximize(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Maximize(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: Maximize(lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Maximize(good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testBin(self):
         with Numpy() as numpy:
@@ -257,8 +266,8 @@ class TestEverything(unittest.TestCase):
                 self.compare("Bin ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes, self.positive)
                 self.compare("Bin ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes, self.noholes)
                 self.compare("Bin ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes, self.withholes)
-                self.assertRaises(AssertionError, lambda: Bin(bins, -3.0, 3.0, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-                self.assertRaises(AssertionError, lambda: Bin(bins, -3.0, 3.0, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+                self.assertRaises(AssertionError, lambda: Bin(bins, -3.0, 3.0, lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
+                self.assertRaises(AssertionError, lambda: Bin(bins, -3.0, 3.0, good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testSparselyBin(self):
         with Numpy() as numpy:
@@ -275,8 +284,8 @@ class TestEverything(unittest.TestCase):
             self.compare("SparselyBin holes positive weights", SparselyBin(0.1, good), self.withholes, self.positive)
             self.compare("SparselyBin holes with weights", SparselyBin(0.1, good), self.withholes, self.noholes)
             self.compare("SparselyBin holes with holes", SparselyBin(0.1, good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: SparselyBin(0.1, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: SparselyBin(0.1, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: SparselyBin(0.1, lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: SparselyBin(0.1, good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testCentrallyBin(self):
         with Numpy() as numpy:
@@ -294,8 +303,8 @@ class TestEverything(unittest.TestCase):
             self.compare("CentrallyBin holes positive weights", CentrallyBin(centers, good), self.withholes, self.positive)
             self.compare("CentrallyBin holes with weights", CentrallyBin(centers, good), self.withholes, self.noholes)
             self.compare("CentrallyBin holes with holes", CentrallyBin(centers, good), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: CentrallyBin(centers, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: CentrallyBin(centers, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: CentrallyBin(centers, lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: CentrallyBin(centers, good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testFraction(self):
         with Numpy() as numpy:
@@ -315,7 +324,7 @@ class TestEverything(unittest.TestCase):
             self.compare("Fraction boolean holes positive weights", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("Fraction boolean holes with weights", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("Fraction boolean holes with holes", Fraction(boolean, Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Fraction(lambda x: (x**2 > 1.5)[:self.SIZE/2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Fraction(lambda x: (x**2 > 1.5)[:self.SIZE//2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
 
             self.compare("Fraction positive no data", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.empty)
             self.compare("Fraction positive noholes w/o weights", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.noholes)
@@ -328,7 +337,7 @@ class TestEverything(unittest.TestCase):
             self.compare("Fraction positive holes positive weights", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("Fraction positive holes with weights", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("Fraction positive holes with holes", Fraction(positive, Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Fraction(lambda x: (x**2)[:self.SIZE/2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Fraction(lambda x: (x**2)[:self.SIZE//2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
 
             self.compare("Fraction good no data", Fraction(good, Bin(100, -3.0, 3.0, good)), self.empty)
             self.compare("Fraction good noholes w/o weights", Fraction(good, Bin(100, -3.0, 3.0, good)), self.noholes)
@@ -341,7 +350,7 @@ class TestEverything(unittest.TestCase):
             self.compare("Fraction good holes positive weights", Fraction(good, Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("Fraction good holes with weights", Fraction(good, Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("Fraction good holes with holes", Fraction(good, Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Fraction(lambda x: (x**3)[:self.SIZE/2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Fraction(lambda x: (x**3)[:self.SIZE//2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
 
     def testStack(self):
         with Numpy() as numpy:
@@ -359,7 +368,7 @@ class TestEverything(unittest.TestCase):
             self.compare("Stack good holes positive weights", Stack(cuts, good, Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("Stack good holes with weights", Stack(cuts, good, Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("Stack good holes with holes", Stack(cuts, good, Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Stack(cuts, lambda x: (x**3)[:self.SIZE/2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Stack(cuts, lambda x: (x**3)[:self.SIZE//2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
 
     def testPartition(self):
         with Numpy() as numpy:
@@ -377,7 +386,7 @@ class TestEverything(unittest.TestCase):
             self.compare("Partition good holes positive weights", Partition(cuts, good, Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("Partition good holes with weights", Partition(cuts, good, Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("Partition good holes with holes", Partition(cuts, good, Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Stack(cuts, lambda x: (x**3)[:self.SIZE/2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Stack(cuts, lambda x: (x**3)[:self.SIZE//2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
 
     def testSelect(self):
         with Numpy() as numpy:
@@ -397,7 +406,7 @@ class TestEverything(unittest.TestCase):
             self.compare("Select boolean holes positive weights", Select(boolean, Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("Select boolean holes with weights", Select(boolean, Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("Select boolean holes with holes", Select(boolean, Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Select(lambda x: (x**2 > 1.5)[:self.SIZE/2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Select(lambda x: (x**2 > 1.5)[:self.SIZE//2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
 
             self.compare("Select positive no data", Select(positive, Bin(100, -3.0, 3.0, good)), self.empty)
             self.compare("Select positive noholes w/o weights", Select(positive, Bin(100, -3.0, 3.0, good)), self.noholes)
@@ -410,7 +419,7 @@ class TestEverything(unittest.TestCase):
             self.compare("Select positive holes positive weights", Select(positive, Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("Select positive holes with weights", Select(positive, Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("Select positive holes with holes", Select(positive, Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Select(lambda x: (x**2)[:self.SIZE/2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Select(lambda x: (x**2)[:self.SIZE//2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
 
             self.compare("Select good no data", Select(good, Bin(100, -3.0, 3.0, good)), self.empty)
             self.compare("Select good noholes w/o weights", Select(good, Bin(100, -3.0, 3.0, good)), self.noholes)
@@ -423,7 +432,7 @@ class TestEverything(unittest.TestCase):
             self.compare("Select good holes positive weights", Select(good, Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("Select good holes with weights", Select(good, Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("Select good holes with holes", Select(good, Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Select(lambda x: (x**3)[:self.SIZE/2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Select(lambda x: (x**3)[:self.SIZE//2], Bin(100, -3.0, 3.0, good)).fillnp(self.noholes))
 
     def testLimit(self):
         with Numpy() as numpy:
@@ -493,8 +502,8 @@ class TestEverything(unittest.TestCase):
             self.compare("Label holes positive weights", Label(x=Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("Label holes with weights", Label(x=Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("Label holes with holes", Label(x=Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Label(x=Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE/2])).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Label(x=Bin(100, -3.0, 3.0, good)).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: Label(x=Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE//2])).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Label(x=Bin(100, -3.0, 3.0, good)).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testUntypedLabel(self):
         with Numpy() as numpy:
@@ -511,8 +520,8 @@ class TestEverything(unittest.TestCase):
             self.compare("UntypedLabel holes positive weights", UntypedLabel(x=Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("UntypedLabel holes with weights", UntypedLabel(x=Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("UntypedLabel holes with holes", UntypedLabel(x=Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE/2])).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: UntypedLabel(x=Bin(100, -3.0, 3.0, good)).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE//2])).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: UntypedLabel(x=Bin(100, -3.0, 3.0, good)).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testIndex(self):
         with Numpy() as numpy:
@@ -529,8 +538,8 @@ class TestEverything(unittest.TestCase):
             self.compare("Index holes positive weights", Index(Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("Index holes with weights", Index(Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("Index holes with holes", Index(Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Index(Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE/2])).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Index(Bin(100, -3.0, 3.0, good)).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: Index(Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE//2])).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Index(Bin(100, -3.0, 3.0, good)).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testBranch(self):
         with Numpy() as numpy:
@@ -547,8 +556,8 @@ class TestEverything(unittest.TestCase):
             self.compare("Branch holes positive weights", Branch(Bin(100, -3.0, 3.0, good)), self.withholes, self.positive)
             self.compare("Branch holes with weights", Branch(Bin(100, -3.0, 3.0, good)), self.withholes, self.noholes)
             self.compare("Branch holes with holes", Branch(Bin(100, -3.0, 3.0, good)), self.withholes, self.withholes)
-            self.assertRaises(AssertionError, lambda: Branch(Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE/2])).fillnp(self.noholes))
-            self.assertRaises(AssertionError, lambda: Branch(Bin(100, -3.0, 3.0, good)).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+            self.assertRaises(AssertionError, lambda: Branch(Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE//2])).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Branch(Bin(100, -3.0, 3.0, good)).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
 
     def testZZZ(self):
         self.scorecard.sort()

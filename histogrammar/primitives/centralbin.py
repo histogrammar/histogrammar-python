@@ -106,7 +106,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
     def histogram(self):
         """Return a plain histogram by converting all sub-aggregator values into :doc:`Counts <histogrammar.primitives.count.Count>`."""
-        out = CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, Count(), self.nanflow.copy())
+        out = CentrallyBin([c for c, v in self.bins], self.quantity, Count(), self.nanflow.copy())
         out.entries = self.entries
         for i, v in self.bins:
             out.bins[i] = Count.ed(v.entries)
@@ -116,7 +116,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
     @inheritdoc(Container)
     def zero(self):
-        return CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, self.value, self.nanflow.zero())
+        return CentrallyBin([c for c, v in self.bins], self.quantity, self.value, self.nanflow.zero())
 
     @inheritdoc(Container)
     def __add__(self, other):
@@ -125,7 +125,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
         newbins = [(c1, v1 + v2) for (c1, v1), (_, v2) in zip(self.bins, other.bins)]
 
-        out = CentrallyBin(map(lambda x: x[0], self.bins), self.quantity, self.value, self.nanflow + other.nanflow)
+        out = CentrallyBin([c for c, v in self.bins], self.quantity, self.value, self.nanflow + other.nanflow)
         out.entries = self.entries + other.entries
         out.bins = newbins
         out.min = minplus(self.min, other.min)

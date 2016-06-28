@@ -209,13 +209,13 @@ class SparselyBin(Factory, Container):
         if self.nan(x):
             return LONG_NAN
         else:
-            softbin = math.floor((x - self.origin) / self.binWidth)
+            softbin = (x - self.origin) / self.binWidth
             if softbin <= LONG_MINUSINF:
                 return LONG_MINUSINF
             elif softbin >= LONG_PLUSINF:
                 return LONG_PLUSINF
             else:
-                return int(softbin)
+                return int(math.floor(softbin))
 
     def nan(self, x):
         """Return ``true`` iff ``x`` is in the nanflow region (equal to ``NaN``)."""

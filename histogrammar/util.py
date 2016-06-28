@@ -727,11 +727,11 @@ class CentrallyBinMethods(object):
     @property
     def centers(self):
         """Iterable over the centers of each bin."""
-        return map(lambda x: x[0], self.bins)
+        return [c for c, v in self.bins]
     @property
     def values(self):
         """Iterable over the containers associated with each bin."""
-        return map(lambda x: x[0], self.bins)
+        return [v for c, v in self.bins]
 
     def index(self, x):
         """Find the closest index to ``x``."""
