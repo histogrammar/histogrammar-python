@@ -241,6 +241,7 @@ class Bin(Factory, Container):
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
         q = self._computenp(data)
 
+        originalweight = weight
         length = data.shape[0]
         selection = numpy.isnan(q)
         self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
@@ -271,7 +272,7 @@ class Bin(Factory, Container):
             numpy.equal(q, index, selection)
             value.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
-        self._entriesnp(weight, length)
+        self._entriesnp(originalweight, length)
 
     @property
     def children(self):

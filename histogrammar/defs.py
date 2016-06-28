@@ -18,9 +18,6 @@ import json as jsonlib
 
 from histogrammar.util import *
 
-# used by SparselyBin as NaN for long
-MIN_LONG = -9223372036854775808
-
 class ContainerException(Exception):
     """Exception type for improperly configured containers."""
     pass

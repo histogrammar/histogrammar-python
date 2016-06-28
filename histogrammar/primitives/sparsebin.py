@@ -20,6 +20,10 @@ from histogrammar.defs import *
 from histogrammar.util import *
 from histogrammar.primitives.count import *
 
+LONG_NAN = -9223372036854775808
+LONG_MINUSINF = -9223372036854775807
+LONG_PLUSINF = 9223372036854775807
+
 class SparselyBin(Factory, Container):
     """Split a quantity into equally spaced bins, creating them whenever their ``entries`` would be non-zero. Exactly one sub-aggregator is filled per datum.
 
@@ -27,7 +31,7 @@ class SparselyBin(Factory, Container):
 
     Unlike fixed-domain binning, this aggregator has the potential to use unlimited memory. A large number of *distinct* outliers can generate many unwanted bins.
 
-    Like fixed-domain binning, the bins are indexed by integers, though they are 64-bit and may be negative.
+    Like fixed-domain binning, the bins are indexed by integers, though they are 64-bit and may be negative. Bin indexes below ``-(2**63 - 1)`` are put in the ``-(2**63 - 1)`` are bin and indexes above ``(2**63 - 1)`` are put in the ``(2**63 - 1)`` bin.
     """
 
     @staticmethod
@@ -200,12 +204,18 @@ class SparselyBin(Factory, Container):
     def bin(self, x):
         """Find the bin index associated with numerical value ``x``.
         
-        @return -9223372036854775808 if ``x`` is ``NaN``; the bin index otherwise.
+        Returns `-2**63` if `x` is `NaN`, the bin index if it is between `-(2**63 - 1)` and `(2**63 - 1)`, otherwise saturate at the endpoints.
         """
         if self.nan(x):
-            return MIN_LONG
+            return LONG_NAN
         else:
-            return int(math.floor((x - self.origin) / self.binWidth))
+            softbin = math.floor((x - self.origin) / self.binWidth)
+            if softbin <= LONG_MINUSINF:
+                return LONG_MINUSINF
+            elif softbin >= LONG_PLUSINF:
+                return LONG_PLUSINF
+            else:
+                return int(softbin)
 
     def nan(self, x):
         """Return ``true`` iff ``x`` is in the nanflow region (equal to ``NaN``)."""
@@ -244,6 +254,7 @@ class SparselyBin(Factory, Container):
         if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
         q = self._computenp(data)
 
+        originalweight = weight
         length = data.shape[0]
         selection = numpy.isnan(q)
         self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
@@ -255,9 +266,8 @@ class SparselyBin(Factory, Container):
             weight = weight[selection]
 
         q = numpy.array(q, dtype=float)
-        numpy.subtract(q, self.low, q)
-        numpy.multiply(q, self.num, q)
-        numpy.divide(q, self.high - self.low, q)
+        numpy.subtract(q, self.origin, q)
+        numpy.divide(q, self.binWidth, q)
         numpy.floor(q, q)
         q = numpy.array(q, dtype=numpy.int64)
 
@@ -271,7 +281,7 @@ class SparselyBin(Factory, Container):
             numpy.equal(q, index, selection)
             bin.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
-        self._entriesnp(weight, length)
+        self._entriesnp(originalweight, length)
 
     @property
     def children(self):

@@ -223,15 +223,48 @@ class TestEverything(unittest.TestCase):
             self.assertRaises(AssertionError, lambda: Maximize(lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
             self.assertRaises(AssertionError, lambda: Maximize(good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
 
+    def testBin(self):
+        with Numpy() as numpy:
+            good = lambda x: x**3
+            print("")
+            self.compare("Bin no data", Bin(100, -3.0, 3.0, good), self.empty)
+            self.compare("Bin noholes w/o weights", Bin(100, -3.0, 3.0, good), self.noholes)
+            self.compare("Bin noholes const weight", Bin(100, -3.0, 3.0, good), self.noholes, 1.5)
+            self.compare("Bin noholes positive weights", Bin(100, -3.0, 3.0, good), self.noholes, self.positive)
+            self.compare("Bin noholes with weights", Bin(100, -3.0, 3.0, good), self.noholes, self.noholes)
+            self.compare("Bin noholes with holes", Bin(100, -3.0, 3.0, good), self.noholes, self.withholes)
+            self.compare("Bin holes w/o weights", Bin(100, -3.0, 3.0, good), self.withholes)
+            self.compare("Bin holes const weight", Bin(100, -3.0, 3.0, good), self.withholes, 1.5)
+            self.compare("Bin holes positive weights", Bin(100, -3.0, 3.0, good), self.withholes, self.positive)
+            self.compare("Bin holes with weights", Bin(100, -3.0, 3.0, good), self.withholes, self.noholes)
+            self.compare("Bin holes with holes", Bin(100, -3.0, 3.0, good), self.withholes, self.withholes)
+            self.assertRaises(AssertionError, lambda: Bin(100, -3.0, 3.0, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: Bin(100, -3.0, 3.0, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
+
+    def testSparselyBin(self):
+        with Numpy() as numpy:
+            good = lambda x: x**3
+            print("")
+            self.compare("SparselyBin no data", SparselyBin(0.1, good), self.empty)
+            self.compare("SparselyBin noholes w/o weights", SparselyBin(0.1, good), self.noholes)
+            self.compare("SparselyBin noholes const weight", SparselyBin(0.1, good), self.noholes, 1.5)
+            self.compare("SparselyBin noholes positive weights", SparselyBin(0.1, good), self.noholes, self.positive)
+            self.compare("SparselyBin noholes with weights", SparselyBin(0.1, good), self.noholes, self.noholes)
+            self.compare("SparselyBin noholes with holes", SparselyBin(0.1, good), self.noholes, self.withholes)
+            self.compare("SparselyBin holes w/o weights", SparselyBin(0.1, good), self.withholes)
+            self.compare("SparselyBin holes const weight", SparselyBin(0.1, good), self.withholes, 1.5)
+            self.compare("SparselyBin holes positive weights", SparselyBin(0.1, good), self.withholes, self.positive)
+            self.compare("SparselyBin holes with weights", SparselyBin(0.1, good), self.withholes, self.noholes)
+            self.compare("SparselyBin holes with holes", SparselyBin(0.1, good), self.withholes, self.withholes)
+            self.assertRaises(AssertionError, lambda: SparselyBin(0.1, lambda x: x[:self.SIZE/2]).fillnp(self.noholes))
+            self.assertRaises(AssertionError, lambda: SparselyBin(0.1, good).fillnp(self.noholes, self.noholes[:self.SIZE/2]))
 
 
 
-# | Quantile               | can't   
-# | Bin                    | untested
-# | SparselyBin            | untested
-# | CentrallyBin           | untested
-# | AdaptivelyBin          | can't   
-# | Categorize             | can't   
+
+
+# | SparselySparselyBin            | untested
+# | CentrallySparselyBin           | untested
 # | Fraction               | untested
 # | Stack                  | untested
 # | Partition              | untested
@@ -241,5 +274,3 @@ class TestEverything(unittest.TestCase):
 # | UntypedLabel           | untested
 # | Index                  | untested
 # | Branch                 | untested
-# | Bag                    | can't   
-# | Sample                 | can't 
