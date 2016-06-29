@@ -234,10 +234,9 @@ class Bin(Factory, Container):
         q = self.quantity(data)
         arrayLength = self._checkNPQuantity(q, arrayLength)
         weights = self._checkNPWeights(weights, arrayLength)
+        newentries = weights.sum()
 
-        # no possibility of exception from here on out (for rollback)
         import numpy
-        self.entries += float(weights.sum())
 
         selection = numpy.isnan(q)
         numpy.bitwise_not(selection, selection)
@@ -282,6 +281,9 @@ class Bin(Factory, Container):
                 subweights[:] = weights
                 subweights[selection] = 0.0
                 value._numpy(data, subweights, arrayLength)
+
+        # no possibility of exception from here on out (for rollback)
+        self.entries += float(newentries)
 
     @property
     def children(self):

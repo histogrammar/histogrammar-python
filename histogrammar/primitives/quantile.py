@@ -122,19 +122,32 @@ class Quantile(Factory, Container):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
-            self.entries += weight
-            if math.isnan(self.estimate):
-                self.estimate = q
+            self._update(q, weight)
+
+    def _update(self, q, weight):
+        self.entries += weight
+        if math.isnan(self.estimate):
+            self.estimate = q
+        else:
+            self.cumulativeDeviation += abs(q - self.estimate)
+            learningRate = 1.5 * self.cumulativeDeviation / self.entries**2
+            if q < self.estimate:
+                sgn = -1
+            elif q > self.estimate:
+                sgn = 1
             else:
-                self.cumulativeDeviation += abs(q - self.estimate)
-                learningRate = 1.5 * self.cumulativeDeviation / self.entries**2
-                if q < self.estimate:
-                    sgn = -1
-                elif q > self.estimate:
-                    sgn = 1
-                else:
-                    sgn = 0
-                self.estimate = weight * learningRate * (sgn + 2.0*self.target - 1.0)
+                sgn = 0
+            self.estimate = weight * learningRate * (sgn + 2.0*self.target - 1.0)
+
+    def _numpy(self, data, weights, arrayLength):
+        q = self.quantity(data)
+        arrayLength = self._checkNPQuantity(q, arrayLength)
+        weights = self._checkNPWeights(weights, arrayLength)
+
+        # no possibility of exception from here on out (for rollback)
+        for x, w in zip(q, weights):
+            if w > 0.0:
+                self._update(float(x), float(w))
 
     @property
     def children(self):
