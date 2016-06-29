@@ -499,7 +499,13 @@ class Clustering1D(object):
 
         self._mergeClusters()
 
-    def _mergeClusters(self):
+    def copy(self, countOnly=False):
+        if countOnly:
+            return Clustering1D(self.num, self.tailDetail, Count.ed(self.value.entries), [Count.ed(v.entries) for v in self.values], self.min, self.max, self.entries)
+        else:
+            return Clustering1D(self.num, self.tailDetail, self.value.copy(), [v.copy() for v in self.values], self.min, self.max, self.entries)
+
+    def _mergeClusters(self, track=None):
         while len(self.values) > self.num:
             smallestDistance = None
             nearestNeighbors = None
@@ -520,22 +526,30 @@ class Clustering1D(object):
             (x1, v1), (x2, v2) = nearestNeighbors
             replacement = (x1 * v1.entries + x2 * v2.entries) / (v1.entries + v2.entries), v1 + v2
 
+            if track is v1 or track is v2:
+                track = replacement[1]
+
             del self.values[lowIndex]
             del self.values[lowIndex]
             self.values.insert(lowIndex, replacement)
-            
-    def update(self, x, datum, weight):
+
+        return track
+
+    def update(self, x, datum, weight, track=False):
         """Ben-Haim and Tom-Tov's "Algorithm 1" with min/max/entries tracking."""
 
         if weight > 0.0:
             index = bisect.bisect_left(self.values, (x, LessThanEverything()))
             if len(self.values) > index and self.values[index][0] == x:
-                self.values[index][1].fill(datum, weight)
+                v = self.values[index][1]
+                v.fill(datum, weight)
+                if track: track = v
             else:
                 v = self.value.zero()
                 v.fill(datum, weight)
+                if track: track = v
                 self.values.insert(index, (x, v))
-                self._mergeClusters()
+                track = self._mergeClusters(track)
 
         if math.isnan(self.min) or x < self.min:
             self.min = x
@@ -543,6 +557,8 @@ class Clustering1D(object):
             self.max = x
 
         self.entries += weight
+        if track:
+            return track
 
     def merge(self, other):
         """Ben-Haim and Tom-Tov's "Algorithm 2" with min/max/entries tracking."""
