@@ -237,147 +237,51 @@ class Bin(Factory, Container):
 
         # no possibility of exception from here on out (for rollback)
         import numpy
+        self.entries += float(weights.sum())
 
-        selection2 = numpy.isnan(q)
-        selection = numpy.bitwise_not(selection2)
+        selection = numpy.isnan(q)
+        numpy.bitwise_not(selection, selection)
         subweights = weights.copy()
         subweights[selection] = 0.0
         self.nanflow._numpy(data, subweights, arrayLength)
 
-        q[selection2] = self.high
+        # avoid nan warning in calculations by flinging the nans elsewhere
+        numpy.bitwise_not(selection, selection)
+        q[selection] = self.high
+        weights[selection] = 0.0
 
         numpy.greater_equal(q, self.low, selection)
-        subweights = weights.copy()
+        subweights[:] = weights
         subweights[selection] = 0.0
-        subweights[selection2] = 0.0
         self.underflow._numpy(data, subweights, arrayLength)
 
         numpy.less(q, self.high, selection)
-        subweights = weights.copy()
+        subweights[:] = weights
         subweights[selection] = 0.0
-        subweights[selection2] = 0.0
         self.overflow._numpy(data, subweights, arrayLength)
 
-        q = numpy.array(q, dtype=numpy.float64)
-        numpy.subtract(q, self.low, q)
-        numpy.multiply(q, self.num, q)
-        numpy.divide(q, self.high - self.low, q)
-        numpy.floor(q, q)
-        q = numpy.array(q, dtype=int)
+        if all(isinstance(value, Count) and value.transform is identity for value in self.values) and numpy.all(numpy.isfinite(q)) and numpy.all(numpy.isfinite(weights)):
+            # Numpy defines histograms as including the upper edge of the last bin only, so drop that
+            weights[q == self.high] == 0.0
 
-        for index, value in enumerate(self.values):
-            numpy.not_equal(q, index, selection)
-            subweights = weights.copy()
-            subweights[selection] = 0.0
-            value._numpy(data, subweights, arrayLength)
+            h, _ = numpy.histogram(q, self.num, (self.low, self.high), weights=weights)
 
-        self.entries += float(weights.sum())
+            for hi, value in zip(h, self.values):
+                value.fill(None, float(hi))
 
-    # @staticmethod
-    # def _count_nonzero(arr):
-    #     import numpy
-    #     try:
-    #         return numpy.count_nonzero(arr)
-    #     except AttributeError:
-    #         return arr.sum()   # only used on selection
+        else:
+            q = numpy.array(q, dtype=numpy.float64)
+            numpy.subtract(q, self.low, q)
+            numpy.multiply(q, self.num, q)
+            numpy.divide(q, self.high - self.low, q)
+            numpy.floor(q, q)
+            q = numpy.array(q, dtype=int)
 
-    # def _fillnp(self, datum, q, weight, entry):
-    #     if not entry:
-    #         q = self.quantity(datum)
-    #     import numpy
-    #     if isinstance(q, numpy.ndarray):
-    #         if entry:
-    #             q, weight = self._entrynp(q, weight)
-    #         self._checknp(q, weight)
-    #         self.entries += weight.sum()
-
-    #         selection = numpy.isnan(q)
-    #         self.nanflow._fillnp(datum, None, weight * selection, False)
-
-    #         numpy.less(q, self.low, selection)
-    #         self.underflow._fillnp(datum, None, weight * selection, False)
-
-    #         numpy.greater_equal(q, self.high, selection)
-    #         self.overflow._fillnp(datum, None, weight * selection, False)
-
-    #         q = numpy.array(q, dtype=float)
-    #         numpy.subtract(q, self.low, q)
-    #         numpy.multiply(q, self.num, q)
-    #         numpy.divide(q, self.high - self.low, q)
-    #         numpy.floor(q, q)
-    #         q = numpy.array(q, dtype=int)
-
-    #         for index, value in enumerate(self.values):
-    #             numpy.equal(q, index, selection)
-    #             value._fillnp(datum, None, weight * selection, False)
-
-    #         self.entries += weight.sum()
-    #         return True
-    #     else:
-    #         return False
-
-
-
-
-
-    # def fillnp(self, data, weight=1.0, lengthAssertion=None):
-    #     self._checkForCrossReferences()
-
-    #     import numpy
-    #     originalweight = weight
-    #     if isinstance(weight, numpy.ndarray):
-    #         weightselection, weight = self._checkweightnp(weight, lengthAssertion)
-    #     else:
-    #         weightselection = None
-    #         if weight <= 0.0: return
-
-    #     q = self._checkqnp(self.quantity(data), lengthAssertion)
-    #     length = q.shape[0]
-    #     if weightselection is not None:
-    #         q = q[weightselection]
-
-    #     selection = numpy.isnan(q)
-    #     if isinstance(self.nanflow, Count) and self.nanflow.transform is identity:
-    #         self.nanflow.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
-    #     else:
-    #         self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
-        
-    #     numpy.bitwise_not(selection, selection)
-    #     data = data[selection]
-    #     q = q[selection]
-    #     if isinstance(weight, numpy.ndarray):
-    #         weight = weight[selection]
-
-    #     q = numpy.array(q, dtype=float)
-    #     numpy.subtract(q, self.low, q)
-    #     numpy.multiply(q, self.num, q)
-    #     numpy.divide(q, self.high - self.low, q)
-
-    #     selection = numpy.empty(q.shape, dtype=numpy.bool)
-
-    #     numpy.less(q, 0.0, selection)
-    #     if isinstance(self.underflow, Count) and self.underflow.transform is identity:
-    #         self.underflow.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
-    #     else:
-    #         self.underflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
-
-    #     numpy.greater_equal(q, self.num, selection)
-    #     if isinstance(self.overflow, Count) and self.overflow.transform is identity:
-    #         self.overflow.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
-    #     else:
-    #         self.overflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
-
-    #     numpy.floor(q, q)
-    #     q = numpy.array(q, dtype=int)
-
-    #     for index, value in enumerate(self.values):
-    #         numpy.equal(q, index, selection)
-    #         if isinstance(value, Count) and value.transform is identity:
-    #             value.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
-    #         else:
-    #             value.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
-
-    #     self.entries += self._entriesnp(originalweight, length)
+            for index, value in enumerate(self.values):
+                numpy.not_equal(q, index, selection)
+                subweights[:] = weights
+                subweights[selection] = 0.0
+                value._numpy(data, subweights, arrayLength)
 
     @property
     def children(self):
