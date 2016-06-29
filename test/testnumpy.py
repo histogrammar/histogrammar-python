@@ -251,155 +251,155 @@ class TestEverything(unittest.TestCase):
     #         self.compare("Quantile holes with holes", Quantile(0.5, lambda x: x["withholes"]), self.data, Quantile(0.5, lambda x: x), self.withholes, self.withholes)
     #         self.compare("Quantile holes with holes2", Quantile(0.5, lambda x: x["withholes"]), self.data, Quantile(0.5, lambda x: x), self.withholes, self.withholes2)
 
-    def testBin(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            for bins in [10, 100, 1000]:
-                self.compare("Bin ({0} bins) no data".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["empty"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.empty, 1.0)
-                self.compare("Bin ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.noholes, 1.0)
-                self.compare("Bin ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.noholes, 0.5)
-                self.compare("Bin ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.noholes, self.positive)
-                self.compare("Bin ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.noholes, self.noholes)
-                self.compare("Bin ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.noholes, self.withholes)
-                self.compare("Bin ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, 1.0)
-                self.compare("Bin ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, 0.5)
-                self.compare("Bin ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, self.positive)
-                self.compare("Bin ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, self.noholes)
-                self.compare("Bin ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, self.withholes)
-                self.compare("Bin ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, self.withholes2)
+    # def testBin(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         for bins in [10, 100, 1000]:
+    #             self.compare("Bin ({0} bins) no data".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["empty"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.empty, 1.0)
+    #             self.compare("Bin ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.noholes, 1.0)
+    #             self.compare("Bin ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.noholes, 0.5)
+    #             self.compare("Bin ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.noholes, self.positive)
+    #             self.compare("Bin ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.noholes, self.noholes)
+    #             self.compare("Bin ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.noholes, self.withholes)
+    #             self.compare("Bin ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, 1.0)
+    #             self.compare("Bin ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, 0.5)
+    #             self.compare("Bin ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, self.positive)
+    #             self.compare("Bin ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, self.noholes)
+    #             self.compare("Bin ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, self.withholes)
+    #             self.compare("Bin ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]), self.data, Bin(bins, -3.0, 3.0, lambda x: x), self.withholes, self.withholes2)
 
-    def testBinTrans(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            for bins in [10, 100]:
-                self.compare("BinTrans ({0} bins) no data".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["empty"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.empty, 1.0)
-                self.compare("BinTrans ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.noholes, 1.0)
-                self.compare("BinTrans ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.noholes, 0.5)
-                self.compare("BinTrans ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.noholes, self.positive)
-                self.compare("BinTrans ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.noholes, self.noholes)
-                self.compare("BinTrans ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.noholes, self.withholes)
-                self.compare("BinTrans ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.withholes, 1.0)
-                self.compare("BinTrans ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.withholes, 0.5)
-                self.compare("BinTrans ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.withholes, self.positive)
-                self.compare("BinTrans ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.withholes, self.noholes)
-                self.compare("BinTrans ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.withholes, self.withholes)
-                self.compare("BinTrans ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: x)), self.withholes, self.withholes2)
+    # def testBinTrans(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         for bins in [10, 100]:
+    #             self.compare("BinTrans ({0} bins) no data".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["empty"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.empty, 1.0)
+    #             self.compare("BinTrans ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, 1.0)
+    #             self.compare("BinTrans ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, 0.5)
+    #             self.compare("BinTrans ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, self.positive)
+    #             self.compare("BinTrans ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, self.noholes)
+    #             self.compare("BinTrans ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, self.withholes)
+    #             self.compare("BinTrans ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, 1.0)
+    #             self.compare("BinTrans ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, 0.5)
+    #             self.compare("BinTrans ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.positive)
+    #             self.compare("BinTrans ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.noholes)
+    #             self.compare("BinTrans ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.withholes)
+    #             self.compare("BinTrans ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.withholes2)
 
-    def testBinAverage(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            for bins in [10, 100]:
-                self.compare("BinAverage ({0} bins) no data".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["empty"], Average(lambda x: x["empty"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.empty, 1.0)
-                self.compare("BinAverage ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.noholes, 1.0)
-                self.compare("BinAverage ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.noholes, 0.5)
-                self.compare("BinAverage ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.noholes, self.positive)
-                self.compare("BinAverage ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.noholes, self.noholes)
-                self.compare("BinAverage ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.noholes, self.withholes)
-                self.compare("BinAverage ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, 1.0)
-                self.compare("BinAverage ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, 0.5)
-                self.compare("BinAverage ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, self.positive)
-                self.compare("BinAverage ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, self.noholes)
-                self.compare("BinAverage ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes)
-                self.compare("BinAverage ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes2)
+    # def testBinAverage(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         for bins in [10, 100]:
+    #             self.compare("BinAverage ({0} bins) no data".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["empty"], Average(lambda x: x["empty"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.empty, 1.0)
+    #             self.compare("BinAverage ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.noholes, 1.0)
+    #             self.compare("BinAverage ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.noholes, 0.5)
+    #             self.compare("BinAverage ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.noholes, self.positive)
+    #             self.compare("BinAverage ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.noholes, self.noholes)
+    #             self.compare("BinAverage ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.noholes, self.withholes)
+    #             self.compare("BinAverage ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, 1.0)
+    #             self.compare("BinAverage ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, 0.5)
+    #             self.compare("BinAverage ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, self.positive)
+    #             self.compare("BinAverage ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, self.noholes)
+    #             self.compare("BinAverage ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes)
+    #             self.compare("BinAverage ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, Bin(bins, -3.0, 3.0, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes2)
 
-    def testSparselyBin(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            self.compare("SparselyBin no data", SparselyBin(0.1, lambda x: x["empty"]), self.data, SparselyBin(0.1, lambda x: x), self.empty, 1.0)
-            self.compare("SparselyBin noholes w/o weights", SparselyBin(0.1, lambda x: x["noholes"]), self.data, SparselyBin(0.1, lambda x: x), self.noholes, 1.0)
-            self.compare("SparselyBin noholes const weights", SparselyBin(0.1, lambda x: x["noholes"]), self.data, SparselyBin(0.1, lambda x: x), self.noholes, 0.5)
-            self.compare("SparselyBin noholes positive weights", SparselyBin(0.1, lambda x: x["noholes"]), self.data, SparselyBin(0.1, lambda x: x), self.noholes, self.positive)
-            self.compare("SparselyBin noholes with weights", SparselyBin(0.1, lambda x: x["noholes"]), self.data, SparselyBin(0.1, lambda x: x), self.noholes, self.noholes)
-            self.compare("SparselyBin noholes with holes", SparselyBin(0.1, lambda x: x["noholes"]), self.data, SparselyBin(0.1, lambda x: x), self.noholes, self.withholes)
-            self.compare("SparselyBin holes w/o weights", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, 1.0)
-            self.compare("SparselyBin holes const weights", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, 0.5)
-            self.compare("SparselyBin holes positive weights", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, self.positive)
-            self.compare("SparselyBin holes with weights", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, self.noholes)
-            self.compare("SparselyBin holes with holes", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, self.withholes)
-            self.compare("SparselyBin holes with holes2", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, self.withholes2)
+    # def testSparselyBin(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         self.compare("SparselyBin no data", SparselyBin(0.1, lambda x: x["empty"]), self.data, SparselyBin(0.1, lambda x: x), self.empty, 1.0)
+    #         self.compare("SparselyBin noholes w/o weights", SparselyBin(0.1, lambda x: x["noholes"]), self.data, SparselyBin(0.1, lambda x: x), self.noholes, 1.0)
+    #         self.compare("SparselyBin noholes const weights", SparselyBin(0.1, lambda x: x["noholes"]), self.data, SparselyBin(0.1, lambda x: x), self.noholes, 0.5)
+    #         self.compare("SparselyBin noholes positive weights", SparselyBin(0.1, lambda x: x["noholes"]), self.data, SparselyBin(0.1, lambda x: x), self.noholes, self.positive)
+    #         self.compare("SparselyBin noholes with weights", SparselyBin(0.1, lambda x: x["noholes"]), self.data, SparselyBin(0.1, lambda x: x), self.noholes, self.noholes)
+    #         self.compare("SparselyBin noholes with holes", SparselyBin(0.1, lambda x: x["noholes"]), self.data, SparselyBin(0.1, lambda x: x), self.noholes, self.withholes)
+    #         self.compare("SparselyBin holes w/o weights", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, 1.0)
+    #         self.compare("SparselyBin holes const weights", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, 0.5)
+    #         self.compare("SparselyBin holes positive weights", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, self.positive)
+    #         self.compare("SparselyBin holes with weights", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, self.noholes)
+    #         self.compare("SparselyBin holes with holes", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, self.withholes)
+    #         self.compare("SparselyBin holes with holes2", SparselyBin(0.1, lambda x: x["withholes"]), self.data, SparselyBin(0.1, lambda x: x), self.withholes, self.withholes2)
 
-    def testSparselyBinTrans(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            self.compare("SparselyBinTrans no data", SparselyBin(0.1, lambda x: x["empty"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.empty, 1.0)
-            self.compare("SparselyBinTrans noholes w/o weights", SparselyBin(0.1, lambda x: x["noholes"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.noholes, 1.0)
-            self.compare("SparselyBinTrans noholes const weights", SparselyBin(0.1, lambda x: x["noholes"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.noholes, 0.5)
-            self.compare("SparselyBinTrans noholes positive weights", SparselyBin(0.1, lambda x: x["noholes"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.noholes, self.positive)
-            self.compare("SparselyBinTrans noholes with weights", SparselyBin(0.1, lambda x: x["noholes"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.noholes, self.noholes)
-            self.compare("SparselyBinTrans noholes with holes", SparselyBin(0.1, lambda x: x["noholes"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.noholes, self.withholes)
-            self.compare("SparselyBinTrans holes w/o weights", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.withholes, 1.0)
-            self.compare("SparselyBinTrans holes const weights", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.withholes, 0.5)
-            self.compare("SparselyBinTrans holes positive weights", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.withholes, self.positive)
-            self.compare("SparselyBinTrans holes with weights", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.withholes, self.noholes)
-            self.compare("SparselyBinTrans holes with holes", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.withholes, self.withholes)
-            self.compare("SparselyBinTrans holes with holes2", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: x)), self.withholes, self.withholes2)
+    # def testSparselyBinTrans(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         self.compare("SparselyBinTrans no data", SparselyBin(0.1, lambda x: x["empty"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.empty, 1.0)
+    #         self.compare("SparselyBinTrans noholes w/o weights", SparselyBin(0.1, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, 1.0)
+    #         self.compare("SparselyBinTrans noholes const weights", SparselyBin(0.1, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, 0.5)
+    #         self.compare("SparselyBinTrans noholes positive weights", SparselyBin(0.1, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, self.positive)
+    #         self.compare("SparselyBinTrans noholes with weights", SparselyBin(0.1, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, self.noholes)
+    #         self.compare("SparselyBinTrans noholes with holes", SparselyBin(0.1, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, self.withholes)
+    #         self.compare("SparselyBinTrans holes w/o weights", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, 1.0)
+    #         self.compare("SparselyBinTrans holes const weights", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, 0.5)
+    #         self.compare("SparselyBinTrans holes positive weights", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.positive)
+    #         self.compare("SparselyBinTrans holes with weights", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.noholes)
+    #         self.compare("SparselyBinTrans holes with holes", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.withholes)
+    #         self.compare("SparselyBinTrans holes with holes2", SparselyBin(0.1, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, SparselyBin(0.1, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.withholes2)
 
-    def testSparselyBinAverage(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            self.compare("SparselyBinAverage no data", SparselyBin(0.1, lambda x: x["empty"], Average(lambda x: x["empty"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.empty, 1.0)
-            self.compare("SparselyBinAverage noholes w/o weights", SparselyBin(0.1, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.noholes, 1.0)
-            self.compare("SparselyBinAverage noholes const weights", SparselyBin(0.1, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.noholes, 0.5)
-            self.compare("SparselyBinAverage noholes positive weights", SparselyBin(0.1, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.noholes, self.positive)
-            self.compare("SparselyBinAverage noholes with weights", SparselyBin(0.1, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.noholes, self.noholes)
-            self.compare("SparselyBinAverage noholes with holes", SparselyBin(0.1, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.noholes, self.withholes)
-            self.compare("SparselyBinAverage holes w/o weights", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, 1.0)
-            self.compare("SparselyBinAverage holes const weights", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, 0.5)
-            self.compare("SparselyBinAverage holes positive weights", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, self.positive)
-            self.compare("SparselyBinAverage holes with weights", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, self.noholes)
-            self.compare("SparselyBinAverage holes with holes", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes)
-            self.compare("SparselyBinAverage holes with holes2", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes2)
+    # def testSparselyBinAverage(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         self.compare("SparselyBinAverage no data", SparselyBin(0.1, lambda x: x["empty"], Average(lambda x: x["empty"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.empty, 1.0)
+    #         self.compare("SparselyBinAverage noholes w/o weights", SparselyBin(0.1, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.noholes, 1.0)
+    #         self.compare("SparselyBinAverage noholes const weights", SparselyBin(0.1, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.noholes, 0.5)
+    #         self.compare("SparselyBinAverage noholes positive weights", SparselyBin(0.1, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.noholes, self.positive)
+    #         self.compare("SparselyBinAverage noholes with weights", SparselyBin(0.1, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.noholes, self.noholes)
+    #         self.compare("SparselyBinAverage noholes with holes", SparselyBin(0.1, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.noholes, self.withholes)
+    #         self.compare("SparselyBinAverage holes w/o weights", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, 1.0)
+    #         self.compare("SparselyBinAverage holes const weights", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, 0.5)
+    #         self.compare("SparselyBinAverage holes positive weights", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, self.positive)
+    #         self.compare("SparselyBinAverage holes with weights", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, self.noholes)
+    #         self.compare("SparselyBinAverage holes with holes", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes)
+    #         self.compare("SparselyBinAverage holes with holes2", SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, SparselyBin(0.1, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes2)
 
-    def testCentrallyBin(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-            self.compare("CentrallyBin no data", CentrallyBin(centers, lambda x: x["empty"]), self.data, CentrallyBin(centers, lambda x: x), self.empty, 1.0)
-            self.compare("CentrallyBin noholes w/o weights", CentrallyBin(centers, lambda x: x["noholes"]), self.data, CentrallyBin(centers, lambda x: x), self.noholes, 1.0)
-            self.compare("CentrallyBin noholes const weights", CentrallyBin(centers, lambda x: x["noholes"]), self.data, CentrallyBin(centers, lambda x: x), self.noholes, 0.5)
-            self.compare("CentrallyBin noholes positive weights", CentrallyBin(centers, lambda x: x["noholes"]), self.data, CentrallyBin(centers, lambda x: x), self.noholes, self.positive)
-            self.compare("CentrallyBin noholes with weights", CentrallyBin(centers, lambda x: x["noholes"]), self.data, CentrallyBin(centers, lambda x: x), self.noholes, self.noholes)
-            self.compare("CentrallyBin noholes with holes", CentrallyBin(centers, lambda x: x["noholes"]), self.data, CentrallyBin(centers, lambda x: x), self.noholes, self.withholes)
-            self.compare("CentrallyBin holes w/o weights", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, 1.0)
-            self.compare("CentrallyBin holes const weights", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, 0.5)
-            self.compare("CentrallyBin holes positive weights", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, self.positive)
-            self.compare("CentrallyBin holes with weights", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, self.noholes)
-            self.compare("CentrallyBin holes with holes", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, self.withholes)
-            self.compare("CentrallyBin holes with holes2", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, self.withholes2)
+    # def testCentrallyBin(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+    #         self.compare("CentrallyBin no data", CentrallyBin(centers, lambda x: x["empty"]), self.data, CentrallyBin(centers, lambda x: x), self.empty, 1.0)
+    #         self.compare("CentrallyBin noholes w/o weights", CentrallyBin(centers, lambda x: x["noholes"]), self.data, CentrallyBin(centers, lambda x: x), self.noholes, 1.0)
+    #         self.compare("CentrallyBin noholes const weights", CentrallyBin(centers, lambda x: x["noholes"]), self.data, CentrallyBin(centers, lambda x: x), self.noholes, 0.5)
+    #         self.compare("CentrallyBin noholes positive weights", CentrallyBin(centers, lambda x: x["noholes"]), self.data, CentrallyBin(centers, lambda x: x), self.noholes, self.positive)
+    #         self.compare("CentrallyBin noholes with weights", CentrallyBin(centers, lambda x: x["noholes"]), self.data, CentrallyBin(centers, lambda x: x), self.noholes, self.noholes)
+    #         self.compare("CentrallyBin noholes with holes", CentrallyBin(centers, lambda x: x["noholes"]), self.data, CentrallyBin(centers, lambda x: x), self.noholes, self.withholes)
+    #         self.compare("CentrallyBin holes w/o weights", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, 1.0)
+    #         self.compare("CentrallyBin holes const weights", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, 0.5)
+    #         self.compare("CentrallyBin holes positive weights", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, self.positive)
+    #         self.compare("CentrallyBin holes with weights", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, self.noholes)
+    #         self.compare("CentrallyBin holes with holes", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, self.withholes)
+    #         self.compare("CentrallyBin holes with holes2", CentrallyBin(centers, lambda x: x["withholes"]), self.data, CentrallyBin(centers, lambda x: x), self.withholes, self.withholes2)
 
-    def testCentrallyBinTrans(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-            self.compare("CentrallyBinTrans no data", CentrallyBin(centers, lambda x: x["empty"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.empty, 1.0)
-            self.compare("CentrallyBinTrans noholes w/o weights", CentrallyBin(centers, lambda x: x["noholes"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.noholes, 1.0)
-            self.compare("CentrallyBinTrans noholes const weights", CentrallyBin(centers, lambda x: x["noholes"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.noholes, 0.5)
-            self.compare("CentrallyBinTrans noholes positive weights", CentrallyBin(centers, lambda x: x["noholes"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.noholes, self.positive)
-            self.compare("CentrallyBinTrans noholes with weights", CentrallyBin(centers, lambda x: x["noholes"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.noholes, self.noholes)
-            self.compare("CentrallyBinTrans noholes with holes", CentrallyBin(centers, lambda x: x["noholes"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.noholes, self.withholes)
-            self.compare("CentrallyBinTrans holes w/o weights", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.withholes, 1.0)
-            self.compare("CentrallyBinTrans holes const weights", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.withholes, 0.5)
-            self.compare("CentrallyBinTrans holes positive weights", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.withholes, self.positive)
-            self.compare("CentrallyBinTrans holes with weights", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.withholes, self.noholes)
-            self.compare("CentrallyBinTrans holes with holes", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.withholes, self.withholes)
-            self.compare("CentrallyBinTrans holes with holes2", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: x)), self.withholes, self.withholes2)
+    # def testCentrallyBinTrans(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+    #         self.compare("CentrallyBinTrans no data", CentrallyBin(centers, lambda x: x["empty"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.empty, 1.0)
+    #         self.compare("CentrallyBinTrans noholes w/o weights", CentrallyBin(centers, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, 1.0)
+    #         self.compare("CentrallyBinTrans noholes const weights", CentrallyBin(centers, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, 0.5)
+    #         self.compare("CentrallyBinTrans noholes positive weights", CentrallyBin(centers, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, self.positive)
+    #         self.compare("CentrallyBinTrans noholes with weights", CentrallyBin(centers, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, self.noholes)
+    #         self.compare("CentrallyBinTrans noholes with holes", CentrallyBin(centers, lambda x: x["noholes"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.noholes, self.withholes)
+    #         self.compare("CentrallyBinTrans holes w/o weights", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, 1.0)
+    #         self.compare("CentrallyBinTrans holes const weights", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, 0.5)
+    #         self.compare("CentrallyBinTrans holes positive weights", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.positive)
+    #         self.compare("CentrallyBinTrans holes with weights", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.noholes)
+    #         self.compare("CentrallyBinTrans holes with holes", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.withholes)
+    #         self.compare("CentrallyBinTrans holes with holes2", CentrallyBin(centers, lambda x: x["withholes"], Count(lambda x: 0.5*x)), self.data, CentrallyBin(centers, lambda x: x, Count(lambda x: 0.5*x)), self.withholes, self.withholes2)
 
-    def testCentrallyBinAverage(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-            self.compare("CentrallyBinAverage no data", CentrallyBin(centers, lambda x: x["empty"], Average(lambda x: x["empty"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.empty, 1.0)
-            self.compare("CentrallyBinAverage noholes w/o weights", CentrallyBin(centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.noholes, 1.0)
-            self.compare("CentrallyBinAverage noholes const weights", CentrallyBin(centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.noholes, 0.5)
-            self.compare("CentrallyBinAverage noholes positive weights", CentrallyBin(centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.noholes, self.positive)
-            self.compare("CentrallyBinAverage noholes with weights", CentrallyBin(centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.noholes, self.noholes)
-            self.compare("CentrallyBinAverage noholes with holes", CentrallyBin(centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.noholes, self.withholes)
-            self.compare("CentrallyBinAverage holes w/o weights", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, 1.0)
-            self.compare("CentrallyBinAverage holes const weights", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, 0.5)
-            self.compare("CentrallyBinAverage holes positive weights", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, self.positive)
-            self.compare("CentrallyBinAverage holes with weights", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, self.noholes)
-            self.compare("CentrallyBinAverage holes with holes", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes)
-            self.compare("CentrallyBinAverage holes with holes2", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes2)
+    # def testCentrallyBinAverage(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+    #         self.compare("CentrallyBinAverage no data", CentrallyBin(centers, lambda x: x["empty"], Average(lambda x: x["empty"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.empty, 1.0)
+    #         self.compare("CentrallyBinAverage noholes w/o weights", CentrallyBin(centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.noholes, 1.0)
+    #         self.compare("CentrallyBinAverage noholes const weights", CentrallyBin(centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.noholes, 0.5)
+    #         self.compare("CentrallyBinAverage noholes positive weights", CentrallyBin(centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.noholes, self.positive)
+    #         self.compare("CentrallyBinAverage noholes with weights", CentrallyBin(centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.noholes, self.noholes)
+    #         self.compare("CentrallyBinAverage noholes with holes", CentrallyBin(centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.noholes, self.withholes)
+    #         self.compare("CentrallyBinAverage holes w/o weights", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, 1.0)
+    #         self.compare("CentrallyBinAverage holes const weights", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, 0.5)
+    #         self.compare("CentrallyBinAverage holes positive weights", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, self.positive)
+    #         self.compare("CentrallyBinAverage holes with weights", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, self.noholes)
+    #         self.compare("CentrallyBinAverage holes with holes", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes)
+    #         self.compare("CentrallyBinAverage holes with holes2", CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])), self.data, CentrallyBin(centers, lambda x: x, Average(lambda x: x)), self.withholes, self.withholes2)
 
 
 

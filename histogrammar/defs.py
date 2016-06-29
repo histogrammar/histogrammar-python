@@ -222,9 +222,11 @@ class Container(object):
         else:
             return weights * numpy.ones(arrayLength, dtype=numpy.float64)
 
-# default weight
+# useful functions
 
 unweighted = named("unweighted", lambda datum: 1.0)
+identity = named("identity", lambda x: x)
+square = named("square", lambda x: x)
 
 # functions for Spark's RDD.aggregate
 

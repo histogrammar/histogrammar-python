@@ -176,28 +176,36 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         q[selection] = 0.0
         weights[selection] = 0.0
 
-        selection = numpy.empty(q.shape, dtype=numpy.bool)
-        selection2 = numpy.empty(q.shape, dtype=numpy.bool)
+        if all(isinstance(v, Count) and v.transform is identity for c, v in self.bins) and numpy.all(numpy.isfinite(q)) and numpy.all(numpy.isfinite(weights)):
 
-        for index in xrange(len(self.bins)):
-            if index == 0:
-                high = (self.bins[index][0] + self.bins[index + 1][0])/2.0
-                numpy.greater_equal(q, high, selection)
+            h, _ = numpy.histogram(q, [float("-inf")] + [(c1 + c2)/2.0 for (c1, v1), (c2, v2) in zip(self.bins[:-1], self.bins[1:])] + [float("inf")], weights=weights)
 
-            elif index == len(self.bins) - 1:
-                low = (self.bins[index - 1][0] + self.bins[index][0])/2.0
-                numpy.less(q, low, selection)
+            for hi, (c, v) in zip(h, self.bins):
+                v.fill(None, float(hi))
 
-            else:
-                low = (self.bins[index - 1][0] + self.bins[index][0])/2.0
-                high = (self.bins[index][0] + self.bins[index + 1][0])/2.0
-                numpy.less(q, low, selection)
-                numpy.greater_equal(q, high, selection2)
-                numpy.bitwise_or(selection, selection2, selection)
+        else:
+            selection = numpy.empty(q.shape, dtype=numpy.bool)
+            selection2 = numpy.empty(q.shape, dtype=numpy.bool)
 
-            subweights[:] = weights
-            subweights[selection] = 0.0
-            self.bins[index][1].numpy(data, subweights, arrayLength)
+            for index in xrange(len(self.bins)):
+                if index == 0:
+                    high = (self.bins[index][0] + self.bins[index + 1][0])/2.0
+                    numpy.greater_equal(q, high, selection)
+
+                elif index == len(self.bins) - 1:
+                    low = (self.bins[index - 1][0] + self.bins[index][0])/2.0
+                    numpy.less(q, low, selection)
+
+                else:
+                    low = (self.bins[index - 1][0] + self.bins[index][0])/2.0
+                    high = (self.bins[index][0] + self.bins[index + 1][0])/2.0
+                    numpy.less(q, low, selection)
+                    numpy.greater_equal(q, high, selection2)
+                    numpy.bitwise_or(selection, selection2, selection)
+
+                subweights[:] = weights
+                subweights[selection] = 0.0
+                self.bins[index][1].numpy(data, subweights, arrayLength)
 
         # no possibility of exception from here on out (for rollback)
 

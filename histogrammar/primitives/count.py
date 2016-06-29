@@ -17,8 +17,6 @@
 from histogrammar.defs import *
 from histogrammar.util import *
 
-identity = serializable(lambda x: x)
-
 class Count(Factory, Container):
     """Count entries by accumulating the sum of all observed weights or a sum of transformed weights (e.g. sum of squares of weights).
 
