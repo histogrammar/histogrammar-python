@@ -96,13 +96,20 @@ class Average(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-            if math.isinf(self.mean) and math.isinf(q):
-                if self.mean * q > 0.0:       # same sign
-                    pass                      # it's still infinite
-                else:
-                    self.mean = float("nan")  # mean of -inf and inf is nan
+            if math.isnan(self.mean) or math.isnan(q):
+                self.mean = float("nan")
 
-            else:                             # handle finite case
+            elif math.isinf(self.mean) or math.isinf(q):
+                if math.isinf(self.mean) and math.isinf(q) and self.mean * q < 0.0:
+                    self.mean = float("nan")       # opposite-sign infinities is bad
+                elif math.isinf(q):
+                    self.mean = q                  # mean becomes infinite with sign of q
+                else:
+                    pass                           # mean is already infinite
+                if math.isinf(self.entries) or math.isnan(self.entries):
+                    self.mean = float("nan")       # non-finite denominator is bad
+
+            else:                                  # handle finite case
                 delta = q - self.mean
                 shift = delta * weight / self.entries
                 self.mean += shift
