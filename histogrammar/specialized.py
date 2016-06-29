@@ -238,7 +238,8 @@ class FractionedHistogramMethods(Fraction,
 
 class TwoDimensionallyHistogramMethods(Bin,
         histogrammar.plot.root.TwoDimensionallyHistogramMethods,
-        histogrammar.plot.bokeh.TwoDimensionallyHistogramMethods):
+        histogrammar.plot.bokeh.TwoDimensionallyHistogramMethods,
+        histogrammar.plot.mpl.TwoDimensionallyHistogramMethods):
 
     @property
     def name(self):
