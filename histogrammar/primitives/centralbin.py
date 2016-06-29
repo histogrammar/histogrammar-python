@@ -155,6 +155,70 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
             if math.isnan(self.max) or q > self.max:
                 self.max = q
 
+    def _numpy(self, data, weights, arrayLength):
+        q = self.quantity(data)
+        arrayLength = self._checkNPQuantity(q, arrayLength)
+        self._checkNPWeights(weights, arrayLength)
+        weights = self._makeNPWeights(weights, arrayLength)
+        newentries = weights.sum()
+
+        import numpy
+
+        selection = numpy.isnan(q)
+        numpy.bitwise_not(selection, selection)
+        subweights = weights.copy()
+        subweights[selection] = 0.0
+        self.nanflow._numpy(data, subweights, arrayLength)
+
+        # avoid nan warning in calculations by flinging the nans elsewhere
+        numpy.bitwise_not(selection, selection)
+        q = numpy.array(q, dtype=numpy.float64)
+        q[selection] = 0.0
+        weights[selection] = 0.0
+
+        selection = numpy.empty(q.shape, dtype=numpy.bool)
+        selection2 = numpy.empty(q.shape, dtype=numpy.bool)
+
+        for index in xrange(len(self.bins)):
+            if index == 0:
+                high = (self.bins[index][0] + self.bins[index + 1][0])/2.0
+                numpy.greater_equal(q, high, selection)
+
+            elif index == len(self.bins) - 1:
+                low = (self.bins[index - 1][0] + self.bins[index][0])/2.0
+                numpy.less(q, low, selection)
+
+            else:
+                low = (self.bins[index - 1][0] + self.bins[index][0])/2.0
+                high = (self.bins[index][0] + self.bins[index + 1][0])/2.0
+                numpy.less(q, low, selection)
+                numpy.greater_equal(q, high, selection2)
+                numpy.bitwise_or(selection, selection2, selection)
+
+            subweights[:] = weights
+            subweights[selection] = 0.0
+            self.bins[index][1].numpy(data, subweights, arrayLength)
+
+        # no possibility of exception from here on out (for rollback)
+
+        if math.isnan(self.min):
+            if q.shape[0] > 0:
+                self.min = float(q.min())
+        else:
+            if q.shape[0] > 0:
+                self.min = min(self.min, float(q.min()))
+
+        if math.isnan(self.max):
+            if q.shape[0] > 0:
+                self.max = float(q.max())
+        else:
+            if q.shape[0] > 0:
+                self.max = max(self.max, float(q.max()))
+
+        self.entries += float(newentries)
+
+
+        
     # def fillnp(self, data, weight=1.0):
     #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
 
