@@ -96,12 +96,17 @@ class Sum(Factory, Container):
         arrayLength = self._checkNPQuantity(q, arrayLength)
         weights = self._checkNPWeights(weights, arrayLength)
 
-        q = q.copy()
-        q[weights <= 0.0] = 0.0
-        q *= weights
-
         # no possibility of exception from here on out (for rollback)
         self.entries += float(weights.sum())
+
+        import numpy
+        selection = numpy.isnan(q)
+        numpy.bitwise_not(selection, selection)
+        numpy.bitwise_and(selection, weights > 0.0, selection)
+        q = q[selection]
+        weights = weights[selection]
+        q *= weights
+
         self.sum += float(q.sum())
 
     @property

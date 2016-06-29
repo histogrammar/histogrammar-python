@@ -31,7 +31,7 @@ class Numpy(object):
     def __enter__(self):
         import numpy
         self.errstate = numpy.geterr()
-        numpy.seterr(invalid="ignore")
+        # numpy.seterr(invalid="ignore")
         return numpy
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -100,12 +100,12 @@ class TestEverything(unittest.TestCase):
         if isinstance(weight, numpy.ndarray):
             startTime = time.time()
             for d, w in zip(pydata, weight):
-                hpy.fill(d, w)
+                hpy.fill(float(d), float(w))
             pyTime = time.time() - startTime
         else:
             startTime = time.time()
             for d in pydata:
-                hpy.fill(d, weight)
+                hpy.fill(float(d), float(weight))
             pyTime = time.time() - startTime
 
         hnpj = json.dumps(hnp.toJson())
@@ -118,12 +118,12 @@ class TestEverything(unittest.TestCase):
 
         self.scorecard.append((pyTime/numpyTime, name))
 
-    # # Warmup: apparently, Numpy does some dynamic optimization that needs to warm up...
-    # Sum(lambda x: x["empty"]**3).fill(data)
-    # Sum(lambda x: x["empty"]**3).fill(data)
-    # Sum(lambda x: x["empty"]**3).fill(data)
-    # Sum(lambda x: x["empty"]**3).fill(data)
-    # Sum(lambda x: x["empty"]**3).fill(data)
+    # Warmup: apparently, Numpy does some dynamic optimization that needs to warm up...
+    Sum(lambda x: x["empty"]**3).numpy(data)
+    Sum(lambda x: x["empty"]**3).numpy(data)
+    Sum(lambda x: x["empty"]**3).numpy(data)
+    Sum(lambda x: x["empty"]**3).numpy(data)
+    Sum(lambda x: x["empty"]**3).numpy(data)
 
     def testSum(self):
         with Numpy() as numpy:
@@ -220,6 +220,9 @@ class TestEverything(unittest.TestCase):
             self.compare("Maximize holes with weights", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, self.noholes)
             self.compare("Maximize holes with holes", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, self.withholes)
             self.compare("Maximize holes with holes2", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, self.withholes2)
+
+
+
 
 
     # def testBin(self):

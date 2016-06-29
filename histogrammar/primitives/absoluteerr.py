@@ -106,14 +106,16 @@ class AbsoluteErr(Factory, Container):
         arrayLength = self._checkNPQuantity(q, arrayLength)
         weights = self._checkNPWeights(weights, arrayLength)
 
+        # no possibility of exception from here on out (for rollback)
+        self.entries += float(weights.sum())
+
         import numpy
-        q = q.copy()
-        q[weights <= 0.0] = 0.0
+        selection = weights > 0.0
+        q = q[selection]
+        weights = weights[selection]
         numpy.absolute(q, q)
         q *= weights
 
-        # no possibility of exception from here on out (for rollback)
-        self.entries += float(weights.sum())
         self.absoluteSum += float(q.sum())
 
     @property

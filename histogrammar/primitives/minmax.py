@@ -104,13 +104,13 @@ class Minimize(Factory, Container):
         arrayLength = self._checkNPQuantity(q, arrayLength)
         weights = self._checkNPWeights(weights, arrayLength)
 
+        # no possibility of exception from here on out (for rollback)
         import numpy
         selection = numpy.isnan(q)
         numpy.bitwise_not(selection, selection)
         numpy.bitwise_and(selection, weights > 0.0, selection)
         q = q[selection]
 
-        # no possibility of exception from here on out (for rollback)
         self.entries += float(weights.sum())
 
         if math.isnan(self.min):
@@ -247,13 +247,13 @@ class Maximize(Factory, Container):
         arrayLength = self._checkNPQuantity(q, arrayLength)
         weights = self._checkNPWeights(weights, arrayLength)
 
+        # no possibility of exception from here on out (for rollback)
         import numpy
         selection = numpy.isnan(q)
         numpy.bitwise_not(selection, selection)
         numpy.bitwise_and(selection, weights > 0.0, selection)
         q = q[selection]
 
-        # no possibility of exception from here on out (for rollback)
         self.entries += float(weights.sum())
 
         if math.isnan(self.max):

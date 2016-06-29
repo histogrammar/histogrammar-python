@@ -230,13 +230,22 @@ class Bin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    @staticmethod
-    def _count_nonzero(arr):
+    def _numpy(self, data, weights, arrayLength):
+        q = self.quantity(data)
+        arrayLength = self._checkNPQuantity(q, arrayLength)
+        weights = self._checkNPWeights(weights, arrayLength)
+
         import numpy
-        try:
-            return numpy.count_nonzero(arr)
-        except AttributeError:
-            return arr.sum()   # only used on selection
+        
+
+
+    # @staticmethod
+    # def _count_nonzero(arr):
+    #     import numpy
+    #     try:
+    #         return numpy.count_nonzero(arr)
+    #     except AttributeError:
+    #         return arr.sum()   # only used on selection
 
     # def _fillnp(self, datum, q, weight, entry):
     #     if not entry:

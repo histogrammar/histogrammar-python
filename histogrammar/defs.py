@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import json as jsonlib
+import math
 
 from histogrammar.util import *
 
@@ -190,11 +191,10 @@ class Container(object):
                 assert weights.shape[0] == arrayLength
 
             weights = numpy.array(weights, dtype=numpy.float64)
-            selection = weights > 0.0
-            numpy.bitwise_not(selection, selection)
-            weights[selection] = 0.0   # non-positives and nans are both zeroed out
+            weights[numpy.isnan(weights)] = 0.0
+            weights[weights < 0.0] = 0.0
 
-        elif not (weights > 0.0):      # non-positives and nans both cause short-circuit return
+        elif math.isnan(weights) or weights <= 0.0:
             return
 
         self._numpy(data, weights, arrayLength)

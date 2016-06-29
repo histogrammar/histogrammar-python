@@ -91,36 +91,33 @@ class Count(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += t
 
-    # def _fillnp(self, datum, q, weight, entry):
-    #     if entry:
-    #         pass
+    def _numpy(self, data, weights, arrayLength):
+        import numpy
+        if isinstance(weights, numpy.ndarray):
+            assert len(weights.shape) == 1
+            if arrayLength is not None:
+                assert weights.shape[0] == arrayLength
 
+            if self.transform is identity:
+                self.entries += float(weights.sum())
+            else:
+                t = self.transform(weights)
+                assert len(t.shape) == 1
+                if arrayLength is not None:
+                    assert t.shape[0] == arrayLength
+                self.entries += float(t.sum())
 
-    # def _fillnp(self, data, weight=1.0, lengthAssertion=None):
-    #     self._checkForCrossReferences()
+        elif arrayLength is not None:
+            if self.transform is identity:
+                self.entries += weights * arrayLength
+            else:
+                t = self.transform(numpy.array([weights]))
+                assert len(t.shape) == 1
+                assert t.shape[0] == 1
+                self.entries += float(t[0])
 
-    #     if lengthAssertion is None:
-    #         raise ValueError("lengthAssertion needed because there is no Numpy array from which to infer dataset size")
-        
-    #     import numpy
-    #     if isinstance(weight, numpy.ndarray):
-    #         assert len(weight.shape) == 1
-    #         assert weight.shape[0] == lengthAssertion
-
-    #         if self.transform is identity:
-    #             self.entries += float(weight[weight > 0.0].sum())
-    #         else:
-    #             weight = weight[weight > 0.0]
-    #             transformed = self.transform(weight)
-    #             assert len(transformed.shape) == 1
-    #             assert transformed.shape[0] == weight.shape[0]
-    #             self.entries += float(transformed.sum())
-                
-    #     elif weight > 0.0:
-    #         if self.transform is identity:
-    #             self.entries += float(weight * lengthAssertion)
-    #         else:
-    #             self.entries += float(self.transform(numpy.array([weight]))[0] * lengthAssertion)
+        else:
+            raise ValueError("cannot use Numpy to fill Count when no arrays (or user-specified arrayLength) are provided")
 
     @property
     def children(self):

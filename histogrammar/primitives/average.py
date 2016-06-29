@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
+
 from histogrammar.defs import *
 from histogrammar.util import *
 
@@ -102,15 +104,20 @@ class Average(Factory, Container):
         arrayLength = self._checkNPQuantity(q, arrayLength)
         weights = self._checkNPWeights(weights, arrayLength)
 
-        import numpy
-        q = q.copy()
-        q[weights <= 0.0] = 0.0
-
         # no possibility of exception from here on out (for rollback)
         ca, ma = self.entries, self.mean
+
+        import numpy
+        selection = weights > 0.0
+        q = q[selection]
+        weights = weights[selection]
+
         self.entries += float(weights.sum())
         ca_plus_cb = self.entries
-        if ca_plus_cb > 0.0:
+
+        if math.isinf(ca_plus_cb):
+            self.mean = float("nan")
+        elif ca_plus_cb > 0.0:
             mb = numpy.average(q, weights=weights)
             self.mean = float((ca*ma + (ca_plus_cb - ca)*mb) / ca_plus_cb)
 
