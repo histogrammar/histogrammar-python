@@ -151,37 +151,39 @@ class Stack(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    # def fillnp(self, data, weight=1.0):
-    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    def _numpy(self, data, weights, arrayLength):
+        q = self.quantity(data)
+        arrayLength = self._checkNPQuantity(q, arrayLength)
+        self._checkNPWeights(weights, arrayLength)
+        weights = self._makeNPWeights(weights, arrayLength)
+        newentries = weights.sum()
 
-    #     This primitive is optimized with Numpy.
+        import numpy
 
-    #     The container is changed in-place.
-    #     """
-    #     self._checkForCrossReferences()
+        selection = numpy.isnan(q)
+        numpy.bitwise_not(selection, selection)
+        subweights = weights.copy()
+        subweights[selection] = 0.0
+        self.nanflow._numpy(data, subweights, arrayLength)
 
-    #     import numpy
-    #     data, weight = self._normalizenp(data, weight)
-    #     if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-    #     q = self._computenp(data)
+        # avoid nan warning in calculations by flinging the nans elsewhere
+        numpy.bitwise_not(selection, selection)
+        q = numpy.array(q, dtype=numpy.float64)
+        q[selection] = float("-inf")
+        weights = weights.copy()
+        weights[selection] = 0.0
 
-    #     originalweight = weight
-    #     length = data.shape[0]
-    #     selection = numpy.isnan(q)
-    #     self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+        selection = numpy.empty(q.shape, dtype=numpy.bool)
+        subweights = weights.copy()
+        for threshold, sub in self.cuts:
+            numpy.less(q, threshold, selection)
+            subweights[:] = weights
+            subweights[selection] = 0.0
 
-    #     numpy.bitwise_not(selection, selection)
-    #     data = data[selection]
-    #     q = q[selection]
-    #     if isinstance(weight, numpy.ndarray):
-    #         weight = weight[selection]
+            sub._numpy(data, subweights, arrayLength)
 
-    #     selection = numpy.empty(q.shape, dtype=numpy.bool)
-    #     for threshold, sub in self.cuts:
-    #         numpy.greater_equal(q, threshold, selection)
-    #         sub.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
-
-    #     self._entriesnp(originalweight, length)
+        # no possibility of exception from here on out (for rollback)
+        self.entries += float(newentries)
 
     @property
     def children(self):
