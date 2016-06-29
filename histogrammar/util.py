@@ -299,18 +299,21 @@ class UserFcn(object):
                 def function(datum):
                     context = dict(globals())
                     context.update(math.__dict__)
-                    try:
-                        context.update(datum.__dict__)
-                    except AttributeError:
-                        v, = varname
-                        if v is None:
-                            try:
-                                v, = set(c.co_names) - set(context.keys())
-                            except ValueError:
-                                raise NameError("more than one unrecognized variable names in single-argument function: {0}".format(set(c.co_names) - set(context.keys())))
-                            varname[0] = v
+                    if isinstance(datum, dict):                # if it's a dict
+                        context.update(datum)                  # use its items as variables
+                    else:
+                        try:
+                            context.update(datum.__dict__)     # try to use its attributes as variables
+                        except AttributeError:
+                            v, = varname                       # otherwise, use the one and only variable
+                            if v is None:                      # as the object (only discover it once)
+                                try:
+                                    v, = set(c.co_names) - set(context.keys())
+                                except ValueError:
+                                    raise NameError("more than one unrecognized variable names in single-argument function: {0}".format(set(c.co_names) - set(context.keys())))
+                                varname[0] = v
 
-                        context.update({v: datum})
+                            context.update({v: datum})
 
                     return eval(c, context)
 

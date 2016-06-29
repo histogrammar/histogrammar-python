@@ -97,28 +97,22 @@ class Average(Factory, Container):
             shift = delta * weight / self.entries
             self.mean += shift
 
-    # def _fillnp(self, datum, q, weight, entry):
-    #     try:
-    #         import numpy
-    #     except ImportError:
-    #         return False
-    #     if not entry:
-    #         q = self.quantity(datum)
-    #     if isinstance(q, numpy.ndarray):
-    #         if entry:
-    #             q, weight = self._entrynp(q, weight)
-    #         self._checknp(q, weight)
+    def _numpy(self, data, weights, arrayLength):
+        q = self.quantity(data)
+        arrayLength = self._checkNPQuantity(q, arrayLength)
+        weights = self._checkNPWeights(weights, arrayLength)
 
-    #         ca, ma = self.entries, self.mean
-    #         self.entries += weight.sum()
-    #         ca_plus_cb = self.entries
-    #         if ca_plus_cb > 0.0:
-    #             mb = numpy.average(q, weights=(weight if isinstance(weight, numpy.ndarray) else None))
-    #             self.mean = float((ca*ma + (ca_plus_cb - ca)*mb) / ca_plus_cb)
+        import numpy
+        q = q.copy()
+        q[weights <= 0.0] = 0.0
 
-    #         return True
-    #     else:
-    #         return False
+        # no possibility of exception from here on out (for rollback)
+        ca, ma = self.entries, self.mean
+        self.entries += float(weights.sum())
+        ca_plus_cb = self.entries
+        if ca_plus_cb > 0.0:
+            mb = numpy.average(q, weights=weights)
+            self.mean = float((ca*ma + (ca_plus_cb - ca)*mb) / ca_plus_cb)
 
     @property
     def children(self):

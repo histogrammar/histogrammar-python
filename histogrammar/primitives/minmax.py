@@ -99,34 +99,26 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
-    # def _fillnp(self, datum, q, weight, entry):
-    #     try:
-    #         import numpy
-    #     except ImportError:
-    #         return False
-    #     if not entry:
-    #         q = self.quantity(datum)
-    #     if isinstance(q, numpy.ndarray):
-    #         if entry:
-    #             q, weight = self._entrynp(q, weight)
-    #         self._checknp(q, weight)
-    #         self.entries += weight.sum()
+    def _numpy(self, data, weights, arrayLength):
+        q = self.quantity(data)
+        arrayLength = self._checkNPQuantity(q, arrayLength)
+        weights = self._checkNPWeights(weights, arrayLength)
 
-    #         selection = numpy.isnan(q)
-    #         numpy.bitwise_not(selection, selection)
-    #         numpy.bitwise_and(selection, weight > 0.0, selection)
-    #         q = q[selection]
+        import numpy
+        selection = numpy.isnan(q)
+        numpy.bitwise_not(selection, selection)
+        numpy.bitwise_and(selection, weights > 0.0, selection)
+        q = q[selection]
 
-    #         if math.isnan(self.min):
-    #             if q.shape[0] > 0:
-    #                 self.min = float(q.min())
-    #         else:
-    #             if q.shape[0] > 0:
-    #                 self.min = min(self.min, float(q.min()))
+        # no possibility of exception from here on out (for rollback)
+        self.entries += float(weights.sum())
 
-    #         return True
-    #     else:
-    #         return False
+        if math.isnan(self.min):
+            if q.shape[0] > 0:
+                self.min = float(q.min())
+        else:
+            if q.shape[0] > 0:
+                self.min = min(self.min, float(q.min()))
 
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
@@ -250,34 +242,26 @@ class Maximize(Factory, Container):
             if math.isnan(self.max) or q > self.max:
                 self.max = q
 
-    # def _fillnp(self, datum, q, weight, entry):
-    #     try:
-    #         import numpy
-    #     except ImportError:
-    #         return False
-    #     if not entry:
-    #         q = self.quantity(datum)
-    #     if isinstance(q, numpy.ndarray):
-    #         if entry:
-    #             q, weight = self._entrynp(q, weight)
-    #         self._checknp(q, weight)
-    #         self.entries += weight.sum()
+    def _numpy(self, data, weights, arrayLength):
+        q = self.quantity(data)
+        arrayLength = self._checkNPQuantity(q, arrayLength)
+        weights = self._checkNPWeights(weights, arrayLength)
 
-    #         selection = numpy.isnan(q)
-    #         numpy.bitwise_not(selection, selection)
-    #         numpy.bitwise_and(selection, weight > 0.0, selection)
-    #         q = q[selection]
+        import numpy
+        selection = numpy.isnan(q)
+        numpy.bitwise_not(selection, selection)
+        numpy.bitwise_and(selection, weights > 0.0, selection)
+        q = q[selection]
 
-    #         if math.isnan(self.max):
-    #             if q.shape[0] > 0:
-    #                 self.max = float(q.max())
-    #         else:
-    #             if q.shape[0] > 0:
-    #                 self.max = max(self.max, float(q.max()))
+        # no possibility of exception from here on out (for rollback)
+        self.entries += float(weights.sum())
 
-    #         return True
-    #     else:
-    #         return False
+        if math.isnan(self.max):
+            if q.shape[0] > 0:
+                self.max = float(q.max())
+        else:
+            if q.shape[0] > 0:
+                self.max = max(self.max, float(q.max()))
 
     @property
     def children(self):

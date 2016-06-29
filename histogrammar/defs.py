@@ -117,7 +117,7 @@ class Container(object):
         """Add two containers of the same type. The originals are unaffected. """
         raise NotImplementedError
 
-    def fill(self, datum, weight=1.0, method=None):
+    def fill(self, datum, weight=1.0):
         """Increment the aggregator by providing one ``datum`` to the fill rule with a given ``weight``.
       
         Usually all containers in a collection of histograms take the same input data by passing it recursively through the tree. Quantities to plot are specified by the individual container's lambda functions.
@@ -176,6 +176,47 @@ class Container(object):
     def toJsonFragment(self, suppressName):
         """Used internally to convert the container to JSON without its ``"type"`` header."""
         raise NotImplementedError
+
+    def numpy(self, data, weights=1.0, arrayLength=None):
+        import numpy
+        self._checkForCrossReferences()
+
+        if isinstance(weights, numpy.ndarray):
+            assert len(weights.shape) == 1
+
+            if arrayLength is None:
+                arrayLength = weights.shape[0]
+            else:
+                assert weights.shape[0] == arrayLength
+
+            weights = numpy.array(weights, dtype=numpy.float64)
+            selection = weights > 0.0
+            numpy.bitwise_not(selection, selection)
+            weights[selection] = 0.0   # non-positives and nans are both zeroed out
+
+        elif not (weights > 0.0):      # non-positives and nans both cause short-circuit return
+            return
+
+        self._numpy(data, weights, arrayLength)
+
+    def _checkNPQuantity(self, q, arrayLength):
+        import numpy
+        assert isinstance(q, numpy.ndarray)
+        assert len(q.shape) == 1
+        if arrayLength is not None:
+            assert q.shape[0] == arrayLength
+        else:
+            arrayLength = q.shape[0]
+        return arrayLength
+
+    def _checkNPWeights(self, weights, arrayLength):
+        import numpy
+        if isinstance(weights, numpy.ndarray):
+            assert len(weights.shape) == 1
+            assert weights.shape[0] == arrayLength
+        else:
+            weights = weights * numpy.ones(arrayLength, dtype=numpy.float64)
+        return weights
 
 # default weight
 

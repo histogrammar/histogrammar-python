@@ -91,23 +91,18 @@ class Sum(Factory, Container):
             self.entries += weight
             self.sum += q * weight
 
-    # def _fillnp(self, datum, q, weight, entry):
-    #     try:
-    #         import numpy
-    #     except ImportError:
-    #         return False
-    #     if not entry:
-    #         q = self.quantity(datum)
-    #         assert isinstance(q, numpy.ndarray)
-    #     if isinstance(q, numpy.ndarray):
-    #         if entry:
-    #             q, weight = self._entrynp(q, weight)
-    #         self._checknp(q, weight)
-    #         self.entries += weight.sum()
-    #         self.sum += float((q * weight).sum())
-    #         return True
-    #     else:
-    #         return False
+    def _numpy(self, data, weights, arrayLength):
+        q = self.quantity(data)
+        arrayLength = self._checkNPQuantity(q, arrayLength)
+        weights = self._checkNPWeights(weights, arrayLength)
+
+        q = q.copy()
+        q[weights <= 0.0] = 0.0
+        q *= weights
+
+        # no possibility of exception from here on out (for rollback)
+        self.entries += float(weights.sum())
+        self.sum += float(q.sum())
 
     @property
     def children(self):
