@@ -113,6 +113,7 @@ class Quantile(Factory, Container):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             q = self.quantity(datum)
             try:

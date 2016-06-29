@@ -210,6 +210,7 @@ class Bin(Factory, Container):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             q = self.quantity(datum)
             try:
@@ -237,65 +238,103 @@ class Bin(Factory, Container):
         except AttributeError:
             return arr.sum()   # only used on selection
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    # def _fillnp(self, datum, q, weight, entry):
+    #     if not entry:
+    #         q = self.quantity(datum)
+    #     import numpy
+    #     if isinstance(q, numpy.ndarray):
+    #         if entry:
+    #             q, weight = self._entrynp(q, weight)
+    #         self._checknp(q, weight)
+    #         self.entries += weight.sum()
 
-        This primitive is optimized with Numpy. The speedup scales approximately as ``300/num**0.7`` (``num`` is number of bins; scales weakly with array size (10000 here)), so it ceases to be advantageous for ``num > 3000``.
+    #         selection = numpy.isnan(q)
+    #         self.nanflow._fillnp(datum, None, weight * selection, False)
 
-        The container is changed in-place.
-        """
-        self._checkForCrossReferences()
+    #         numpy.less(q, self.low, selection)
+    #         self.underflow._fillnp(datum, None, weight * selection, False)
 
-        import numpy
+    #         numpy.greater_equal(q, self.high, selection)
+    #         self.overflow._fillnp(datum, None, weight * selection, False)
 
-        data, weight = self._normalizenp(data, weight)
-        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self._computenp(data)
+    #         q = numpy.array(q, dtype=float)
+    #         numpy.subtract(q, self.low, q)
+    #         numpy.multiply(q, self.num, q)
+    #         numpy.divide(q, self.high - self.low, q)
+    #         numpy.floor(q, q)
+    #         q = numpy.array(q, dtype=int)
 
-        originalweight = weight
-        length = data.shape[0]
-        selection = numpy.isnan(q)
-        if isinstance(self.nanflow, Count) and self.nanflow.transform is identity:
-            self.nanflow.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
-        else:
-            self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+    #         for index, value in enumerate(self.values):
+    #             numpy.equal(q, index, selection)
+    #             value._fillnp(datum, None, weight * selection, False)
+
+    #         self.entries += weight.sum()
+    #         return True
+    #     else:
+    #         return False
+
+
+
+
+
+    # def fillnp(self, data, weight=1.0, lengthAssertion=None):
+    #     self._checkForCrossReferences()
+
+    #     import numpy
+    #     originalweight = weight
+    #     if isinstance(weight, numpy.ndarray):
+    #         weightselection, weight = self._checkweightnp(weight, lengthAssertion)
+    #     else:
+    #         weightselection = None
+    #         if weight <= 0.0: return
+
+    #     q = self._checkqnp(self.quantity(data), lengthAssertion)
+    #     length = q.shape[0]
+    #     if weightselection is not None:
+    #         q = q[weightselection]
+
+    #     selection = numpy.isnan(q)
+    #     if isinstance(self.nanflow, Count) and self.nanflow.transform is identity:
+    #         self.nanflow.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
+    #     else:
+    #         self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
         
-        numpy.bitwise_not(selection, selection)
-        data = data[selection]
-        q = q[selection]
-        if isinstance(weight, numpy.ndarray):
-            weight = weight[selection]
+    #     numpy.bitwise_not(selection, selection)
+    #     data = data[selection]
+    #     q = q[selection]
+    #     if isinstance(weight, numpy.ndarray):
+    #         weight = weight[selection]
 
-        q = numpy.array(q, dtype=float)
-        numpy.subtract(q, self.low, q)
-        numpy.multiply(q, self.num, q)
-        numpy.divide(q, self.high - self.low, q)
+    #     q = numpy.array(q, dtype=float)
+    #     numpy.subtract(q, self.low, q)
+    #     numpy.multiply(q, self.num, q)
+    #     numpy.divide(q, self.high - self.low, q)
 
-        selection = numpy.empty(q.shape, dtype=numpy.bool)
+    #     selection = numpy.empty(q.shape, dtype=numpy.bool)
 
-        numpy.less(q, 0.0, selection)
-        if isinstance(self.underflow, Count) and self.underflow.transform is identity:
-            self.underflow.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
-        else:
-            self.underflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+    #     numpy.less(q, 0.0, selection)
+    #     if isinstance(self.underflow, Count) and self.underflow.transform is identity:
+    #         self.underflow.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
+    #     else:
+    #         self.underflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
-        numpy.greater_equal(q, self.num, selection)
-        if isinstance(self.overflow, Count) and self.overflow.transform is identity:
-            self.overflow.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
-        else:
-            self.overflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+    #     numpy.greater_equal(q, self.num, selection)
+    #     if isinstance(self.overflow, Count) and self.overflow.transform is identity:
+    #         self.overflow.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
+    #     else:
+    #         self.overflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
-        numpy.floor(q, q)
-        q = numpy.array(q, dtype=int)
+    #     numpy.floor(q, q)
+    #     q = numpy.array(q, dtype=int)
 
-        for index, value in enumerate(self.values):
-            numpy.equal(q, index, selection)
-            if isinstance(value, Count) and value.transform is identity:
-                value.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
-            else:
-                value.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+    #     for index, value in enumerate(self.values):
+    #         numpy.equal(q, index, selection)
+    #         if isinstance(value, Count) and value.transform is identity:
+    #             value.fill(None, float(weight[selection].sum() if isinstance(weight, numpy.ndarray) else weight*self._count_nonzero(selection)))
+    #         else:
+    #             value.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
-        self._entriesnp(originalweight, length)
+    #     self.entries += self._entriesnp(originalweight, length)
 
     @property
     def children(self):

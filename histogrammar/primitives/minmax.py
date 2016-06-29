@@ -86,6 +86,7 @@ class Minimize(Factory, Container):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             q = self.quantity(datum)
             try:
@@ -98,33 +99,34 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
-    @inheritdoc(Container)
-    def fillnp(self, data, weight=1.0, lengthAssertion=None):
-        self._checkForCrossReferences()
+    # def _fillnp(self, datum, q, weight, entry):
+    #     try:
+    #         import numpy
+    #     except ImportError:
+    #         return False
+    #     if not entry:
+    #         q = self.quantity(datum)
+    #     if isinstance(q, numpy.ndarray):
+    #         if entry:
+    #             q, weight = self._entrynp(q, weight)
+    #         self._checknp(q, weight)
+    #         self.entries += weight.sum()
 
-        import numpy
-        if isinstance(weight, numpy.ndarray):
-            weightselection, weight = self._checkweightnp(weight, lengthAssertion)
-        else:
-            weightselection = None
-            if weight <= 0.0: return
+    #         selection = numpy.isnan(q)
+    #         numpy.bitwise_not(selection, selection)
+    #         numpy.bitwise_and(selection, weight > 0.0, selection)
+    #         q = q[selection]
 
-        q = self._checkqnp(self.quantity(data), lengthAssertion)
-        if weightselection is not None:
-            q = q[weightselection]
+    #         if math.isnan(self.min):
+    #             if q.shape[0] > 0:
+    #                 self.min = float(q.min())
+    #         else:
+    #             if q.shape[0] > 0:
+    #                 self.min = min(self.min, float(q.min()))
 
-        self.entries += self._entriesnp(weight, q.shape[0])
-
-        selection = numpy.isnan(q)
-        numpy.bitwise_not(selection, selection)
-        q = q[selection]
-
-        if math.isnan(self.min):
-            if q.shape[0] > 0:
-                self.min = float(q.min())
-        else:
-            if q.shape[0] > 0:
-                self.min = min(self.min, float(q.min()))
+    #         return True
+    #     else:
+    #         return False
 
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
@@ -235,6 +237,7 @@ class Maximize(Factory, Container):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             q = self.quantity(datum)
             try:
@@ -247,33 +250,34 @@ class Maximize(Factory, Container):
             if math.isnan(self.max) or q > self.max:
                 self.max = q
 
-    @inheritdoc(Container)
-    def fillnp(self, data, weight=1.0, lengthAssertion=None):
-        self._checkForCrossReferences()
+    # def _fillnp(self, datum, q, weight, entry):
+    #     try:
+    #         import numpy
+    #     except ImportError:
+    #         return False
+    #     if not entry:
+    #         q = self.quantity(datum)
+    #     if isinstance(q, numpy.ndarray):
+    #         if entry:
+    #             q, weight = self._entrynp(q, weight)
+    #         self._checknp(q, weight)
+    #         self.entries += weight.sum()
 
-        import numpy
-        if isinstance(weight, numpy.ndarray):
-            weightselection, weight = self._checkweightnp(weight, lengthAssertion)
-        else:
-            weightselection = None
-            if weight <= 0.0: return
+    #         selection = numpy.isnan(q)
+    #         numpy.bitwise_not(selection, selection)
+    #         numpy.bitwise_and(selection, weight > 0.0, selection)
+    #         q = q[selection]
 
-        q = self._checkqnp(self.quantity(data), lengthAssertion)
-        if weightselection is not None:
-            q = q[weightselection]
+    #         if math.isnan(self.max):
+    #             if q.shape[0] > 0:
+    #                 self.max = float(q.max())
+    #         else:
+    #             if q.shape[0] > 0:
+    #                 self.max = max(self.max, float(q.max()))
 
-        self.entries += self._entriesnp(weight, q.shape[0])
-
-        selection = numpy.isnan(q)
-        numpy.bitwise_not(selection, selection)
-        q = q[selection]
-
-        if math.isnan(self.max):
-            if q.shape[0] > 0:
-                self.max = float(q.max())
-        else:
-            if q.shape[0] > 0:
-                self.max = max(self.max, float(q.max()))
+    #         return True
+    #     else:
+    #         return False
 
     @property
     def children(self):

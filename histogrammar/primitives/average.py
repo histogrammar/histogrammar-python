@@ -83,6 +83,7 @@ class Average(Factory, Container):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             q = self.quantity(datum)
             try:
@@ -96,29 +97,28 @@ class Average(Factory, Container):
             shift = delta * weight / self.entries
             self.mean += shift
 
-    @inheritdoc(Container)
-    def fillnp(self, data, weight=1.0, lengthAssertion=None):
-        self._checkForCrossReferences()
+    # def _fillnp(self, datum, q, weight, entry):
+    #     try:
+    #         import numpy
+    #     except ImportError:
+    #         return False
+    #     if not entry:
+    #         q = self.quantity(datum)
+    #     if isinstance(q, numpy.ndarray):
+    #         if entry:
+    #             q, weight = self._entrynp(q, weight)
+    #         self._checknp(q, weight)
 
-        import numpy
-        if isinstance(weight, numpy.ndarray):
-            weightselection, weight = self._checkweightnp(weight, lengthAssertion)
-        else:
-            weightselection = None
-            if weight <= 0.0: return
+    #         ca, ma = self.entries, self.mean
+    #         self.entries += weight.sum()
+    #         ca_plus_cb = self.entries
+    #         if ca_plus_cb > 0.0:
+    #             mb = numpy.average(q, weights=(weight if isinstance(weight, numpy.ndarray) else None))
+    #             self.mean = float((ca*ma + (ca_plus_cb - ca)*mb) / ca_plus_cb)
 
-        q = self._checkqnp(self.quantity(data), lengthAssertion)
-        if weightselection is not None:
-            q = q[weightselection]
-
-        ca, ma = self.entries, self.mean
-
-        self.entries += self._entriesnp(weight, q.shape[0])
-
-        ca_plus_cb = self.entries
-        if ca_plus_cb > 0.0:
-            mb = numpy.average(q, weights=(weight if isinstance(weight, numpy.ndarray) else None))
-            self.mean = float((ca*ma + (ca_plus_cb - ca)*mb) / ca_plus_cb)
+    #         return True
+    #     else:
+    #         return False
 
     @property
     def children(self):

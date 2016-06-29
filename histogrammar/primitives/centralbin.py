@@ -135,6 +135,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             q = self.quantity(datum)
             try:
@@ -154,67 +155,67 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
             if math.isnan(self.max) or q > self.max:
                 self.max = q
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    # def fillnp(self, data, weight=1.0):
+    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
 
-        This primitive is optimized with Numpy.
+    #     This primitive is optimized with Numpy.
 
-        The container is changed in-place.
-        """
-        self._checkForCrossReferences()
+    #     The container is changed in-place.
+    #     """
+    #     self._checkForCrossReferences()
 
-        import numpy
-        data, weight = self._normalizenp(data, weight)
-        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self._computenp(data)
+    #     import numpy
+    #     data, weight = self._normalizenp(data, weight)
+    #     if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
+    #     q = self._computenp(data)
 
-        originalweight = weight
-        length = data.shape[0]
-        selection = numpy.isnan(q)
-        self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+    #     originalweight = weight
+    #     length = data.shape[0]
+    #     selection = numpy.isnan(q)
+    #     self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
         
-        numpy.bitwise_not(selection, selection)
-        data = data[selection]
-        q = q[selection]
-        if isinstance(weight, numpy.ndarray):
-            weight = weight[selection]
+    #     numpy.bitwise_not(selection, selection)
+    #     data = data[selection]
+    #     q = q[selection]
+    #     if isinstance(weight, numpy.ndarray):
+    #         weight = weight[selection]
 
-        selection = numpy.empty(q.shape, dtype=numpy.bool)
-        selection2 = numpy.empty(q.shape, dtype=numpy.bool)
+    #     selection = numpy.empty(q.shape, dtype=numpy.bool)
+    #     selection2 = numpy.empty(q.shape, dtype=numpy.bool)
 
-        for index in xrange(len(self.bins)):
-            if index == 0:
-                high = (self.bins[index][0] + self.bins[index + 1][0])/2.0
-                numpy.less(q, high, selection)
+    #     for index in xrange(len(self.bins)):
+    #         if index == 0:
+    #             high = (self.bins[index][0] + self.bins[index + 1][0])/2.0
+    #             numpy.less(q, high, selection)
 
-            elif index == len(self.bins) - 1:
-                low = (self.bins[index - 1][0] + self.bins[index][0])/2.0
-                numpy.greater_equal(q, low, selection)
+    #         elif index == len(self.bins) - 1:
+    #             low = (self.bins[index - 1][0] + self.bins[index][0])/2.0
+    #             numpy.greater_equal(q, low, selection)
 
-            else:
-                low = (self.bins[index - 1][0] + self.bins[index][0])/2.0
-                high = (self.bins[index][0] + self.bins[index + 1][0])/2.0
-                numpy.greater_equal(q, low, selection)
-                numpy.less(q, high, selection2)
-                numpy.bitwise_and(selection, selection2, selection)
+    #         else:
+    #             low = (self.bins[index - 1][0] + self.bins[index][0])/2.0
+    #             high = (self.bins[index][0] + self.bins[index + 1][0])/2.0
+    #             numpy.greater_equal(q, low, selection)
+    #             numpy.less(q, high, selection2)
+    #             numpy.bitwise_and(selection, selection2, selection)
 
-            self.bins[index][1].fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+    #         self.bins[index][1].fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
-        if math.isnan(self.min):
-            if q.shape[0] > 0:
-                self.min = float(q.min())
-        else:
-            if q.shape[0] > 0:
-                self.min = min(self.min, float(q.min()))
+    #     if math.isnan(self.min):
+    #         if q.shape[0] > 0:
+    #             self.min = float(q.min())
+    #     else:
+    #         if q.shape[0] > 0:
+    #             self.min = min(self.min, float(q.min()))
 
-        if math.isnan(self.max):
-            if q.shape[0] > 0:
-                self.max = float(q.max())
-        else:
-            if q.shape[0] > 0:
-                self.max = max(self.max, float(q.max()))
+    #     if math.isnan(self.max):
+    #         if q.shape[0] > 0:
+    #             self.max = float(q.max())
+    #     else:
+    #         if q.shape[0] > 0:
+    #             self.max = max(self.max, float(q.max()))
 
-        self._entriesnp(originalweight, length)
+    #     self._entriesnp(originalweight, length)
 
     @property
     def children(self):

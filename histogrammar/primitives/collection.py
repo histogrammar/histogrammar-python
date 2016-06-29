@@ -141,26 +141,28 @@ class Label(Factory, Container, Collection):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             for x in self.values:
                 x.fill(datum, weight)
+
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    # def fillnp(self, data, weight=1.0):
+    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
 
-        This primitive is optimized with Numpy.
+    #     This primitive is optimized with Numpy.
 
-        The container is changed in-place.
-        """
-        self._checkForCrossReferences()
+    #     The container is changed in-place.
+    #     """
+    #     self._checkForCrossReferences()
 
-        import numpy
-        data, weight = self._normalizenp(data, weight)
-        for x in self.values:
-            x.fillnp(data, weight)
-        self._entriesnp(weight, data.shape[0])
+    #     import numpy
+    #     data, weight = self._normalizenp(data, weight)
+    #     for x in self.values:
+    #         x.fillnp(data, weight)
+    #     self._entriesnp(weight, data.shape[0])
 
     @property
     def children(self):
@@ -324,26 +326,28 @@ class UntypedLabel(Factory, Container, Collection):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             for x in self.values:
                 x.fill(datum, weight)
+
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    # def fillnp(self, data, weight=1.0):
+    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
 
-        This primitive is optimized with Numpy.
+    #     This primitive is optimized with Numpy.
 
-        The container is changed in-place.
-        """
-        self._checkForCrossReferences()
+    #     The container is changed in-place.
+    #     """
+    #     self._checkForCrossReferences()
 
-        import numpy
-        data, weight = self._normalizenp(data, weight)
-        for x in self.values:
-            x.fillnp(data, weight)
-        self._entriesnp(weight, data.shape[0])
+    #     import numpy
+    #     data, weight = self._normalizenp(data, weight)
+    #     for x in self.values:
+    #         x.fillnp(data, weight)
+    #     self._entriesnp(weight, data.shape[0])
 
     @property
     def children(self):
@@ -502,26 +506,28 @@ class Index(Factory, Container, Collection):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             for x in self.values:
                 x.fill(datum, weight)
+
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    # def fillnp(self, data, weight=1.0):
+    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
 
-        This primitive is optimized with Numpy.
+    #     This primitive is optimized with Numpy.
 
-        The container is changed in-place.
-        """
-        self._checkForCrossReferences()
+    #     The container is changed in-place.
+    #     """
+    #     self._checkForCrossReferences()
 
-        import numpy
-        data, weight = self._normalizenp(data, weight)
-        for x in self.values:
-            x.fillnp(data, weight)
-        self._entriesnp(weight, data.shape[0])
+    #     import numpy
+    #     data, weight = self._normalizenp(data, weight)
+    #     for x in self.values:
+    #         x.fillnp(data, weight)
+    #     self._entriesnp(weight, data.shape[0])
 
     @property
     def children(self):
@@ -691,26 +697,28 @@ class Branch(Factory, Container, Collection):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             for x in self.values:
                 x.fill(datum, weight)
+
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    # def fillnp(self, data, weight=1.0):
+    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
 
-        This primitive is optimized with Numpy.
+    #     This primitive is optimized with Numpy.
 
-        The container is changed in-place.
-        """
-        self._checkForCrossReferences()
+    #     The container is changed in-place.
+    #     """
+    #     self._checkForCrossReferences()
 
-        import numpy
-        data, weight = self._normalizenp(data, weight)
-        for x in self.values:
-            x.fillnp(data, weight)
-        self._entriesnp(weight, data.shape[0])
+    #     import numpy
+    #     data, weight = self._normalizenp(data, weight)
+    #     for x in self.values:
+    #         x.fillnp(data, weight)
+    #     self._entriesnp(weight, data.shape[0])
 
     @property
     def children(self):

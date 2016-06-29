@@ -116,6 +116,7 @@ class Fraction(Factory, Container):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             w = self.quantity(datum)
             try:
@@ -131,30 +132,30 @@ class Fraction(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    # def fillnp(self, data, weight=1.0):
+    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
 
-        This primitive is optimized with Numpy.
+    #     This primitive is optimized with Numpy.
 
-        The container is changed in-place.
-        """
-        self._checkForCrossReferences()
+    #     The container is changed in-place.
+    #     """
+    #     self._checkForCrossReferences()
 
-        import numpy
-        data, weight = self._normalizenp(data, weight)
-        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        w = self._computenp(data)
-        if numpy.issubdtype(w.dtype, numpy.bool_):
-            w = numpy.array(w, dtype=float)
+    #     import numpy
+    #     data, weight = self._normalizenp(data, weight)
+    #     if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
+    #     w = self._computenp(data)
+    #     if numpy.issubdtype(w.dtype, numpy.bool_):
+    #         w = numpy.array(w, dtype=float)
 
-        numpy.multiply(w, weight, w)
+    #     numpy.multiply(w, weight, w)
 
-        self.denominator.fillnp(data, weight)
+    #     self.denominator.fillnp(data, weight)
 
-        selection = (w > 0.0)
-        self.numerator.fillnp(data[selection], w[selection])
+    #     selection = (w > 0.0)
+    #     self.numerator.fillnp(data[selection], w[selection])
 
-        self._entriesnp(weight, data.shape[0])
+    #     self._entriesnp(weight, data.shape[0])
 
     @property
     def children(self):

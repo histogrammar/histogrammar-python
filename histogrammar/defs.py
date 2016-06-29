@@ -117,18 +117,11 @@ class Container(object):
         """Add two containers of the same type. The originals are unaffected. """
         raise NotImplementedError
 
-    def fill(self, datum, weight=1.0):
+    def fill(self, datum, weight=1.0, method=None):
         """Increment the aggregator by providing one ``datum`` to the fill rule with a given ``weight``.
       
         Usually all containers in a collection of histograms take the same input data by passing it recursively through the tree. Quantities to plot are specified by the individual container's lambda functions.
       
-        The container is changed in-place.
-        """
-        raise NotImplementedError
-
-    def fillnp(self, data, weight=1.0, lengthAssertion=None):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
-
         The container is changed in-place.
         """
         raise NotImplementedError
@@ -152,32 +145,26 @@ class Container(object):
             for child in self.children:
                 child._checkForCrossReferences(memo)
             self._checkedForCrossReferences = True
+        
+    # def _entrynp(self, q, weight):
+    #     import numpy
+    #     if isinstance(weight, numpy.ndarray):
+    #         q = numpy.array(q, dtype=float)
+    #         weight = numpy.array(weight, dtype=float)
+    #         weightselection = weight > 0.0
+    #         numpy.bitwise_not(weightselection, weightselection)
+    #         q[weightselection] = 0.0
+    #         weight[weightselection] = 0.0
+    #     else:
+    #         weight = numpy.ones(q.shape, dtype=float)
+    #     return q, weight
 
-    def _checkweightnp(self, weight, lengthAssertion):
-        assert len(weight.shape) == 1
-        if lengthAssertion is not None:
-            assert weight.shape[0] == lengthAssertion
-        weightselection = weight > 0.0
-        return weightselection, weight[weightselection]
-
-    def _checkqnp(self, q, lengthAssertion):
-        import numpy
-        if isinstance(q, numpy.ndarray):
-            assert len(q.shape) == 1
-            if lengthAssertion is not None:
-                assert q.shape[0] == lengthAssertion
-        else:
-            if lengthAssertion is None:
-                raise ValueError("lengthAssertion needed because there is no Numpy array from which to infer dataset size")
-            q = numpy.ones(lengthAssertion, dtype=type(q)) * q
-        return q
-
-    def _entriesnp(self, weight, length):
-        import numpy
-        if isinstance(weight, numpy.ndarray):
-            return float(weight.sum())
-        else:
-            return float(weight * length)
+    # def _checknp(self, q, weight):
+    #     import numpy
+    #     assert isinstance(q, numpy.ndarray)
+    #     assert isinstance(weight, numpy.ndarray)
+    #     assert len(q.shape) == 1
+    #     assert q.shape == weight.shape
 
     def toJson(self):
         """Convert this container to dicts and lists representing JSON (dropping its ``fill`` method).

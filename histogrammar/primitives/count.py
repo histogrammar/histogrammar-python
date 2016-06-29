@@ -80,6 +80,7 @@ class Count(Factory, Container):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             t = self.transform(weight)
             try:
@@ -90,32 +91,36 @@ class Count(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += t
 
-    @inheritdoc(Container)
-    def fillnp(self, data, weight=1.0, lengthAssertion=None):
-        self._checkForCrossReferences()
+    # def _fillnp(self, datum, q, weight, entry):
+    #     if entry:
+    #         pass
 
-        if lengthAssertion is None:
-            raise ValueError("lengthAssertion needed because there is no Numpy array from which to infer dataset size")
+
+    # def _fillnp(self, data, weight=1.0, lengthAssertion=None):
+    #     self._checkForCrossReferences()
+
+    #     if lengthAssertion is None:
+    #         raise ValueError("lengthAssertion needed because there is no Numpy array from which to infer dataset size")
         
-        import numpy
-        if isinstance(weight, numpy.ndarray):
-            assert len(weight.shape) == 1
-            assert weight.shape[0] == lengthAssertion
+    #     import numpy
+    #     if isinstance(weight, numpy.ndarray):
+    #         assert len(weight.shape) == 1
+    #         assert weight.shape[0] == lengthAssertion
 
-            if self.transform is identity:
-                self.entries += float(weight[weight > 0.0].sum())
-            else:
-                weight = weight[weight > 0.0]
-                transformed = self.transform(weight)
-                assert len(transformed.shape) == 1
-                assert transformed.shape[0] == weight.shape[0]
-                self.entries += float(transformed.sum())
+    #         if self.transform is identity:
+    #             self.entries += float(weight[weight > 0.0].sum())
+    #         else:
+    #             weight = weight[weight > 0.0]
+    #             transformed = self.transform(weight)
+    #             assert len(transformed.shape) == 1
+    #             assert transformed.shape[0] == weight.shape[0]
+    #             self.entries += float(transformed.sum())
                 
-        elif weight > 0.0:
-            if self.transform is identity:
-                self.entries += float(weight * lengthAssertion)
-            else:
-                self.entries += float(self.transform(numpy.array([weight]))[0] * lengthAssertion)
+    #     elif weight > 0.0:
+    #         if self.transform is identity:
+    #             self.entries += float(weight * lengthAssertion)
+    #         else:
+    #             self.entries += float(self.transform(numpy.array([weight]))[0] * lengthAssertion)
 
     @property
     def children(self):

@@ -224,6 +224,7 @@ class SparselyBin(Factory, Container):
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             q = self.quantity(datum)
             try:
@@ -242,48 +243,48 @@ class SparselyBin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def fillnp(self, data, weight=1.0):
-        """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    # def fillnp(self, data, weight=1.0):
+    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
 
-        This primitive is optimized with Numpy.
+    #     This primitive is optimized with Numpy.
 
-        The container is changed in-place.
-        """
-        self._checkForCrossReferences()
+    #     The container is changed in-place.
+    #     """
+    #     self._checkForCrossReferences()
 
-        import numpy
-        data, weight = self._normalizenp(data, weight)
-        if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-        q = self._computenp(data)
+    #     import numpy
+    #     data, weight = self._normalizenp(data, weight)
+    #     if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
+    #     q = self._computenp(data)
 
-        originalweight = weight
-        length = data.shape[0]
-        selection = numpy.isnan(q)
-        self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+    #     originalweight = weight
+    #     length = data.shape[0]
+    #     selection = numpy.isnan(q)
+    #     self.nanflow.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
         
-        numpy.bitwise_not(selection, selection)
-        data = data[selection]
-        q = q[selection]
-        if isinstance(weight, numpy.ndarray):
-            weight = weight[selection]
+    #     numpy.bitwise_not(selection, selection)
+    #     data = data[selection]
+    #     q = q[selection]
+    #     if isinstance(weight, numpy.ndarray):
+    #         weight = weight[selection]
 
-        q = numpy.array(q, dtype=float)
-        numpy.subtract(q, self.origin, q)
-        numpy.divide(q, self.binWidth, q)
-        numpy.floor(q, q)
-        q = numpy.array(q, dtype=numpy.int64)
+    #     q = numpy.array(q, dtype=float)
+    #     numpy.subtract(q, self.origin, q)
+    #     numpy.divide(q, self.binWidth, q)
+    #     numpy.floor(q, q)
+    #     q = numpy.array(q, dtype=numpy.int64)
 
-        selection = numpy.empty(q.shape, dtype=numpy.bool)
-        for index in numpy.unique(q):
-            bin = self.bins.get(index)
-            if bin is None:
-                bin = self.value.zero()
-                self.bins[index] = bin
+    #     selection = numpy.empty(q.shape, dtype=numpy.bool)
+    #     for index in numpy.unique(q):
+    #         bin = self.bins.get(index)
+    #         if bin is None:
+    #             bin = self.value.zero()
+    #             self.bins[index] = bin
 
-            numpy.equal(q, index, selection)
-            bin.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
+    #         numpy.equal(q, index, selection)
+    #         bin.fillnp(data[selection], weight[selection] if isinstance(weight, numpy.ndarray) else weight)
 
-        self._entriesnp(originalweight, length)
+    #     self._entriesnp(originalweight, length)
 
     @property
     def children(self):
