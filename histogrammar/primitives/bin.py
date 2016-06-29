@@ -249,6 +249,7 @@ class Bin(Factory, Container):
         numpy.bitwise_not(selection, selection)
         q = numpy.array(q, dtype=numpy.float64)
         q[selection] = self.high
+        weights = weights.copy()
         weights[selection] = 0.0
 
         numpy.greater_equal(q, self.low, selection)

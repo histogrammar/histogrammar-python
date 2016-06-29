@@ -245,7 +245,6 @@ class SparselyBin(Factory, Container):
 
     def _numpy(self, data, weights, arrayLength):
         q = self.quantity(data)
-
         arrayLength = self._checkNPQuantity(q, arrayLength)
         self._checkNPWeights(weights, arrayLength)
         weights = self._makeNPWeights(weights, arrayLength)

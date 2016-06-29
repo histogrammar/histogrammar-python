@@ -162,6 +162,9 @@ class Categorize(Factory, Container):
                     self.pairs[x] = self.value.zero()
                 self.pairs[x].fill(x, w)
 
+        # no possibility of exception from here on out (for rollback)
+        self.entries += float(weights.sum())
+
     @property
     def children(self):
         """List of sub-aggregators, to make it possible to walk the tree."""

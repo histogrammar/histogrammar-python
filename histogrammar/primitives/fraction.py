@@ -132,30 +132,22 @@ class Fraction(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    # def fillnp(self, data, weight=1.0):
-    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    def _numpy(self, data, weights, arrayLength):
+        w = self.quantity(data)
+        arrayLength = self._checkNPQuantity(w, arrayLength)
+        self._checkNPWeights(weights, arrayLength)
+        weights = self._makeNPWeights(weights, arrayLength)
 
-    #     This primitive is optimized with Numpy.
+        import numpy
+        w = w * weights
+        w[numpy.isnan(w)] = 0.0
+        w[w < 0.0] = 0.0
 
-    #     The container is changed in-place.
-    #     """
-    #     self._checkForCrossReferences()
+        self.numerator._numpy(data, w, arrayLength)
+        self.denominator._numpy(data, weights, arrayLength)
 
-    #     import numpy
-    #     data, weight = self._normalizenp(data, weight)
-    #     if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-    #     w = self._computenp(data)
-    #     if numpy.issubdtype(w.dtype, numpy.bool_):
-    #         w = numpy.array(w, dtype=float)
-
-    #     numpy.multiply(w, weight, w)
-
-    #     self.denominator.fillnp(data, weight)
-
-    #     selection = (w > 0.0)
-    #     self.numerator.fillnp(data[selection], w[selection])
-
-    #     self._entriesnp(weight, data.shape[0])
+        # no possibility of exception from here on out (for rollback)
+        self.entries += float(weights.sum())
 
     @property
     def children(self):

@@ -174,6 +174,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
         numpy.bitwise_not(selection, selection)
         q = numpy.array(q, dtype=numpy.float64)
         q[selection] = 0.0
+        weights = weights.copy()
         weights[selection] = 0.0
 
         if all(isinstance(v, Count) and v.transform is identity for c, v in self.bins) and numpy.all(numpy.isfinite(q)) and numpy.all(numpy.isfinite(weights)):
