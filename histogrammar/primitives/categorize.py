@@ -149,6 +149,19 @@ class Categorize(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _numpy(self, data, weights, arrayLength):
+        q = self.quantity(data)
+        arrayLength = self._checkNPQuantity(q, arrayLength)
+        self._checkNPWeights(weights, arrayLength)
+        weights = self._makeNPWeights(weights, arrayLength)
+
+        # no possibility of exception from here on out (for rollback)
+        for x, w in zip(q, weights):
+            if w > 0.0:
+                if x not in self.pairs:
+                    self.pairs[x] = self.value.zero()
+                self.pairs[x].fill(x, w)
+
     @property
     def children(self):
         """List of sub-aggregators, to make it possible to walk the tree."""

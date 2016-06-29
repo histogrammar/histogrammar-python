@@ -245,6 +245,7 @@ class SparselyBin(Factory, Container):
 
     def _numpy(self, data, weights, arrayLength):
         q = self.quantity(data)
+
         arrayLength = self._checkNPQuantity(q, arrayLength)
         self._checkNPWeights(weights, arrayLength)
         weights = self._makeNPWeights(weights, arrayLength)
@@ -258,28 +259,31 @@ class SparselyBin(Factory, Container):
         subweights[selection] = 0.0
         self.nanflow._numpy(data, subweights, arrayLength)
 
-        # avoid nan warning in calculations by flinging the nans elsewhere
-        numpy.bitwise_not(selection, selection)
-        q = numpy.array(q, dtype=numpy.float64)
-        q[selection] = 0.0
-        weights[selection] = 0.0
+        q = q.copy()
+        neginfs = numpy.isneginf(q)
+        posinfs = numpy.isposinf(q)
 
         numpy.subtract(q, self.origin, q)
         numpy.divide(q, self.binWidth, q)
         numpy.floor(q, q)
         q = numpy.array(q, dtype=numpy.int64)
+        q[neginfs] = LONG_MINUSINF
+        q[posinfs] = LONG_PLUSINF
+
+        selected = q[weights > 0.0]
 
         selection = numpy.empty(q.shape, dtype=numpy.bool)
-        for index in numpy.unique(q):
-            bin = self.bins.get(index)
-            if bin is None:
-                bin = self.value.zero()
-                self.bins[index] = bin
+        for index in numpy.unique(selected):
+            if index != LONG_NAN:
+                bin = self.bins.get(index)
+                if bin is None:
+                    bin = self.value.zero()
+                    self.bins[index] = bin
 
-            numpy.equal(q, index, selection)
-            subweights[:] = weights
-            subweights[selection] = 0.0
-            bin._numpy(data, subweights, arrayLength)
+                numpy.not_equal(q, index, selection)
+                subweights[:] = weights
+                subweights[selection] = 0.0
+                bin._numpy(data, subweights, arrayLength)
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(newentries)

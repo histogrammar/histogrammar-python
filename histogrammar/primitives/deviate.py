@@ -111,10 +111,19 @@ class Deviate(Factory, Container):
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
-            delta = q - self.mean
-            shift = delta * weight / self.entries
-            self.mean += shift
-            self.varianceTimesEntries += weight * delta * (q - self.mean)
+
+            if math.isinf(self.mean) and math.isinf(q):
+                if self.mean * q > 0.0:       # same sign
+                    pass                      # it's still infinite (variance should follow suit)
+                else:
+                    self.mean = float("nan")  # mean of -inf and inf is nan
+                    self.varianceTimesEntries = float("nan")
+
+            else:                             # handle finite case
+                delta = q - self.mean
+                shift = delta * weight / self.entries
+                self.mean += shift
+                self.varianceTimesEntries += weight * delta * (q - self.mean)
 
     def _numpy(self, data, weights, arrayLength):
         q = self.quantity(data)

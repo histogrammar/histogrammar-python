@@ -213,26 +213,8 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
             self.clustering.update(q, datum, weight)
 
-    # def _numpy(self, data, weights, arrayLength):
-    #     q = self.quantity(data)
-    #     arrayLength = self._checkNPQuantity(q, arrayLength)
-    #     self._checkNPWeights(weights, arrayLength)
-    #     weights = self._makeNPWeights(weights, arrayLength)
-
-    #     # save the rollback feature: copy the clustering with countOnly=True
-    #     clusteringCopy = self.clustering.copy(True)
-    #     subweights = {}
-
-    #     for i, (x, w) in enumerate(zip(q, weights)):
-    #         if w > 0.0:
-    #             v = clusteringCopy.update(x, None, w, True)
-    #             if v not in subweights:
-    #                 subweights[v] = numpy.zeros(arrayLength, dtype=numpy.float64)
-    #             subweights[v][i] = w
-
-    #     for v, subw in subweights.items():
-            
-
+    def _numpy(self, data, weights, arrayLength):
+        raise NotImplementedError("AdaptivelyBin cannot be filled with Numpy because it combines order-dependence with nesting")
 
     @property
     def children(self):

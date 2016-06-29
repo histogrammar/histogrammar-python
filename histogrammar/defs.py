@@ -146,26 +146,6 @@ class Container(object):
             for child in self.children:
                 child._checkForCrossReferences(memo)
             self._checkedForCrossReferences = True
-        
-    # def _entrynp(self, q, weight):
-    #     import numpy
-    #     if isinstance(weight, numpy.ndarray):
-    #         q = numpy.array(q, dtype=float)
-    #         weight = numpy.array(weight, dtype=float)
-    #         weightselection = weight > 0.0
-    #         numpy.bitwise_not(weightselection, weightselection)
-    #         q[weightselection] = 0.0
-    #         weight[weightselection] = 0.0
-    #     else:
-    #         weight = numpy.ones(q.shape, dtype=float)
-    #     return q, weight
-
-    # def _checknp(self, q, weight):
-    #     import numpy
-    #     assert isinstance(q, numpy.ndarray)
-    #     assert isinstance(weight, numpy.ndarray)
-    #     assert len(q.shape) == 1
-    #     assert q.shape == weight.shape
 
     def toJson(self):
         """Convert this container to dicts and lists representing JSON (dropping its ``fill`` method).
@@ -189,6 +169,8 @@ class Container(object):
                 arrayLength = weights.shape[0]
             else:
                 assert weights.shape[0] == arrayLength
+
+            original = weights
 
             weights = numpy.array(weights, dtype=numpy.float64)
             weights[numpy.isnan(weights)] = 0.0
