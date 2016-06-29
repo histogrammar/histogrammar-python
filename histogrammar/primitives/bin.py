@@ -235,9 +235,43 @@ class Bin(Factory, Container):
         arrayLength = self._checkNPQuantity(q, arrayLength)
         weights = self._checkNPWeights(weights, arrayLength)
 
+        # no possibility of exception from here on out (for rollback)
         import numpy
-        
 
+        selection2 = numpy.isnan(q)
+        selection = numpy.bitwise_not(selection2)
+        subweights = weights.copy()
+        subweights[selection] = 0.0
+        self.nanflow._numpy(data, subweights, arrayLength)
+
+        q[selection2] = self.high
+
+        numpy.greater_equal(q, self.low, selection)
+        subweights = weights.copy()
+        subweights[selection] = 0.0
+        subweights[selection2] = 0.0
+        self.underflow._numpy(data, subweights, arrayLength)
+
+        numpy.less(q, self.high, selection)
+        subweights = weights.copy()
+        subweights[selection] = 0.0
+        subweights[selection2] = 0.0
+        self.overflow._numpy(data, subweights, arrayLength)
+
+        q = numpy.array(q, dtype=numpy.float64)
+        numpy.subtract(q, self.low, q)
+        numpy.multiply(q, self.num, q)
+        numpy.divide(q, self.high - self.low, q)
+        numpy.floor(q, q)
+        q = numpy.array(q, dtype=int)
+
+        for index, value in enumerate(self.values):
+            numpy.not_equal(q, index, selection)
+            subweights = weights.copy()
+            subweights[selection] = 0.0
+            value._numpy(data, subweights, arrayLength)
+
+        self.entries += float(weights.sum())
 
     # @staticmethod
     # def _count_nonzero(arr):

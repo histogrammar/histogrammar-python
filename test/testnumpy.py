@@ -125,163 +125,142 @@ class TestEverything(unittest.TestCase):
     Sum(lambda x: x["empty"]**3).numpy(data)
     Sum(lambda x: x["empty"]**3).numpy(data)
 
-    def testSum(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            self.compare("Sum no data", Sum(lambda x: x["empty"]**3), self.data, Sum(lambda x: x**3), self.empty, 1.0)
-            self.compare("Sum noholes w/o weights", Sum(lambda x: x["noholes"]**3), self.data, Sum(lambda x: x**3), self.noholes, 1.0)
-            self.compare("Sum noholes const weights", Sum(lambda x: x["noholes"]**3), self.data, Sum(lambda x: x**3), self.noholes, 0.5)
-            self.compare("Sum noholes positive weights", Sum(lambda x: x["noholes"]**3), self.data, Sum(lambda x: x**3), self.noholes, self.positive)
-            self.compare("Sum noholes with weights", Sum(lambda x: x["noholes"]**3), self.data, Sum(lambda x: x**3), self.noholes, self.noholes)
-            self.compare("Sum noholes with holes", Sum(lambda x: x["noholes"]**3), self.data, Sum(lambda x: x**3), self.noholes, self.withholes)
-            self.compare("Sum holes w/o weights", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, 1.0)
-            self.compare("Sum holes const weights", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, 0.5)
-            self.compare("Sum holes positive weights", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, self.positive)
-            self.compare("Sum holes with weights", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, self.noholes)
-            self.compare("Sum holes with holes", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, self.withholes)
-            self.compare("Sum holes with holes2", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, self.withholes2)
-
-    def testAverage(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            self.compare("Average no data", Average(lambda x: x["empty"]**3), self.data, Average(lambda x: x**3), self.empty, 1.0)
-            self.compare("Average noholes w/o weights", Average(lambda x: x["noholes"]**3), self.data, Average(lambda x: x**3), self.noholes, 1.0)
-            self.compare("Average noholes const weights", Average(lambda x: x["noholes"]**3), self.data, Average(lambda x: x**3), self.noholes, 0.5)
-            self.compare("Average noholes positive weights", Average(lambda x: x["noholes"]**3), self.data, Average(lambda x: x**3), self.noholes, self.positive)
-            self.compare("Average noholes with weights", Average(lambda x: x["noholes"]**3), self.data, Average(lambda x: x**3), self.noholes, self.noholes)
-            self.compare("Average noholes with holes", Average(lambda x: x["noholes"]**3), self.data, Average(lambda x: x**3), self.noholes, self.withholes)
-            self.compare("Average holes w/o weights", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, 1.0)
-            self.compare("Average holes const weights", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, 0.5)
-            self.compare("Average holes positive weights", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, self.positive)
-            self.compare("Average holes with weights", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, self.noholes)
-            self.compare("Average holes with holes", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, self.withholes)
-            self.compare("Average holes with holes2", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, self.withholes2)
-
-    def testDeviate(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            self.compare("Deviate no data", Deviate(lambda x: x["empty"]**3), self.data, Deviate(lambda x: x**3), self.empty, 1.0)
-            self.compare("Deviate noholes w/o weights", Deviate(lambda x: x["noholes"]**3), self.data, Deviate(lambda x: x**3), self.noholes, 1.0)
-            self.compare("Deviate noholes const weights", Deviate(lambda x: x["noholes"]**3), self.data, Deviate(lambda x: x**3), self.noholes, 0.5)
-            self.compare("Deviate noholes positive weights", Deviate(lambda x: x["noholes"]**3), self.data, Deviate(lambda x: x**3), self.noholes, self.positive)
-            self.compare("Deviate noholes with weights", Deviate(lambda x: x["noholes"]**3), self.data, Deviate(lambda x: x**3), self.noholes, self.noholes)
-            self.compare("Deviate noholes with holes", Deviate(lambda x: x["noholes"]**3), self.data, Deviate(lambda x: x**3), self.noholes, self.withholes)
-            self.compare("Deviate holes w/o weights", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, 1.0)
-            self.compare("Deviate holes const weights", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, 0.5)
-            self.compare("Deviate holes positive weights", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, self.positive)
-            self.compare("Deviate holes with weights", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, self.noholes)
-            self.compare("Deviate holes with holes", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, self.withholes)
-            self.compare("Deviate holes with holes2", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, self.withholes2)
-
-    def testAbsoluteErr(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            self.compare("AbsoluteErr no data", AbsoluteErr(lambda x: x["empty"]**3), self.data, AbsoluteErr(lambda x: x**3), self.empty, 1.0)
-            self.compare("AbsoluteErr noholes w/o weights", AbsoluteErr(lambda x: x["noholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.noholes, 1.0)
-            self.compare("AbsoluteErr noholes const weights", AbsoluteErr(lambda x: x["noholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.noholes, 0.5)
-            self.compare("AbsoluteErr noholes positive weights", AbsoluteErr(lambda x: x["noholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.noholes, self.positive)
-            self.compare("AbsoluteErr noholes with weights", AbsoluteErr(lambda x: x["noholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.noholes, self.noholes)
-            self.compare("AbsoluteErr noholes with holes", AbsoluteErr(lambda x: x["noholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.noholes, self.withholes)
-            self.compare("AbsoluteErr holes w/o weights", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, 1.0)
-            self.compare("AbsoluteErr holes const weights", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, 0.5)
-            self.compare("AbsoluteErr holes positive weights", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, self.positive)
-            self.compare("AbsoluteErr holes with weights", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, self.noholes)
-            self.compare("AbsoluteErr holes with holes", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, self.withholes)
-            self.compare("AbsoluteErr holes with holes2", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, self.withholes2)
-
-    def testMinimize(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            self.compare("Minimize no data", Minimize(lambda x: x["empty"]**3), self.data, Minimize(lambda x: x**3), self.empty, 1.0)
-            self.compare("Minimize noholes w/o weights", Minimize(lambda x: x["noholes"]**3), self.data, Minimize(lambda x: x**3), self.noholes, 1.0)
-            self.compare("Minimize noholes const weights", Minimize(lambda x: x["noholes"]**3), self.data, Minimize(lambda x: x**3), self.noholes, 0.5)
-            self.compare("Minimize noholes positive weights", Minimize(lambda x: x["noholes"]**3), self.data, Minimize(lambda x: x**3), self.noholes, self.positive)
-            self.compare("Minimize noholes with weights", Minimize(lambda x: x["noholes"]**3), self.data, Minimize(lambda x: x**3), self.noholes, self.noholes)
-            self.compare("Minimize noholes with holes", Minimize(lambda x: x["noholes"]**3), self.data, Minimize(lambda x: x**3), self.noholes, self.withholes)
-            self.compare("Minimize holes w/o weights", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, 1.0)
-            self.compare("Minimize holes const weights", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, 0.5)
-            self.compare("Minimize holes positive weights", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, self.positive)
-            self.compare("Minimize holes with weights", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, self.noholes)
-            self.compare("Minimize holes with holes", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, self.withholes)
-            self.compare("Minimize holes with holes2", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, self.withholes2)
-
-    def testMaximize(self):
-        with Numpy() as numpy:
-            sys.stderr.write("\n")
-            self.compare("Maximize no data", Maximize(lambda x: x["empty"]**3), self.data, Maximize(lambda x: x**3), self.empty, 1.0)
-            self.compare("Maximize noholes w/o weights", Maximize(lambda x: x["noholes"]**3), self.data, Maximize(lambda x: x**3), self.noholes, 1.0)
-            self.compare("Maximize noholes const weights", Maximize(lambda x: x["noholes"]**3), self.data, Maximize(lambda x: x**3), self.noholes, 0.5)
-            self.compare("Maximize noholes positive weights", Maximize(lambda x: x["noholes"]**3), self.data, Maximize(lambda x: x**3), self.noholes, self.positive)
-            self.compare("Maximize noholes with weights", Maximize(lambda x: x["noholes"]**3), self.data, Maximize(lambda x: x**3), self.noholes, self.noholes)
-            self.compare("Maximize noholes with holes", Maximize(lambda x: x["noholes"]**3), self.data, Maximize(lambda x: x**3), self.noholes, self.withholes)
-            self.compare("Maximize holes w/o weights", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, 1.0)
-            self.compare("Maximize holes const weights", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, 0.5)
-            self.compare("Maximize holes positive weights", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, self.positive)
-            self.compare("Maximize holes with weights", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, self.noholes)
-            self.compare("Maximize holes with holes", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, self.withholes)
-            self.compare("Maximize holes with holes2", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, self.withholes2)
-
-
-
-
-
-    # def testBin(self):
+    # def testSum(self):
     #     with Numpy() as numpy:
     #         sys.stderr.write("\n")
-    #         for bins in [10, 100, 1000]:
-    #             self.compare("Bin ({0} bins) no data".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["empty"]**3), self.data, 1.0, Bin(bins, -3.0, 3.0, lambda x: x**3), self.empty)
-    #             self.compare("Bin ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, 1.0, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes)
-    #             self.compare("Bin ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, self.positive, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes)
-    #             self.compare("Bin ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, self.noholes, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes)
-    #             self.compare("Bin ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, self.withholes, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes)
-    #             self.compare("Bin ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, 1.0, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes)
-    #             self.compare("Bin ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, self.positive, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes)
-    #             self.compare("Bin ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, self.noholes, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes)
-    #             self.compare("Bin ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, self.withholes, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes)
+    #         self.compare("Sum no data", Sum(lambda x: x["empty"]**3), self.data, Sum(lambda x: x**3), self.empty, 1.0)
+    #         self.compare("Sum noholes w/o weights", Sum(lambda x: x["noholes"]**3), self.data, Sum(lambda x: x**3), self.noholes, 1.0)
+    #         self.compare("Sum noholes const weights", Sum(lambda x: x["noholes"]**3), self.data, Sum(lambda x: x**3), self.noholes, 0.5)
+    #         self.compare("Sum noholes positive weights", Sum(lambda x: x["noholes"]**3), self.data, Sum(lambda x: x**3), self.noholes, self.positive)
+    #         self.compare("Sum noholes with weights", Sum(lambda x: x["noholes"]**3), self.data, Sum(lambda x: x**3), self.noholes, self.noholes)
+    #         self.compare("Sum noholes with holes", Sum(lambda x: x["noholes"]**3), self.data, Sum(lambda x: x**3), self.noholes, self.withholes)
+    #         self.compare("Sum holes w/o weights", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, 1.0)
+    #         self.compare("Sum holes const weights", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, 0.5)
+    #         self.compare("Sum holes positive weights", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, self.positive)
+    #         self.compare("Sum holes with weights", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, self.noholes)
+    #         self.compare("Sum holes with holes", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, self.withholes)
+    #         self.compare("Sum holes with holes2", Sum(lambda x: x["withholes"]**3), self.data, Sum(lambda x: x**3), self.withholes, self.withholes2)
 
-
-
-
-
-
-
-
-    # def testBin(self):
+    # def testAverage(self):
     #     with Numpy() as numpy:
     #         sys.stderr.write("\n")
-    #         for bins in [10, 100, 1000]:
-    #             self.compare("Bin no data", Bin(bins, -3.0, 3.0, lambda x: x["empty"]**3), self.data, 1.0, Bin(bins, -3.0, 3.0, lambda x: x**3), self.empty)
-    #             self.compare("Bin noholes w/o weights", Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, 1.0, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes)
-    #             self.compare("Bin noholes const weight", Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, 1.5, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes)
-    #             self.compare("Bin noholes positive weights", Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, self.positive, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes)
-    #             self.compare("Bin noholes with weights", Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, self.noholes, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes)
-    #             self.compare("Bin noholes with holes", Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, self.withholes, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes)
-    #             self.compare("Bin holes w/o weights", Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, 1.0, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes)
-    #             self.compare("Bin holes const weight", Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, 1.5, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes)
-    #             self.compare("Bin holes positive weights", Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, self.positive, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes)
-    #             self.compare("Bin holes with weights", Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, self.noholes, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes)
-    #             self.compare("Bin holes with holes", Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, self.withholes, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes)
-    #             self.assertRaises(AssertionError, lambda: Bin(bins, -3.0, 3.0, lambda x: x[:self.SIZE//2]).fillnp(self.noholes, lengthAssertion=self.SIZE))
-    #             self.assertRaises(AssertionError, lambda: Bin(bins, -3.0, 3.0, lambda x: x["noholes"]).fillnp(self.data, self.noholes[:self.SIZE//2], lengthAssertion=self.SIZE))
+    #         self.compare("Average no data", Average(lambda x: x["empty"]**3), self.data, Average(lambda x: x**3), self.empty, 1.0)
+    #         self.compare("Average noholes w/o weights", Average(lambda x: x["noholes"]**3), self.data, Average(lambda x: x**3), self.noholes, 1.0)
+    #         self.compare("Average noholes const weights", Average(lambda x: x["noholes"]**3), self.data, Average(lambda x: x**3), self.noholes, 0.5)
+    #         self.compare("Average noholes positive weights", Average(lambda x: x["noholes"]**3), self.data, Average(lambda x: x**3), self.noholes, self.positive)
+    #         self.compare("Average noholes with weights", Average(lambda x: x["noholes"]**3), self.data, Average(lambda x: x**3), self.noholes, self.noholes)
+    #         self.compare("Average noholes with holes", Average(lambda x: x["noholes"]**3), self.data, Average(lambda x: x**3), self.noholes, self.withholes)
+    #         self.compare("Average holes w/o weights", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, 1.0)
+    #         self.compare("Average holes const weights", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, 0.5)
+    #         self.compare("Average holes positive weights", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, self.positive)
+    #         self.compare("Average holes with weights", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, self.noholes)
+    #         self.compare("Average holes with holes", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, self.withholes)
+    #         self.compare("Average holes with holes2", Average(lambda x: x["withholes"]**3), self.data, Average(lambda x: x**3), self.withholes, self.withholes2)
 
-    # def testBin(self):
+    # def testDeviate(self):
     #     with Numpy() as numpy:
-    #         good = lambda x: x**3
     #         sys.stderr.write("\n")
-    #         for bins in [10, 100, 1000]:
-    #             self.compare("Bin ({0} bins) no data".format(bins), Bin(bins, -3.0, 3.0, good), self.empty)
-    #             self.compare("Bin ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, good), self.noholes)
-    #             self.compare("Bin ({0} bins) noholes const weight".format(bins), Bin(bins, -3.0, 3.0, good), self.noholes, 1.5)
-    #             self.compare("Bin ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, good), self.noholes, self.positive)
-    #             self.compare("Bin ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, good), self.noholes, self.noholes)
-    #             self.compare("Bin ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, good), self.noholes, self.withholes)
-    #             self.compare("Bin ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes)
-    #             self.compare("Bin ({0} bins) holes const weight".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes, 1.5)
-    #             self.compare("Bin ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes, self.positive)
-    #             self.compare("Bin ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes, self.noholes)
-    #             self.compare("Bin ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, good), self.withholes, self.withholes)
-    #             self.assertRaises(AssertionError, lambda: Bin(bins, -3.0, 3.0, lambda x: x[:self.SIZE//2]).fillnp(self.noholes))
-    #             self.assertRaises(AssertionError, lambda: Bin(bins, -3.0, 3.0, good).fillnp(self.noholes, self.noholes[:self.SIZE//2]))
+    #         self.compare("Deviate no data", Deviate(lambda x: x["empty"]**3), self.data, Deviate(lambda x: x**3), self.empty, 1.0)
+    #         self.compare("Deviate noholes w/o weights", Deviate(lambda x: x["noholes"]**3), self.data, Deviate(lambda x: x**3), self.noholes, 1.0)
+    #         self.compare("Deviate noholes const weights", Deviate(lambda x: x["noholes"]**3), self.data, Deviate(lambda x: x**3), self.noholes, 0.5)
+    #         self.compare("Deviate noholes positive weights", Deviate(lambda x: x["noholes"]**3), self.data, Deviate(lambda x: x**3), self.noholes, self.positive)
+    #         self.compare("Deviate noholes with weights", Deviate(lambda x: x["noholes"]**3), self.data, Deviate(lambda x: x**3), self.noholes, self.noholes)
+    #         self.compare("Deviate noholes with holes", Deviate(lambda x: x["noholes"]**3), self.data, Deviate(lambda x: x**3), self.noholes, self.withholes)
+    #         self.compare("Deviate holes w/o weights", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, 1.0)
+    #         self.compare("Deviate holes const weights", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, 0.5)
+    #         self.compare("Deviate holes positive weights", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, self.positive)
+    #         self.compare("Deviate holes with weights", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, self.noholes)
+    #         self.compare("Deviate holes with holes", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, self.withholes)
+    #         self.compare("Deviate holes with holes2", Deviate(lambda x: x["withholes"]**3), self.data, Deviate(lambda x: x**3), self.withholes, self.withholes2)
+
+    # def testAbsoluteErr(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         self.compare("AbsoluteErr no data", AbsoluteErr(lambda x: x["empty"]**3), self.data, AbsoluteErr(lambda x: x**3), self.empty, 1.0)
+    #         self.compare("AbsoluteErr noholes w/o weights", AbsoluteErr(lambda x: x["noholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.noholes, 1.0)
+    #         self.compare("AbsoluteErr noholes const weights", AbsoluteErr(lambda x: x["noholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.noholes, 0.5)
+    #         self.compare("AbsoluteErr noholes positive weights", AbsoluteErr(lambda x: x["noholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.noholes, self.positive)
+    #         self.compare("AbsoluteErr noholes with weights", AbsoluteErr(lambda x: x["noholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.noholes, self.noholes)
+    #         self.compare("AbsoluteErr noholes with holes", AbsoluteErr(lambda x: x["noholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.noholes, self.withholes)
+    #         self.compare("AbsoluteErr holes w/o weights", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, 1.0)
+    #         self.compare("AbsoluteErr holes const weights", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, 0.5)
+    #         self.compare("AbsoluteErr holes positive weights", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, self.positive)
+    #         self.compare("AbsoluteErr holes with weights", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, self.noholes)
+    #         self.compare("AbsoluteErr holes with holes", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, self.withholes)
+    #         self.compare("AbsoluteErr holes with holes2", AbsoluteErr(lambda x: x["withholes"]**3), self.data, AbsoluteErr(lambda x: x**3), self.withholes, self.withholes2)
+
+    # def testMinimize(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         self.compare("Minimize no data", Minimize(lambda x: x["empty"]**3), self.data, Minimize(lambda x: x**3), self.empty, 1.0)
+    #         self.compare("Minimize noholes w/o weights", Minimize(lambda x: x["noholes"]**3), self.data, Minimize(lambda x: x**3), self.noholes, 1.0)
+    #         self.compare("Minimize noholes const weights", Minimize(lambda x: x["noholes"]**3), self.data, Minimize(lambda x: x**3), self.noholes, 0.5)
+    #         self.compare("Minimize noholes positive weights", Minimize(lambda x: x["noholes"]**3), self.data, Minimize(lambda x: x**3), self.noholes, self.positive)
+    #         self.compare("Minimize noholes with weights", Minimize(lambda x: x["noholes"]**3), self.data, Minimize(lambda x: x**3), self.noholes, self.noholes)
+    #         self.compare("Minimize noholes with holes", Minimize(lambda x: x["noholes"]**3), self.data, Minimize(lambda x: x**3), self.noholes, self.withholes)
+    #         self.compare("Minimize holes w/o weights", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, 1.0)
+    #         self.compare("Minimize holes const weights", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, 0.5)
+    #         self.compare("Minimize holes positive weights", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, self.positive)
+    #         self.compare("Minimize holes with weights", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, self.noholes)
+    #         self.compare("Minimize holes with holes", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, self.withholes)
+    #         self.compare("Minimize holes with holes2", Minimize(lambda x: x["withholes"]**3), self.data, Minimize(lambda x: x**3), self.withholes, self.withholes2)
+
+    # def testMaximize(self):
+    #     with Numpy() as numpy:
+    #         sys.stderr.write("\n")
+    #         self.compare("Maximize no data", Maximize(lambda x: x["empty"]**3), self.data, Maximize(lambda x: x**3), self.empty, 1.0)
+    #         self.compare("Maximize noholes w/o weights", Maximize(lambda x: x["noholes"]**3), self.data, Maximize(lambda x: x**3), self.noholes, 1.0)
+    #         self.compare("Maximize noholes const weights", Maximize(lambda x: x["noholes"]**3), self.data, Maximize(lambda x: x**3), self.noholes, 0.5)
+    #         self.compare("Maximize noholes positive weights", Maximize(lambda x: x["noholes"]**3), self.data, Maximize(lambda x: x**3), self.noholes, self.positive)
+    #         self.compare("Maximize noholes with weights", Maximize(lambda x: x["noholes"]**3), self.data, Maximize(lambda x: x**3), self.noholes, self.noholes)
+    #         self.compare("Maximize noholes with holes", Maximize(lambda x: x["noholes"]**3), self.data, Maximize(lambda x: x**3), self.noholes, self.withholes)
+    #         self.compare("Maximize holes w/o weights", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, 1.0)
+    #         self.compare("Maximize holes const weights", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, 0.5)
+    #         self.compare("Maximize holes positive weights", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, self.positive)
+    #         self.compare("Maximize holes with weights", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, self.noholes)
+    #         self.compare("Maximize holes with holes", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, self.withholes)
+    #         self.compare("Maximize holes with holes2", Maximize(lambda x: x["withholes"]**3), self.data, Maximize(lambda x: x**3), self.withholes, self.withholes2)
+
+    def testBin(self):
+        with Numpy() as numpy:
+            sys.stderr.write("\n")
+            for bins in [10, 100, 1000]:
+                self.compare("Bin ({0} bins) no data".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["empty"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.empty, 1.0)
+                self.compare("Bin ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes, 1.0)
+                self.compare("Bin ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes, 0.5)
+                self.compare("Bin ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes, self.positive)
+                self.compare("Bin ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes, self.noholes)
+                self.compare("Bin ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.noholes, self.withholes)
+                self.compare("Bin ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes, 1.0)
+                self.compare("Bin ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes, 0.5)
+                self.compare("Bin ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes, self.positive)
+                self.compare("Bin ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes, self.noholes)
+                self.compare("Bin ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes, self.withholes)
+                self.compare("Bin ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3), self.withholes, self.withholes2)
+
+    def testBinSum(self):
+        with Numpy() as numpy:
+            sys.stderr.write("\n")
+            for bins in [10, 100, 1000]:
+                self.compare("BinSum ({0} bins) no data".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["empty"]**3, Sum(lambda x: x["empty"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.empty, 1.0)
+                self.compare("BinSum ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3, Sum(lambda x: x["noholes"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.noholes, 1.0)
+                self.compare("BinSum ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3, Sum(lambda x: x["noholes"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.noholes, 0.5)
+                self.compare("BinSum ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3, Sum(lambda x: x["noholes"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.noholes, self.positive)
+                self.compare("BinSum ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3, Sum(lambda x: x["noholes"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.noholes, self.noholes)
+                self.compare("BinSum ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["noholes"]**3, Sum(lambda x: x["noholes"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.noholes, self.withholes)
+                self.compare("BinSum ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3, Sum(lambda x: x["withholes"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.withholes, 1.0)
+                self.compare("BinSum ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3, Sum(lambda x: x["withholes"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.withholes, 0.5)
+                self.compare("BinSum ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3, Sum(lambda x: x["withholes"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.withholes, self.positive)
+                self.compare("BinSum ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3, Sum(lambda x: x["withholes"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.withholes, self.noholes)
+                self.compare("BinSum ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3, Sum(lambda x: x["withholes"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.withholes, self.withholes)
+                self.compare("BinSum ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, lambda x: x["withholes"]**3, Sum(lambda x: x["withholes"]**3)), self.data, Bin(bins, -3.0, 3.0, lambda x: x**3, Sum(lambda x: x**3)), self.withholes, self.withholes2)
+
+
+
+
+
+
+
 
     # def testSparselyBin(self):
     #     with Numpy() as numpy:
