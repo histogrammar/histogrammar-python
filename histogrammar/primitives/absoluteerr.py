@@ -104,7 +104,8 @@ class AbsoluteErr(Factory, Container):
     def _numpy(self, data, weights, arrayLength):
         q = self.quantity(data)
         arrayLength = self._checkNPQuantity(q, arrayLength)
-        weights = self._checkNPWeights(weights, arrayLength)
+        self._checkNPWeights(weights, arrayLength)
+        weights = self._makeNPWeights(weights, arrayLength)
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(weights.sum())

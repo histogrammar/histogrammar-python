@@ -214,9 +214,13 @@ class Container(object):
         if isinstance(weights, numpy.ndarray):
             assert len(weights.shape) == 1
             assert weights.shape[0] == arrayLength
+
+    def _makeNPWeights(self, weights, arrayLength):
+        import numpy
+        if isinstance(weights, numpy.ndarray):
+            return weights
         else:
-            weights = weights * numpy.ones(arrayLength, dtype=numpy.float64)
-        return weights
+            return weights * numpy.ones(arrayLength, dtype=numpy.float64)
 
 # default weight
 
