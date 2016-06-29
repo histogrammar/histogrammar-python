@@ -243,6 +243,49 @@ class SparselyBin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _numpy(self, data, weights, arrayLength):
+        q = self.quantity(data)
+        arrayLength = self._checkNPQuantity(q, arrayLength)
+        self._checkNPWeights(weights, arrayLength)
+        weights = self._makeNPWeights(weights, arrayLength)
+        newentries = weights.sum()
+
+        import numpy
+
+        selection = numpy.isnan(q)
+        numpy.bitwise_not(selection, selection)
+        subweights = weights.copy()
+        subweights[selection] = 0.0
+        self.nanflow._numpy(data, subweights, arrayLength)
+
+        # avoid nan warning in calculations by flinging the nans elsewhere
+        numpy.bitwise_not(selection, selection)
+        q = numpy.array(q, dtype=numpy.float64)
+        q[selection] = 0.0
+        weights[selection] = 0.0
+
+        numpy.subtract(q, self.origin, q)
+        numpy.divide(q, self.binWidth, q)
+        numpy.floor(q, q)
+        q = numpy.array(q, dtype=numpy.int64)
+
+        selection = numpy.empty(q.shape, dtype=numpy.bool)
+        subweights = weights.copy()
+        for index in numpy.unique(q):
+            bin = self.bins.get(index)
+            if bin is None:
+                bin = self.value.zero()
+                self.bins[index] = bin
+
+            numpy.equal(q, index, selection)
+            subweights[:] = weights
+            subweights[selection] = 0.0
+            bin._numpy(data, subweights, arrayLength)
+
+        # no possibility of exception from here on out (for rollback)
+        self.entries += float(newentries)
+
+        
     # def fillnp(self, data, weight=1.0):
     #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
 

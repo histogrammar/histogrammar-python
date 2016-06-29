@@ -247,6 +247,7 @@ class Bin(Factory, Container):
 
         # avoid nan warning in calculations by flinging the nans elsewhere
         numpy.bitwise_not(selection, selection)
+        q = numpy.array(q, dtype=numpy.float64)
         q[selection] = self.high
         weights[selection] = 0.0
 
