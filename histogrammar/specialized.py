@@ -101,6 +101,10 @@ class HistogramMethods(Bin,
     def numericalNanflow(self):
         return self.nanflow.entries
 
+    def confidenceIntervalValues(self,absz=1.0): 
+        from math import sqrt
+        return map(lambda v: absz*sqrt(v), self.numericalValues)
+
 class SparselyHistogramMethods(SparselyBin,
         histogrammar.plot.root.SparselyHistogramMethods,
         histogrammar.plot.bokeh.SparselyHistogramMethods):

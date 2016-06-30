@@ -41,8 +41,9 @@ class HistogramMethods(object):
             x.append(center+bin_width/2)
             center += bin_width
         y = self.numericalValues
+        ci = [2.*v for v in self.confidenceIntervalValues()]
 
-        source = ColumnDataSource(data=dict(x=x, y=y))
+        source = ColumnDataSource(data=dict(x=x, y=y, ci=ci))
 
         glyph = None
         if glyphType == "square": glyph = Square(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)   
@@ -51,6 +52,8 @@ class HistogramMethods(object):
         elif glyphType == "triangle": glyph = Triangle(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
         elif glyphType == "circle": glyph = Circle(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
         elif glyphType == "rect": glyph = Rect(x='x', y='y', width=bin_width, height=0.1, fill_alpha=fillAlpha, line_color=lineColor, fill_color=fillColor)
+        elif glyphType == "errors": 
+            glyph = Rect(x='x', y='y', width=bin_width, height='ci', fill_alpha=fillAlpha, line_color=lineColor, fill_color=fillColor)
         elif glyphType == "histogram": 
             h = y
             y = [yy/2 for yy in y]
