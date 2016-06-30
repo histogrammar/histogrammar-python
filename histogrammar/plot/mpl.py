@@ -95,7 +95,10 @@ class SparselyHistogramMethods(object):
 
 class ProfileMethods(object):
     def matplotlib(self, name=None, **kwargs):
-        """ Plotting method for
+        """ Plotting method for Bin of Average
+              kwargs : matplotlib.collections.LineCollection properties.
+
+            Returns a matplotlib.axes instance
         """
         import matplotlib.pyplot as plt
         import numpy as np
@@ -117,7 +120,10 @@ class ProfileMethods(object):
 
 class SparselyProfileMethods(object):
     def matplotlib(self, name=None, **kwargs):
-        """ Plotting method for
+        """ Plotting method for SparselyBin of Average
+              kwargs : matplotlib.collections.LineCollection properties.
+
+            Returns a matplotlib.axes instance
         """
         import matplotlib.pyplot as plt
         import numpy as np
@@ -140,8 +146,7 @@ class SparselyProfileMethods(object):
             ax.set_title(name)
         else:
             ax.set_title(self.name)
-        #return ax
-        return xmins, xmaxs, means
+        return ax
 
 class ProfileErrMethods(object):
     def matplotlib(self, name=None, **kwargs):
