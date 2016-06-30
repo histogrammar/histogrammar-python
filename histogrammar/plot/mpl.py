@@ -43,6 +43,7 @@ def set2Dsparse(sparse, yminBin, ymaxBin, grid):
 class HistogramMethods(object):
     def matplotlib(self, name=None, **kwargs):
         """
+            name : title of the plot.
             kwargs :  `matplotlib.patches.Rectangle` properties.
 
             Returns a matplotlib.axes instance
@@ -69,6 +70,7 @@ class HistogramMethods(object):
 class SparselyHistogramMethods(object):
     def matplotlib(self, name=None, **kwargs):
         """
+            name : title of the plot.
             kwargs :  `matplotlib.patches.Rectangle` properties.
 
             Returns a matplotlib.axes instance
@@ -96,6 +98,7 @@ class SparselyHistogramMethods(object):
 class ProfileMethods(object):
     def matplotlib(self, name=None, **kwargs):
         """ Plotting method for Bin of Average
+              name : title of the plot.
               kwargs : matplotlib.collections.LineCollection properties.
 
             Returns a matplotlib.axes instance
@@ -121,6 +124,7 @@ class ProfileMethods(object):
 class SparselyProfileMethods(object):
     def matplotlib(self, name=None, **kwargs):
         """ Plotting method for SparselyBin of Average
+              name : title of the plot.
               kwargs : matplotlib.collections.LineCollection properties.
 
             Returns a matplotlib.axes instance
@@ -151,6 +155,7 @@ class SparselyProfileMethods(object):
 class ProfileErrMethods(object):
     def matplotlib(self, name=None, **kwargs):
         """ Plotting method for Bin of Deviate
+              name : title of the plot.
               kwargs :  `matplotlib.collections.LineCollection` properties.
 
             Returns a matplotlib.axes instance
@@ -248,6 +253,7 @@ class FractionedHistogramMethods(object):
 class TwoDimensionallyHistogramMethods(object):
     def matplotlib(self, name=None, **kwargs):
         """ Plotting method for Bin of Bin of Count
+              name : title of the plot.
               kwargs: matplotlib.collections.QuadMesh properties.
 
             Returns a matplotlib.axes instance
@@ -279,6 +285,7 @@ class TwoDimensionallyHistogramMethods(object):
 class SparselyTwoDimensionallyHistogramMethods(object):
     def matplotlib(self, name=None, **kwargs):
         """ Plotting method for SparselyBin of SparselyBin of Count
+              name : title of the plot.
               kwargs: matplotlib.collections.QuadMesh properties.
 
             Returns a matplotlib.axes instance
