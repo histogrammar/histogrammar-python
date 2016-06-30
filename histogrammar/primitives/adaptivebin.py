@@ -60,7 +60,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
             nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
 
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(num, (int, long)):
             raise TypeError("num ({0}) must be an integer".format(num))
@@ -70,9 +70,9 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
             raise TypeError("contentType ({0}) must be a string".format(contentType))
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
             raise TypeError("bins ({0}) must be a list of number, Container pairs".format(bins))
-        if not isinstance(min, (int, long, float)):
+        if not isinstance(min, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("min ({0}) must be a number".format(min))
-        if not isinstance(max, (int, long, float)):
+        if not isinstance(max, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("max ({0}) must be a number".format(max))
         if not isinstance(nanflow, Container):
             raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
@@ -86,8 +86,8 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
         out = AdaptivelyBin(None, num, tailDetail, None, nanflow)
         out.clustering.entries = float(entries)
         out.clustering.values = bins
-        out.clustering.min = min
-        out.clustering.max = max
+        out.clustering.min = float(min)
+        out.clustering.max = float(max)
         out.contentType = contentType
         return out.specialize()
 

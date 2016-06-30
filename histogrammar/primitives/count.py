@@ -36,7 +36,7 @@ class Count(Factory, Container):
         Parameters:
             entries (float): the number of entries.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))

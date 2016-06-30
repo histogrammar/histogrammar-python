@@ -50,9 +50,9 @@ class Sample(Factory, Container):
         Other parameters:
             randomGenerator (random generator state or ``None``): Python representation of the random generator's state if a ``randomSeed`` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampled instances.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(limit, (int, long, float)):
+        if not isinstance(limit, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("limit ({0}) must be a number".format(limit))
         if not isinstance(values, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 3 and isinstance(v[1], (int, long, float)) and isinstance(v[2], (int, long, float)) for v in values):
             raise TypeError("values ({0}) must be a list of quantity return type, number, number triples".format(values))
@@ -62,8 +62,8 @@ class Sample(Factory, Container):
             raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Sample(limit, None, randomSeed)
         del out.reservoir
-        out.entries = entries
-        out._limit = limit
+        out.entries = float(entries)
+        out._limit = float(limit)
         out._values = values
         return out.specialize()
 
@@ -101,7 +101,6 @@ class Sample(Factory, Container):
         super(Sample, self).__init__()
         self._limit = limit
         self.specialize()
-        
 
     @property
     def limit(self):
@@ -186,23 +185,44 @@ class Sample(Factory, Container):
 
         if weight > 0.0:
             q = self.quantity(datum)
-            if isinstance(q, basestring):
-                pass
-            elif isinstance(q, (list, tuple)):
-                try:
-                    q = tuple(float(qi) for qi in q)
-                except:
-                    raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
-            else:
-                try:
-                    q = float(q)
-                except:
-                    raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
+            self._update(q, weight)
 
-            self.reservoir.update(q, weight, self.randomGenerator)
+    def _update(self, q, weight):
+        if isinstance(q, basestring):
+            pass
+        elif isinstance(q, (list, tuple)):
+            try:
+                q = tuple(float(qi) for qi in q)
+            except:
+                raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
+        else:
+            try:
+                q = float(q)
+            except:
+                raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
 
-            # no possibility of exception from here on out (for rollback)
-            self.entries += weight
+        self.reservoir.update(q, weight, self.randomGenerator)
+
+        # no possibility of exception from here on out (for rollback)
+        self.entries += weight
+
+    def _numpy(self, data, weights, shape):
+        import numpy
+        q = self.quantity(data)
+        assert isinstance(q, numpy.ndarray)
+        if shape[0] is None:
+            shape[0] = q.shape[0]
+        else:
+            assert q.shape[0] == shape[0]
+
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
+
+        for x, w in zip(q, weights):
+            if w > 0.0:
+                if isinstance(x, numpy.ndarray):
+                    x = x.tolist()
+                self._update(x, float(w))
 
     @property
     def children(self):
@@ -213,7 +233,7 @@ class Sample(Factory, Container):
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "limit": floatToJson(self.limit),
-        "values": [{"w": w, "v": y} for y, w in sorted(self.values, key=lambda y_w: y_w[0])],
+        "values": [{"w": floatToJson(w), "v": rangeToJson(y)} for y, w in sorted(self.values, key=lambda y_w: y_w[0])],
         }, name=self.quantity.name, seed=self.randomGenerator.randint(MIN_LONG, MAX_LONG) if self.randomGenerator is not None else None)
 
     @staticmethod

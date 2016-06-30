@@ -41,7 +41,7 @@ class Stack(Factory, Container):
             cuts (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the ``N + 1`` thresholds and sub-aggregator pairs.
             nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(cuts, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in cuts):
             raise TypeError("cuts ({0}) must be a list of number, Container pairs".format(cuts))

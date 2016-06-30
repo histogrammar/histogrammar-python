@@ -58,11 +58,11 @@ class Bin(Factory, Container):
             overflow (:doc:`Container <histogrammar.defs.Container>`): the filled overflow bin.
             nanflow (:doc:`Container <histogrammar.defs.Container>`): is the filled nanflow bin.
         """
-        if not isinstance(low, (int, long, float)):
+        if not isinstance(low, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("low ({0}) must be a number".format(low))
-        if not isinstance(high, (int, long, float)):
+        if not isinstance(high, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("high ({0}) must be a number".format(high))
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(values, (list, tuple)) and not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({0}) must be a list of Containers".format(values))
@@ -79,7 +79,7 @@ class Bin(Factory, Container):
         if len(values) < 1:
             raise ValueError("values ({0}) must have at least one element".format(values))
 
-        out = Bin(len(values), low, high, None, None, underflow, overflow, nanflow)
+        out = Bin(len(values), float(low), float(high), None, None, underflow, overflow, nanflow)
         out.entries = float(entries)
         out.values = values
         return out.specialize()

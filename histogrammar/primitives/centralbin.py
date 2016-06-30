@@ -40,23 +40,23 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
             max (float): the highest value of the quantity observed or NaN if no data were observed.
             nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
             raise TypeError("bins ({0}) must be a list of number, Container pairs".format(bins))
-        if not isinstance(min, (int, long, float)):
+        if not isinstance(min, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("min ({0}) must be a number".format(min))
-        if not isinstance(max, (int, long, float)):
+        if not isinstance(max, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("max ({0}) must be a number".format(max))
         if not isinstance(nanflow, Container):
             raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = CentrallyBin(bins, None, None, nanflow)
-        out.entries = entries
+        out.entries = float(entries)
         out.bins = bins
-        out.min = min
-        out.max = max
+        out.min = float(min)
+        out.max = float(max)
         return out.specialize()
 
     @staticmethod

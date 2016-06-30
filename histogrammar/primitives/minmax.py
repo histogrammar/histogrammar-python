@@ -33,9 +33,9 @@ class Minimize(Factory, Container):
             entries (float): the number of entries.
             min (float): the lowest value of the quantity observed or NaN if no data were observed.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(min, (int, long, float)):
+        if not isinstance(min, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("min ({0}) must be a number".format(min))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
@@ -182,9 +182,9 @@ class Maximize(Factory, Container):
             entries (float): the number of entries.
             max (float): the highest value of the quantity observed or NaN if no data were observed.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(max, (int, long, float)):
+        if not isinstance(max, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("max ({0}) must be a number".format(max))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))

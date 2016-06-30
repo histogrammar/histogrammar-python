@@ -40,15 +40,15 @@ class Quantile(Factory, Container):
             target (float): the value between 0.0 and 1.0 (inclusive), indicating the quantile approximated.
             estimate (float): the best estimate of where `target` of the distribution is below this value and `1.0 - target` of the distribution is above.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(target, (int, long, float)):
+        if not isinstance(target, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("target ({0}) must be a number".format(target))
-        if not isinstance(estimate, (int, long, float)):
+        if not isinstance(estimate, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("estimate ({0}) must be a number".format(estimate))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
-        out = Quantile(target, None)
+        out = Quantile(float(target), None)
         out.entries = float(entries)
         out.estimate = float(estimate)
         return out.specialize()

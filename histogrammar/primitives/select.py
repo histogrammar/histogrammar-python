@@ -37,14 +37,14 @@ class Select(Factory, Container):
             entries (float): the number of entries.
             cut (:doc:`Container <histogrammar.defs.Container>`): the filled sub-aggregator.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(cut, Container):
             raise TypeError("cut ({0}) must be a Container".format(cut))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Select(None, cut)
-        out.entries = entries
+        out.entries = float(entries)
         return out.specialize()
 
     @staticmethod

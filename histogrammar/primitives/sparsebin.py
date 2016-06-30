@@ -48,7 +48,7 @@ class SparselyBin(Factory, Container):
         """
         if not isinstance(binWidth, (int, long, float)):
             raise TypeError("binWidth ({0}) must be a number".format(binWidth))
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(contentType, basestring):
             raise TypeError("contentType ({0}) must be a string".format(contentType))
@@ -64,7 +64,7 @@ class SparselyBin(Factory, Container):
             raise ValueError("binWidth ({0}) must be greater than zero".format(binWidth))
 
         out = SparselyBin(binWidth, None, None, nanflow, origin)
-        out.entries = entries
+        out.entries = float(entries)
         out.contentType = contentType
         out.bins = bins
         return out.specialize()

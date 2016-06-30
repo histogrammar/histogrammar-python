@@ -34,9 +34,9 @@ class Average(Factory, Container):
             mean (float): the mean.
         """
 
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(mean, (int, long, float)):
+        if not isinstance(mean, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("mean ({0}) must be a number".format(mean))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))

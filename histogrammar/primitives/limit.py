@@ -47,7 +47,7 @@ class Limit(Factory, Container):
             contentType (str): the value's sub-aggregator type (must be provided to determine type for the case when ``value`` has been deleted).
             value (:doc:`Container <histogrammar.defs.Container>` or ``None``) is the filled sub-aggregator if unsaturated, ``None`` if saturated.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(limit, (int, long, float)):
             raise TypeError("limit ({0}) must be a number".format(limit))
@@ -59,7 +59,7 @@ class Limit(Factory, Container):
             raise ValueError("entries ({0}) cannot be negative".format(entries))
 
         out = Limit(limit, value)
-        out.entries = entries
+        out.entries = float(entries)
         out.contentType = contentType
         return out.specialize()
 

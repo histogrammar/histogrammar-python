@@ -259,6 +259,15 @@ def floatToJson(x):
     else:
         return x
 
+def rangeToJson(x):
+    """Custom rule for converting numbers, one-dimensional vectors of numbers, and strings to JSON, converting non-finite nmbers to ``"inf"``, ``"-inf"``, and ``"nan"``. This avoids Python's bad habit of putting literal ``Infinity``, ``-Infinity``, and ``NaN`` in the JSON (without quotes)."""
+    if isinstance(x, basestring):
+        return x
+    elif isinstance(x, (list, tuple)):
+        return [floatToJson(xi) for xi in x]
+    else:
+        return floatToJson(x)
+
 ################################################################ function tools
 
 class UserFcn(object):

@@ -35,7 +35,7 @@ class Categorize(Factory, Container):
             contentType (str): the value's sub-aggregator type (must be provided to determine type for the case when `bins` is empty).
             pairs (dict from str to :doc:`Container <histogrammar.defs.Container>`): the non-empty bin categories and their values.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(contentType, basestring):
             raise TypeError("contentType ({0}) must be a string".format(contentType))

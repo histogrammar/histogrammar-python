@@ -40,7 +40,7 @@ class Label(Factory, Container, Collection):
             entries (float): the number of entries.
             pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled aggregators.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
             raise TypeError("pairs ({0}) must be a dict from strings to Containers".format(pairs))
@@ -233,7 +233,7 @@ class UntypedLabel(Factory, Container, Collection):
             entries (float): the number of entries.
             pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled aggregators.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
             raise TypeError("pairs ({0}) must be a dict from strings to Containers".format(pairs))
@@ -422,7 +422,7 @@ class Index(Factory, Container, Collection):
             entries (float): the number of entries.
             values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({0}) must be a list of Containers".format(values))
@@ -613,7 +613,7 @@ class Branch(Factory, Container, Collection):
             entries (float): the number of entries.
             values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({0}) must be a list of Containers".format(values))

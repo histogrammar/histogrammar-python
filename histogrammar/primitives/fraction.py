@@ -35,7 +35,7 @@ class Fraction(Factory, Container):
             numerator: (:doc:`Container <histogrammar.defs.Container>`): the filled numerator.
             denominator (:doc:`Container <histogrammar.defs.Container>`): the filled denominator.
         """
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(numerator, Container):
             raise TypeError("numerator ({0}) must be a Container".format(numerator))

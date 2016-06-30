@@ -39,7 +39,7 @@ class Bag(Factory, Container):
             values (dict from float, tuple of floats, or str to float): the number of entries for each unique item.
         """
 
-        if not isinstance(entries, (int, long, float)):
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(values, dict) and not all(isinstance(k, (int, long, float)) for k, v in values.items()):
             raise TypeError("values ({0}) must be a dict from numbers to range type".format(values))
@@ -99,26 +99,47 @@ class Bag(Factory, Container):
 
         if weight > 0.0:
             q = self.quantity(datum)
-            if isinstance(q, basestring):
-                pass
-            elif isinstance(q, (list, tuple)):
-                try:
-                    q = tuple(float(qi) for qi in q)
-                except:
-                    raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
-            else:
-                try:
-                    q = float(q)
-                except:
-                    raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
+            self._update(q, weight)
 
-            # no possibility of exception from here on out (for rollback)
-            self.entries += weight
-            if q in self.values:
-                self.values[q] += weight
-            else:
-                self.values[q] = weight
+    def _update(self, q, weight):
+        if isinstance(q, basestring):
+            pass
+        elif isinstance(q, (list, tuple)):
+            try:
+                q = tuple(float(qi) for qi in q)
+            except:
+                raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
+        else:
+            try:
+                q = float(q)
+            except:
+                raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
 
+        # no possibility of exception from here on out (for rollback)
+        self.entries += weight
+        if q in self.values:
+            self.values[q] += weight
+        else:
+            self.values[q] = weight
+
+    def _numpy(self, data, weights, shape):
+        import numpy
+        q = self.quantity(data)
+        assert isinstance(q, numpy.ndarray)
+        if shape[0] is None:
+            shape[0] = q.shape[0]
+        else:
+            assert q.shape[0] == shape[0]
+
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
+
+        for x, w in zip(q, weights):
+            if w > 0.0:
+                if isinstance(x, numpy.ndarray):
+                    x = x.tolist()
+                self._update(x, float(w))
+        
     @property
     def children(self):
         """List of sub-aggregators, to make it possible to walk the tree."""
@@ -127,7 +148,7 @@ class Bag(Factory, Container):
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
-        "values": [{"w": n, "v": v} for v, n in sorted(self.values.items())],
+        "values": [{"w": floatToJson(n), "v": rangeToJson(v)} for v, n in sorted(self.values.items())],
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
