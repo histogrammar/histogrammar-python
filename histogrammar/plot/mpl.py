@@ -102,6 +102,13 @@ class ProfileMethods(object):
         fig = plt.gcf()
         ax = fig.gca()
 
+        bin_centers = [sum(self.range(x))/2.0 for x in self.indexes]
+        xranges = [self.range(x) for x in self.indexes]
+        means = self.meanValues
+
+        xmins = [x[0] for x in xranges]
+        xmaxs = [x[1] for x in xranges]
+        ax.hlines(self.meanValues, xmins, xmaxs, **kwargs)
 
         if name is not None:
             ax.set_title(name)
