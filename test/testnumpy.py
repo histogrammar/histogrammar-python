@@ -96,8 +96,6 @@ class TestEverything(unittest.TestCase):
     def twosigfigs(self, number):
         return round(number, 1 - int(math.floor(math.log10(number))))
 
-    scorecard = []
-
     def compare(self, name, hnp, npdata, hpy, pydata, weight):
         import numpy
         associative = not isinstance(hnp, (Quantile, AdaptivelyBin, Sample))
@@ -191,8 +189,6 @@ class TestEverything(unittest.TestCase):
         if associative:
             assert Factory.fromJson((hnp + hnp2).toJson()) == Factory.fromJson((hpy + hpy2).toJson())
             assert Factory.fromJson(hnp3.toJson()) == Factory.fromJson(hpy3.toJson())
-
-        self.scorecard.append((pyTime/numpyTime, name))
 
     # Warmup: apparently, Numpy does some dynamic optimization that needs to warm up...
     if empty is not None:
@@ -767,11 +763,3 @@ class TestEverything(unittest.TestCase):
             self.compare("Sample holes with weights", Sample(self.SIZE//2, lambda x: x["withholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.withholes, self.noholes)
             self.compare("Sample holes with holes", Sample(self.SIZE//2, lambda x: x["withholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.withholes, self.withholes)
             self.compare("Sample holes with holes2", Sample(self.SIZE//2, lambda x: x["withholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.withholes, self.withholes2)
-
-    def testZZZ(self):
-        self.scorecard.sort()
-        sys.stderr.write("\n----------------------------------------------+----------------------------\n")
-        sys.stderr.write("Numpy/PurePython comparison                   | Speedup factor\n")
-        sys.stderr.write("----------------------------------------------+----------------------------\n")
-        for score, name in self.scorecard:
-            sys.stderr.write("{0:45s} | {1:g}\n".format(name, score))
