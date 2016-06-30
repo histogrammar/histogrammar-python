@@ -58,7 +58,7 @@ class Sample(Factory, Container):
             raise TypeError("values ({0}) must be a list of quantity return type, number, number triples".format(values))
         if randomSeed is not None and not isinstance(randomSeed, (int, long)):
             raise TypeError("randomSeed ({0}) must be None or a number".format(randomSeed))
-        if entries < 0.0:
+        if float(entries) < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Sample(limit, None, randomSeed)
         del out.reservoir

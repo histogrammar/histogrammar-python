@@ -43,7 +43,7 @@ class Bag(Factory, Container):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(values, dict) and not all(isinstance(k, (int, long, float)) for k, v in values.items()):
             raise TypeError("values ({0}) must be a dict from numbers to range type".format(values))
-        if entries < 0.0:
+        if float(entries) < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Bag(None)
         out.entries = float(entries)
@@ -146,10 +146,14 @@ class Bag(Factory, Container):
         return []
 
     @inheritdoc(Container)
-    def toJsonFragment(self, suppressName): return maybeAdd({
-        "entries": floatToJson(self.entries),
-        "values": [{"w": floatToJson(n), "v": rangeToJson(v)} for v, n in sorted(self.values.items())],
-        }, name=(None if suppressName else self.quantity.name))
+    def toJsonFragment(self, suppressName):
+        aslist = sorted(x for x in self.values.items() if x[0] != "nan")
+        if "nan" in self.values:
+            aslist.append(("nan", self.values["nan"]))
+        return maybeAdd({
+            "entries": floatToJson(self.entries),
+            "values": [{"w": floatToJson(n), "v": rangeToJson(v)} for v, n in aslist],
+            }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
     @inheritdoc(Factory)
@@ -215,8 +219,10 @@ class Bag(Factory, Container):
     def __eq__(self, other):
         if len(self.values) != len(other.values):
             return False
-        one = sorted(self.values.items())
-        two = sorted(other.values.items())
+
+        one = sorted(x for x in self.values.items() if x[0] != "nan") + [("nan", self.values.get("nan"))]
+        two = sorted(x for x in other.values.items() if x[0] != "nan") + [("nan", other.values.get("nan"))]
+
         for (v1, w1), (v2, w2) in zip(one, two):
             if isinstance(v1, basestring) and isinstance(v2, basestring):
                 if v1 != v2:
@@ -234,7 +240,9 @@ class Bag(Factory, Container):
             else:
                 return False
 
-            if isinstance(w1, (int, long, float)) and isinstance(w2, (int, long, float)):
+            if v1 == "nan" and v2 == "nan" and w1 is None and w2 is None:
+                pass
+            elif isinstance(w1, (int, long, float)) and isinstance(w2, (int, long, float)):
                 if not numeq(w1, w2):
                     return False
             else:

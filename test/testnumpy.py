@@ -116,7 +116,7 @@ class TestEverything(unittest.TestCase):
         hnp.numpy(npdata, weight)
         numpyTime = time.time() - startTime
 
-        if pydata.dtype != numpy.string_:
+        if pydata.dtype != numpy.unicode_:
             for key in npdata:
                 diff = (npdata[key] != npdata2[key]) & numpy.bitwise_not(numpy.isnan(npdata[key])) & numpy.bitwise_not(numpy.isnan(npdata2[key]))
                 if numpy.any(diff):
@@ -139,7 +139,7 @@ class TestEverything(unittest.TestCase):
         if isinstance(weight, numpy.ndarray):
             startTime = time.time()
             for d, w in zip(pydata, weight):
-                if isinstance(d, numpy.string_):
+                if isinstance(d, numpy.unicode_):
                     d = str(d)
                 else:
                     d = float(d)
@@ -149,7 +149,7 @@ class TestEverything(unittest.TestCase):
             if associative:
                 for h in [hpy2, hpy3, hpy3]:
                     for d, w in zip(pydata, weight):
-                        if isinstance(d, numpy.string_):
+                        if isinstance(d, numpy.unicode_):
                             d = str(d)
                         else:
                             d = float(d)
@@ -158,7 +158,7 @@ class TestEverything(unittest.TestCase):
         else:
             startTime = time.time()
             for d in pydata:
-                if isinstance(d, numpy.string_):
+                if isinstance(d, numpy.unicode_):
                     d = str(d)
                 else:
                     d = float(d)
@@ -168,7 +168,7 @@ class TestEverything(unittest.TestCase):
             if associative:
                 for h in [hpy2, hpy3, hpy3]:
                     for d in pydata:
-                        if isinstance(d, numpy.string_):
+                        if isinstance(d, numpy.unicode_):
                             d = str(d)
                         else:
                             d = float(d)
@@ -537,35 +537,35 @@ class TestEverything(unittest.TestCase):
         with Numpy() as numpy:
             if numpy is None: return
             sys.stderr.write("\n")
-            self.compare("Categorize no data", Categorize(lambda x: numpy.array(numpy.floor(x["empty"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.empty), dtype="|S5"), 1.0)
-            self.compare("Categorize noholes w/o weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="|S5"), 1.0)
-            self.compare("Categorize noholes const weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="|S5"), 0.5)
-            self.compare("Categorize noholes positive weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="|S5"), self.positive)
-            self.compare("Categorize noholes with weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="|S5"), self.noholes)
-            self.compare("Categorize noholes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="|S5"), self.withholes)
-            self.compare("Categorize holes w/o weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="|S5"), 1.0)
-            self.compare("Categorize holes const weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="|S5"), 0.5)
-            self.compare("Categorize holes positive weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="|S5"), self.positive)
-            self.compare("Categorize holes with weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="|S5"), self.noholes)
-            self.compare("Categorize holes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="|S5"), self.withholes)
-            self.compare("Categorize holes with holes2", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="|S5"), self.withholes)
+            self.compare("Categorize no data", Categorize(lambda x: numpy.array(numpy.floor(x["empty"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.empty), dtype="<U5"), 1.0)
+            self.compare("Categorize noholes w/o weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="<U5"), 1.0)
+            self.compare("Categorize noholes const weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="<U5"), 0.5)
+            self.compare("Categorize noholes positive weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="<U5"), self.positive)
+            self.compare("Categorize noholes with weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="<U5"), self.noholes)
+            self.compare("Categorize noholes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="<U5"), self.withholes)
+            self.compare("Categorize holes w/o weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), 1.0)
+            self.compare("Categorize holes const weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), 0.5)
+            self.compare("Categorize holes positive weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.positive)
+            self.compare("Categorize holes with weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.noholes)
+            self.compare("Categorize holes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.withholes)
+            self.compare("Categorize holes with holes2", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.withholes)
 
     def testCategorizeTrans(self):
         with Numpy() as numpy:
             if numpy is None: return
             sys.stderr.write("\n")
-            self.compare("CategorizeTrans no data", Categorize(lambda x: numpy.array(numpy.floor(x["empty"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.empty), dtype="|S5"), 1.0)
-            self.compare("CategorizeTrans noholes w/o weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.noholes), dtype="|S5"), 1.0)
-            self.compare("CategorizeTrans noholes const weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.noholes), dtype="|S5"), 0.5)
-            self.compare("CategorizeTrans noholes positive weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.noholes), dtype="|S5"), self.positive)
-            self.compare("CategorizeTrans noholes with weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.noholes), dtype="|S5"), self.noholes)
-            self.compare("CategorizeTrans noholes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.noholes), dtype="|S5"), self.withholes)
-            self.compare("CategorizeTrans holes w/o weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="|S5"), 1.0)
-            self.compare("CategorizeTrans holes const weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="|S5"), 0.5)
-            self.compare("CategorizeTrans holes positive weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="|S5"), self.positive)
-            self.compare("CategorizeTrans holes with weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="|S5"), self.noholes)
-            self.compare("CategorizeTrans holes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="|S5"), self.withholes)
-            self.compare("CategorizeTrans holes with holes2", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="|S5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="|S5"), self.withholes)
+            self.compare("CategorizeTrans no data", Categorize(lambda x: numpy.array(numpy.floor(x["empty"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.empty), dtype="<U5"), 1.0)
+            self.compare("CategorizeTrans noholes w/o weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.noholes), dtype="<U5"), 1.0)
+            self.compare("CategorizeTrans noholes const weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.noholes), dtype="<U5"), 0.5)
+            self.compare("CategorizeTrans noholes positive weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.noholes), dtype="<U5"), self.positive)
+            self.compare("CategorizeTrans noholes with weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.noholes), dtype="<U5"), self.noholes)
+            self.compare("CategorizeTrans noholes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.noholes), dtype="<U5"), self.withholes)
+            self.compare("CategorizeTrans holes w/o weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="<U5"), 1.0)
+            self.compare("CategorizeTrans holes const weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="<U5"), 0.5)
+            self.compare("CategorizeTrans holes positive weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.positive)
+            self.compare("CategorizeTrans holes with weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.noholes)
+            self.compare("CategorizeTrans holes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.withholes)
+            self.compare("CategorizeTrans holes with holes2", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5"), Count(lambda x: 0.5*x)), self.data, Categorize(lambda x: x, Count(lambda x: 0.5*x)), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.withholes)
 
     def testFractionBin(self):
         with Numpy() as numpy:
