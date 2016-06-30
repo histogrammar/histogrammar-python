@@ -83,7 +83,7 @@ class Stack(Factory, Container):
             self.cuts = tuple(cuts)
         else:
             self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(cuts))
-        self.nanflow = nanflow
+        self.nanflow = nanflow.copy()
         super(Stack, self).__init__()
         self.specialize()
 
@@ -174,7 +174,6 @@ class Stack(Factory, Container):
         weights[selection] = 0.0
 
         selection = numpy.empty(q.shape, dtype=numpy.bool)
-        subweights = weights.copy()
         for threshold, sub in self.cuts:
             numpy.less(q, threshold, selection)
             subweights[:] = weights

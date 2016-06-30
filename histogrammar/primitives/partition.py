@@ -79,7 +79,7 @@ class Partition(Factory, Container):
             self.cuts = tuple(thresholds)
         else:
             self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(thresholds))
-        self.nanflow = nanflow
+        self.nanflow = nanflow.copy()
         super(Partition, self).__init__()
         self.specialize()
 

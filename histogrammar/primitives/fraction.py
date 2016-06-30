@@ -107,6 +107,7 @@ class Fraction(Factory, Container):
     def __add__(self, other):
         if isinstance(other, Fraction):
             out = Fraction(self.quantity, None)
+            out.entries = self.entries + other.entries
             out.numerator = self.numerator + other.numerator
             out.denominator = self.denominator + other.denominator
             return out.specialize()
