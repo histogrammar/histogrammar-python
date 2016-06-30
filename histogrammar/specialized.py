@@ -105,7 +105,8 @@ class HistogramMethods(Bin,
 
 class SparselyHistogramMethods(SparselyBin,
         histogrammar.plot.root.SparselyHistogramMethods,
-        histogrammar.plot.bokeh.SparselyHistogramMethods):
+        histogrammar.plot.bokeh.SparselyHistogramMethods,
+        histogrammar.plot.mpl.SparselyHistogramMethods):
 
     @property
     def name(self):
@@ -251,7 +252,8 @@ class TwoDimensionallyHistogramMethods(Bin,
 
 class SparselyTwoDimensionallyHistogramMethods(SparselyBin,
         histogrammar.plot.root.SparselyTwoDimensionallyHistogramMethods,
-        histogrammar.plot.bokeh.SparselyTwoDimensionallyHistogramMethods):
+        histogrammar.plot.bokeh.SparselyTwoDimensionallyHistogramMethods,
+        histogrammar.plot.mpl.SparselyTwoDimensionallyHistogramMethods):
 
     @property
     def name(self):
