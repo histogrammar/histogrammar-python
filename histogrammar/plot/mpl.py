@@ -102,7 +102,6 @@ class ProfileMethods(object):
         fig = plt.gcf()
         ax = fig.gca()
 
-        bin_centers = [sum(self.range(x))/2.0 for x in self.indexes]
         xranges = [self.range(x) for x in self.indexes]
         means = self.meanValues
 
@@ -125,12 +124,24 @@ class SparselyProfileMethods(object):
         fig = plt.gcf()
         ax = fig.gca()
 
+        xmins = np.arange(self.low, self.high, self.binWidth)
+        xmaxs = np.arange(self.low + self.binWidth, self.high + self.binWidth, self.binWidth)
+
+        means = [np.nan]*np.ones(xmaxs.shape)
+
+        for i in xrange(self.minBin, self.maxBin + 1):
+            if i in self.bins:
+                means[i - self.minBin] = self.bins[i].mean
+        idx = np.isfinite(means)
+
+        ax.hlines(means[idx], xmins[idx], xmaxs[idx], **kwargs)
 
         if name is not None:
             ax.set_title(name)
         else:
             ax.set_title(self.name)
-        return ax
+        #return ax
+        return xmins, xmaxs, means
 
 class ProfileErrMethods(object):
     def matplotlib(self, name=None, **kwargs):

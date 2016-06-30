@@ -147,7 +147,8 @@ class ProfileMethods(Bin,
 
 class SparselyProfileMethods(SparselyBin,
         histogrammar.plot.root.SparselyProfileMethods,
-        histogrammar.plot.bokeh.SparselyProfileMethods):
+        histogrammar.plot.bokeh.SparselyProfileMethods,
+        histogrammar.plot.mpl.SparselyProfileMethods):
 
     @property
     def name(self):
