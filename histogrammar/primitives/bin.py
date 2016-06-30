@@ -230,11 +230,11 @@ class Bin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _numpy(self, data, weights, arrayLength):
+    def _numpy(self, data, weights, shape):
         q = self.quantity(data)
-        arrayLength = self._checkNPQuantity(q, arrayLength)
-        self._checkNPWeights(weights, arrayLength)
-        weights = self._makeNPWeights(weights, arrayLength)
+        self._checkNPQuantity(q, shape)
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
         newentries = weights.sum()
 
         import numpy
@@ -243,7 +243,7 @@ class Bin(Factory, Container):
         numpy.bitwise_not(selection, selection)
         subweights = weights.copy()
         subweights[selection] = 0.0
-        self.nanflow._numpy(data, subweights, arrayLength)
+        self.nanflow._numpy(data, subweights, shape)
 
         # avoid nan warning in calculations by flinging the nans elsewhere
         numpy.bitwise_not(selection, selection)
@@ -255,12 +255,12 @@ class Bin(Factory, Container):
         numpy.greater_equal(q, self.low, selection)
         subweights[:] = weights
         subweights[selection] = 0.0
-        self.underflow._numpy(data, subweights, arrayLength)
+        self.underflow._numpy(data, subweights, shape)
 
         numpy.less(q, self.high, selection)
         subweights[:] = weights
         subweights[selection] = 0.0
-        self.overflow._numpy(data, subweights, arrayLength)
+        self.overflow._numpy(data, subweights, shape)
 
         if all(isinstance(value, Count) and value.transform is identity for value in self.values) and numpy.all(numpy.isfinite(q)) and numpy.all(numpy.isfinite(weights)):
             # Numpy defines histograms as including the upper edge of the last bin only, so drop that
@@ -283,7 +283,7 @@ class Bin(Factory, Container):
                 numpy.not_equal(q, index, selection)
                 subweights[:] = weights
                 subweights[selection] = 0.0
-                value._numpy(data, subweights, arrayLength)
+                value._numpy(data, subweights, shape)
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(newentries)

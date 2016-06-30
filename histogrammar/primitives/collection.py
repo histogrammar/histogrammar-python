@@ -149,20 +149,20 @@ class Label(Factory, Container, Collection):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    # def fillnp(self, data, weight=1.0):
-    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    def _numpy(self, data, weights, shape):
+        if shape[0] is not None:
+            self._checkNPWeights(weights, shape)
+            weights = self._makeNPWeights(weights, shape)
 
-    #     This primitive is optimized with Numpy.
+        for x in self.values:
+            x._numpy(data, weights, shape)
 
-    #     The container is changed in-place.
-    #     """
-    #     self._checkForCrossReferences()
-
-    #     import numpy
-    #     data, weight = self._normalizenp(data, weight)
-    #     for x in self.values:
-    #         x.fillnp(data, weight)
-    #     self._entriesnp(weight, data.shape[0])
+        # no possibility of exception from here on out (for rollback)
+        import numpy
+        if isinstance(weights, numpy.ndarray):
+            self.entries += float(weights.sum())
+        else:
+            self.entries += float(weights * shape[0])
 
     @property
     def children(self):
@@ -334,20 +334,20 @@ class UntypedLabel(Factory, Container, Collection):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    # def fillnp(self, data, weight=1.0):
-    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    def _numpy(self, data, weights, shape):
+        if shape[0] is not None:
+            self._checkNPWeights(weights, shape)
+            weights = self._makeNPWeights(weights, shape)
 
-    #     This primitive is optimized with Numpy.
+        for x in self.values:
+            x._numpy(data, weights, shape)
 
-    #     The container is changed in-place.
-    #     """
-    #     self._checkForCrossReferences()
-
-    #     import numpy
-    #     data, weight = self._normalizenp(data, weight)
-    #     for x in self.values:
-    #         x.fillnp(data, weight)
-    #     self._entriesnp(weight, data.shape[0])
+        # no possibility of exception from here on out (for rollback)
+        import numpy
+        if isinstance(weights, numpy.ndarray):
+            self.entries += float(weights.sum())
+        else:
+            self.entries += float(weights * shape[0])
 
     @property
     def children(self):
@@ -514,20 +514,20 @@ class Index(Factory, Container, Collection):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    # def fillnp(self, data, weight=1.0):
-    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    def _numpy(self, data, weights, shape):
+        if shape[0] is not None:
+            self._checkNPWeights(weights, shape)
+            weights = self._makeNPWeights(weights, shape)
 
-    #     This primitive is optimized with Numpy.
+        for x in self.values:
+            x._numpy(data, weights, shape)
 
-    #     The container is changed in-place.
-    #     """
-    #     self._checkForCrossReferences()
-
-    #     import numpy
-    #     data, weight = self._normalizenp(data, weight)
-    #     for x in self.values:
-    #         x.fillnp(data, weight)
-    #     self._entriesnp(weight, data.shape[0])
+        # no possibility of exception from here on out (for rollback)
+        import numpy
+        if isinstance(weights, numpy.ndarray):
+            self.entries += float(weights.sum())
+        else:
+            self.entries += float(weights * shape[0])
 
     @property
     def children(self):
@@ -705,20 +705,20 @@ class Branch(Factory, Container, Collection):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    # def fillnp(self, data, weight=1.0):
-    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    def _numpy(self, data, weights, shape):
+        if shape[0] is not None:
+            self._checkNPWeights(weights, shape)
+            weights = self._makeNPWeights(weights, shape)
 
-    #     This primitive is optimized with Numpy.
+        for x in self.values:
+            x._numpy(data, weights, shape)
 
-    #     The container is changed in-place.
-    #     """
-    #     self._checkForCrossReferences()
-
-    #     import numpy
-    #     data, weight = self._normalizenp(data, weight)
-    #     for x in self.values:
-    #         x.fillnp(data, weight)
-    #     self._entriesnp(weight, data.shape[0])
+        # no possibility of exception from here on out (for rollback)
+        import numpy
+        if isinstance(weights, numpy.ndarray):
+            self.entries += float(weights.sum())
+        else:
+            self.entries += float(weights * shape[0])
 
     @property
     def children(self):

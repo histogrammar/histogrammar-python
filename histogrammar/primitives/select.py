@@ -113,18 +113,18 @@ class Select(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _numpy(self, data, weights, arrayLength):
+    def _numpy(self, data, weights, shape):
         w = self.quantity(data)
-        arrayLength = self._checkNPQuantity(w, arrayLength)
-        self._checkNPWeights(weights, arrayLength)
-        weights = self._makeNPWeights(weights, arrayLength)
+        self._checkNPQuantity(w, shape)
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
 
         import numpy
         w = w * weights
         w[numpy.isnan(w)] = 0.0
         w[w < 0.0] = 0.0
 
-        self.cut._numpy(data, w, arrayLength)
+        self.cut._numpy(data, w, shape)
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(weights.sum())

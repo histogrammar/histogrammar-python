@@ -114,11 +114,11 @@ class Average(Factory, Container):
                 shift = delta * weight / self.entries
                 self.mean += shift
 
-    def _numpy(self, data, weights, arrayLength):
+    def _numpy(self, data, weights, shape):
         q = self.quantity(data)
-        arrayLength = self._checkNPQuantity(q, arrayLength)
-        self._checkNPWeights(weights, arrayLength)
-        weights = self._makeNPWeights(weights, arrayLength)
+        self._checkNPQuantity(q, shape)
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
 
         # no possibility of exception from here on out (for rollback)
         ca, ma = self.entries, self.mean

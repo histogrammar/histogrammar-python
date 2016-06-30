@@ -243,11 +243,11 @@ class SparselyBin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _numpy(self, data, weights, arrayLength):
+    def _numpy(self, data, weights, shape):
         q = self.quantity(data)
-        arrayLength = self._checkNPQuantity(q, arrayLength)
-        self._checkNPWeights(weights, arrayLength)
-        weights = self._makeNPWeights(weights, arrayLength)
+        self._checkNPQuantity(q, shape)
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
         newentries = weights.sum()
 
         import numpy
@@ -256,7 +256,7 @@ class SparselyBin(Factory, Container):
         numpy.bitwise_not(selection, selection)
         subweights = weights.copy()
         subweights[selection] = 0.0
-        self.nanflow._numpy(data, subweights, arrayLength)
+        self.nanflow._numpy(data, subweights, shape)
 
         q = q.copy()
         neginfs = numpy.isneginf(q)
@@ -282,7 +282,7 @@ class SparselyBin(Factory, Container):
                 numpy.not_equal(q, index, selection)
                 subweights[:] = weights
                 subweights[selection] = 0.0
-                bin._numpy(data, subweights, arrayLength)
+                bin._numpy(data, subweights, shape)
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(newentries)

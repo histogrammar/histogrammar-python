@@ -151,11 +151,11 @@ class Stack(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _numpy(self, data, weights, arrayLength):
+    def _numpy(self, data, weights, shape):
         q = self.quantity(data)
-        arrayLength = self._checkNPQuantity(q, arrayLength)
-        self._checkNPWeights(weights, arrayLength)
-        weights = self._makeNPWeights(weights, arrayLength)
+        self._checkNPQuantity(q, shape)
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
         newentries = weights.sum()
 
         import numpy
@@ -164,7 +164,7 @@ class Stack(Factory, Container):
         numpy.bitwise_not(selection, selection)
         subweights = weights.copy()
         subweights[selection] = 0.0
-        self.nanflow._numpy(data, subweights, arrayLength)
+        self.nanflow._numpy(data, subweights, shape)
 
         # avoid nan warning in calculations by flinging the nans elsewhere
         numpy.bitwise_not(selection, selection)
@@ -180,7 +180,7 @@ class Stack(Factory, Container):
             subweights[:] = weights
             subweights[selection] = 0.0
 
-            sub._numpy(data, subweights, arrayLength)
+            sub._numpy(data, subweights, shape)
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(newentries)

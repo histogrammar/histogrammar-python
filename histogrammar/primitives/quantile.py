@@ -139,11 +139,11 @@ class Quantile(Factory, Container):
                 sgn = 0
             self.estimate = weight * learningRate * (sgn + 2.0*self.target - 1.0)
 
-    def _numpy(self, data, weights, arrayLength):
+    def _numpy(self, data, weights, shape):
         q = self.quantity(data)
-        arrayLength = self._checkNPQuantity(q, arrayLength)
-        self._checkNPWeights(weights, arrayLength)
-        weights = self._makeNPWeights(weights, arrayLength)
+        self._checkNPQuantity(q, shape)
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
 
         # no possibility of exception from here on out (for rollback)
         for x, w in zip(q, weights):

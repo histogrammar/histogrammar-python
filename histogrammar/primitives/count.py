@@ -89,25 +89,25 @@ class Count(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += t
 
-    def _numpy(self, data, weights, arrayLength):
+    def _numpy(self, data, weights, shape):
         import numpy
         if isinstance(weights, numpy.ndarray):
             assert len(weights.shape) == 1
-            if arrayLength is not None:
-                assert weights.shape[0] == arrayLength
+            if shape[0] is not None:
+                assert weights.shape[0] == shape[0]
 
             if self.transform is identity:
                 self.entries += float(weights.sum())
             else:
                 t = self.transform(weights)
                 assert len(t.shape) == 1
-                if arrayLength is not None:
-                    assert t.shape[0] == arrayLength
+                if shape[0] is not None:
+                    assert t.shape[0] == shape[0]
                 self.entries += float(t.sum())
 
-        elif arrayLength is not None:
+        elif shape[0] is not None:
             if self.transform is identity:
-                self.entries += weights * arrayLength
+                self.entries += weights * shape[0]
             else:
                 t = self.transform(numpy.array([weights]))
                 assert len(t.shape) == 1
@@ -115,7 +115,7 @@ class Count(Factory, Container):
                 self.entries += float(t[0])
 
         else:
-            raise ValueError("cannot use Numpy to fill Count when no arrays (or user-specified arrayLength) are provided")
+            raise ValueError("cannot use Numpy to fill an isolated Count (unless the weights are given as an array)")
 
     @property
     def children(self):

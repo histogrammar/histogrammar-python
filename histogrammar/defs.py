@@ -158,51 +158,49 @@ class Container(object):
         """Used internally to convert the container to JSON without its ``"type"`` header."""
         raise NotImplementedError
 
-    def numpy(self, data, weights=1.0, arrayLength=None):
+    def numpy(self, data, weights=1.0):
         import numpy
         self._checkForCrossReferences()
 
         if isinstance(weights, numpy.ndarray):
             assert len(weights.shape) == 1
 
-            if arrayLength is None:
-                arrayLength = weights.shape[0]
-            else:
-                assert weights.shape[0] == arrayLength
-
             original = weights
-
             weights = numpy.array(weights, dtype=numpy.float64)
             weights[numpy.isnan(weights)] = 0.0
             weights[weights < 0.0] = 0.0
 
+            shape = [weights.shape[0]]
+
         elif math.isnan(weights) or weights <= 0.0:
             return
 
-        self._numpy(data, weights, arrayLength)
+        else:
+            shape = [None]
 
-    def _checkNPQuantity(self, q, arrayLength):
+        self._numpy(data, weights, shape)
+
+    def _checkNPQuantity(self, q, shape):
         import numpy
         assert isinstance(q, numpy.ndarray)
         assert len(q.shape) == 1
-        if arrayLength is not None:
-            assert q.shape[0] == arrayLength
+        if shape[0] is None:
+            shape[0] = q.shape[0]
         else:
-            arrayLength = q.shape[0]
-        return arrayLength
+            assert q.shape[0] == shape[0]
 
-    def _checkNPWeights(self, weights, arrayLength):
+    def _checkNPWeights(self, weights, shape):
         import numpy
         if isinstance(weights, numpy.ndarray):
             assert len(weights.shape) == 1
-            assert weights.shape[0] == arrayLength
+            assert weights.shape[0] == shape[0]
 
-    def _makeNPWeights(self, weights, arrayLength):
+    def _makeNPWeights(self, weights, shape):
         import numpy
         if isinstance(weights, numpy.ndarray):
             return weights
         else:
-            return weights * numpy.ones(arrayLength, dtype=numpy.float64)
+            return weights * numpy.ones(shape, dtype=numpy.float64)
 
 # useful functions
 

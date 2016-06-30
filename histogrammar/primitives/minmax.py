@@ -99,11 +99,11 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
-    def _numpy(self, data, weights, arrayLength):
+    def _numpy(self, data, weights, shape):
         q = self.quantity(data)
-        arrayLength = self._checkNPQuantity(q, arrayLength)
-        self._checkNPWeights(weights, arrayLength)
-        weights = self._makeNPWeights(weights, arrayLength)
+        self._checkNPQuantity(q, shape)
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
 
         # no possibility of exception from here on out (for rollback)
         import numpy
@@ -243,11 +243,11 @@ class Maximize(Factory, Container):
             if math.isnan(self.max) or q > self.max:
                 self.max = q
 
-    def _numpy(self, data, weights, arrayLength):
+    def _numpy(self, data, weights, shape):
         q = self.quantity(data)
-        arrayLength = self._checkNPQuantity(q, arrayLength)
-        self._checkNPWeights(weights, arrayLength)
-        weights = self._makeNPWeights(weights, arrayLength)
+        self._checkNPQuantity(q, shape)
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
 
         # no possibility of exception from here on out (for rollback)
         import numpy

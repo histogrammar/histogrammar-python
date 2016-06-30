@@ -213,7 +213,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
             self.clustering.update(q, datum, weight)
 
-    def _numpy(self, data, weights, arrayLength):
+    def _numpy(self, data, weights, shape):
         raise NotImplementedError("AdaptivelyBin cannot be filled with Numpy because it combines order-dependence with nesting")
 
     @property
