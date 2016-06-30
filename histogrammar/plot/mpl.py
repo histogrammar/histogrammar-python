@@ -29,18 +29,14 @@ def prepare2Dsparse(sparse):
         ymaxBin = 0.0
     sample = list(sparse.bins.values())[0]
     ynum = 1.0 + ymaxBin - yminBin
-    print 'ymbins', yminBins
-    print 'ymBin', yminBin, 'hbw', sample.binWidth, 'so', sample.origin
     ylow = yminBin * sample.binWidth + sample.origin
     yhigh = (ymaxBin + 1.0) * sample.binWidth + sample.origin
     return yminBin, ymaxBin, ynum, ylow, yhigh
 
 def set2Dsparse(sparse, yminBin, ymaxBin, grid):
-    print 'grid.shape', grid.shape
     for i, iindex in enumerate(xrange(sparse.minBin, sparse.maxBin + 1)):
         for j, jindex in enumerate(xrange(yminBin, ymaxBin + 1)):
             if iindex in sparse.bins and jindex in sparse.bins[iindex].bins:
-                print "j, i", j, i
                 grid[j, i] = sparse.bins[iindex].bins[jindex].entries
     return grid
 
