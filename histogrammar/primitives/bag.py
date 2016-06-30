@@ -106,12 +106,12 @@ class Bag(Factory, Container):
             pass
         elif isinstance(q, (list, tuple)):
             try:
-                q = tuple(float(qi) for qi in q)
+                q = tuple(floatOrNan(qi) for qi in q)
             except:
                 raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
         else:
             try:
-                q = float(q)
+                q = floatOrNan(q)
             except:
                 raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
 
@@ -179,15 +179,15 @@ class Bag(Factory, Container):
                         else:
                             raise JsonFormatException(nv["w"], "Bag.values {0} n".format(i))
 
-                        if isinstance(nv["v"], basestring):
+                        if nv["v"] in ("nan", "inf", "-inf") or isinstance(nv["v"], (int, long, float)):
+                            v = floatOrNan(nv["v"])
+                        elif isinstance(nv["v"], basestring):
                             v = nv["v"]
-                        elif nv["v"] in ("nan", "inf", "-inf") or isinstance(nv["v"], (int, long, float)):
-                            v = float(nv["v"])
                         elif isinstance(nv["v"], (list, tuple)):
                             for j, d in enumerate(nv["v"]):
                                 if d not in ("nan", "inf", "-inf") and not isinstance(d, (int, long, float)):
                                     raise JsonFormatException(d, "Bag.values {0} v {1}".format(i, j))
-                            v = tuple(map(float, nv["v"]))
+                            v = tuple(map(floatOrNan, nv["v"]))
                         else:
                             raise JsonFormatException(nv["v"], "Bag.values {0} v".format(i))
 
@@ -213,7 +213,34 @@ class Bag(Factory, Container):
         return "<Bag size={0}>".format(len(self.values))
 
     def __eq__(self, other):
-        return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values
+        if len(self.values) != len(other.values):
+            return False
+        one = sorted(self.values.items())
+        two = sorted(other.values.items())
+        for (v1, w1), (v2, w2) in zip(one, two):
+            if isinstance(v1, basestring) and isinstance(v2, basestring):
+                if v1 != v2:
+                    return False
+            elif isinstance(v1, (int, long, float)) and isinstance(v2, (int, long, float)):
+                if not numeq(v1, v2):
+                    return False
+            elif isinstance(v1, tuple) and isinstance(v2, tuple) and len(v1) == len(v2):
+                for v1i, v2i in zip(v1, v2):
+                    if isinstance(v1i, (int, long, float)) and isinstance(v2i, (int, long, float)):
+                        if not numeq(v1i, v2i):
+                            return False
+                    else:
+                        return False
+            else:
+                return False
+
+            if isinstance(w1, (int, long, float)) and isinstance(w2, (int, long, float)):
+                if not numeq(w1, w2):
+                    return False
+            else:
+                return False
+
+        return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries)
 
     def __ne__(self, other): return not self == other
 

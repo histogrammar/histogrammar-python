@@ -266,10 +266,10 @@ class Sample(Factory, Container):
                         else:
                             raise JsonFormatException(wv["w"], "Sample.values {0} w".format(i))
 
-                        if isinstance(wv["v"], basestring):
-                            v = wv["v"]
-                        elif wv["v"] in ("nan", "inf", "-inf") or isinstance(wv["v"], (int, long, float)):
+                        if wv["v"] in ("nan", "inf", "-inf") or isinstance(wv["v"], (int, long, float)):
                             v = float(wv["v"])
+                        elif isinstance(wv["v"], basestring):
+                            v = wv["v"]
                         elif isinstance(wv["v"], (list, tuple)):
                             for j, d in enumerate(wv["v"]):
                                 if d not in ("nan", "inf", "-inf") and not isinstance(d, (int, long, float)):
@@ -304,7 +304,33 @@ class Sample(Factory, Container):
         return "<Sample size={0}>".format(self.size)
 
     def __eq__(self, other):
-        return isinstance(other, Sample) and self.entries == other.entries and self.quantity == other.quantity and self.limit == other.limit and self.values == other.values and (self.randomGenerator is None) == (other.randomGenerator is None)
+        if self.size != other.size:
+            return False
+
+        for (v1, w1), (v2, w2) in zip(self.values, other.values):
+            if isinstance(v1, basestring) and isinstance(v2, basestring):
+                if v1 != v2:
+                    return False
+            elif isinstance(v1, (int, long, float)) and isinstance(v2, (int, long, float)):
+                if not numeq(v1, v2):
+                    return False
+            elif isinstance(v1, tuple) and isinstance(v2, tuple) and len(v1) == len(v2):
+                for v1i, v2i in zip(v1, v2):
+                    if isinstance(v1i, (int, long, float)) and isinstance(v2i, (int, long, float)):
+                        if not numeq(v1i, v2i):
+                            return False
+                    else:
+                        return False
+            else:
+                return False
+
+            if isinstance(w1, (int, long, float)) and isinstance(w2, (int, long, float)):
+                if not numeq(w1, w2):
+                    return False
+            else:
+                return False
+
+        return isinstance(other, Sample) and self.entries == other.entries and self.quantity == other.quantity and self.limit == other.limit and (self.randomGenerator is None) == (other.randomGenerator is None)
 
     def __ne__(self, other): return not self == other
 

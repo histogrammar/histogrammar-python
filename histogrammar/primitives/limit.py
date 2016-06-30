@@ -90,6 +90,7 @@ class Limit(Factory, Container):
             self.contentType = None
         else:
             self.contentType = value.name
+            self._emptyValue = value.zero()
         self.value = value
         super(Limit, self).__init__()
         self.specialize()
@@ -156,19 +157,25 @@ class Limit(Factory, Container):
             self.entries += weight
 
     def _numpy(self, data, weights, shape):
-        w = self.quantity(data)
-        self._checkNPQuantity(w, shape)
-        self._checkNPWeights(weights, shape)
-        weights = self._makeNPWeights(weights, shape)
+        if shape[0] is not None:
+            self._checkNPWeights(weights, shape)
+            weights = self._makeNPWeights(weights, shape)
 
-        newentries = weights.sum()
-
-        if self.entries + newentries > self.limit:
-            self.value = None
-        elif self.value is not None:
+        import numpy
+        if self.value is not None:
             self.value._numpy(data, weights, shape)
 
-        self.entries += float(newentries)
+        if isinstance(weights, numpy.ndarray):
+            self.entries += float(weights.sum())
+        elif shape[0] is not None:
+            self.entries += float(weights * shape[0])
+        else:
+            self._emptyValue._numpy(data, weights, shape)
+            self._emptyValue = self._emptyValue.zero()
+            self.entries += float(weights * shape[0])
+
+        if self.entries > self.limit:
+            self.value = None
 
     @property
     def children(self):

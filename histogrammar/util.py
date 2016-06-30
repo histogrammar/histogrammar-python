@@ -248,6 +248,14 @@ def maxplus(x, y):
     else:
         return y
 
+def floatOrNan(x):
+    """NaN is not a good key in a hash map because it isn't equal to itself. histogrammar.primitives.Bag therefore uses the string ``"nan"`` as a substitute. This converts to the right JSON string representation."""
+    x = float(x)
+    if math.isnan(x):
+        return "nan"
+    else:
+        return x
+
 def floatToJson(x):
     """Custom rule for converting non-finite numbers to JSON as quoted strings: ``"inf"``, ``"-inf"``, and ``"nan"``. This avoids Python's bad habit of putting literal ``Infinity``, ``-Infinity``, and ``NaN`` in the JSON (without quotes)."""
     if math.isnan(x):
