@@ -137,7 +137,7 @@ class SparselyProfileMethods(object):
         xmins = np.arange(self.low, self.high, self.binWidth)
         xmaxs = np.arange(self.low + self.binWidth, self.high + self.binWidth, self.binWidth)
 
-        means = [np.nan]*np.ones(xmaxs.shape)
+        means = np.nan*np.ones(xmaxs.shape)
 
         for i in xrange(self.minBin, self.maxBin + 1):
             if i in self.bins:
@@ -195,6 +195,31 @@ class SparselyProfileErrMethods(object):
         fig = plt.gcf()
         ax = fig.gca()
 
+        xmins = np.arange(self.low, self.high, self.binWidth)
+        xmaxs = np.arange(self.low + self.binWidth, self.high + self.binWidth, self.binWidth)
+
+        means = np.nan*np.ones(xmaxs.shape)
+        variances = np.nan*np.ones(xmaxs.shape)
+
+        for i in xrange(self.minBin, self.maxBin + 1):
+            if i in self.bins:
+                means[i - self.minBin] = self.bins[i].mean
+                variances[i - self.minBin] = self.bins[i].variance
+        idx = np.isfinite(means)
+
+        # pull out non nans
+        means = means[idx]
+        xmins = xmins[idx]
+        xmaxs = xmaxs[idx]
+        variances = variances[idx]
+
+        ax.hlines(means, xmins, xmaxs, **kwargs)
+
+        bin_centers = (self.binWidth/2.0) + xmins
+        ymins = [means[i] - np.sqrt(variances[i]) for i in xrange(len(means))]
+        ymaxs = [means[i] + np.sqrt(variances[i]) for i in xrange(len(means))]
+
+        ax.vlines(bin_centers, ymins, ymaxs, **kwargs)
 
         if name is not None:
             ax.set_title(name)
