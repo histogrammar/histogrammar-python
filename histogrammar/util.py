@@ -315,11 +315,37 @@ class UserFcn(object):
                 # close over this state
                 varname = [None]
 
+                try:
+                    import numpy
+                except ImportError:
+                    numpy = None
+                try:
+                    import pandas
+                except ImportError:
+                    pandas = None
+
                 def function(datum):
                     context = dict(globals())
+
+                    # fill the namespace with math.* functions
                     context.update(math.__dict__)
+
+                    # if you have Numpy, override the namespace with numpy.* functions
+                    if numpy is not None:
+                        context.update(numpy.__dict__)
+
+                    # if the datum is a dict, override the namespace with its dict keys
                     if isinstance(datum, dict):                # if it's a dict
                         context.update(datum)                  # use its items as variables
+
+                    # if the datum is a Numpy record array, override the namespace with its field names
+                    elif numpy is not None and isinstance(datum, numpy.core.records.recarray):
+                        context.update(dict((n, datum[n]) for n in datum.dtype.names))
+
+                    # if the datum is a Pandas DataFrame, override the namespace with its column names
+                    elif pandas is not None and isinstance(datum, pandas.core.frame.DataFrame):
+                        context.update(dict((n, datum[n].values) for n in datum.columns))
+
                     else:
                         try:
                             context.update(datum.__dict__)     # try to use its attributes as variables

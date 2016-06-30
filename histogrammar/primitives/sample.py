@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import math
+import numbers
 import random
 
 from histogrammar.defs import *
@@ -50,11 +51,11 @@ class Sample(Factory, Container):
         Other parameters:
             randomGenerator (random generator state or ``None``): Python representation of the random generator's state if a ``randomSeed`` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampled instances.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(limit, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(limit, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("limit ({0}) must be a number".format(limit))
-        if not isinstance(values, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 3 and isinstance(v[1], (int, long, float)) and isinstance(v[2], (int, long, float)) for v in values):
+        if not isinstance(values, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 3 and isinstance(v[1], numbers.Real) and isinstance(v[2], numbers.Real) for v in values):
             raise TypeError("values ({0}) must be a list of quantity return type, number, number triples".format(values))
         if randomSeed is not None and not isinstance(randomSeed, (int, long)):
             raise TypeError("randomSeed ({0}) must be None or a number".format(randomSeed))
@@ -85,7 +86,7 @@ class Sample(Factory, Container):
             values (list of quantity return type, float, float triplets): the set of collected values with their weights and a random number (see algorithm below), sorted by the random number. Its size is at most ``limit`` and it may contain duplicates.
             randomGenerator (random generator state or ``None``) Python representation of the random generator's state if a ``randomSeed`` was provided. The random generator's sequence of values must be unaffected by any other random sampling elsewhere in the environment, including other Sampling instances.
         """
-        if not isinstance(limit, (int, long, float)):
+        if not isinstance(limit, numbers.Real):
             raise TypeError("limit ({0}) must be a number".format(limit))
         if randomSeed is not None and not isinstance(randomSeed, (int, long)):
             raise TypeError("randomSeed ({0}) must be None or a number".format(randomSeed))
@@ -190,16 +191,15 @@ class Sample(Factory, Container):
     def _update(self, q, weight):
         if isinstance(q, basestring):
             pass
+
         elif isinstance(q, (list, tuple)):
             try:
                 q = tuple(float(qi) for qi in q)
             except:
                 raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
-        else:
-            try:
-                q = float(q)
-            except:
-                raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
+
+        elif not isinstance(q, numbers.Real):
+            raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
 
         self.reservoir.update(q, weight, self.randomGenerator)
 
@@ -240,7 +240,7 @@ class Sample(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "values"], ["name", "seed"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = json["entries"]
             else:
                 raise JsonFormatException(json["entries"], "Sample.entries")
@@ -252,7 +252,7 @@ class Sample(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Sample.name")
 
-            if json["limit"] in ("nan", "inf", "-inf") or isinstance(json["limit"], (int, long, float)):
+            if json["limit"] in ("nan", "inf", "-inf") or isinstance(json["limit"], numbers.Real):
                 limit = json["limit"]
             else:
                 raise JsonFormatException(json["limit"], "Sample.limit")
@@ -261,18 +261,18 @@ class Sample(Factory, Container):
                 values = []
                 for i, wv in enumerate(json["values"]):
                     if isinstance(wv, dict) and hasKeys(wv.keys(), ["w", "v"]):
-                        if wv["w"] in ("nan", "inf", "-inf") or isinstance(wv["w"], (int, long, float)):
+                        if wv["w"] in ("nan", "inf", "-inf") or isinstance(wv["w"], numbers.Real):
                             w = float(wv["w"])
                         else:
                             raise JsonFormatException(wv["w"], "Sample.values {0} w".format(i))
 
-                        if wv["v"] in ("nan", "inf", "-inf") or isinstance(wv["v"], (int, long, float)):
+                        if wv["v"] in ("nan", "inf", "-inf") or isinstance(wv["v"], numbers.Real):
                             v = float(wv["v"])
                         elif isinstance(wv["v"], basestring):
                             v = wv["v"]
                         elif isinstance(wv["v"], (list, tuple)):
                             for j, d in enumerate(wv["v"]):
-                                if d not in ("nan", "inf", "-inf") and not isinstance(d, (int, long, float)):
+                                if d not in ("nan", "inf", "-inf") and not isinstance(d, numbers.Real):
                                     raise JsonFormatException(d, "Sample.values {0} v {1}".format(i, j))
                             v = tuple(map(float, wv["v"]))
                         else:
@@ -311,12 +311,12 @@ class Sample(Factory, Container):
             if isinstance(v1, basestring) and isinstance(v2, basestring):
                 if v1 != v2:
                     return False
-            elif isinstance(v1, (int, long, float)) and isinstance(v2, (int, long, float)):
+            elif isinstance(v1, numbers.Real) and isinstance(v2, numbers.Real):
                 if not numeq(v1, v2):
                     return False
             elif isinstance(v1, tuple) and isinstance(v2, tuple) and len(v1) == len(v2):
                 for v1i, v2i in zip(v1, v2):
-                    if isinstance(v1i, (int, long, float)) and isinstance(v2i, (int, long, float)):
+                    if isinstance(v1i, numbers.Real) and isinstance(v2i, numbers.Real):
                         if not numeq(v1i, v2i):
                             return False
                     else:
@@ -324,7 +324,7 @@ class Sample(Factory, Container):
             else:
                 return False
 
-            if isinstance(w1, (int, long, float)) and isinstance(w2, (int, long, float)):
+            if isinstance(w1, numbers.Real) and isinstance(w2, numbers.Real):
                 if not numeq(w1, w2):
                     return False
             else:

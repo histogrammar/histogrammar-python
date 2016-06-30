@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numbers
+
 from histogrammar.defs import *
 from histogrammar.util import *
 from histogrammar.primitives.count import *
@@ -35,7 +37,7 @@ class Fraction(Factory, Container):
             numerator: (:doc:`Container <histogrammar.defs.Container>`): the filled numerator.
             denominator (:doc:`Container <histogrammar.defs.Container>`): the filled denominator.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(numerator, Container):
             raise TypeError("numerator ({0}) must be a Container".format(numerator))
@@ -120,9 +122,7 @@ class Fraction(Factory, Container):
 
         if weight > 0.0:
             w = self.quantity(datum)
-            try:
-                w = float(w)
-            except:
+            if not isinstance(w, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(w))
             w *= weight
 
@@ -176,7 +176,7 @@ class Fraction(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "numerator", "denominator"], ["name", "sub:name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Fraction.entries")

@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numbers
+
 from histogrammar.defs import *
 from histogrammar.util import *
 
@@ -40,7 +42,7 @@ class Label(Factory, Container, Collection):
             entries (float): the number of entries.
             pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled aggregators.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
             raise TypeError("pairs ({0}) must be a dict from strings to Containers".format(pairs))
@@ -180,7 +182,7 @@ class Label(Factory, Container, Collection):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Label.entries")
@@ -233,7 +235,7 @@ class UntypedLabel(Factory, Container, Collection):
             entries (float): the number of entries.
             pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled aggregators.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
             raise TypeError("pairs ({0}) must be a dict from strings to Containers".format(pairs))
@@ -364,7 +366,7 @@ class UntypedLabel(Factory, Container, Collection):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "UntypedLabel.entries")
@@ -422,7 +424,7 @@ class Index(Factory, Container, Collection):
             entries (float): the number of entries.
             values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({0}) must be a list of Containers".format(values))
@@ -545,7 +547,7 @@ class Index(Factory, Container, Collection):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Index.entries")
@@ -613,7 +615,7 @@ class Branch(Factory, Container, Collection):
             entries (float): the number of entries.
             values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({0}) must be a list of Containers".format(values))
@@ -735,7 +737,7 @@ class Branch(Factory, Container, Collection):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Branch.entries")
