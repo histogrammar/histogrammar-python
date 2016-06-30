@@ -155,31 +155,20 @@ class Limit(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    # def fillnp(self, data, weight=1.0):
-    #     """Increment the aggregator by providing a one-dimensional Numpy array of ``data`` to the fill rule with given ``weight`` (number or array).
+    def _numpy(self, data, weights, arrayLength):
+        w = self.quantity(data)
+        arrayLength = self._checkNPQuantity(w, arrayLength)
+        self._checkNPWeights(weights, arrayLength)
+        weights = self._makeNPWeights(weights, arrayLength)
 
-    #     This primitive is optimized with Numpy.
+        newentries = weights.sum()
 
-    #     The container is changed in-place.
-    #     """
-    #     self._checkForCrossReferences()
+        if self.entries + newentries > self.limit:
+            self.value = None
+        elif self.value is not None:
+            self.value._numpy(data, weights, arrayLength)
 
-    #     import numpy
-    #     data, weight = self._normalizenp(data, weight)
-    #     if not isinstance(weight, numpy.ndarray) and weight <= 0.0: return
-    #     q = self._computenp(data)
-
-    #     if isinstance(weight, numpy.ndarray):
-    #         newentries = weight.sum()
-    #     else:
-    #         newentries = weight * data.shape[0]
-
-    #     if self.entries + newentries > self.limit:
-    #         self.value = None
-    #     elif self.value is not None:
-    #         self.value.fillnp(data, weight)
-
-    #     self.entries += float(newentries)
+        self.entries += float(newentries)
 
     @property
     def children(self):
