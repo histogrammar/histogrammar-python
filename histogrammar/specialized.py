@@ -117,6 +117,10 @@ class SparselyHistogramMethods(SparselyBin,
     def factory(self):
         return SparselyBin
 
+    def confidenceIntervalValues(self,absz=1.0):
+        from math import sqrt
+        return map(lambda v: absz*sqrt(v), [v.entries for _, v in sorted(self.bins.items())])
+
 class ProfileMethods(Bin,
         histogrammar.plot.root.ProfileMethods,
         histogrammar.plot.bokeh.ProfileMethods):
