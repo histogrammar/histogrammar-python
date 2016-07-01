@@ -112,7 +112,52 @@ class SparselyHistogramMethods(object):
 
 
 class ProfileMethods(object):
-    pass
+    def bokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
+
+        #glyphs
+        from bokeh.models.glyphs import Rect, Segment, Line, Patches, Arc
+        from bokeh.models.renderers import GlyphRenderer
+        from bokeh.models.markers import (Marker, Asterisk, Circle, CircleCross, CircleX, Cross,
+                      Diamond, DiamondCross, InvertedTriangle, Square,
+                      SquareCross, SquareX, Triangle, X)
+
+        #data 
+        from bokeh.models import ColumnDataSource
+
+        from math import sqrt
+
+        #Parameters of the histogram
+        l = self.low
+        h = self.high
+        num = self.num
+        bin_width = (h-l)/num
+        x = list()
+        y = list()
+        center = l
+        for v in self.values:
+            y.append(v.mean)
+            x.append(center+bin_width/2)
+            center += bin_width
+
+        source = ColumnDataSource(data=dict(x=x, y=y))
+
+        glyph = None
+        if glyphType == "square": glyph = Square(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "diamond": glyph = Diamond(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "cross": glyph = Cross(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "triangle": glyph = Triangle(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "circle": glyph = Circle(x='x', y='y',line_color=lineColor,fill_color=fillColor,line_alpha=lineAlpha,size=glyphSize,line_dash=lineDash)
+        elif glyphType == "histogram":
+            w = [bin_width for _ in x]
+            h = y
+            y = [yy/2 for yy in y]
+            source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
+            glyph = Rect(x='x', y='y', width='w', height='h', fill_alpha=fillAlpha, line_color=lineColor, fill_color=fillColor)
+        else: glyph = Line(x='x', y='y',line_color=lineColor,line_alpha=lineAlpha,line_width=glyphSize,line_dash=lineDash)
+
+        return GlyphRenderer(glyph=glyph,data_source=source)
+
+
 
 class SparselyProfileMethods(object):
     pass
