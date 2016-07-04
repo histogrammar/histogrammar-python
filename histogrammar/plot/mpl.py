@@ -50,8 +50,7 @@ class HistogramMethods(object):
         """
         import matplotlib.pyplot as plt
         import numpy as np
-        fig = plt.gcf()
-        ax = fig.gca()
+        ax = plt.gca()
 
         entries = [x.entries for x in self.values]
 
@@ -60,6 +59,7 @@ class HistogramMethods(object):
         edges = np.linspace(self.low, self.high, num_bins + 1)[:-1]
 
         ax.bar(edges, entries, width=width, **kwargs)
+
         if name is not None:
             ax.set_title(name)
         else:
@@ -77,8 +77,7 @@ class SparselyHistogramMethods(object):
         """
         import matplotlib.pyplot as plt
         import numpy as np
-        fig = plt.gcf()
-        ax = fig.gca()
+        ax = plt.gca()
 
         if self.minBin is None or self.maxBin is None:
             ax.bar([self.origin, self.origin + 1], self.bins[0].entries, width=self.binWidth, **kwargs)
@@ -105,8 +104,7 @@ class ProfileMethods(object):
         """
         import matplotlib.pyplot as plt
         import numpy as np
-        fig = plt.gcf()
-        ax = fig.gca()
+        ax = plt.gca()
 
         xranges = [self.range(x) for x in self.indexes]
         means = self.meanValues
@@ -131,8 +129,7 @@ class SparselyProfileMethods(object):
         """
         import matplotlib.pyplot as plt
         import numpy as np
-        fig = plt.gcf()
-        ax = fig.gca()
+        ax = plt.gca()
 
         xmins = np.arange(self.low, self.high, self.binWidth)
         xmaxs = np.arange(self.low + self.binWidth, self.high + self.binWidth, self.binWidth)
@@ -162,8 +159,7 @@ class ProfileErrMethods(object):
         """
         import matplotlib.pyplot as plt
         import numpy as np
-        fig = plt.gcf()
-        ax = fig.gca()
+        ax = plt.gca()
 
         bin_centers = [sum(self.range(x))/2.0 for x in self.indexes]
         xranges = [self.range(x) for x in self.indexes]
@@ -192,8 +188,7 @@ class SparselyProfileErrMethods(object):
         """
         import matplotlib.pyplot as plt
         import numpy as np
-        fig = plt.gcf()
-        ax = fig.gca()
+        ax = plt.gca()
 
         xmins = np.arange(self.low, self.high, self.binWidth)
         xmaxs = np.arange(self.low + self.binWidth, self.high + self.binWidth, self.binWidth)
@@ -233,9 +228,15 @@ class StackedHistogramMethods(object):
         """
         import matplotlib.pyplot as plt
         import numpy as np
-        fig = plt.gcf()
-        ax = fig.gca()
+        ax = plt.gca()
+        color_cycle = plt.rcParams['axes.color_cycle']
+        if kwargs.has_key("color"):
+            kwargs.pop("color")
 
+        for i, hist in enumerate(self.values):
+            color = color_cycle[i]
+            hist.matplotlib(color=color, label=hist.name, **kwargs)
+            color_cycle.append(color)
 
         if name is not None:
             ax.set_title(name)
@@ -249,9 +250,15 @@ class PartitionedHistogramMethods(object):
         """
         import matplotlib.pyplot as plt
         import numpy as np
-        fig = plt.gcf()
-        ax = fig.gca()
+        ax = plt.gca()
+        color_cycle = plt.rcParams['axes.color_cycle']
+        if kwargs.has_key("color"):
+            kwargs.pop("color")
 
+        for i, hist in enumerate(self.values):
+            color = color_cycle[i]
+            hist.matplotlib(color=color, label=hist.name, **kwargs)
+            color_cycle.append(color)
 
         if name is not None:
             ax.set_title(name)
@@ -265,8 +272,7 @@ class FractionedHistogramMethods(object):
         """
         import matplotlib.pyplot as plt
         import numpy as np
-        fig = plt.gcf()
-        ax = fig.gca()
+        ax = plt.gca()
 
         if isinstance(self.numerator, HistogramMethods):
             fracs = [x[0].entries / float(x[1].entries) for x in zip(self.numerator.values, self.denominator.values)]
@@ -310,8 +316,7 @@ class TwoDimensionallyHistogramMethods(object):
         """
         import matplotlib.pyplot as plt
         import numpy as np
-        fig = plt.gcf()
-        ax = fig.gca()
+        ax = plt.gca()
 
         samp = self.values[0]
         x_ranges = np.unique(np.array([self.range(i) for i in self.indexes]).flatten())
@@ -342,8 +347,7 @@ class SparselyTwoDimensionallyHistogramMethods(object):
         """
         import matplotlib.pyplot as plt
         import numpy as np
-        fig = plt.gcf()
-        ax = fig.gca()
+        ax = plt.gca()
 
         yminBin, ymaxBin, ynum, ylow, yhigh = prepare2Dsparse(self)
 

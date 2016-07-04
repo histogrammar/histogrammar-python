@@ -206,7 +206,8 @@ class SparselyProfileErrMethods(SparselyBin,
 
 class StackedHistogramMethods(Stack,
         histogrammar.plot.root.StackedHistogramMethods,
-        histogrammar.plot.bokeh.StackedHistogramMethods):
+        histogrammar.plot.bokeh.StackedHistogramMethods,
+        histogrammar.plot.mpl.StackedHistogramMethods):
 
     @property
     def name(self):
@@ -218,7 +219,8 @@ class StackedHistogramMethods(Stack,
 
 class PartitionedHistogramMethods(Partition,
         histogrammar.plot.root.PartitionedHistogramMethods,
-        histogrammar.plot.bokeh.PartitionedHistogramMethods):
+        histogrammar.plot.bokeh.PartitionedHistogramMethods,
+        histogrammar.plot.mpl.PartitionedHistogramMethods):
 
     @property
     def name(self):
