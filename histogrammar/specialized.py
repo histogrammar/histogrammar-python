@@ -193,7 +193,8 @@ class ProfileErrMethods(Bin,
 
 class SparselyProfileErrMethods(SparselyBin,
         histogrammar.plot.root.SparselyProfileErrMethods,
-        histogrammar.plot.bokeh.SparselyProfileErrMethods):
+        histogrammar.plot.bokeh.SparselyProfileErrMethods,
+        histogrammar.plot.mpl.SparselyProfileErrMethods):
 
     @property
     def name(self):
@@ -229,7 +230,8 @@ class PartitionedHistogramMethods(Partition,
 
 class FractionedHistogramMethods(Fraction,
         histogrammar.plot.root.FractionedHistogramMethods,
-        histogrammar.plot.bokeh.FractionedHistogramMethods):
+        histogrammar.plot.bokeh.FractionedHistogramMethods,
+        histogrammar.plot.mpl.FractionedHistogramMethods):
 
     @property
     def name(self):

@@ -268,7 +268,32 @@ class FractionedHistogramMethods(object):
         fig = plt.gcf()
         ax = fig.gca()
 
+        if isinstance(self.numerator, HistogramMethods):
+            fracs = [x[0].entries / float(x[1].entries) for x in zip(self.numerator.values, self.denominator.values)]
+            xranges = [self.numerator.range(x) for x in self.numerator.indexes]
 
+            xmins = [x[0] for x in xranges]
+            xmaxs = [x[1] for x in xranges]
+            ax.hlines(fracs, xmins, xmaxs, **kwargs)
+
+
+        elif isinstance(self.numerator, SparselyHistogramMethods):
+            assert self.numerator.binWidth == self.denominator.binWidth,\
+                   "Fraction numerator and denominator histograms must have same binWidth."
+            numerator = self.numerator
+            denominator = self.denominator
+            xmins = np.arange(numerator.low, numerator.high, numerator.binWidth)
+            xmaxs = np.arange(numerator.low + numerator.binWidth, numerator.high + numerator.binWidth, numerator.binWidth)
+
+            fracs = np.nan*np.zeros(xmaxs.shape)
+
+            for i in xrange(denominator.minBin, denominator.maxBin + 1):
+                if i in self.numerator.bins and i in self.denominator.bins:
+                    fracs[i - denominator.minBin] = numerator.bins[i].entries / denominator.bins[i].entries
+            idx = np.isfinite(fracs)
+            ax.hlines(fracs[idx], xmins[idx], xmaxs[idx], **kwargs)
+
+        ax.set_ylim((0.0, 1.0))
         if name is not None:
             ax.set_title(name)
         else:
