@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,25 @@
 
 # "Private" methods; not attached to the histogram because not a member of the class, but within scope because it's a closure.
 
-from collections import OrderedDict
 import math
 import types
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    class OrderedDict(dict):
+        def __init__(self):
+            self._data = []
+        def __setattr__(self, key, value):
+            self._data.append((key, value))
+        def __getattr__(self, key):
+            return dict(self._data)[key]
+        def items(self):
+            return self._data
+        def keys(self):
+            return [k for k, v in self._data]
+        def values(self):
+            return [v for k, v in self._data]
 
 def setTH1(entries, values, underflow, overflow, th1):
     th1.SetBinContent(0, underflow)

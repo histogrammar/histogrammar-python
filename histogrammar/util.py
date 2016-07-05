@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import bisect
-import functools
 import marshal
 import math
 import random
@@ -27,17 +26,94 @@ if sys.version_info[0] > 2:
     basestring = str
     xrange = range
     long = int
+    from functools import total_ordering
+else:
+    if sys.version_info[0] == 2 and sys.version_info[1] > 6:
+        from functools import total_ordering
+    else:
+        # Copyright (c) 2012, Konsta Vesterinen (applies to Python 2.6 implementation of total_ordering only)
+        #
+        # All rights reserved.
+        #
+        # Redistribution and use in source and binary forms, with or without
+        # modification, are permitted provided that the following conditions are met:
+        #
+        # * Redistributions of source code must retain the above copyright notice, this
+        #   list of conditions and the following disclaimer.
+        #
+        # * Redistributions in binary form must reproduce the above copyright notice,
+        #   this list of conditions and the following disclaimer in the documentation
+        #   and/or other materials provided with the distribution.
+        #
+        # * The names of the contributors may not be used to endorse or promote products
+        #   derived from this software without specific prior written permission.
+        #
+        # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+        # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+        # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+        # DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT,
+        # INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+        # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+        # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+        # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+        # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+        # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-@functools.total_ordering
+        def total_ordering(cls):
+            """
+            Backport to work with Python 2.6
+            Class decorator that fills in missing ordering methods
+            Code from: http://code.activestate.com/recipes/576685/
+            Copied from: https://github.com/kvesteri/total-ordering
+            """
+            convert = {
+                '__lt__': [
+                    ('__gt__', lambda self, other: not (self < other or self == other)),
+                    ('__le__', lambda self, other: self < other or self == other),
+                    ('__ge__', lambda self, other: not self < other)],
+                '__le__': [
+                    ('__ge__', lambda self, other: not self <= other or self == other),
+                    ('__lt__', lambda self, other: self <= other and not self == other),
+                    ('__gt__', lambda self, other: not self <= other)],
+                '__gt__': [
+                    ('__lt__', lambda self, other: not (self > other or self == other)),
+                    ('__ge__', lambda self, other: self > other or self == other),
+                    ('__le__', lambda self, other: not self > other)],
+                '__ge__': [
+                    ('__le__', lambda self, other: (not self >= other) or self == other),
+                    ('__gt__', lambda self, other: self >= other and not self == other),
+                    ('__lt__', lambda self, other: not self >= other)]
+            }
+            roots = set(dir(cls)) & set(convert)
+            if not roots:
+                raise ValueError('must define at least one ordering operation: < > <= >=')
+            root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
+            for opname, opfunc in convert[root]:
+                if opname not in roots:
+                    opfunc.__name__ = opname
+                    opfunc.__doc__ = getattr(int, opname).__doc__
+                    setattr(cls, opname, opfunc)
+            return cls
+    
+@total_ordering
 class LessThanEverything(object):
+    """An object that will always float the the beginning of a list in a sort."""
     def __le__(self, other):
         return True
     def __eq__(self, other):
         return self is other
 
+def inheritdoc(cls):
+    def _fn(fn):
+        if fn.__name__ in cls.__dict__:
+            fn.__doc__ = cls.__dict__[fn.__name__].__doc__
+        return fn
+    return _fn
+
 ################################################################ handling key set comparisons with optional keys
 
 def hasKeys(test, required, optional=set()):
+    """Checks to see if a dict from JSON has the right keys."""
     if not isinstance(test, set):
         test = set(test)
     if not isinstance(required, set):
@@ -47,6 +123,7 @@ def hasKeys(test, required, optional=set()):
     return required.issubset(test) and test.issubset(required.union(optional))
 
 def maybeAdd(json, **pairs):
+    """Adds key-value pairs to a dict for JSON if the value is not None."""
     if len(pairs) == 0:
         return json
     else:
@@ -59,6 +136,13 @@ def maybeAdd(json, **pairs):
 ################################################################ random sampling
 
 class Reservoir(object):
+    """Utility for reservoir sampling on data of type RANGE.
+      
+    Collects up to ``limit`` data points (based on count, not sum of weights), including their weights. Once the ``limit`` is reached, points are deweighted such that the final sample is a statistically unbiased representative of the full sample.
+      
+    Merge step assumes that RANGE is immutable.
+    """
+
     def __init__(self, limit, *initial):
         self.limit = limit
         self.numObserved = 0
@@ -66,10 +150,20 @@ class Reservoir(object):
         for y, weight in initial:
             self.update(y, weight)
 
-    def update(self, y, weight=1.0):
+    def update(self, y, weight=1.0, randomGenerator=None):
+        """Add a point to the reservoir.
+        
+        Args:
+            y (RANGE): data point to insert or possibly insert in the sample
+            weight (float): weight of the point; data in the final sample are represented in proportion to these weights (probability of a point with weight ``w`` to be in the final sample: ``w/W`` where ``W`` is the sum of all weights)
+            randomGenerator (random.Random): optional random generator state, for deterministic tests with a given random seed
+        """
         self.numObserved += 1
 
-        r = random.uniform(0.0, 1.0)**(1.0/weight)
+        if randomGenerator is None:
+            r = random.uniform(0.0, 1.0)**(1.0/weight)
+        else:
+            r = randomGenerator.uniform(0.0, 1.0)**(1.0/weight)
 
         if self.numObserved <= self.limit:
             # insert this item in the list, keeping the list sorted, letting it grow
@@ -84,11 +178,17 @@ class Reservoir(object):
             self.keyvalues[index] = (r, (y, weight))
 
     @property
-    def values(self): return [pair for r, pair in self.keyvalues]
+    def values(self):
+        """Get a snapshot of the sample."""
+        return [pair for r, pair in self.keyvalues]
     @property
-    def size(self): return len(self.keyvalues)
+    def size(self):
+        """Get the number of elements in the sample (saturates at ``limit``)."""
+        return len(self.keyvalues)
     @property
-    def isEmpty(self): return self.size == 0
+    def isEmpty(self):
+        """Determine if the sample is empty."""
+        return self.size == 0
 
 ################################################################ NaN handling
 
@@ -96,8 +196,23 @@ relativeTolerance = 0.0
 absoluteTolerance = 0.0
 
 def numeq(x, y):
+    """Introduces a ``===`` operator for all ``Double`` tolerance comparisons.
+    
+    Custom equality rules:
+    
+      - nan == nan (nans are used by some primitives to indicate missing data).
+      - inf == inf and -inf == -inf (naturally, but has to be explicit given the following).
+      - if ``histogrammar.util.relativeTolerance`` is greater than zero, numbers may differ by this small ratio.
+      - if ``histogrammar.util.absoluteTolerance`` is greater than zero, numbers may differ by this small difference.
+    
+    Python's math.isclose algorithm is applied for non-NaNs:
+    
+        ``abs(x - y) <= max(relativeTolerance * max(abs(x), abs(y)), absoluteTolerance)``
+   """
     if math.isnan(x) and math.isnan(y):
         return True
+    elif math.isinf(x) and math.isinf(y):
+        return (x > 0.0) == (y > 0.0)
     elif relativeTolerance > 0.0 and absoluteTolerance > 0.0:
         return abs(x - y) <= max(relativeTolerance * max(abs(x), abs(y)), absoluteTolerance)
     elif relativeTolerance > 0.0:
@@ -108,6 +223,7 @@ def numeq(x, y):
         return x == y
 
 def minplus(x, y):
+    """Rule for finding the minimum of two numbers, given the Histogrammar convention of representing the minimum of no data to be nan."""
     if math.isnan(x) and math.isnan(y):
         return float("nan")
     elif math.isnan(x):
@@ -120,6 +236,7 @@ def minplus(x, y):
         return y
 
 def maxplus(x, y):
+    """Rule for finding the maximum of two numbers, given the Histogrammar convention of representing the maximum of no data to be nan."""
     if math.isnan(x) and math.isnan(y):
         return float("nan")
     elif math.isnan(x):
@@ -131,7 +248,16 @@ def maxplus(x, y):
     else:
         return y
 
+def floatOrNan(x):
+    """NaN is not a good key in a hash map because it isn't equal to itself. histogrammar.primitives.Bag therefore uses the string ``"nan"`` as a substitute. This converts to the right JSON string representation."""
+    x = float(x)
+    if math.isnan(x):
+        return "nan"
+    else:
+        return x
+
 def floatToJson(x):
+    """Custom rule for converting non-finite numbers to JSON as quoted strings: ``"inf"``, ``"-inf"``, and ``"nan"``. This avoids Python's bad habit of putting literal ``Infinity``, ``-Infinity``, and ``NaN`` in the JSON (without quotes)."""
     if math.isnan(x):
         return "nan"
     elif math.isinf(x) and x > 0.0:
@@ -141,9 +267,30 @@ def floatToJson(x):
     else:
         return x
 
+def rangeToJson(x):
+    """Custom rule for converting numbers, one-dimensional vectors of numbers, and strings to JSON, converting non-finite nmbers to ``"inf"``, ``"-inf"``, and ``"nan"``. This avoids Python's bad habit of putting literal ``Infinity``, ``-Infinity``, and ``NaN`` in the JSON (without quotes)."""
+    if isinstance(x, basestring):
+        return x
+    elif isinstance(x, (list, tuple)):
+        return [floatToJson(xi) for xi in x]
+    else:
+        return floatToJson(x)
+
 ################################################################ function tools
 
 class UserFcn(object):
+    """Base trait for user functions.
+
+    All functions passed to Histogrammar primitives get wrapped as UserFcn objects. Functions (instances of ``types.FunctionType``, not any callable) are used as-is and strings and deferred for later evaluation. If a string-based UserFcn is used in a normal ``fill`` operation, it gets compiled (once) as a Python function of the input structure's fields or a single-argument function for unstructured data.
+
+    The string need not be interpreted this way: backends targeting JIT compilation can interpret the strings as C code; backends targeting GPUs and FPGAs can interpret them as CUDA/OpenCL or pin-out names. As usual with Histogrammar, the only platform-specific part is the user functions.
+
+    UserFcns have a ``name`` parameter that may not be set. The user would ordinarily use the histogrammar.util.named function to give a function a name. Similarly, histogrammar.util.cached adds caching. (Naming and caching commute: they can be applied in either order.)
+
+    UserFcns are also 100% serializable, so that Histogrammar trees can be pickled and they can be passed through PySpark.
+
+    Note that the histogrammar.util.serializable function creates a UserFcn, avoids duplication, and commutes with histogrammar.util.named and histogrammar.util.cached (they can be applied in any order).
+    """
     def __init__(self, expr, name=None):
         self.expr = expr
         if isinstance(expr, basestring) and name is None:
@@ -152,7 +299,11 @@ class UserFcn(object):
             self.name = expr.__name__
         else:
             self.name = name
-
+        if expr is not None and not isinstance(expr, (basestring, types.FunctionType)):
+            raise TypeError("quantity ({0}) must be a string or function".format(expr))
+        if name is not None and not isinstance(name, basestring):
+            raise TypeError("function name must be a string, not {0} (perhaps your arguments are reversed)".format(name))
+        
     def __call__(self, *args, **kwds):
         if not hasattr(self, "fcn"):
             if isinstance(self.expr, types.FunctionType):
@@ -164,21 +315,50 @@ class UserFcn(object):
                 # close over this state
                 varname = [None]
 
+                try:
+                    import numpy
+                except ImportError:
+                    numpy = None
+                try:
+                    import pandas
+                except ImportError:
+                    pandas = None
+
                 def function(datum):
                     context = dict(globals())
-                    context.update(math.__dict__)
-                    try:
-                        context.update(datum.__dict__)
-                    except AttributeError:
-                        v, = varname
-                        if v is None:
-                            try:
-                                v, = set(c.co_names) - set(context.keys())
-                            except ValueError:
-                                raise NameError("more than one unrecognized variable names in single-argument function: {}".format(set(c.co_names) - set(context.keys())))
-                            varname[0] = v
 
-                        context.update({v: datum})
+                    # fill the namespace with math.* functions
+                    context.update(math.__dict__)
+
+                    # if you have Numpy, override the namespace with numpy.* functions
+                    if numpy is not None:
+                        context.update(numpy.__dict__)
+
+                    # if the datum is a dict, override the namespace with its dict keys
+                    if isinstance(datum, dict):                # if it's a dict
+                        context.update(datum)                  # use its items as variables
+
+                    # if the datum is a Numpy record array, override the namespace with its field names
+                    elif numpy is not None and isinstance(datum, numpy.core.records.recarray):
+                        context.update(dict((n, datum[n]) for n in datum.dtype.names))
+
+                    # if the datum is a Pandas DataFrame, override the namespace with its column names
+                    elif pandas is not None and isinstance(datum, pandas.core.frame.DataFrame):
+                        context.update(dict((n, datum[n].values) for n in datum.columns))
+
+                    else:
+                        try:
+                            context.update(datum.__dict__)     # try to use its attributes as variables
+                        except AttributeError:
+                            v, = varname                       # otherwise, use the one and only variable
+                            if v is None:                      # as the object (only discover it once)
+                                try:
+                                    v, = set(c.co_names) - set(context.keys())
+                                except ValueError:
+                                    raise NameError("more than one unrecognized variable names in single-argument function: {0}".format(set(c.co_names) - set(context.keys())))
+                                varname[0] = v
+
+                            context.update({v: datum})
 
                     return eval(c, context)
 
@@ -188,7 +368,7 @@ class UserFcn(object):
                 raise TypeError("immutable container (created from JSON or .ed) cannot be filled")
 
             else:
-                raise TypeError("unrecognized type for function: {}".format(type(self.expr)))
+                raise TypeError("unrecognized type for function: {0}".format(type(self.expr)))
 
         return self.fcn(*args, **kwds)
 
@@ -197,14 +377,14 @@ class UserFcn(object):
             return (deserializeString, (self.__class__, self.expr, self.name))
 
         elif isinstance(self.expr, types.FunctionType):
-            refs = {n: self.expr.__globals__[n] for n in self.expr.__code__.co_names if n in self.expr.__globals__}
+            refs = dict((n, self.expr.__globals__[n]) for n in self.expr.__code__.co_names if n in self.expr.__globals__)
             return (deserializeFunction, (self.__class__, marshal.dumps(self.expr.__code__), self.expr.__name__, self.expr.__defaults__, self.expr.__closure__, refs, self.name))
 
         else:
-            raise TypeError("unrecognized type for function: {}".format(type(self.expr)))
+            raise TypeError("unrecognized type for function: {0}".format(type(self.expr)))
 
     def __repr__(self):
-        return "UserFcn({}, {})".format(self.expr, self.name)
+        return "UserFcn({0}, {1})".format(self.expr, self.name)
 
     def __eq__(self, other):
         out = isinstance(other, UserFcn) and self.name == other.name
@@ -223,8 +403,36 @@ class UserFcn(object):
             return hash((self.expr, self.name))
 
 class CachedFcn(UserFcn):
+    """Represents a cached UserFcn.
+      
+    Note that the histogrammar.util.cached function creates a CachedFcn, avoids duplication, and commutes with histogrammar.util.named and histogrammar.util.serializable (they can be applied in any order).
+      
+    **Example:**
+      
+    ::
+
+        f = cached(lambda x: complexFunction(x))
+        f(3.14)   # computes the function
+        f(3.14)   # re-uses the old value
+        f(4.56)   # computes the function again at a new point
+    """
+
+    try:
+        import numpy
+        np = numpy
+    except ImportError:
+        np = None
+
     def __call__(self, *args, **kwds):
-        if hasattr(self, "lastArgs") and hasattr(self, "lastKwds") and args == self.lastArgs and kwds == self.lastKwds:
+        if hasattr(self, "lastArgs") and \
+           len(args) == len(self.lastArgs) and \
+           (all(x is y for x, y in zip(args, self.lastArgs)) or \
+            (self.np is not None and all(self.np.array_equal(x, y) for x, y in zip(args, self.lastArgs))) or \
+            (self.np is None and all(x == y for x, y in zip(args, self.lastArgs)))) and \
+           set(kwds.keys()) == set(self.lastKwds.keys()) and \
+           (all(kwds[k] is self.lastKwds[k] for k in kwds) or \
+            (self.np is not None and all(self.np.array_equal(kwds[k], self.lastKwds[k]) for k in kwds)) or \
+            (self.np is None and all(kwds[k] == self.lastKwds[k] for k in kwds))):
             return self.lastReturn
         else:
             self.lastArgs = args
@@ -233,15 +441,17 @@ class CachedFcn(UserFcn):
             return self.lastReturn
 
     def __repr__(self):
-        return "CachedFcn({}, {})".format(self.expr, self.name)
+        return "CachedFcn({0}, {1})".format(self.expr, self.name)
 
 def deserializeString(cls, expr, name):
+    """Used by Pickle to reconstruct a string-based histogrammar.util.UserFcn from Pickle data."""
     out = cls.__new__(cls)
     out.expr = expr
     out.name = name
     return out
 
 def deserializeFunction(cls, __code__, __name__, __defaults__, __closure__, refs, name):
+    """Used by Pickle to reconstruct a function-based histogrammar.util.UserFcn from Pickle data."""
     out = cls.__new__(cls)
     g = dict(globals(), **refs)
     out.expr = types.FunctionType(marshal.loads(__code__), g, __name__, __defaults__, __closure__)
@@ -249,12 +459,30 @@ def deserializeFunction(cls, __code__, __name__, __defaults__, __closure__, refs
     return out
 
 def serializable(fcn):
+    """Create a serializable version of fcn (histogrammar.util.UserFcn), which can be a types.FunctionType or a string.
+
+    Unlike the histogrammar.util.UserFcn constructor, this function avoids duplication (doubly wrapped objects) and commutes with histogrammar.util.cached and histogrammar.util.named (they can be applied in any order).
+    """
     if isinstance(fcn, UserFcn):
         return fcn
     else:
         return UserFcn(fcn)
 
 def cached(fcn):
+    """Create a cached version of this function.
+
+    Unlike the histogrammar.util.CachedFcn constructor, this function avoids duplication (doubly wrapped objects) and commutes with histogrammar.util.named and histogrammar.util.serializable (they can be applied in either order).
+      
+    **Example:**
+      
+    ::
+
+        f = cached(lambda x: complexFunction(x))
+        f(3.14)   # computes the function
+        f(3.14)   # re-uses the old value
+        f(4.56)   # computes the function again at a new point
+    """
+
     if isinstance(fcn, CachedFcn):
         return fcn
     elif isinstance(fcn, UserFcn):
@@ -263,8 +491,12 @@ def cached(fcn):
         return CachedFcn(fcn)
 
 def named(name, fcn):
+    """Create a named, serializable version of fcn (histogrammar.util.UserFcn), which can be a types.FunctionType or a string.
+
+    Unlike the histogrammar.util.UserFcn constructor, this function avoids duplication (doubly wrapped objects) and commutes with histogrammar.util.cached and histogrammar.util.serializable (they can be applied in any order).
+    """
     if isinstance(fcn, UserFcn) and fcn.name is not None:
-        raise ValueError("two names applied to the same function: {} and {}".format(fcn.name, name))
+        raise ValueError("two names applied to the same function: {0} and {1}".format(fcn.name, name))
     elif isinstance(fcn, CachedFcn):
         return CachedFcn(fcn.expr, name)
     elif isinstance(fcn, UserFcn):
@@ -275,6 +507,30 @@ def named(name, fcn):
 ################################################################ 1D clustering algorithm (used by AdaptivelyBin)
 
 class Clustering1D(object):
+    """Clusters data in one dimension for adaptive histogramming and approximating quantiles (such as the median) in one pass over the data.
+      
+    Adapted from `"A streaming parallel decision tree algorithm," <http://www.jmlr.org/papers/volume11/ben-haim10a/ben-haim10a.pdf>`_ Yael Ben-Haim and Elad Tom-Tov, *J. Machine Learning Research 11,* 2010.
+    
+    In the original paper, when the cluster-set needs to merge clusters (bins), it does so in increasing distance between neighboring bins. This algorithm also considers the content of the bins: the least-filled bins are merged first.
+    
+    The ``tailDetail`` parameter scales between extremes: ``tailDetail = 0`` *only* considers the content of the bins and ``tailDetail = 1`` *only* considers the distance between bins (pure Ben-Haim/Tom-Tov). Specifically, the first bins to be merged are the ones that minimize
+    
+    ::
+
+        tailDetail*(x2 - x1)/(max - min) + (1.0 - tailDetail)*(v1 + v2)/entries
+    
+    where ``x1`` and ``x2`` are the positions of the neighboring bins, ``min`` and ``max`` are the most extreme data positions observed so far, ``v1`` and ``v2`` are the (weighted) number of entries in the neighboring bins, and ``entries`` is the total (weighted) number of entries. The corresponding objective function for pure Ben-Haim/Tom-Tov is just ``x2 - x1``.
+    
+    Args:
+        num (int): Maximum number of bins (used as a constraint when merging).
+        tailDetail (float): Between 0 and 1 inclusive: use 0 to focus on the bulk of the distribution and 1 to focus on the tails; see above for details.
+        value (histogrammar.defs.Container): New value (note the ``=>``: expression is reevaluated every time a new value is needed).
+        values (list of histogrammar.defs.Container): Containers for the surviving bins.
+        min (float): Lowest observed value; used to interpret the first bin as a finite PDF (since the first bin technically extends to minus infinity).
+        max (float): Highest observed value; used to interpret the last bin as a finite PDF (since the last bin technically extends to plus infinity).
+        entries (float): Weighted number of entries (sum of all observed weights).
+    """
+
     def __init__(self, num, tailDetail, value, values, min, max, entries):
         self.num = num
         self.tailDetail = tailDetail
@@ -310,8 +566,10 @@ class Clustering1D(object):
             del self.values[lowIndex]
             del self.values[lowIndex]
             self.values.insert(lowIndex, replacement)
-            
+
     def update(self, x, datum, weight):
+        """Ben-Haim and Tom-Tov's "Algorithm 1" with min/max/entries tracking."""
+
         if weight > 0.0:
             index = bisect.bisect_left(self.values, (x, LessThanEverything()))
             if len(self.values) > index and self.values[index][0] == x:
@@ -330,6 +588,7 @@ class Clustering1D(object):
         self.entries += weight
 
     def merge(self, other):
+        """Ben-Haim and Tom-Tov's "Algorithm 2" with min/max/entries tracking."""
         bins = {}
 
         for x, v in self.values:
@@ -352,32 +611,48 @@ class Clustering1D(object):
 ################################################################ interpretation of central bins as a distribution
 
 class CentralBinsDistribution(object):
+    """Mix-in for containers with non-uniform bins defined by centers (such as histogrammar.primitives.centralbin.CentrallyBin and histogrammar.primitives.adaptivebin.AdaptivelyBin)."""
+
     def pdf(self, *xs):
+        """Probability distribution function (PDF) of one sample point.
+      
+        Computed as the ``entries`` of the corresponding bin divided by total number of entries divided by bin width.
+        """
         if len(xs) == 0:
             return self.pdfTimesEntries(xs[0]) / self.entries
         else:
             return [x / self.entries for x in self.pdfTimesEntries(*xs)]
 
     def cdf(self, *xs):
+        """Cumulative distribution function (CDF, or "accumulation function") of one sample point.
+        
+        Computed by adding bin contents from minus infinity to the point in question. This is a continuous, piecewise linear function.
+        """
         if len(xs) == 0:
             return self.cdfTimesEntries(xs[0]) / self.entries
         else:
             return [x / self.entries for x in self.cdfTimesEntries(*xs)]
 
     def qf(self, *xs):
+        """Quantile function (QF, or "inverse of the accumulation function") of one sample point.
+       
+        Computed like the CDF, but solving for the point in question, rather than integrating up to it. This is a continuous, piecewise linear function.
+        """
         if len(xs) == 0:
             return self.qfTimesEntries(xs[0]) * self.entries
         else:
             return [x * self.entries for x in self.qfTimesEntries(*xs)]
 
     def pdfTimesEntries(self, x, *xs):
+        """PDF without the non-unity number of entries removed (no division by zero when ``entries`` is zero)."""
+
         xs = [x] + list(xs)
 
         if len(self.bins) == 0 or math.isnan(self.min) or math.isnan(self.max):
             out = [0.0] * len(xs)
 
         elif len(self.bins) == 1:
-            out = [float("inf") if x == bins[0][0] else 0.0 for x in xs]
+            out = [float("inf") if x == self.bins[0][0] else 0.0 for x in xs]
 
         else:
             out = [0.0] * len(xs)
@@ -403,6 +678,8 @@ class CentralBinsDistribution(object):
             return out
 
     def cdfTimesEntries(self, x, *xs):
+        """CDF without the non-unity number of entries removed (no division by zero when ``entries`` is zero)."""
+
         xs = [x] + list(xs)
 
         if len(self.bins) == 0 or math.isnan(self.min) or math.isnan(self.max):
@@ -448,6 +725,8 @@ class CentralBinsDistribution(object):
             return out
 
     def qfTimesEntries(self, y, *ys):
+        """QF without the non-unity number of entries removed (no division by zero when ``entries`` is zero)."""
+
         ys = [y] + list(ys)
 
         if len(self.bins) == 0 or math.isnan(self.min) or math.isnan(self.max):
@@ -490,13 +769,20 @@ class CentralBinsDistribution(object):
 
 class CentrallyBinMethods(object):
     @property
-    def centersSet(self): return set(self.centers)
+    def centersSet(self):
+        """Set of centers of each bin."""
+        return set(self.centers)
     @property
-    def centers(self): return map(lambda x: x[0], self.bins)
+    def centers(self):
+        """Iterable over the centers of each bin."""
+        return [c for c, v in self.bins]
     @property
-    def values(self): return map(lambda x: x[0], self.bins)
+    def values(self):
+        """Iterable over the containers associated with each bin."""
+        return [v for c, v in self.bins]
 
     def index(self, x):
+        """Find the closest index to ``x``."""
         closestIndex = bisect.bisect_left(self.bins, (x, LessThanEverything()))
         if closestIndex == len(self.bins):
             closestIndex = len(self.bins) - 1
@@ -508,18 +794,22 @@ class CentrallyBinMethods(object):
         return closestIndex
 
     def center(self, x):
+        """Return the exact center of the bin that ``x`` belongs to."""
         return self.bins[self.index(x)][0]
 
     def value(self, x):
+        """Return the aggregator at the center of the bin that ``x`` belongs to."""
         return self.bins[self.index(x)][1]
 
     def nan(self, x):
+        """Return ``true`` iff ``x`` is in the nanflow region (equal to ``NaN``)."""
         return math.isnan(x)
 
     def neighbors(self, center):
+        """Find the lower and upper neighbors of a bin (given by exact bin center)."""
         closestIndex = self.index(center)
         if self.bins[closestIndex][0] != center:
-            raise TypeError("position {} is not the exact center of a bin".format(center))
+            raise TypeError("position {0} is not the exact center of a bin".format(center))
         elif closestIndex == 0:
             return None, self.bins[closestIndex + 1][0]
         elif closestIndex == len(self.bins) - 1:
@@ -528,6 +818,7 @@ class CentrallyBinMethods(object):
             return self.bins[closestIndex - 1][0], self.bins[closestIndex + 1][0]
 
     def range(self, center):
+        """Get the low and high edge of a bin (given by exact bin center)."""
         below, above = self.neighbors(center)    # is never None, None
         if below is None:
             return float("-inf"), (center + above)/2.0

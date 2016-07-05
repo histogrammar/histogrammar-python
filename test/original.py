@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -101,6 +101,9 @@ class TestEverything(unittest.TestCase):
 
     def checkName(self, x):
         repr(x)
+
+    def runTest(self):
+        pass
 
     ################################################################ Count
 
@@ -327,6 +330,7 @@ class TestEverything(unittest.TestCase):
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
 
+
             self.assertAlmostEqual(leftAveraging.cut.mean, self.meanWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
             self.assertAlmostEqual(rightAveraging.cut.mean, self.meanWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
 
@@ -337,7 +341,7 @@ class TestEverything(unittest.TestCase):
             self.checkJson(leftAveraging)
             self.checkPickle(leftAveraging)
             self.checkName(leftAveraging)
-
+        
     ################################################################ Deviate
 
     def testDeviate(self):
@@ -370,6 +374,7 @@ class TestEverything(unittest.TestCase):
 
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
+            
 
             self.assertAlmostEqual(leftDeviating.cut.variance, self.variance([_.double for _ in left if _.bool]))
             self.assertAlmostEqual(rightDeviating.cut.variance, self.variance([_.double for _ in right if _.bool]))
@@ -381,7 +386,7 @@ class TestEverything(unittest.TestCase):
             self.checkJson(leftDeviating)
             self.checkPickle(leftDeviating)
             self.checkName(leftDeviating)
-
+        
     def testDeviateWithWeightingFactor(self):
         for i in xrange(11):
             left, right = self.struct[:i], self.struct[i:]
@@ -586,11 +591,11 @@ class TestEverything(unittest.TestCase):
         self.checkName(three)
 
     def testBagWithLimit(self):
-        one = Limit(Bag(lambda x: x.string), 20)
+        one = Limit(20, Bag(lambda x: x.string))
         for _ in self.struct: one.fill(_)
         self.assertEqual(one.get.values, {"one": 1.0, "two": 1.0, "three": 1.0, "four": 1.0, "five": 1.0, "six": 1.0, "seven": 1.0, "eight": 1.0, "nine": 1.0, "ten": 1.0})
 
-        two = Limit(Bag(lambda x: x.string), 9)
+        two = Limit(9, Bag(lambda x: x.string))
         for _ in self.struct: two.fill(_)
         self.assertTrue(two.saturated)
 
@@ -711,6 +716,53 @@ class TestEverything(unittest.TestCase):
         self.checkPickle(two)
         self.checkName(one)
         self.checkName(two)
+
+    def testPlotHistogram(self):
+        one = Histogram(5, -3.0, 7.0, lambda x: x)
+        for _ in self.simple: one.fill(_)
+
+        two = Histogram(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
+        for _ in self.struct: two.fill(_)
+
+        try:
+            from histogrammar.plot.bokeh import plot,save,view
+            curve1 = one.bokeh("histogram")
+            curve2 = two.bokeh()
+            c = plot(curve1,curve2)
+            save(c,"plot_histogram.html")
+            #self.checkHtml("example.html")
+        except ImportError:
+            pass
+
+    def testPlotProfileErr(self):
+        one = ProfileErr(5, -3.0, 7.0, lambda x: x, lambda x: x)
+        for _ in self.simple: one.fill(_)
+    
+        try:
+            from histogrammar.plot.bokeh import plot,save,view
+            curve = one.bokeh("errors")
+            c = plot(curve)
+            save(c,"plot_errors.html")
+            #self.checkHtml("example.html")
+        except ImportError:
+            pass
+
+    def testPlotStack(self):
+        one = Histogram(5, -3.0, 7.0, lambda x: x)
+        two = Histogram(5, -3.0, 7.0, lambda x: x)
+        for _ in self.simple:  
+            one.fill(_)
+            two.fill(_)
+   
+        try:
+            from histogrammar.plot.bokeh import plot,save,view
+            s = Stack.build(one,two)
+            curve = s.bokeh()
+            c = plot(curve)
+            save(c,"plot_stack.html")
+            #self.checkHtml("example.html")
+        except ImportError:
+            pass
 
     ################################################################ SparselyBin
 
@@ -870,7 +922,7 @@ class TestEverything(unittest.TestCase):
         categorizing = Categorize(named("something", lambda x: x.string[0]))
         for _ in self.struct: categorizing.fill(_)
 
-        self.assertEqual({k: v.entries for k, v in categorizing.pairsMap.items()}, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
+        self.assertEqual(dict((k, v.entries) for k, v in categorizing.pairsMap.items()), {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
 
         self.checkJson(categorizing)
         self.checkPickle(categorizing)
