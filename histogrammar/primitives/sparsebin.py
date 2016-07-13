@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import math
+import numbers
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -46,9 +47,9 @@ class SparselyBin(Factory, Container):
             nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
             origin (float): the left edge of the bin whose index is zero.
         """
-        if not isinstance(binWidth, (int, long, float)):
+        if not isinstance(binWidth, numbers.Real):
             raise TypeError("binWidth ({0}) must be a number".format(binWidth))
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(contentType, basestring):
             raise TypeError("contentType ({0}) must be a string".format(contentType))
@@ -56,7 +57,7 @@ class SparselyBin(Factory, Container):
             raise TypeError("bins ({0}) must be a map from 64-bit integers to Containers".format(bins))
         if not isinstance(nanflow, Container):
             raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
-        if not isinstance(origin, (int, long, float)):
+        if not isinstance(origin, numbers.Real):
             raise TypeError("origin ({0}) must be a number".format(origin))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
@@ -88,13 +89,13 @@ class SparselyBin(Factory, Container):
             entries (float): the number of entries, initially 0.0.
             bins (dict from int to :doc:`Container <histogrammar.defs.Container>`): the map, probably a hashmap, to fill with values when their `entries` become non-zero.
         """
-        if not isinstance(binWidth, (int, long, float)):
+        if not isinstance(binWidth, numbers.Real):
             raise TypeError("binWidth ({0}) must be a number".format(binWidth))
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({0}) must be a Container".format(value))
         if not isinstance(nanflow, Container):
             raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
-        if not isinstance(origin, (int, long, float)):
+        if not isinstance(origin, numbers.Real):
             raise TypeError("origin ({0}) must be a number".format(origin))
         if binWidth <= 0.0:
             raise ValueError("binWidth ({0}) must be greater than zero".format(binWidth))
@@ -227,9 +228,7 @@ class SparselyBin(Factory, Container):
 
         if weight > 0.0:
             q = self.quantity(datum)
-            try:
-                q = float(q)
-            except:
+            if not isinstance(q, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             if self.nan(q):
@@ -326,12 +325,12 @@ class SparselyBin(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"], ["name", "bins:name"]):
-            if json["binWidth"] in ("nan", "inf", "-inf") or isinstance(json["binWidth"], (int, long, float)):
+            if json["binWidth"] in ("nan", "inf", "-inf") or isinstance(json["binWidth"], numbers.Real):
                 binWidth = float(json["binWidth"])
             else:
                 raise JsonFormatException(json, "SparselyBin.binWidth")
 
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "SparselyBin.entries")
@@ -371,7 +370,7 @@ class SparselyBin(Factory, Container):
                 raise JsonFormatException(json, "Bin.nanflow:type")
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
 
-            if json["origin"] in ("nan", "inf", "-inf") or isinstance(json["origin"], (int, long, float)):
+            if json["origin"] in ("nan", "inf", "-inf") or isinstance(json["origin"], numbers.Real):
                 origin = json["origin"]
             else:
                 raise JsonFormatException(json, "SparselyBin.origin")

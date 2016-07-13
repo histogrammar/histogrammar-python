@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numbers
+
 from histogrammar.defs import *
 from histogrammar.util import *
 
@@ -47,9 +49,9 @@ class Limit(Factory, Container):
             contentType (str): the value's sub-aggregator type (must be provided to determine type for the case when ``value`` has been deleted).
             value (:doc:`Container <histogrammar.defs.Container>` or ``None``) is the filled sub-aggregator if unsaturated, ``None`` if saturated.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(limit, (int, long, float)):
+        if not isinstance(limit, numbers.Real):
             raise TypeError("limit ({0}) must be a number".format(limit))
         if not isinstance(contentType, basestring):
             raise TypeError("contentType ({0}) must be a number".format(contentType))
@@ -79,7 +81,7 @@ class Limit(Factory, Container):
             entries (float): the number of entries, initially 0.0.
             contentType (str): the value's sub-aggregator type (must be provided to determine type for the case when `value` has been deleted).
         """
-        if not isinstance(limit, (int, long, float)):
+        if not isinstance(limit, numbers.Real):
             raise TypeError("limit ({0}) must be a number".format(limit))
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({0}) must be None or a Container".format(value))
@@ -194,12 +196,12 @@ class Limit(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "limit", "type", "data"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Limit.entries")
 
-            if json["limit"] in ("nan", "inf", "-inf") or isinstance(json["limit"], (int, long, float)):
+            if json["limit"] in ("nan", "inf", "-inf") or isinstance(json["limit"], numbers.Real):
                 limit = float(json["limit"])
             else:
                 raise JsonFormatException(json, "Limit.limit")

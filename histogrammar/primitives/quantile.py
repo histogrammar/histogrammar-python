@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import math
+import numbers
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -40,11 +41,11 @@ class Quantile(Factory, Container):
             target (float): the value between 0.0 and 1.0 (inclusive), indicating the quantile approximated.
             estimate (float): the best estimate of where `target` of the distribution is below this value and `1.0 - target` of the distribution is above.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(target, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(target, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("target ({0}) must be a number".format(target))
-        if not isinstance(estimate, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(estimate, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("estimate ({0}) must be a number".format(estimate))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
@@ -70,7 +71,7 @@ class Quantile(Factory, Container):
             estimate (float): the best estimate of where `target` of the distribution is below this value and `1.0 - target` of the distribution is above. Initially, this value is NaN.
             cumulativeDeviation (float): the sum of absolute error between observed values and the current `estimate` (which moves). Initially, this value is 0.0.
         """
-        if not isinstance(target, (int, long, float)):
+        if not isinstance(target, numbers.Real):
             raise TypeError("target ({0}) must be a number".format(target))
         if target < 0.0 or target > 1.0:
             raise ValueError("target ({0}) must be between 0 and 1, inclusive".format(target))
@@ -116,9 +117,7 @@ class Quantile(Factory, Container):
 
         if weight > 0.0:
             q = self.quantity(datum)
-            try:
-                q = float(q)
-            except:
+            if not isinstance(q, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
@@ -166,7 +165,7 @@ class Quantile(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "target", "estimate"], ["name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Quantile.entries")
@@ -178,12 +177,12 @@ class Quantile(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "AbsoluteErr.name")
 
-            if json["target"] in ("nan", "inf", "-inf") or isinstance(json["target"], (int, long, float)):
+            if json["target"] in ("nan", "inf", "-inf") or isinstance(json["target"], numbers.Real):
                 target = float(json["target"])
             else:
                 raise JsonFormatException(json["target"], "Quantile.target")
 
-            if json["estimate"] in ("nan", "inf", "-inf") or isinstance(json["estimate"], (int, long, float)):
+            if json["estimate"] in ("nan", "inf", "-inf") or isinstance(json["estimate"], numbers.Real):
                 estimate = float(json["estimate"])
             else:
                 raise JsonFormatException(json["estimate"], "Quantile.estimate")

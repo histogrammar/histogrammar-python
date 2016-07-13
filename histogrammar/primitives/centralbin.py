@@ -16,6 +16,7 @@
 
 import bisect
 import math
+import numbers
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -40,13 +41,13 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
             max (float): the highest value of the quantity observed or NaN if no data were observed.
             nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
+        if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], numbers.Real) and isinstance(v[1], Container) for v in bins):
             raise TypeError("bins ({0}) must be a list of number, Container pairs".format(bins))
-        if not isinstance(min, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(min, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("min ({0}) must be a number".format(min))
-        if not isinstance(max, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(max, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("max ({0}) must be a number".format(max))
         if not isinstance(nanflow, Container):
             raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
@@ -80,7 +81,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
             max (float): the highest value of the quantity observed, initially NaN.
         """
 
-        if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
+        if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], numbers.Real) and isinstance(v[1], Container) for v in bins):
             raise TypeError("bins ({0}) must be a list of number, Container pairs".format(bins))
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({0}) must be None or a Container".format(value))
@@ -138,9 +139,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
 
         if weight > 0.0:
             q = self.quantity(datum)
-            try:
-                q = float(q)
-            except:
+            if not isinstance(q, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             if self.nan(q):
@@ -257,7 +256,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow"], ["name", "bins:name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "CentrallyBin.entries")
@@ -283,7 +282,7 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
                 bins = []
                 for i, binpair in enumerate(json["bins"]):
                     if isinstance(binpair, dict) and hasKeys(binpair.keys(), ["center", "value"]):
-                        if binpair["center"] in ("nan", "inf", "-inf") or isinstance(binpair["center"], (int, long, float)):
+                        if binpair["center"] in ("nan", "inf", "-inf") or isinstance(binpair["center"], numbers.Real):
                             center = float(binpair["center"])
                         else:
                             JsonFormatException(binpair["center"], "CentrallyBin.bins {0} center".format(i))
@@ -293,12 +292,12 @@ class CentrallyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMeth
                     else:
                         raise JsonFormatException(binpair, "CentrallyBin.bins {0}".format(i))
 
-            if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], (int, long, float)):
+            if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], numbers.Real):
                 min = float(json["min"])
             else:
                 raise JsonFormatException(json, "CentrallyBin.min")
 
-            if json["max"] in ("nan", "inf", "-inf") or isinstance(json["max"], (int, long, float)):
+            if json["max"] in ("nan", "inf", "-inf") or isinstance(json["max"], numbers.Real):
                 max = float(json["max"])
             else:
                 raise JsonFormatException(json, "CentrallyBin.max")

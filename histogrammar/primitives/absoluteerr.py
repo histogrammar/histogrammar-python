@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numbers
+
 from histogrammar.defs import *
 from histogrammar.util import *
 
@@ -32,9 +34,9 @@ class AbsoluteErr(Factory, Container):
             mae (float): the mean absolute error.
         """
 
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(mae, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(mae, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("mae ({0}) must be a number".format(mae))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
@@ -92,9 +94,7 @@ class AbsoluteErr(Factory, Container):
 
         if weight > 0.0:
             q = self.quantity(datum)
-            try:
-                q = float(q)
-            except:
+            if not isinstance(q, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
@@ -134,7 +134,7 @@ class AbsoluteErr(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mae"], ["name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "AbsoluteErr.entries")
@@ -146,7 +146,7 @@ class AbsoluteErr(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "AbsoluteErr.name")
 
-            if json["mae"] in ("nan", "inf", "-inf") or isinstance(json["mae"], (int, long, float)):
+            if json["mae"] in ("nan", "inf", "-inf") or isinstance(json["mae"], numbers.Real):
                 mae = float(json["mae"])
             else:
                 raise JsonFormatException(json["mae"], "AbsoluteErr.mae")

@@ -16,6 +16,7 @@
 
 import bisect
 import math
+import numbers
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -60,19 +61,19 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
             nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
 
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(num, (int, long)):
             raise TypeError("num ({0}) must be an integer".format(num))
-        if not isinstance(tailDetail, (int, long, float)):
+        if not isinstance(tailDetail, numbers.Real):
             raise TypeError("tailDetail ({0}) must be a number".format(tailDetail))
         if not isinstance(contentType, basestring):
             raise TypeError("contentType ({0}) must be a string".format(contentType))
-        if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], (int, long, float)) and isinstance(v[1], Container) for v in bins):
+        if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], numbers.Real) and isinstance(v[1], Container) for v in bins):
             raise TypeError("bins ({0}) must be a list of number, Container pairs".format(bins))
-        if not isinstance(min, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(min, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("min ({0}) must be a number".format(min))
-        if not isinstance(max, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(max, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("max ({0}) must be a number".format(max))
         if not isinstance(nanflow, Container):
             raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
@@ -115,7 +116,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
         if not isinstance(num, (int, long)):
             raise TypeError("num ({0}) must be an integer".format(num))
-        if not isinstance(tailDetail, (int, long, float)):
+        if not isinstance(tailDetail, numbers.Real):
             raise TypeError("tailDetail ({0}) must be a number".format(tailDetail))
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({0}) must be None or a Container".format(value))
@@ -206,9 +207,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
 
         if weight > 0.0:
             q = self.quantity(datum)
-            try:
-                q = float(q)
-            except:
+            if not isinstance(q, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             self.clustering.update(q, datum, weight)
@@ -244,7 +243,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
             "entries": floatToJson(self.entries),
             "num": self.num,
             "bins:type": self.clustering.value.name if self.clustering.value is not None else self.contentType,
-            "bins": [{"center": c, "value": v.toJsonFragment(True)} for c, v in self.bins],
+            "bins": [{"center": floatToJson(c), "value": v.toJsonFragment(True)} for c, v in self.bins],
             "min": floatToJson(self.min),
             "max": floatToJson(self.max),
             "nanflow:type": self.nanflow.name,
@@ -257,7 +256,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "num", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow", "tailDetail"], ["name", "bins:name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "AdaptivelyBin.entries")
@@ -289,7 +288,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
                 bins = []
                 for i, binpair in enumerate(json["bins"]):
                     if isinstance(binpair, dict) and hasKeys(binpair.keys(), ["center", "value"]):
-                        if binpair["center"] in ("nan", "inf", "-inf") or isinstance(binpair["center"], (int, long, float)):
+                        if binpair["center"] in ("nan", "inf", "-inf") or isinstance(binpair["center"], numbers.Real):
                             center = float(binpair["center"])
                         else:
                             JsonFormatException(binpair["center"], "AdaptivelyBin.bins {0} center".format(i))
@@ -299,12 +298,12 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
                     else:
                         raise JsonFormatException(binpair, "AdaptivelyBin.bins {0}".format(i))
 
-            if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], (int, long, float)):
+            if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], numbers.Real):
                 min = float(json["min"])
             else:
                 raise JsonFormatException(json, "AdaptivelyBin.min")
 
-            if json["max"] in ("nan", "inf", "-inf") or isinstance(json["max"], (int, long, float)):
+            if json["max"] in ("nan", "inf", "-inf") or isinstance(json["max"], numbers.Real):
                 max = float(json["max"])
             else:
                 raise JsonFormatException(json, "AdaptivelyBin.max")
@@ -315,7 +314,7 @@ class AdaptivelyBin(Factory, Container, CentralBinsDistribution, CentrallyBinMet
                 raise JsonFormatException(json, "AdaptivelyBin.nanflow:type")
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
 
-            if json["tailDetail"] in ("nan", "inf", "-inf") or isinstance(json["tailDetail"], (int, long, float)):
+            if json["tailDetail"] in ("nan", "inf", "-inf") or isinstance(json["tailDetail"], numbers.Real):
                 tailDetail = float(json["tailDetail"])
             else:
                 raise JsonFormatException(json, "AdaptivelyBin.tailDetail")

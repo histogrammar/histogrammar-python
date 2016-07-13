@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import math
+import numbers
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -58,11 +59,11 @@ class Bin(Factory, Container):
             overflow (:doc:`Container <histogrammar.defs.Container>`): the filled overflow bin.
             nanflow (:doc:`Container <histogrammar.defs.Container>`): is the filled nanflow bin.
         """
-        if not isinstance(low, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(low, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("low ({0}) must be a number".format(low))
-        if not isinstance(high, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(high, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("high ({0}) must be a number".format(high))
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(values, (list, tuple)) and not all(isinstance(v, Container) for v in values):
             raise TypeError("values ({0}) must be a list of Containers".format(values))
@@ -109,9 +110,9 @@ class Bin(Factory, Container):
 
         if not isinstance(num, (int, long)):
             raise TypeError("num ({0}) must be an integer".format(num))
-        if not isinstance(low, (int, long, float)):
+        if not isinstance(low, numbers.Real):
             raise TypeError("low ({0}) must be a number".format(low))
-        if not isinstance(high, (int, long, float)):
+        if not isinstance(high, numbers.Real):
             raise TypeError("high ({0}) must be a number".format(high))
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({0}) must be a Container".format(value))
@@ -213,9 +214,7 @@ class Bin(Factory, Container):
 
         if weight > 0.0:
             q = self.quantity(datum)
-            try:
-                q = float(q)
-            except:
+            if not isinstance(q, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             if self.under(q):
@@ -321,17 +320,17 @@ class Bin(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values", "underflow:type", "underflow", "overflow:type", "overflow", "nanflow:type", "nanflow"], ["name", "values:name"]):
-            if json["low"] in ("nan", "inf", "-inf") or isinstance(json["low"], (int, long, float)):
+            if json["low"] in ("nan", "inf", "-inf") or isinstance(json["low"], numbers.Real):
                 low = float(json["low"])
             else:
                 raise JsonFormatException(json, "Bin.low")
 
-            if json["high"] in ("nan", "inf", "-inf") or isinstance(json["high"], (int, long, float)):
+            if json["high"] in ("nan", "inf", "-inf") or isinstance(json["high"], numbers.Real):
                 high = float(json["high"])
             else:
                 raise JsonFormatException(json, "Bin.high")
 
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Bin.entries")

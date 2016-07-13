@@ -14,8 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math
 import json
+import math
+import numbers
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -39,9 +40,9 @@ class Bag(Factory, Container):
             values (dict from float, tuple of floats, or str to float): the number of entries for each unique item.
         """
 
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(values, dict) and not all(isinstance(k, (int, long, float)) for k, v in values.items()):
+        if not isinstance(values, dict) and not all(isinstance(k, numbers.Real) for k, v in values.items()):
             raise TypeError("values ({0}) must be a dict from numbers to range type".format(values))
         if float(entries) < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
@@ -159,7 +160,7 @@ class Bag(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "values"], ["name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = json["entries"]
             else:
                 raise JsonFormatException(json["entries"], "Bag.entries")
@@ -178,18 +179,18 @@ class Bag(Factory, Container):
                 values = {}
                 for i, nv in enumerate(json["values"]):
                     if isinstance(nv, dict) and hasKeys(nv.keys(), ["w", "v"]):
-                        if nv["w"] in ("nan", "inf", "-inf") or isinstance(nv["w"], (int, long, float)):
+                        if nv["w"] in ("nan", "inf", "-inf") or isinstance(nv["w"], numbers.Real):
                             n = float(nv["w"])
                         else:
                             raise JsonFormatException(nv["w"], "Bag.values {0} n".format(i))
 
-                        if nv["v"] in ("nan", "inf", "-inf") or isinstance(nv["v"], (int, long, float)):
+                        if nv["v"] in ("nan", "inf", "-inf") or isinstance(nv["v"], numbers.Real):
                             v = floatOrNan(nv["v"])
                         elif isinstance(nv["v"], basestring):
                             v = nv["v"]
                         elif isinstance(nv["v"], (list, tuple)):
                             for j, d in enumerate(nv["v"]):
-                                if d not in ("nan", "inf", "-inf") and not isinstance(d, (int, long, float)):
+                                if d not in ("nan", "inf", "-inf") and not isinstance(d, numbers.Real):
                                     raise JsonFormatException(d, "Bag.values {0} v {1}".format(i, j))
                             v = tuple(map(floatOrNan, nv["v"]))
                         else:
@@ -227,12 +228,12 @@ class Bag(Factory, Container):
             if isinstance(v1, basestring) and isinstance(v2, basestring):
                 if v1 != v2:
                     return False
-            elif isinstance(v1, (int, long, float)) and isinstance(v2, (int, long, float)):
+            elif isinstance(v1, numbers.Real) and isinstance(v2, numbers.Real):
                 if not numeq(v1, v2):
                     return False
             elif isinstance(v1, tuple) and isinstance(v2, tuple) and len(v1) == len(v2):
                 for v1i, v2i in zip(v1, v2):
-                    if isinstance(v1i, (int, long, float)) and isinstance(v2i, (int, long, float)):
+                    if isinstance(v1i, numbers.Real) and isinstance(v2i, numbers.Real):
                         if not numeq(v1i, v2i):
                             return False
                     else:
@@ -242,7 +243,7 @@ class Bag(Factory, Container):
 
             if v1 == "nan" and v2 == "nan" and w1 is None and w2 is None:
                 pass
-            elif isinstance(w1, (int, long, float)) and isinstance(w2, (int, long, float)):
+            elif isinstance(w1, numbers.Real) and isinstance(w2, numbers.Real):
                 if not numeq(w1, w2):
                     return False
             else:

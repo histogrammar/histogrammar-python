@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numbers
+
 from histogrammar.defs import *
 from histogrammar.util import *
 
@@ -31,9 +33,9 @@ class Sum(Factory, Container):
             entries (float): the number of entries.
             sum (float): the sum.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(sum, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(sum, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("sum ({0}) must be a number".format(sum))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
@@ -82,9 +84,7 @@ class Sum(Factory, Container):
 
         if weight > 0.0:
             q = self.quantity(datum)
-            try:
-                q = float(q)
-            except:
+            if not isinstance(q, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
@@ -125,7 +125,7 @@ class Sum(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sum"], ["name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Sum.entries")
@@ -137,7 +137,7 @@ class Sum(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Sum.name")
 
-            if json["sum"] in ("nan", "inf", "-inf") or isinstance(json["sum"], (int, long, float)):
+            if json["sum"] in ("nan", "inf", "-inf") or isinstance(json["sum"], numbers.Real):
                 sum = float(json["sum"])
             else:
                 raise JsonFormatException(json["sum"], "Sum.sum")

@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import math
+import numbers
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -33,9 +34,9 @@ class Minimize(Factory, Container):
             entries (float): the number of entries.
             min (float): the lowest value of the quantity observed or NaN if no data were observed.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(min, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(min, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("min ({0}) must be a number".format(min))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
@@ -89,9 +90,7 @@ class Minimize(Factory, Container):
 
         if weight > 0.0:
             q = self.quantity(datum)
-            try:
-                q = float(q)
-            except:
+            if not isinstance(q, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
@@ -131,7 +130,7 @@ class Minimize(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "min"], ["name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Minimize.entries")
@@ -143,7 +142,7 @@ class Minimize(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Minimize.name")
 
-            if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], (int, long, float)):
+            if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], numbers.Real):
                 min = float(json["min"])
             else:
                 raise JsonFormatException(json["min"], "Minimize.min")
@@ -182,9 +181,9 @@ class Maximize(Factory, Container):
             entries (float): the number of entries.
             max (float): the highest value of the quantity observed or NaN if no data were observed.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(max, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(max, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("max ({0}) must be a number".format(max))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
@@ -233,9 +232,7 @@ class Maximize(Factory, Container):
 
         if weight > 0.0:
             q = self.quantity(datum)
-            try:
-                q = float(q)
-            except:
+            if not isinstance(q, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
@@ -280,7 +277,7 @@ class Maximize(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "max"], ["name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Maximize.entries")
@@ -292,7 +289,7 @@ class Maximize(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Maximize.name")
 
-            if json["max"] in ("nan", "inf", "-inf") or isinstance(json["max"], (int, long, float)):
+            if json["max"] in ("nan", "inf", "-inf") or isinstance(json["max"], numbers.Real):
                 max = float(json["max"])
             else:
                 raise JsonFormatException(json["max"], "Maximize.max")

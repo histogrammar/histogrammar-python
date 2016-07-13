@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numbers
+
 from histogrammar.defs import *
 from histogrammar.util import *
 
@@ -36,7 +38,7 @@ class Count(Factory, Container):
         Parameters:
             entries (float): the number of entries.
         """
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
@@ -81,9 +83,7 @@ class Count(Factory, Container):
 
         if weight > 0.0:
             t = self.transform(weight)
-            try:
-                t = float(t)
-            except:
+            if not isinstance(t, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(t))
 
             # no possibility of exception from here on out (for rollback)
@@ -128,7 +128,7 @@ class Count(Factory, Container):
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if json in ("nan", "inf", "-inf") or isinstance(json, (int, long, float)):
+        if json in ("nan", "inf", "-inf") or isinstance(json, numbers.Real):
             return Count.ed(float(json))
         else:
             raise JsonFormatException(json, "Count")

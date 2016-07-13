@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import math
+import numbers
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -34,9 +35,9 @@ class Average(Factory, Container):
             mean (float): the mean.
         """
 
-        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(mean, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(mean, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("mean ({0}) must be a number".format(mean))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
@@ -88,9 +89,7 @@ class Average(Factory, Container):
 
         if weight > 0.0:
             q = self.quantity(datum)
-            try:
-                q = float(q)
-            except:
+            if not isinstance(q, numbers.Real):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
@@ -152,7 +151,7 @@ class Average(Factory, Container):
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mean"], ["name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Average.entries")
@@ -164,7 +163,7 @@ class Average(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Average.name")
 
-            if json["mean"] in ("nan", "inf", "-inf") or isinstance(json["mean"], (int, long, float)):
+            if json["mean"] in ("nan", "inf", "-inf") or isinstance(json["mean"], numbers.Real):
                 mean = float(json["mean"])
             else:
                 raise JsonFormatException(json["mean"], "Average.mean")
