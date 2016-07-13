@@ -13,3 +13,6 @@ addons:
 install:
   - pip install --upgrade pip
   - pip install bokeh
+
+script:
+  python setup.py test
