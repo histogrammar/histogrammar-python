@@ -1,0 +1,15 @@
+language: python
+
+python:
+  - 2.7
+  - 3.4
+
+addons:
+  apt:
+    packages:
+      - python-numpy
+      - python3-numpy
+
+install:
+  - pip install --update pip
+  - pip install bokeh
