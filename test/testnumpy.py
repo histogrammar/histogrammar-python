@@ -79,7 +79,7 @@ def makeSamples(SIZE, HOLES):
 
         return {"empty": empty, "positive": positive, "boolean": boolean, "noholes": noholes, "withholes": withholes, "withholes2": withholes2}
 
-class TestEverything(unittest.TestCase):
+class TestNumpy(unittest.TestCase):
     def runTest(self):
         pass
         
