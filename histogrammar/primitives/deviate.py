@@ -94,7 +94,7 @@ class Deviate(Factory, Container):
                 out.mean = (self.mean + other.mean)/2.0
             else:
                 out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
-            out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + self.entries*self.mean**2 + other.entries*other.mean**2 - 2.0*out.mean*(self.entries*self.mean + other.entries*other.mean) + out.mean*out.mean*out.entries
+            out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + self.entries*self.mean*self.mean + other.entries*other.mean*other.mean - 2.0*out.mean*(self.entries*self.mean + other.entries*other.mean) + out.mean*out.mean*out.entries
             return out.specialize()
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
@@ -158,9 +158,9 @@ class Deviate(Factory, Container):
         elif ca_plus_cb > 0.0:
             cb = ca_plus_cb - ca
             mb = numpy.average(q, weights=weights)
-            sb = cb*numpy.average((q - mb)**2, weights=weights)
+            sb = cb*numpy.average((q - mb)*(q - mb), weights=weights)
             self.mean = float((ca*ma + (ca_plus_cb - ca)*mb) / ca_plus_cb)
-            self.varianceTimesEntries = float(sa + sb + ca*ma**2 + cb*mb**2 - 2.0*self.mean*(ca*ma + cb*mb) + self.mean*self.mean*ca_plus_cb)
+            self.varianceTimesEntries = float(sa + sb + ca*ma*ma + cb*mb*mb - 2.0*self.mean*(ca*ma + cb*mb) + self.mean*self.mean*ca_plus_cb)
 
     @property
     def children(self):

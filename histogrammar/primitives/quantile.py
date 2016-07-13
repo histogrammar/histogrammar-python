@@ -129,7 +129,7 @@ class Quantile(Factory, Container):
             self.estimate = q
         else:
             self.cumulativeDeviation += abs(q - self.estimate)
-            learningRate = 1.5 * self.cumulativeDeviation / self.entries**2
+            learningRate = 1.5 * self.cumulativeDeviation / (self.entries*self.entries)
             if q < self.estimate:
                 sgn = -1
             elif q > self.estimate:

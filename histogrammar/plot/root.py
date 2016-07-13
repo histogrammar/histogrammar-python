@@ -90,13 +90,13 @@ class ProfileMethods(object):
     def root(self, name, title=""):
         import ROOT
         tprofile = ROOT.TProfile(name, title, len(self.values), self.low, self.high)
-        tprofile.SetBinContent(0, self.underflow.entries**2)
+        tprofile.SetBinContent(0, self.underflow.entries*self.underflow.entries)
         tprofile.SetBinEntries(0, self.underflow.entries)
         for i, v in enumerate(self.values):
             tprofile.SetBinError(i + 1, math.sqrt(v.entries) * v.mean)
             tprofile.SetBinContent(i + 1, v.entries * v.mean)
             tprofile.SetBinEntries(i + 1, v.entries)
-        tprofile.SetBinContent(len(self.values) + 1, self.overflow.entries**2)
+        tprofile.SetBinContent(len(self.values) + 1, self.overflow.entries*self.overflow.entries)
         tprofile.SetBinEntries(len(self.values) + 1, self.overflow.entries)
         tprofile.SetEntries(self.entries)
         return tprofile
@@ -125,13 +125,13 @@ class ProfileErrMethods(object):
     def root(self, name, title=""):
         import ROOT
         tprofile = ROOT.TProfile(name, title, len(self.values), self.low, self.high)
-        tprofile.SetBinContent(0, self.underflow.entries**2)
+        tprofile.SetBinContent(0, self.underflow.entries*self.underflow.entries)
         tprofile.SetBinEntries(0, self.underflow.entries)
         for i, v in enumerate(self.values):
-            tprofile.SetBinError(i + 1, math.sqrt(v.entries*(v.variance + v.mean**2)))
+            tprofile.SetBinError(i + 1, math.sqrt(v.entries*(v.variance + v.mean*v.mean)))
             tprofile.SetBinContent(i + 1, v.entries * v.mean)
             tprofile.SetBinEntries(i + 1, v.entries)
-        tprofile.SetBinContent(len(self.values) + 1, self.overflow.entries**2)
+        tprofile.SetBinContent(len(self.values) + 1, self.overflow.entries*self.overflow.entries)
         tprofile.SetBinEntries(len(self.values) + 1, self.overflow.entries)
         tprofile.SetEntries(self.entries)
         return tprofile
@@ -146,7 +146,7 @@ class SparselyProfileErrMethods(object):
             for i, index in enumerate(xrange(self.minBin, self.maxBin + 1)):
                 if index in self.bins:
                     v = self.bins[index]
-                    tprofile.SetBinError(i + 1, math.sqrt(v.entries*(v.variance + v.mean**2)))
+                    tprofile.SetBinError(i + 1, math.sqrt(v.entries*(v.variance + v.mean*v.mean)))
                     tprofile.SetBinContent(i + 1, v.entries * v.mean)
                     tprofile.SetBinEntries(i + 1, v.entries)
             tprofile.SetBinContent(0, 0.0)

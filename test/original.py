@@ -16,6 +16,7 @@
 
 import math
 import pickle
+import sys
 import unittest
 
 from histogrammar import *
@@ -725,6 +726,8 @@ class TestOriginal(unittest.TestCase):
         map(lambda _: two.fill(_), self.struct)
 
         try:
+            if sys.version_info[0] == 2 and sys.version_info[1] == 6:
+                raise ImportError   # Bokeh is not compatible with Python 2.6
             from histogrammar.plot.bokeh import plot,save,view
             glyph1 = one.bokeh("histogram")
             glyph2 = two.bokeh()
@@ -739,6 +742,8 @@ class TestOriginal(unittest.TestCase):
         map(lambda _: one.fill(_), self.simple)
     
         try:
+            if sys.version_info[0] == 2 and sys.version_info[1] == 6:
+                raise ImportError   # Bokeh is not compatible with Python 2.6
             from histogrammar.plot.bokeh import plot,save,view
             glyph = one.bokeh("errors")
             c = plot(glyph)
@@ -755,6 +760,8 @@ class TestOriginal(unittest.TestCase):
         map(lambda _: labeling.fill(_), self.simple)
 
         try:
+            if sys.version_info[0] == 2 and sys.version_info[1] == 6:
+                raise ImportError   # Bokeh is not compatible with Python 2.6
             from histogrammar.plot.bokeh import plot,save,view
             s = Stack.build(one,two)
             glyph = s.bokeh()
