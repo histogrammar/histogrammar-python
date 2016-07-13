@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,8 +35,7 @@ class Struct(object):
     def __repr__(self):
         return "Struct({}, {}, {}, {})".format(self.bool, self.int, self.double, repr(self.string))
 
-def ed(x):
-    return Factory.fromJson(x.toJson())
+def ed(x): return Factory.fromJson(x.toJson())
 
 class TestEverything(unittest.TestCase):
     def assertAlmostEqualJSON(self, x, y):
@@ -62,6 +61,9 @@ class TestEverything(unittest.TestCase):
 
         else:
             self.assertEqual(x, y)
+
+    def runTest(self):
+        pass
 
     def test_count(self):
         x = Count()
@@ -3123,7 +3125,7 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(ed(x), ed(pickle.loads(pickle.dumps(x))))
 
     def test_bagLimit(self):
-        x = Limit(Bag(lambda x: x.string), 5)
+        x = Limit(5, Bag(lambda x: x.string))
         self.assertEqual(x, x)
         self.assertEqual(ed(x), ed(x))
         self.assertEqual(hash(x), hash(x))

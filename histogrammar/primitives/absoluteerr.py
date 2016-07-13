@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,10 +18,26 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class AbsoluteErr(Factory, Container):
+    """Accumulate the weighted mean absolute error (MAE) of a quantity around zero.
+
+    The MAE is sometimes used as a replacement for the standard deviation, associated with medians, rather than means. However, this aggregator makes no attempt to estimate a median. If used as an "error," it should be used on a quantity whose nominal value is zero, such as a residual.
+    """
+
     @staticmethod
     def ed(entries, mae):
+        """Create an AbsoluteErr that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            mae (float): the mean absolute error.
+        """
+
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+            raise TypeError("entries ({0}) must be a number".format(entries))
+        if not isinstance(mae, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+            raise TypeError("mae ({0}) must be a number".format(mae))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = AbsoluteErr(None)
         out.entries = float(entries)
         out.absoluteSum = float(mae)*float(entries)
@@ -29,9 +45,20 @@ class AbsoluteErr(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return AbsoluteErr(quantity)
 
     def __init__(self, quantity):
+        """Create an AbsoluteErr that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            mae (float): the mean absolute error.
+        """
+
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.absoluteSum = 0.0
@@ -40,13 +67,16 @@ class AbsoluteErr(Factory, Container):
 
     @property
     def mae(self):
+        """The mean absolute error."""
         if self.entries == 0.0:
             return self.absoluteSum
         else:
             return self.absoluteSum/self.entries
 
+    @inheritdoc(Container)
     def zero(self): return AbsoluteErr(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, AbsoluteErr):
             out = AbsoluteErr(self.quantity)
@@ -54,30 +84,57 @@ class AbsoluteErr(Factory, Container):
             out.absoluteSum = self.entries*self.mae + other.entries*other.mae
             return out.specialize()
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             q = self.quantity(datum)
+            try:
+                q = float(q)
+            except:
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
             self.absoluteSum += abs(q) * weight
 
+    def _numpy(self, data, weights, shape):
+        q = self.quantity(data)
+        self._checkNPQuantity(q, shape)
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
+
+        # no possibility of exception from here on out (for rollback)
+        self.entries += float(weights.sum())
+
+        import numpy
+        selection = weights > 0.0
+        q = q[selection]
+        weights = weights[selection]
+        numpy.absolute(q, q)
+        q *= weights
+
+        self.absoluteSum += float(q.sum())
+
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "mae": floatToJson(self.mae),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mae"], ["name"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "AbsoluteErr.entries")
@@ -89,7 +146,7 @@ class AbsoluteErr(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "AbsoluteErr.name")
 
-            if isinstance(json["mae"], (int, long, float)):
+            if json["mae"] in ("nan", "inf", "-inf") or isinstance(json["mae"], (int, long, float)):
                 mae = float(json["mae"])
             else:
                 raise JsonFormatException(json["mae"], "AbsoluteErr.mae")
@@ -102,10 +159,12 @@ class AbsoluteErr(Factory, Container):
             raise JsonFormatException(json, "AbsoluteErr")
         
     def __repr__(self):
-        return "<AbsoluteErr mae={}>".format(self.mae)
+        return "<AbsoluteErr mae={0}>".format(self.mae)
 
     def __eq__(self, other):
         return isinstance(other, AbsoluteErr) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.mae, other.mae)
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.mae))

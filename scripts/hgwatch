@@ -1,0 +1,147 @@
+#!/usr/bin/env python
+
+import argparse
+import code
+import getpass
+import json
+import os
+import subprocess
+import sys
+import threading
+try:
+    import readline
+    import rlcompleter
+except ImportError:
+    pass
+
+from histogrammar import *
+import histogrammar.version
+
+if sys.version_info[0] > 2:
+    raw_input = input
+
+hg = "Waiting for first valid plot object..."
+hgin = None
+hgerr = None
+
+newNameNumber = 0
+def newName():
+    global newNameNumber
+    newNameNumber += 1
+    return "name_" + str(newNameNumber)
+
+commandSets = {
+    # for --json
+    "json": "import json; print(json.dumps(hg.toJson()))",
+
+    # for --root
+    "root": """
+import ROOT
+
+# Must give hg.root the right number of "name" strings.
+if isinstance(hg, Fraction):
+    roothist = hg.root(newName(), newName())
+elif isinstance(hg, (Stack, Partition)):
+    roothist = hg.root(*[newName() for i in xrange(hg.cuts)])
+else:
+    roothist = hg.root(newName())
+
+if isinstance(roothist, ROOT.TH2):
+    roothist.Draw("colz")    # Preferred visualization.
+else:
+    roothist.Draw()
+
+ROOT.gPad.Modified()         # Deal with the fact that we're in a non-main thread.
+ROOT.gPad.Update()
+""",
+
+    # ...others?
+    }
+        
+class Watcher(threading.Thread):
+    def start(self, stream, commands):
+        self.stream = stream
+        if os.path.exists(commands):
+            self.code = compile(open(commands).read(), commands, "exec")
+        else:
+            self.code = compile(commands, "<-p commands>", "exec")
+        super(Watcher, self).start()
+
+    def run(self):
+        global hg
+        global hgin
+        global hgerr
+
+        while True:
+            hgin = self.stream.readline()
+
+            if hgin is None or hgin == "": break
+            if hgin.strip() == "": continue
+
+            try:
+                hg = Factory.fromJson(json.loads(hgin))
+            except Exception as err:
+                hgerr = err
+            else:
+                try:
+                    exec(self.code, globals())
+                except Exception as err:
+                    hgerr = err
+
+if __name__ == "__main__":
+    argparser = argparse.ArgumentParser(description="Watch a file, pipe, or remote connection for Histogrammar JSON objects and perform some action on each (such as plotting).", epilog="Only one of [-f, -c, -s] may be used. Each JSON object in the stream must be a separate line of text, and no action is performed until the input buffer flushes with an end of line character (\"\\n\").", add_help=True)
+    argparser.add_argument("-f", metavar="FILE", default="-", help="File or pipe to watch (default is \"-\", standard input).")
+    argparser.add_argument("-c", metavar="COMMAND", help="Shell command(s) to run and watch; if a filename, use the contents of that file.")
+    argparser.add_argument("-s", metavar="ADDRESS:PORT", help="Socket address and port to watch (separated by a colon).")
+    argparser.add_argument("-p", default="", metavar="COMMANDS", help="Python commands to run on each new histogram \"hg\"; if a filename, use the contents of that file.")
+    argparser.add_argument("-i", action="store_true", help="Start an interactive Python prompt with the watcher in a background thread.")
+    argparser.add_argument("--json", action="store_true", help="append -p with print-out of JSON.")
+    argparser.add_argument("--root", action="store_true", help="append -p with visualization in ROOT.")
+    argparser.add_argument("-v", "--version", action="version", version="HistogrammarWatch (hgwatch) version {}".format(histogrammar.version.__version__))
+    arguments = argparser.parse_args()
+
+    if arguments.json: arguments.p += "\n" + commandSets["json"]
+    if arguments.root: arguments.p += "\n" + commandSets["root"]
+
+    command = None
+
+    watcher = Watcher()
+    watcher.daemon = arguments.i
+
+    if arguments.c is None and arguments.s is None:
+        if arguments.f == "-":
+            stream = sys.stdin
+
+        else:
+            stream = open(arguments.f)
+
+        watcher.start(stream, arguments.p)
+
+    elif arguments.f == "-" and arguments.c is not None and arguments.s is None:
+        command = subprocess.Popen(arguments.c, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
+
+        stream = command.stdout
+        watcher.start(stream, arguments.p)
+
+    elif arguments.f == "-" and arguments.c is None and arguments.s is not None:
+        raise NotImplementedError
+
+    else:
+        argparser.print_help(sys.stderr)
+        sys.exit(-1)
+
+    if arguments.i:
+        try:
+            readline.set_completer(rlcompleter.Completer(globals()).complete)
+            readline.parse_and_bind("tab: complete")
+        except NameError:
+            pass
+        code.interact("""Python {} on {}.
+HistogrammarWatch version {}.
+Current plot object is \"hg\"; raw input is \"hgin\"; last error is \"hgerr\".
+Type ctrl-D to exit.""".format(sys.version.replace("\n", " ").replace("  ", " "), sys.platform, histogrammar.version.__version__), raw_input, globals())
+
+        if command is not None:
+            # FIXME: this SIGTERM kills the process, but not the process's children if it has any...
+            command.terminate()
+            command.wait()

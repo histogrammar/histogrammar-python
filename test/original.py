@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,12 +18,7 @@ import math
 import pickle
 import unittest
 
-
 from histogrammar import *
-
-
-
-
 
 class TestEverything(unittest.TestCase):
     simple = [3.4, 2.2, -1.8, 0.0, 7.3, -4.7, 1.6, 0.0, -3.0, -1.7]
@@ -106,6 +101,9 @@ class TestEverything(unittest.TestCase):
 
     def checkName(self, x):
         repr(x)
+
+    def runTest(self):
+        pass
 
     ################################################################ Count
 
@@ -593,11 +591,11 @@ class TestEverything(unittest.TestCase):
         self.checkName(three)
 
     def testBagWithLimit(self):
-        one = Limit(Bag(lambda x: x.string), 20)
+        one = Limit(20, Bag(lambda x: x.string))
         for _ in self.struct: one.fill(_)
         self.assertEqual(one.get.values, {"one": 1.0, "two": 1.0, "three": 1.0, "four": 1.0, "five": 1.0, "six": 1.0, "seven": 1.0, "eight": 1.0, "nine": 1.0, "ten": 1.0})
 
-        two = Limit(Bag(lambda x: x.string), 9)
+        two = Limit(9, Bag(lambda x: x.string))
         for _ in self.struct: two.fill(_)
         self.assertTrue(two.saturated)
 
@@ -725,25 +723,29 @@ class TestEverything(unittest.TestCase):
 
         two = Histogram(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
         map(lambda _: two.fill(_), self.struct)
-        
-        from histogrammar.plot.bokeh import plot,save,view
-        glyph1 = one.bokeh("histogram")
-        glyph2 = two.bokeh()
-        c = plot(glyph1,glyph2)
-        save(c,"plot_histogram.html")
 
-        #self.checkHtml("example.html")
+        try:
+            from histogrammar.plot.bokeh import plot,save,view
+            glyph1 = one.bokeh("histogram")
+            glyph2 = two.bokeh()
+            c = plot(glyph1,glyph2)
+            save(c,"plot_histogram.html")
+            #self.checkHtml("example.html")
+        except ImportError:
+            pass
 
     def testPlotProfileErr(self):
         one = ProfileErr(5, -3.0, 7.0, lambda x: x, lambda x: x)
         map(lambda _: one.fill(_), self.simple)
     
-        from histogrammar.plot.bokeh import plot,save,view
-        glyph = one.bokeh("errors")
-        c = plot(glyph)
-        save(c,"plot_errors.html")
-    
-        #self.checkHtml("example.html")
+        try:
+            from histogrammar.plot.bokeh import plot,save,view
+            glyph = one.bokeh("errors")
+            c = plot(glyph)
+            save(c,"plot_errors.html")
+            #self.checkHtml("example.html")
+        except ImportError:
+            pass
 
     def testPlotStack(self):
         one = Histogram(5, -3.0, 7.0, lambda x: x)
@@ -752,13 +754,15 @@ class TestEverything(unittest.TestCase):
         labeling = Label(one=one, two=two)
         map(lambda _: labeling.fill(_), self.simple)
 
-        from histogrammar.plot.bokeh import plot,save,view
-        s = Stack.build(one,two)
-        glyph = s.bokeh()
-        c = plot(glyph)
-        save(c,"plot_stack.html")
-   
-        #self.checkHtml("example.html")
+        try:
+            from histogrammar.plot.bokeh import plot,save,view
+            s = Stack.build(one,two)
+            glyph = s.bokeh()
+            c = plot(glyph)
+            save(c,"plot_stack.html")
+            #self.checkHtml("example.html")
+        except ImportError:
+            pass
 
     ################################################################ SparselyBin
 
@@ -918,7 +922,7 @@ class TestEverything(unittest.TestCase):
         categorizing = Categorize(named("something", lambda x: x.string[0]))
         for _ in self.struct: categorizing.fill(_)
 
-        self.assertEqual({k: v.entries for k, v in categorizing.pairsMap.items()}, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
+        self.assertEqual(dict((k, v.entries) for k, v in categorizing.pairsMap.items()), {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
 
         self.checkJson(categorizing)
         self.checkPickle(categorizing)

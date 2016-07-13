@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2016 Jim Pivarski
+# Copyright 2016 DIANA-HEP
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,10 +20,25 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Minimize(Factory, Container):
+    """Find the minimum value of a given quantity. If no data are observed, the result is NaN.
+
+    Unlike :doc:`Quantile <histogrammar.primitives.quantile.Quantile>` with a target of 0, Minimize is exact.
+    """
+
     @staticmethod
     def ed(entries, min):
+        """Create a Minimize that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            min (float): the lowest value of the quantity observed or NaN if no data were observed.
+        """
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+            raise TypeError("entries ({0}) must be a number".format(entries))
+        if not isinstance(min, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+            raise TypeError("min ({0}) must be a number".format(min))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Minimize(None)
         out.entries = float(entries)
         out.min = float(min)
@@ -31,17 +46,29 @@ class Minimize(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Minimize(quantity)
 
     def __init__(self, quantity):
+        """Create a Minimize that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0. # 
+            min (float): the lowest value of the quantity observed, initially NaN.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.min = float("nan")
         super(Minimize, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Minimize(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Minimize):
             out = Minimize(self.quantity)
@@ -49,31 +76,62 @@ class Minimize(Factory, Container):
             out.min = minplus(self.min, other.min)
             return out.specialize()
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             q = self.quantity(datum)
+            try:
+                q = float(q)
+            except:
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
+    def _numpy(self, data, weights, shape):
+        q = self.quantity(data)
+        self._checkNPQuantity(q, shape)
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
+
+        # no possibility of exception from here on out (for rollback)
+        import numpy
+        selection = numpy.isnan(q)
+        numpy.bitwise_not(selection, selection)
+        numpy.bitwise_and(selection, weights > 0.0, selection)
+        q = q[selection]
+
+        self.entries += float(weights.sum())
+
+        if math.isnan(self.min):
+            if q.shape[0] > 0:
+                self.min = float(q.min())
+        else:
+            if q.shape[0] > 0:
+                self.min = min(self.min, float(q.min()))
+
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "min": floatToJson(self.min),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "min"], ["name"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Minimize.entries")
@@ -98,10 +156,12 @@ class Minimize(Factory, Container):
             raise JsonFormatException(json, "Minimize")
         
     def __repr__(self):
-        return "<Minimize min={}>".format(self.min)
+        return "<Minimize min={0}>".format(self.min)
 
     def __eq__(self, other):
         return isinstance(other, Minimize) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.min, other.min)
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.min))
@@ -109,10 +169,25 @@ class Minimize(Factory, Container):
 Factory.register(Minimize)
 
 class Maximize(Factory, Container):
+    """Find the maximum value of a given quantity. If no data are observed, the result is NaN.
+
+    Unlike :doc:`Quantile <histogrammar.primitives.quantile.Quantile>` with a target of 1, Maximize is exact.
+    """
+
     @staticmethod
     def ed(entries, max):
+        """Create a Maximize that is only capable of being added.
+
+        Parameters:
+            entries (float): the number of entries.
+            max (float): the highest value of the quantity observed or NaN if no data were observed.
+        """
+        if not isinstance(entries, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+            raise TypeError("entries ({0}) must be a number".format(entries))
+        if not isinstance(max, (int, long, float)) and entries not in ("nan", "inf", "-inf"):
+            raise TypeError("max ({0}) must be a number".format(max))
         if entries < 0.0:
-            raise ContainerException("entries ($entries) cannot be negative")
+            raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Maximize(None)
         out.entries = float(entries)
         out.max = float(max)
@@ -120,17 +195,29 @@ class Maximize(Factory, Container):
 
     @staticmethod
     def ing(quantity):
+        """Synonym for ``__init__``."""
         return Maximize(quantity)
 
     def __init__(self, quantity):
+        """Create a Maximize that is capable of being filled and added.
+
+        Parameters:
+            quantity (function returning float): computes the quantity of interest from the data.
+
+        Other parameters:
+            entries (float): the number of entries, initially 0.0.
+            max (float): the highest value of the quantity observed, initially NaN.
+        """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.max = float("nan")
         super(Maximize, self).__init__()
         self.specialize()
 
+    @inheritdoc(Container)
     def zero(self): return Maximize(self.quantity)
 
+    @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Maximize):
             out = Maximize(self.quantity)
@@ -138,31 +225,62 @@ class Maximize(Factory, Container):
             out.max = maxplus(self.max, other.max)
             return out.specialize()
         else:
-            raise ContainerException("cannot add {} and {}".format(self.name, other.name))
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
+
         if weight > 0.0:
             q = self.quantity(datum)
+            try:
+                q = float(q)
+            except:
+                raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
             if math.isnan(self.max) or q > self.max:
                 self.max = q
 
+    def _numpy(self, data, weights, shape):
+        q = self.quantity(data)
+        self._checkNPQuantity(q, shape)
+        self._checkNPWeights(weights, shape)
+        weights = self._makeNPWeights(weights, shape)
+
+        # no possibility of exception from here on out (for rollback)
+        import numpy
+        selection = numpy.isnan(q)
+        numpy.bitwise_not(selection, selection)
+        numpy.bitwise_and(selection, weights > 0.0, selection)
+        q = q[selection]
+
+        self.entries += float(weights.sum())
+
+        if math.isnan(self.max):
+            if q.shape[0] > 0:
+                self.max = float(q.max())
+        else:
+            if q.shape[0] > 0:
+                self.max = max(self.max, float(q.max()))
+
     @property
     def children(self):
+        """List of sub-aggregators, to make it possible to walk the tree."""
         return []
 
+    @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
         "max": floatToJson(self.max),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
+    @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "max"], ["name"]):
-            if isinstance(json["entries"], (int, long, float)):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], (int, long, float)):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Maximize.entries")
@@ -187,10 +305,12 @@ class Maximize(Factory, Container):
             raise JsonFormatException(json, "Maximize")
         
     def __repr__(self):
-        return "<Maximize max={}>".format(self.max)
+        return "<Maximize max={0}>".format(self.max)
 
     def __eq__(self, other):
         return isinstance(other, Maximize) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.max, other.max)
+
+    def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.max))
