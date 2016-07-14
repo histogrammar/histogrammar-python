@@ -132,12 +132,12 @@ class SparselyBin(Factory, Container):
             if self.origin != other.origin:
                 raise ContainerException("cannot add SparselyBins because origin differs ({0} vs {1})".format(self.origin, other.origin))
 
-            out = SparselyBin(self.binWidth, self.quantity, self.value, self.nanflow + other.nanflow)
+            out = SparselyBin(self.binWidth, self.quantity, self.value.copy(), self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
-            out.bins = self.bins
+            out.bins = self.bins.copy()
             for i, v in other.bins.items():
                 if i in out.bins:
-                    out.bins[i] += v
+                    out.bins[i] = out.bins[i] + v
                 else:
                     out.bins[i] = v
             return out.specialize()
@@ -236,9 +236,8 @@ class SparselyBin(Factory, Container):
             else:
                 b = self.bin(q)
                 if b not in self.bins:
-                    self.bins[b] = self.value.zero()
+                    self.bins[b] = self.value.copy()
                 self.bins[b].fill(datum, weight)
-
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 

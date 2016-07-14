@@ -112,7 +112,9 @@ def Count_fill(counting, datum, weight):
         counting.entries += counting.transform(weight)
 
 def Count_combine(one, two):
-    return Count.ed(one.entries + two.entries)
+    out = Count.ed(one.entries + two.entries)
+    out.transform = one.transform
+    return out
 
 def Sum_fill(summing, datum, weight):
     if weight > 0.0:
@@ -121,7 +123,9 @@ def Sum_fill(summing, datum, weight):
         summing.sum += q * weight
 
 def Sum_combine(one, two):
-    return Sum.ed(one.entries + two.entries, one.sum + two.sum)
+    out = Sum.ed(one.entries + two.entries, one.sum + two.sum)
+    out.quantity = one.quantity
+    return out
 
 def Average_fill(averaging, datum, weight):
     if weight > 0.0:
@@ -152,7 +156,9 @@ def Average_combine(one, two):
         mean = (one.mean + two.mean) / 2.0
     else:
         mean = (one.entries*one.mean + two.entries*two.mean)/entries
-    return Average.ed(entries, mean)
+    out = Average.ed(entries, mean)
+    out.quantity = one.quantity
+    return out
 
 def Deviate_fill(deviating, datum, weight):
     if weight > 0.0:
@@ -202,12 +208,14 @@ def Deviate_combine(one, two):
     else:
         variance = varianceTimesEntries / entries
 
-    return Deviate.ed(entries, mean, variance)
+    out = Deviate.ed(entries, mean, variance)
+    out.quantity = one.quantity
+    return out
 
 def Minimize_fill(minimizing, datum, weight):
     if weight > 0.0:
-        q = quantity(datum)
-        entries += weight
+        q = minimizing.quantity(datum)
+        minimizing.entries += weight
         if math.isnan(minimizing.min) or q < minimizing.min:
             minimizing.min = q
 
@@ -221,12 +229,14 @@ def Minimize_combine(one, two):
         min = one.min
     else:
         min = two.min
-    return Minimize.ed(entries, min)
+    out = Minimize.ed(entries, min)
+    out.quantity = one.quantity
+    return out
 
 def Maximize_fill(maximizing, datum, weight):
     if weight > 0.0:
-        q = quantity(datum)
-        entries += weight
+        q = maximizing.quantity(datum)
+        maximizing.entries += weight
         if math.isnan(maximizing.max) or q > maximizing.max:
             maximizing.max = q
 
@@ -240,7 +250,9 @@ def Maximize_combine(one, two):
         max = one.max
     else:
         max = two.max
-    return Maximize.ed(entries, max)
+    out = Maximize.ed(entries, max)
+    out.quantity = one.quantity
+    return out
 
 def Bag_fill(bagging, datum, weight):
     if weight > 0.0:
@@ -294,30 +306,27 @@ def SparselyBin_fill(sparselybinning, datum, weight):
         if math.isnan(q):
             fill(sparselybinning.nanflow, datum, weight)
         else:
-            softbin = math.floor(binning.num * \
-                (q - binning.low) / (binning.high - binning.low))
-            if softbin < -(2**63 - 1):
+            softbin = (q - sparselybinning.origin) / sparselybinning.binWidth
+
+            if softbin <= -(2**63 - 1):
                 bin = -(2**63 - 1)
-            elif softbin > (2**63 - 1):
+            elif softbin >= (2**63 - 1):
                 bin = (2**63 - 1)
             else:
-                bin = long(softbin)
+                bin = int(math.floor(softbin))
 
-            if bin in binning.bins:
-                binning.bins[bin] = binning.value.copy()
-            fill(binning.bins[bin], datum, weight)
-            binning.entries += weight
+            if bin not in sparselybinning.bins:
+                sparselybinning.bins[bin] = sparselybinning.value.copy()
+
+            fill(sparselybinning.bins[bin], datum, weight)
+
+        sparselybinning.entries += weight
 
 def SparselyBin_combine(one, two):
-    if one.binWidth != two.binWidth or one.origin != two.origin:
+    if one.binWidth != two.binWidth or one.origin != two.origin or one.contentType != two.contentType:
         raise Exception
     entries = one.entries + two.entries
-    if len(one.bins) > 0:
-        contentType = list(one.bins.values())[0].factory.name
-    elif len(two.bins) > 0:
-        contentType = list(two.bins.values())[0].factory.name
-    else:
-        contentType = one.contentType
+    contentType = one.contentType
     bins = {}
     for key in set(one.bins.keys()).union(set(two.bins.keys())):
         if key in one.bins and key in two.bins:
