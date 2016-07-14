@@ -744,10 +744,10 @@ class TestOriginal(unittest.TestCase):
         self.checkPickle(stacking)
         self.checkName(stacking)
 
-    ################################################################ Partition
+    ################################################################ IrregularlyBin
 
-    def testPartition(self):
-        partitioning = Partition([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count())
+    def testIrregularlyBin(self):
+        partitioning = IrregularlyBin([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count())
         for _ in self.simple: partitioning.fill(_)
 
         self.assertEqual([(k, v.entries) for k, v in partitioning.cuts], [(float("-inf"), 4.0), (0.0, 3.0), (2.0, 2.0), (4.0, 0.0), (6.0, 1.0), (8.0, 0.0)])
@@ -756,8 +756,8 @@ class TestOriginal(unittest.TestCase):
         self.checkPickle(partitioning)
         self.checkName(partitioning)
 
-    def testPartitionSum(self):
-        partitioning = Partition([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
+    def testIrregularlyBinSum(self):
+        partitioning = IrregularlyBin([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
         for _ in self.simple: partitioning.fill(_)
 
         self.assertAlmostEqual(partitioning.cuts[0][1].sum, -11.2)

@@ -20,17 +20,17 @@ from histogrammar.defs import *
 from histogrammar.util import *
 from histogrammar.primitives.count import *
 
-class Partition(Factory, Container):
+class IrregularlyBin(Factory, Container):
     """Accumulate a suite of aggregators, each between two thresholds, filling exactly one per datum.
 
-    This is a variation on :doc:`Stack <histogrammar.primitives.stack.Stack>`, which fills ``N + 1`` aggregators with ``N`` successively tighter cut thresholds. Partition fills ``N + 1`` aggregators in the non-overlapping intervals between ``N`` thresholds.
+    This is a variation on :doc:`Stack <histogrammar.primitives.stack.Stack>`, which fills ``N + 1`` aggregators with ``N`` successively tighter cut thresholds. IrregularlyBin fills ``N + 1`` aggregators in the non-overlapping intervals between ``N`` thresholds.
 
-    Partition is also similar to :doc:`CentrallyBin <histogrammar.primitives.centralbin.CentrallyBin>`, in that they both partition a space into irregular subdomains with no gaps and no overlaps. However, CentrallyBin is defined by bin centers and Partition is defined by bin edges, the first and last of which are at negative and positive infinity.
+    IrregularlyBin is also similar to :doc:`CentrallyBin <histogrammar.primitives.centralbin.CentrallyBin>`, in that they both partition a space into irregular subdomains with no gaps and no overlaps. However, CentrallyBin is defined by bin centers and IrregularlyBin is defined by bin edges, the first and last of which are at negative and positive infinity.
     """
 
     @staticmethod
     def ed(entries, cuts, nanflow):
-        """Create a Partition that is only capable of being added.
+        """Create a IrregularlyBin that is only capable of being added.
 
         Parameters:
             entries (float): the number of entries.
@@ -46,20 +46,20 @@ class Partition(Factory, Container):
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
 
-        out = Partition(cuts, None, None, nanflow)
+        out = IrregularlyBin(cuts, None, None, nanflow)
         out.entries = float(entries)
         return out.specialize()
 
     @staticmethod
     def ing(cuts, quantity, value, nanflow=Count()):
         """Synonym for ``__init__``."""
-        return Partition(cuts, quantity, value, nanflow)
+        return IrregularlyBin(cuts, quantity, value, nanflow)
 
     def __init__(self, thresholds, quantity, value, nanflow=Count()):
-        """Create a Partition that is capable of being filled and added.
+        """Create a IrregularlyBin that is capable of being filled and added.
 
         Parameters:
-            thresholds (list of float) specifies ``N`` cut thresholds, so the Partition will fill ``N + 1`` aggregators in distinct intervals.
+            thresholds (list of float) specifies ``N`` cut thresholds, so the IrregularlyBin will fill ``N + 1`` aggregators in distinct intervals.
             quantity (function returning float): computes the quantity of interest from the data.
             value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators for each bin.
             nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is NaN.
@@ -82,7 +82,7 @@ class Partition(Factory, Container):
         else:
             self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(thresholds))
         self.nanflow = nanflow.copy()
-        super(Partition, self).__init__()
+        super(IrregularlyBin, self).__init__()
         self.specialize()
 
     @property
@@ -97,15 +97,15 @@ class Partition(Factory, Container):
 
     @inheritdoc(Container)
     def zero(self):
-        return Partition([(c, v.zero()) for c, v in self.cuts], self.quantity, None, self.nanflow.zero())
+        return IrregularlyBin([(c, v.zero()) for c, v in self.cuts], self.quantity, None, self.nanflow.zero())
 
     @inheritdoc(Container)
     def __add__(self, other):
-        if isinstance(other, Partition):
+        if isinstance(other, IrregularlyBin):
             if self.thresholds != other.thresholds:
-                raise ContainerException("cannot add Partition because cut thresholds differ")
+                raise ContainerException("cannot add IrregularlyBin because cut thresholds differ")
 
-            out = Partition([(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)], self.quantity, None, self.nanflow + other.nanflow)
+            out = IrregularlyBin([(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)], self.quantity, None, self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
             return out.specialize()
 
@@ -204,31 +204,31 @@ class Partition(Factory, Container):
             if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
-                raise JsonFormatException(json, "Partition.entries")
+                raise JsonFormatException(json, "IrregularlyBin.entries")
 
             if isinstance(json.get("name", None), basestring):
                 name = json["name"]
             elif json.get("name", None) is None:
                 name = None
             else:
-                raise JsonFormatException(json["name"], "Partition.name")
+                raise JsonFormatException(json["name"], "IrregularlyBin.name")
 
             if isinstance(json["type"], basestring):
                 factory = Factory.registered[json["type"]]
             else:
-                raise JsonFormatException(json, "Partition.type")
+                raise JsonFormatException(json, "IrregularlyBin.type")
 
             if isinstance(json.get("data:name", None), basestring):
                 dataName = json["data:name"]
             elif json.get("data:name", None) is None:
                 dataName = None
             else:
-                raise JsonFormatException(json["data:name"], "Partition.data:name")
+                raise JsonFormatException(json["data:name"], "IrregularlyBin.data:name")
 
             if isinstance(json["nanflow:type"], basestring):
                 nanflowFactory = Factory.registered[json["nanflow:type"]]
             else:
-                raise JsonFormatException(json, "Partition.nanflow:type")
+                raise JsonFormatException(json, "IrregularlyBin.nanflow:type")
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
 
             if isinstance(json["data"], list):
@@ -236,32 +236,32 @@ class Partition(Factory, Container):
                 for i, elementPair in enumerate(json["data"]):
                     if isinstance(elementPair, dict) and hasKeys(elementPair.keys(), ["atleast", "data"]):
                         if elementPair["atleast"] not in ("nan", "inf", "-inf") and not isinstance(elementPair["atleast"], numbers.Real):
-                            raise JsonFormatException(json, "Partition.data {0} atleast".format(i))
+                            raise JsonFormatException(json, "IrregularlyBin.data {0} atleast".format(i))
 
                         cuts.append((float(elementPair["atleast"]), factory.fromJsonFragment(elementPair["data"], dataName)))
 
                     else:
-                        raise JsonFormatException(json, "Partition.data {0}".format(i))
+                        raise JsonFormatException(json, "IrregularlyBin.data {0}".format(i))
 
-                out = Partition.ed(entries, cuts, nanflow)
+                out = IrregularlyBin.ed(entries, cuts, nanflow)
                 out.quantity.name = nameFromParent if name is None else name
                 return out.specialize()
 
             else:
-                raise JsonFormatException(json, "Partition.data")
+                raise JsonFormatException(json, "IrregularlyBin.data")
 
         else:
-            raise JsonFormatException(json, "Partition")
+            raise JsonFormatException(json, "IrregularlyBin")
 
     def __repr__(self):
-        return "<Partition values={0} thresholds=({1}) nanflow={2}>".format(self.cuts[0][1].name, ", ".join([str(x) for x in self.thresholds]), self.nanflow.name)
+        return "<IrregularlyBin values={0} thresholds=({1}) nanflow={2}>".format(self.cuts[0][1].name, ", ".join([str(x) for x in self.thresholds]), self.nanflow.name)
 
     def __eq__(self, other):
-        return isinstance(other, Partition) and numeq(self.entries, other.entries) and self.quantity == other.quantity and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.cuts, other.cuts)) and self.nanflow == other.nanflow
+        return isinstance(other, IrregularlyBin) and numeq(self.entries, other.entries) and self.quantity == other.quantity and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.cuts, other.cuts)) and self.nanflow == other.nanflow
 
     def __ne__(self, other): return not self == other
 
     def __hash__(self):
         return hash((self.entries, self.quantity, self.cuts, self.nanflow))
 
-Factory.register(Partition)
+Factory.register(IrregularlyBin)

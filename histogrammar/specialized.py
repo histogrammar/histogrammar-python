@@ -20,7 +20,7 @@ from histogrammar.primitives.bin import Bin
 from histogrammar.primitives.count import Count
 from histogrammar.primitives.deviate import Deviate
 from histogrammar.primitives.fraction import Fraction
-from histogrammar.primitives.partition import Partition
+from histogrammar.primitives.irregularlybin import IrregularlyBin
 from histogrammar.primitives.select import Select
 from histogrammar.primitives.sparsebin import SparselyBin
 from histogrammar.primitives.stack import Stack
@@ -256,7 +256,7 @@ class StackedHistogramMethods(Stack,
     def factory(self):
         return Stack
 
-class PartitionedHistogramMethods(Partition,
+class PartitionedHistogramMethods(IrregularlyBin,
         histogrammar.plot.root.PartitionedHistogramMethods,
         histogrammar.plot.bokeh.PartitionedHistogramMethods,
         histogrammar.plot.mpl.PartitionedHistogramMethods):
@@ -264,11 +264,11 @@ class PartitionedHistogramMethods(Partition,
 
     @property
     def name(self):
-        return "Partition"
+        return "IrregularlyBin"
 
     @property
     def factory(self):
-        return Partition
+        return IrregularlyBin
 
 class FractionedHistogramMethods(Fraction,
         histogrammar.plot.root.FractionedHistogramMethods,
@@ -345,7 +345,7 @@ def addImplicitMethods(container):
         all(isinstance(v, Select) and isinstance(v.cut, SparselyBin) and v.cut.contentType == "Count" and all(isinstance(vv, Count) for vv in v.cut.bins.values()) for c, v in container.cuts)):
         container.__class__ = StackedHistogramMethods
 
-    elif isinstance(container, Partition) and (
+    elif isinstance(container, IrregularlyBin) and (
         all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.cuts) or
         all(isinstance(v, Select) and isinstance(v.cut, Bin) and all(isinstance(vv, Count) for vv in v.cut.values) for c, v in container.cuts) or
         all(isinstance(v, SparselyBin) and v.contentType == "Count" and all(isinstance(vv, Count) for vv in v.bins.values()) for c, v in container.cuts) or

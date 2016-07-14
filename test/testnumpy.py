@@ -557,23 +557,23 @@ class TestNumpy(unittest.TestCase):
             self.compare("StackBin holes with holes", Stack(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Stack(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
             self.compare("StackBin holes with holes2", Stack(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Stack(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
 
-    def testPartitionBin(self):
+    def testIrregularlyBinBin(self):
         with Numpy() as numpy:
             if numpy is None: return
             sys.stderr.write("\n")
             cuts = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-            self.compare("PartitionBin no data", Partition(cuts, lambda x: x["empty"], Bin(100, -3.0, 3.0, lambda x: x["empty"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.empty, 1.0)
-            self.compare("PartitionBin noholes w/o weights", Partition(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 1.0)
-            self.compare("PartitionBin noholes const weights", Partition(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 0.5)
-            self.compare("PartitionBin noholes positive weights", Partition(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.positive)
-            self.compare("PartitionBin noholes with weights", Partition(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.noholes)
-            self.compare("PartitionBin noholes with holes", Partition(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.withholes)
-            self.compare("PartitionBin holes w/o weights", Partition(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 1.0)
-            self.compare("PartitionBin holes const weights", Partition(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 0.5)
-            self.compare("PartitionBin holes positive weights", Partition(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.positive)
-            self.compare("PartitionBin holes with weights", Partition(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.noholes)
-            self.compare("PartitionBin holes with holes", Partition(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
-            self.compare("PartitionBin holes with holes2", Partition(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Partition(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
+            self.compare("IrregularlyBinBin no data", IrregularlyBin(cuts, lambda x: x["empty"], Bin(100, -3.0, 3.0, lambda x: x["empty"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.empty, 1.0)
+            self.compare("IrregularlyBinBin noholes w/o weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 1.0)
+            self.compare("IrregularlyBinBin noholes const weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 0.5)
+            self.compare("IrregularlyBinBin noholes positive weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.positive)
+            self.compare("IrregularlyBinBin noholes with weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.noholes)
+            self.compare("IrregularlyBinBin noholes with holes", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.withholes)
+            self.compare("IrregularlyBinBin holes w/o weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 1.0)
+            self.compare("IrregularlyBinBin holes const weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 0.5)
+            self.compare("IrregularlyBinBin holes positive weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.positive)
+            self.compare("IrregularlyBinBin holes with weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.noholes)
+            self.compare("IrregularlyBinBin holes with holes", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
+            self.compare("IrregularlyBinBin holes with holes2", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
 
     def testSelectBin(self):
         with Numpy() as numpy:
