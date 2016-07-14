@@ -82,6 +82,10 @@ class Deviate(Factory, Container):
         else:
             return self.varianceTimesEntries/self.entries
 
+    @variance.setter
+    def variance(self, value):
+        self.varianceTimesEntries = value * self.entries
+
     @inheritdoc(Container)
     def zero(self): return Deviate(self.quantity)
 
