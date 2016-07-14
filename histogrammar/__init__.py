@@ -16,11 +16,9 @@
 
 from histogrammar.defs import *
 
-from histogrammar.primitives.absoluteerr import *
-from histogrammar.primitives.adaptivebin import *
 from histogrammar.primitives.average import *
 from histogrammar.primitives.categorize import *
-from histogrammar.primitives.centralbin import *
+from histogrammar.primitives.centrallybin import *
 from histogrammar.primitives.collection import *
 from histogrammar.primitives.count import *
 from histogrammar.primitives.bag import *
@@ -31,9 +29,8 @@ from histogrammar.primitives.limit import *
 from histogrammar.primitives.minmax import *
 from histogrammar.primitives.partition import *
 from histogrammar.primitives.quantile import *
-from histogrammar.primitives.sample import *
 from histogrammar.primitives.select import *
-from histogrammar.primitives.sparsebin import *
+from histogrammar.primitives.sparselybin import *
 from histogrammar.primitives.stack import *
 from histogrammar.primitives.sum import *
 

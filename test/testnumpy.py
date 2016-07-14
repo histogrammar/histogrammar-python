@@ -98,17 +98,15 @@ class TestNumpy(unittest.TestCase):
 
     def compare(self, name, hnp, npdata, hpy, pydata, weight):
         import numpy
-        associative = not isinstance(hnp, (Quantile, AdaptivelyBin, Sample))
 
         npdata2 = npdata.copy()
         if isinstance(weight, numpy.ndarray):
             weight2 = weight.copy()
 
-        if associative:
-            hnp2 = hnp.copy()
-            hnp3 = hnp.copy()
-            hpy2 = hpy.copy()
-            hpy3 = hpy.copy()
+        hnp2 = hnp.copy()
+        hnp3 = hnp.copy()
+        hpy2 = hpy.copy()
+        hpy3 = hpy.copy()
 
         startTime = time.time()
         hnp.numpy(npdata, weight)
@@ -125,14 +123,13 @@ class TestNumpy(unittest.TestCase):
             if numpy.any(diff):
                 raise AssertionError("weight has been modified:\n{0}\n{1}\n{2}\n{3} vs {4}".format(weight, weight2, numpy.nonzero(diff), weight[numpy.nonzero(diff)[0][0]], weight2[numpy.nonzero(diff)[0][0]]))
 
-        if associative:
-            hnp2.numpy(npdata, weight)
-            hnp3.numpy(npdata, weight)
-            hnp3.numpy(npdata, weight)
-            assert (hnp + hnp2) == hnp3
-            assert (hnp2 + hnp) == hnp3
-            assert (hnp + hnp.zero()) == hnp2
-            assert (hnp.zero() + hnp) == hnp2
+        hnp2.numpy(npdata, weight)
+        hnp3.numpy(npdata, weight)
+        hnp3.numpy(npdata, weight)
+        assert (hnp + hnp2) == hnp3
+        assert (hnp2 + hnp) == hnp3
+        assert (hnp + hnp.zero()) == hnp2
+        assert (hnp.zero() + hnp) == hnp2
 
         if isinstance(weight, numpy.ndarray):
             startTime = time.time()
@@ -144,14 +141,13 @@ class TestNumpy(unittest.TestCase):
                 hpy.fill(d, float(w))
             pyTime = time.time() - startTime
 
-            if associative:
-                for h in [hpy2, hpy3, hpy3]:
-                    for d, w in zip(pydata, weight):
-                        if isinstance(d, numpy.unicode_):
-                            d = str(d)
-                        else:
-                            d = float(d)
-                        h.fill(d, float(w))
+            for h in [hpy2, hpy3, hpy3]:
+                for d, w in zip(pydata, weight):
+                    if isinstance(d, numpy.unicode_):
+                        d = str(d)
+                    else:
+                        d = float(d)
+                    h.fill(d, float(w))
 
         else:
             startTime = time.time()
@@ -163,20 +159,18 @@ class TestNumpy(unittest.TestCase):
                 hpy.fill(d, float(weight))
             pyTime = time.time() - startTime
 
-            if associative:
-                for h in [hpy2, hpy3, hpy3]:
-                    for d in pydata:
-                        if isinstance(d, numpy.unicode_):
-                            d = str(d)
-                        else:
-                            d = float(d)
-                        h.fill(d, float(weight))
+            for h in [hpy2, hpy3, hpy3]:
+                for d in pydata:
+                    if isinstance(d, numpy.unicode_):
+                        d = str(d)
+                    else:
+                        d = float(d)
+                    h.fill(d, float(weight))
 
-        if associative:
-            assert (hpy + hpy2) == hpy3
-            assert (hpy2 + hpy) == hpy3
-            assert (hpy + hpy.zero()) == hpy2
-            assert (hpy.zero() + hpy) == hpy2
+        assert (hpy + hpy2) == hpy3
+        assert (hpy2 + hpy) == hpy3
+        assert (hpy + hpy.zero()) == hpy2
+        assert (hpy.zero() + hpy) == hpy2
 
         hnpj = json.dumps(hnp.toJson())
         hpyj = json.dumps(hpy.toJson())
@@ -186,9 +180,8 @@ class TestNumpy(unittest.TestCase):
         else:
             sys.stderr.write("{0:45s} | numpy: {1:.3f}ms python: {2:.3f}ms = {3:g}X speedup\n".format(name, numpyTime*1000, pyTime*1000, self.twosigfigs(pyTime/numpyTime)))
 
-        if associative:
-            assert Factory.fromJson((hnp + hnp2).toJson()) == Factory.fromJson((hpy + hpy2).toJson())
-            assert Factory.fromJson(hnp3.toJson()) == Factory.fromJson(hpy3.toJson())
+        assert Factory.fromJson((hnp + hnp2).toJson()) == Factory.fromJson((hpy + hpy2).toJson())
+        assert Factory.fromJson(hnp3.toJson()) == Factory.fromJson(hpy3.toJson())
 
     # Warmup: apparently, Numpy does some dynamic optimization that needs to warm up...
     if empty is not None:
@@ -249,23 +242,6 @@ class TestNumpy(unittest.TestCase):
             self.compare("Deviate holes with holes", Deviate(lambda x: x["withholes"]), self.data, Deviate(lambda x: x), self.withholes, self.withholes)
             self.compare("Deviate holes with holes2", Deviate(lambda x: x["withholes"]), self.data, Deviate(lambda x: x), self.withholes, self.withholes2)
 
-    def testAbsoluteErr(self):
-        with Numpy() as numpy:
-            if numpy is None: return
-            sys.stderr.write("\n")
-            self.compare("AbsoluteErr no data", AbsoluteErr(lambda x: x["empty"]), self.data, AbsoluteErr(lambda x: x), self.empty, 1.0)
-            self.compare("AbsoluteErr noholes w/o weights", AbsoluteErr(lambda x: x["noholes"]), self.data, AbsoluteErr(lambda x: x), self.noholes, 1.0)
-            self.compare("AbsoluteErr noholes const weights", AbsoluteErr(lambda x: x["noholes"]), self.data, AbsoluteErr(lambda x: x), self.noholes, 0.5)
-            self.compare("AbsoluteErr noholes positive weights", AbsoluteErr(lambda x: x["noholes"]), self.data, AbsoluteErr(lambda x: x), self.noholes, self.positive)
-            self.compare("AbsoluteErr noholes with weights", AbsoluteErr(lambda x: x["noholes"]), self.data, AbsoluteErr(lambda x: x), self.noholes, self.noholes)
-            self.compare("AbsoluteErr noholes with holes", AbsoluteErr(lambda x: x["noholes"]), self.data, AbsoluteErr(lambda x: x), self.noholes, self.withholes)
-            self.compare("AbsoluteErr holes w/o weights", AbsoluteErr(lambda x: x["withholes"]), self.data, AbsoluteErr(lambda x: x), self.withholes, 1.0)
-            self.compare("AbsoluteErr holes const weights", AbsoluteErr(lambda x: x["withholes"]), self.data, AbsoluteErr(lambda x: x), self.withholes, 0.5)
-            self.compare("AbsoluteErr holes positive weights", AbsoluteErr(lambda x: x["withholes"]), self.data, AbsoluteErr(lambda x: x), self.withholes, self.positive)
-            self.compare("AbsoluteErr holes with weights", AbsoluteErr(lambda x: x["withholes"]), self.data, AbsoluteErr(lambda x: x), self.withholes, self.noholes)
-            self.compare("AbsoluteErr holes with holes", AbsoluteErr(lambda x: x["withholes"]), self.data, AbsoluteErr(lambda x: x), self.withholes, self.withholes)
-            self.compare("AbsoluteErr holes with holes2", AbsoluteErr(lambda x: x["withholes"]), self.data, AbsoluteErr(lambda x: x), self.withholes, self.withholes2)
-
     def testMinimize(self):
         with Numpy() as numpy:
             if numpy is None: return
@@ -299,23 +275,6 @@ class TestNumpy(unittest.TestCase):
             self.compare("Maximize holes with weights", Maximize(lambda x: x["withholes"]), self.data, Maximize(lambda x: x), self.withholes, self.noholes)
             self.compare("Maximize holes with holes", Maximize(lambda x: x["withholes"]), self.data, Maximize(lambda x: x), self.withholes, self.withholes)
             self.compare("Maximize holes with holes2", Maximize(lambda x: x["withholes"]), self.data, Maximize(lambda x: x), self.withholes, self.withholes2)
-
-    def testQuantile(self):
-        with Numpy() as numpy:
-            if numpy is None: return
-            sys.stderr.write("\n")
-            self.compare("Quantile no data", Quantile(0.5, lambda x: x["empty"]), self.data, Quantile(0.5, lambda x: x), self.empty, 1.0)
-            self.compare("Quantile noholes w/o weights", Quantile(0.5, lambda x: x["noholes"]), self.data, Quantile(0.5, lambda x: x), self.noholes, 1.0)
-            self.compare("Quantile noholes const weights", Quantile(0.5, lambda x: x["noholes"]), self.data, Quantile(0.5, lambda x: x), self.noholes, 0.5)
-            self.compare("Quantile noholes positive weights", Quantile(0.5, lambda x: x["noholes"]), self.data, Quantile(0.5, lambda x: x), self.noholes, self.positive)
-            self.compare("Quantile noholes with weights", Quantile(0.5, lambda x: x["noholes"]), self.data, Quantile(0.5, lambda x: x), self.noholes, self.noholes)
-            self.compare("Quantile noholes with holes", Quantile(0.5, lambda x: x["noholes"]), self.data, Quantile(0.5, lambda x: x), self.noholes, self.withholes)
-            self.compare("Quantile holes w/o weights", Quantile(0.5, lambda x: x["withholes"]), self.data, Quantile(0.5, lambda x: x), self.withholes, 1.0)
-            self.compare("Quantile holes const weights", Quantile(0.5, lambda x: x["withholes"]), self.data, Quantile(0.5, lambda x: x), self.withholes, 0.5)
-            self.compare("Quantile holes positive weights", Quantile(0.5, lambda x: x["withholes"]), self.data, Quantile(0.5, lambda x: x), self.withholes, self.positive)
-            self.compare("Quantile holes with weights", Quantile(0.5, lambda x: x["withholes"]), self.data, Quantile(0.5, lambda x: x), self.withholes, self.noholes)
-            self.compare("Quantile holes with holes", Quantile(0.5, lambda x: x["withholes"]), self.data, Quantile(0.5, lambda x: x), self.withholes, self.withholes)
-            self.compare("Quantile holes with holes2", Quantile(0.5, lambda x: x["withholes"]), self.data, Quantile(0.5, lambda x: x), self.withholes, self.withholes2)
 
     def testBin(self):
         with Numpy() as numpy:
@@ -746,20 +705,3 @@ class TestNumpy(unittest.TestCase):
             self.compare("Bag holes with weights", Bag(lambda x: x["withholes"]), self.data, Bag(lambda x: x), self.withholes, self.noholes)
             self.compare("Bag holes with holes", Bag(lambda x: x["withholes"]), self.data, Bag(lambda x: x), self.withholes, self.withholes)
             self.compare("Bag holes with holes2", Bag(lambda x: x["withholes"]), self.data, Bag(lambda x: x), self.withholes, self.withholes2)
-
-    def testSample(self):
-        with Numpy() as numpy:
-            if numpy is None: return
-            sys.stderr.write("\n")
-            self.compare("Sample no data", Sample(self.SIZE//2, lambda x: x["empty"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.empty, 1.0)
-            self.compare("Sample noholes w/o weights", Sample(self.SIZE//2, lambda x: x["noholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.noholes, 1.0)
-            self.compare("Sample noholes const weights", Sample(self.SIZE//2, lambda x: x["noholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.noholes, 0.5)
-            self.compare("Sample noholes positive weights", Sample(self.SIZE//2, lambda x: x["noholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.noholes, self.positive)
-            self.compare("Sample noholes with weights", Sample(self.SIZE//2, lambda x: x["noholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.noholes, self.noholes)
-            self.compare("Sample noholes with holes", Sample(self.SIZE//2, lambda x: x["noholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.noholes, self.withholes)
-            self.compare("Sample holes w/o weights", Sample(self.SIZE//2, lambda x: x["withholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.withholes, 1.0)
-            self.compare("Sample holes const weights", Sample(self.SIZE//2, lambda x: x["withholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.withholes, 0.5)
-            self.compare("Sample holes positive weights", Sample(self.SIZE//2, lambda x: x["withholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.withholes, self.positive)
-            self.compare("Sample holes with weights", Sample(self.SIZE//2, lambda x: x["withholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.withholes, self.noholes)
-            self.compare("Sample holes with holes", Sample(self.SIZE//2, lambda x: x["withholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.withholes, self.withholes)
-            self.compare("Sample holes with holes2", Sample(self.SIZE//2, lambda x: x["withholes"], 12345), self.data, Sample(self.SIZE//2, lambda x: x, 12345), self.withholes, self.withholes2)
