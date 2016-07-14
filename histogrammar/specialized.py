@@ -22,7 +22,7 @@ from histogrammar.primitives.deviate import Deviate
 from histogrammar.primitives.fraction import Fraction
 from histogrammar.primitives.irregularlybin import IrregularlyBin
 from histogrammar.primitives.select import Select
-from histogrammar.primitives.sparsebin import SparselyBin
+from histogrammar.primitives.sparselybin import SparselyBin
 from histogrammar.primitives.stack import Stack
 from histogrammar.util import serializable
 
