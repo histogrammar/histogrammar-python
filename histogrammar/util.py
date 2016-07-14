@@ -28,7 +28,9 @@ if sys.version_info[0] > 2:
     long = int
     from functools import total_ordering
 else:
-    if sys.version_info[0] == 2 and sys.version_info[1] > 6:
+    if sys.version_info[0] == 2 and sys.version_info[1] <= 6:
+        def LessThanEverything(): return None
+    else:
         from functools import total_ordering
         @total_ordering
         class LessThanEverything(object):
@@ -37,8 +39,6 @@ else:
                 return True
             def __eq__(self, other):
                 return self is other
-    else:
-        def LessThanEverything(): return None
 
 def inheritdoc(cls):
     def _fn(fn):
