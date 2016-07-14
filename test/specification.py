@@ -343,9 +343,15 @@ def CentrallyBin_fill(centrallybinning, datum, weight):
     if weight > 0.0:
         q = centrallybinning.quantity(datum)
         if math.isnan(q):
-            centrallybinning.nanflow(datum, weight)
+            fill(centrallybinning.nanflow, datum, weight)
         else:
-            dist, closest = min((abs(c - q), v) for c, v in centrallybinning.bins)
+            if math.isinf(q):
+                if q < 0.0:
+                    closest = centrallybinning.bins[0][1]
+                else:
+                    closest = centrallybinning.bins[-1][1]
+            else:
+                dist, closest = min((abs(c - q), v) for c, v in centrallybinning.bins)
             fill(closest, datum, weight)
         centrallybinning.entries += weight
 
