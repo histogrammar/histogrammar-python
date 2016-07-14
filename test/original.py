@@ -728,7 +728,7 @@ class TestOriginal(unittest.TestCase):
         stacking = Stack([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count())
         for _ in self.simple: stacking.fill(_)        
 
-        self.assertEqual([(k, v.entries) for k, v in stacking.cuts], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
+        self.assertEqual([(k, v.entries) for k, v in stacking.bins], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
 
         self.checkJson(stacking)
         self.checkPickle(stacking)
@@ -738,7 +738,7 @@ class TestOriginal(unittest.TestCase):
         stacking = Stack([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
         for _ in self.simple: stacking.fill(_)        
 
-        self.assertEqual([(k, v.entries) for k, v in stacking.cuts], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
+        self.assertEqual([(k, v.entries) for k, v in stacking.bins], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
 
         self.checkJson(stacking)
         self.checkPickle(stacking)
@@ -750,7 +750,7 @@ class TestOriginal(unittest.TestCase):
         partitioning = IrregularlyBin([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count())
         for _ in self.simple: partitioning.fill(_)
 
-        self.assertEqual([(k, v.entries) for k, v in partitioning.cuts], [(float("-inf"), 4.0), (0.0, 3.0), (2.0, 2.0), (4.0, 0.0), (6.0, 1.0), (8.0, 0.0)])
+        self.assertEqual([(k, v.entries) for k, v in partitioning.bins], [(float("-inf"), 4.0), (0.0, 3.0), (2.0, 2.0), (4.0, 0.0), (6.0, 1.0), (8.0, 0.0)])
 
         self.checkJson(partitioning)
         self.checkPickle(partitioning)
@@ -760,8 +760,8 @@ class TestOriginal(unittest.TestCase):
         partitioning = IrregularlyBin([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
         for _ in self.simple: partitioning.fill(_)
 
-        self.assertAlmostEqual(partitioning.cuts[0][1].sum, -11.2)
-        self.assertAlmostEqual(partitioning.cuts[1][1].sum, 1.6)
+        self.assertAlmostEqual(partitioning.bins[0][1].sum, -11.2)
+        self.assertAlmostEqual(partitioning.bins[1][1].sum, 1.6)
 
         self.checkJson(partitioning)
         self.checkPickle(partitioning)

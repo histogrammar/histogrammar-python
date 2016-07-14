@@ -34,32 +34,32 @@ class Stack(Factory, Container):
     """
 
     @staticmethod
-    def ed(entries, cuts, nanflow):
+    def ed(entries, bins, nanflow):
         """Create a Stack that is only capable of being added.
 
         Parameters:
             entries (float): the number of entries.
-            cuts (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the ``N + 1`` thresholds and sub-aggregator pairs.
+            bins (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the ``N + 1`` thresholds and sub-aggregator pairs.
             nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
         if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(cuts, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], numbers.Real) and isinstance(v[1], Container) for v in cuts):
-            raise TypeError("cuts ({0}) must be a list of number, Container pairs".format(cuts))
+        if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], numbers.Real) and isinstance(v[1], Container) for v in bins):
+            raise TypeError("bins ({0}) must be a list of number, Container pairs".format(bins))
         if not isinstance(nanflow, Container):
             raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
-        out = Stack(cuts, None, None, nanflow)
+        out = Stack(bins, None, None, nanflow)
         out.entries = float(entries)
         return out.specialize()
 
     @staticmethod
-    def ing(cuts, quantity, value, nanflow=Count()):
+    def ing(bins, quantity, value, nanflow=Count()):
         """Synonym for ``__init__``."""
-        return Stack(cuts, quantity, value, nanflow)
+        return Stack(bins, quantity, value, nanflow)
 
-    def __init__(self, cuts, quantity, value, nanflow=Count()):
+    def __init__(self, bins, quantity, value, nanflow=Count()):
         """Create a Stack that is capable of being filled and added.
 
         Parameters:
@@ -70,10 +70,10 @@ class Stack(Factory, Container):
 
         Other parameters:
             entries (float): the number of entries, initially 0.0.
-            cuts (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the ``N + 1`` thresholds and sub-aggregators. (The first threshold is minus infinity; the rest are the ones specified by ``thresholds``).
+            bins (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the ``N + 1`` thresholds and sub-aggregators. (The first threshold is minus infinity; the rest are the ones specified by ``thresholds``).
         """
-        if not isinstance(cuts, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], numbers.Real) and isinstance(v[1], Container) for v in cuts):
-            raise TypeError("cuts ({0}) must be a list of number, Container pairs".format(cuts))
+        if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], numbers.Real) and isinstance(v[1], Container) for v in bins):
+            raise TypeError("bins ({0}) must be a list of number, Container pairs".format(bins))
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({0}) must be None or a Container".format(value))
         if not isinstance(nanflow, Container):
@@ -81,9 +81,9 @@ class Stack(Factory, Container):
         self.entries = 0.0
         self.quantity = serializable(quantity)
         if value is None:
-            self.cuts = tuple(cuts)
+            self.bins = tuple(bins)
         else:
-            self.cuts = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(cuts))
+            self.bins = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(bins))
         self.nanflow = nanflow.copy()
         super(Stack, self).__init__()
         self.specialize()
@@ -99,24 +99,24 @@ class Stack(Factory, Container):
         if not all(isinstance(y, Container) for y in ys):
             raise TypeError("ys must all be Containers")
         entries = sum(y.entries for y in ys)
-        cuts = []
+        bins = []
         for i in xrange(len(ys)):
-            cuts.append((float("nan"), reduce(lambda a, b: a + b, ys[i:])))
-        return Stack.ed(entries, cuts, Count.ed(0.0))
+            bins.append((float("nan"), reduce(lambda a, b: a + b, ys[i:])))
+        return Stack.ed(entries, bins, Count.ed(0.0))
 
     @property
     def thresholds(self):
-        """Cut thresholds (first items of ``cuts``)."""
-        return [k for k, v in self.cuts]
+        """Cut thresholds (first items of ``bins``)."""
+        return [k for k, v in self.bins]
 
     @property
     def values(self):
-        """Sub-aggregators (second items of ``cuts``)."""
-        return [v for k, v in self.cuts]
+        """Sub-aggregators (second items of ``bins``)."""
+        return [v for k, v in self.bins]
 
     @inheritdoc(Container)
     def zero(self):
-        return Stack([(c, v.zero()) for c, v in self.cuts], self.quantity, None, self.nanflow.zero())
+        return Stack([(c, v.zero()) for c, v in self.bins], self.quantity, None, self.nanflow.zero())
 
     @inheritdoc(Container)
     def __add__(self, other):
@@ -124,7 +124,7 @@ class Stack(Factory, Container):
             if self.thresholds != other.thresholds:
                 raise ContainerException("cannot add Stack because cut thresholds differ")
 
-            out = Stack([(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.cuts, other.cuts)], self.quantity, None, self.nanflow + other.nanflow)
+            out = Stack([(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.bins, other.bins)], self.quantity, None, self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
             return out.specialize()
 
@@ -143,7 +143,7 @@ class Stack(Factory, Container):
             if math.isnan(q):
                 self.nanflow.fill(datum, weight)
             else:
-                for threshold, sub in self.cuts:
+                for threshold, sub in self.bins:
                     if q >= threshold:
                         sub.fill(datum, weight)
 
@@ -173,7 +173,7 @@ class Stack(Factory, Container):
         weights[selection] = 0.0
 
         selection = numpy.empty(q.shape, dtype=numpy.bool)
-        for threshold, sub in self.cuts:
+        for threshold, sub in self.bins:
             numpy.less(q, threshold, selection)
             subweights[:] = weights
             subweights[selection] = 0.0
@@ -190,17 +190,17 @@ class Stack(Factory, Container):
 
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
-        if getattr(self.cuts[0][1], "quantity", None) is not None:
-            binsName = self.cuts[0][1].quantity.name
-        elif getattr(self.cuts[0][1], "quantityName", None) is not None:
-            binsName = self.cuts[0][1].quantityName
+        if getattr(self.bins[0][1], "quantity", None) is not None:
+            binsName = self.bins[0][1].quantity.name
+        elif getattr(self.bins[0][1], "quantityName", None) is not None:
+            binsName = self.bins[0][1].quantityName
         else:
             binsName = None
 
         return maybeAdd({
             "entries": floatToJson(self.entries),
-            "type": self.cuts[0][1].name,
-            "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment(True)} for atleast, sub in self.cuts],
+            "type": self.bins[0][1].name,
+            "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment(True)} for atleast, sub in self.bins],
             "nanflow:type": self.nanflow.name,
             "nanflow": self.nanflow.toJsonFragment(False),
             }, **{"name": None if suppressName else self.quantity.name,
@@ -241,18 +241,18 @@ class Stack(Factory, Container):
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
 
             if isinstance(json["data"], list):
-                cuts = []
+                bins = []
                 for i, elementPair in enumerate(json["data"]):
                     if isinstance(elementPair, dict) and hasKeys(elementPair.keys(), ["atleast", "data"]):
                         if elementPair["atleast"] not in ("nan", "inf", "-inf") and not isinstance(elementPair["atleast"], numbers.Real):
                             raise JsonFormatException(json, "Stack.data {0} atleast".format(i))
 
-                        cuts.append((float(elementPair["atleast"]), factory.fromJsonFragment(elementPair["data"], dataName)))
+                        bins.append((float(elementPair["atleast"]), factory.fromJsonFragment(elementPair["data"], dataName)))
 
                     else:
                         raise JsonFormatException(json, "Stack.data {0}".format(i))
 
-                out = Stack.ed(entries, cuts, nanflow)
+                out = Stack.ed(entries, bins, nanflow)
                 out.quantity.name = nameFromParent if name is None else name
                 return out.specialize()
 
@@ -263,14 +263,14 @@ class Stack(Factory, Container):
             raise JsonFormatException(json, "Stack")
 
     def __repr__(self):
-        return "<Stack values={0} thresholds=({1}) nanflow={2}>".format(self.cuts[0][1].name, ", ".join([str(x) for x in self.thresholds]), self.nanflow.name)
+        return "<Stack values={0} thresholds=({1}) nanflow={2}>".format(self.bins[0][1].name, ", ".join([str(x) for x in self.thresholds]), self.nanflow.name)
 
     def __eq__(self, other):
-        return isinstance(other, Stack) and numeq(self.entries, other.entries) and self.quantity == other.quantity and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.cuts, other.cuts)) and self.nanflow == other.nanflow
+        return isinstance(other, Stack) and numeq(self.entries, other.entries) and self.quantity == other.quantity and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.bins, other.bins)) and self.nanflow == other.nanflow
 
     def __ne__(self, other): return not self == other
 
     def __hash__(self):
-        return hash((self.entries, self.quantity, self.cuts, self.nanflow))
+        return hash((self.entries, self.quantity, self.bins, self.nanflow))
 
 Factory.register(Stack)
