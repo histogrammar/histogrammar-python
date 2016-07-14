@@ -149,7 +149,7 @@ class TestOriginal(unittest.TestCase):
             self.checkJson(leftCounting)
             self.checkJson(leftCounting)
 
-    ################################################################Pickle
+    ################################################################ Sum
 
     def testSum(self):
         for i in xrange(11):
@@ -409,29 +409,6 @@ class TestOriginal(unittest.TestCase):
             self.checkPickle(leftDeviating)
             self.checkName(leftDeviating)
 
-    ################################################################ AbsoluteErr
-
-    def testAbsoluteErr(self):
-        for i in xrange(11):
-            left, right = self.simple[:i], self.simple[i:]
-
-            leftAbsoluteErring = AbsoluteErr(named("something", lambda x: x))
-            rightAbsoluteErring = AbsoluteErr(named("something", lambda x: x))
-
-            for _ in left: leftAbsoluteErring.fill(_)
-            for _ in right: rightAbsoluteErring.fill(_)
-
-            self.assertAlmostEqual(leftAbsoluteErring.mae, self.mae(left))
-            self.assertAlmostEqual(rightAbsoluteErring.mae, self.mae(right))
-
-            finalResult = leftAbsoluteErring + rightAbsoluteErring
-
-            self.assertAlmostEqual(finalResult.mae, self.mae(self.simple))
-
-            self.checkJson(leftAbsoluteErring)
-            self.checkPickle(leftAbsoluteErring)
-            self.checkName(leftAbsoluteErring)
-        
     ################################################################ Minimize
 
     def testMinimize(self):
@@ -492,80 +469,6 @@ class TestOriginal(unittest.TestCase):
             self.checkPickle(leftMaximizing)
             self.checkName(leftMaximizing)
 
-    ################################################################ Quantile
-
-    def testQuantile(self):
-        answers = [
-            [float("nan"), -0.481328271104, -0.481328271104],
-            [3.4, -0.69120847042, -0.282087623378],
-            [-0.675, -0.736543753016, -0.724235002413],
-            [-0.58125, -0.958145383329, -0.84507676833],
-            [0.13623046875, -1.53190059408, -0.864648168945],
-            [0.302100585937, -0.819002197266, -0.258450805664],
-            [-0.942007507324, -0.629296875, -0.816923254395],
-            [0.269603994253, -0.753125, -0.0372147040231],
-            [-0.628724939722, 0.24375, -0.454229951778],
-            [-0.562639074418, -1.7, -0.676375166976],
-            [-0.481328271104, float("nan"), -0.481328271104],
-            [float("nan"), -0.329460938614, -0.329460938614],
-            [3.4, -0.457521896462, -0.0717697068155],
-            [-0.45, -0.511698266503, -0.499358613202],
-            [-0.425, -0.706904919683, -0.622333443778],
-            [0.27890625, -0.937865017361, -0.451156510417],
-            [0.599765625, -0.65764453125, -0.028939453125],
-            [-0.637327473958, -0.471875, -0.571146484375],
-            [0.536730209662, -0.595833333333, 0.196961146763],
-            [-0.423513681061, 0.4875, -0.241310944849],
-            [-0.382340803288, -1.7, -0.514106722959],
-            [-0.329460938614, float("nan"), -0.329460938614],
-            [float("nan"), -0.168649887325, -0.168649887325],
-            [3.4, -0.227037303799, 0.135666426581],
-            [-0.225, -0.265185561995, -0.257148449596],
-            [-0.23125, -0.386842979665, -0.340165085765],
-            [0.42275390625, -0.477651570638, -0.117489379883],
-            [0.889514648438, -0.394795166016, 0.247359741211],
-            [-0.322354390462, -0.264453125, -0.299193884277],
-            [0.798766766295, -0.344791666667, 0.455699236407],
-            [-0.213212483191, 0.73125, -0.0243199865526],
-            [-0.194267772368, -1.7, -0.344840995131],
-            [-0.168649887325, float("nan"), -0.168649887325],
-            ]
-
-        line = 0
-        for p in 0.25, 0.5, 0.75:
-            for i in xrange(11):
-                left, right = self.simple[:i], self.simple[i:]
-
-                leftQuantiling = Quantile(p, named("something", lambda x: x))
-                rightQuantiling = Quantile(p, named("something", lambda x: x))
-
-                for _ in left: leftQuantiling.fill(_)
-                for _ in right: rightQuantiling.fill(_)
-
-                finalResult = leftQuantiling + rightQuantiling
-
-                leftAnswer, rightAnswer, finalAnswer = answers[line]
-                line += 1
-
-                if math.isnan(leftAnswer):
-                    self.assertTrue(math.isnan(leftQuantiling.estimate))
-                else:
-                    self.assertAlmostEqual(leftQuantiling.estimate, leftAnswer)
-
-                if math.isnan(rightAnswer):
-                    self.assertTrue(math.isnan(rightQuantiling.estimate))
-                else:
-                    self.assertAlmostEqual(rightQuantiling.estimate, rightAnswer)
-
-                if math.isnan(finalAnswer):
-                    self.assertTrue(math.isnan(finalResult.estimate))
-                else:
-                    self.assertAlmostEqual(finalResult.estimate, finalAnswer)
-
-                self.checkJson(leftQuantiling)
-                self.checkPickle(leftQuantiling)
-                self.checkName(leftQuantiling)
-
     ################################################################ Bag
 
     def testBag(self):
@@ -606,46 +509,6 @@ class TestOriginal(unittest.TestCase):
         self.checkPickle(two)
         self.checkName(one)
         self.checkName(two)
-
-    ################################################################ Sample
-
-    def testSample(self):
-        one = Sample(100, named("something", lambda x: x))
-        for _ in self.simple: one.fill(_)
-        self.assertEqual(set(one.values), set([(3.4, 1.0), (2.2, 1.0), (-1.8, 1.0), (0.0, 1.0), (7.3, 1.0), (-4.7, 1.0), (1.6, 1.0), (0.0, 1.0), (-3.0, 1.0), (-1.7, 1.0)]))
-
-        two = Sample(3, lambda x: x)
-        for _ in self.simple: two.fill(_)
-        self.assertEqual(len(two.values), 3)
-        self.assertEqual(two.size, 3)
-
-        three = Sample(100, lambda x: (x, x))
-        for _ in self.simple: three.fill(_)
-        self.assertEqual(set(three.values), set([((3.4, 3.4), 1.0), ((2.2, 2.2), 1.0), ((-1.8, -1.8), 1.0), ((0.0, 0.0), 1.0), ((7.3, 7.3), 1.0), ((-4.7, -4.7), 1.0), ((1.6, 1.6), 1.0), ((0.0, 0.0), 1.0), ((-3.0, -3.0), 1.0), ((-1.7, -1.7), 1.0)]))        
-
-        four = Sample(100, lambda x: x.string[0])
-        for _ in self.struct: four.fill(_)
-        self.assertEqual(sorted(four.values), [("e", 1.0), ("f", 1.0), ("f", 1.0), ("n", 1.0), ("o", 1.0), ("s", 1.0), ("s", 1.0), ("t", 1.0), ("t", 1.0), ("t", 1.0)])
-
-        five = Sample(100, lambda x: x.string)
-        for _ in self.struct: five.fill(_)
-        self.assertEqual(sorted(five.values), [("eight", 1.0), ("five", 1.0), ("four", 1.0), ("nine", 1.0), ("one", 1.0), ("seven", 1.0), ("six", 1.0), ("ten", 1.0), ("three", 1.0), ("two", 1.0)])
-
-        self.checkJson(one)
-        self.checkJson(two)
-        self.checkJson(three)
-        self.checkJson(four)
-        self.checkJson(five)
-        self.checkPickle(one)
-        self.checkPickle(two)
-        self.checkPickle(three)
-        self.checkPickle(four)
-        self.checkPickle(five)
-        self.checkName(one)
-        self.checkName(two)
-        self.checkName(three)
-        self.checkName(four)
-        self.checkName(five)
 
     ################################################################ Bin
 
@@ -824,25 +687,6 @@ class TestOriginal(unittest.TestCase):
         self.checkPickle(two)
         self.checkName(two)
 
-    ################################################################ AdaptivelyBin
-
-    def testAdaptivelyBin(self):
-        one = AdaptivelyBin(named("something", lambda x: x), num=5)
-        for _ in self.simple: one.fill(_)
-
-        self.assertEqual(list(map(lambda x_c: (x_c[0], x_c[1].entries),one.bins)), [(-3.85, 2.0), (-1.1666666666666667, 3.0), (0.8, 2.0), (2.8, 2.0), (7.3, 1.0)])
-
-        self.checkJson(one)
-        self.checkPickle(one)
-        self.checkName(one)
-
-        two = AdaptivelyBin(named("something", lambda x: x), num=5, value=Sum(named("elsie", lambda x: x)))
-        for _ in self.simple: two.fill(_)
-
-        self.checkJson(two)
-        self.checkPickle(two)
-        self.checkName(two)
-
     ################################################################ Fraction
 
     def testFraction(self):
@@ -884,7 +728,7 @@ class TestOriginal(unittest.TestCase):
         stacking = Stack([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count())
         for _ in self.simple: stacking.fill(_)        
 
-        self.assertEqual([(k, v.entries) for k, v in stacking.cuts], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
+        self.assertEqual([(k, v.entries) for k, v in stacking.bins], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
 
         self.checkJson(stacking)
         self.checkPickle(stacking)
@@ -894,30 +738,30 @@ class TestOriginal(unittest.TestCase):
         stacking = Stack([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
         for _ in self.simple: stacking.fill(_)        
 
-        self.assertEqual([(k, v.entries) for k, v in stacking.cuts], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
+        self.assertEqual([(k, v.entries) for k, v in stacking.bins], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
 
         self.checkJson(stacking)
         self.checkPickle(stacking)
         self.checkName(stacking)
 
-    ################################################################ Partition
+    ################################################################ IrregularlyBin
 
-    def testPartition(self):
-        partitioning = Partition([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count())
+    def testIrregularlyBin(self):
+        partitioning = IrregularlyBin([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count())
         for _ in self.simple: partitioning.fill(_)
 
-        self.assertEqual([(k, v.entries) for k, v in partitioning.cuts], [(float("-inf"), 4.0), (0.0, 3.0), (2.0, 2.0), (4.0, 0.0), (6.0, 1.0), (8.0, 0.0)])
+        self.assertEqual([(k, v.entries) for k, v in partitioning.bins], [(float("-inf"), 4.0), (0.0, 3.0), (2.0, 2.0), (4.0, 0.0), (6.0, 1.0), (8.0, 0.0)])
 
         self.checkJson(partitioning)
         self.checkPickle(partitioning)
         self.checkName(partitioning)
 
-    def testPartitionSum(self):
-        partitioning = Partition([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
+    def testIrregularlyBinSum(self):
+        partitioning = IrregularlyBin([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
         for _ in self.simple: partitioning.fill(_)
 
-        self.assertAlmostEqual(partitioning.cuts[0][1].sum, -11.2)
-        self.assertAlmostEqual(partitioning.cuts[1][1].sum, 1.6)
+        self.assertAlmostEqual(partitioning.bins[0][1].sum, -11.2)
+        self.assertAlmostEqual(partitioning.bins[1][1].sum, 1.6)
 
         self.checkJson(partitioning)
         self.checkPickle(partitioning)
