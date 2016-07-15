@@ -479,34 +479,34 @@ def Limit_combine(one, two):
 
 def Label_fill(labeling, datum, weight):
     if weight > 0.0:
-        for _, v in labeling.pairs:
+        for _, v in labeling.pairs.items():
             fill(v, datum, weight)
         labeling.entries += weight
 
 def Label_combine(one, two):
-    if set(one.pairsMap.keys()) != set(two.pairsMap.keys()):
+    if set(one.pairs.keys()) != set(two.pairs.keys()):
         raise Exception
     entries = one.entries + two.entries
-    pairs = []
-    for l, v1 in one.pairs:
-        v2 = two.pairsMap[l]
-        pairs.append((l, combine(v1, v2)))
+    pairs = {}
+    for l, v1 in one.pairs.items():
+        v2 = two.pairs[l]
+        pairs[l] = combine(v1, v2)
     return Label.ed(entries, pairs)
 
 def UntypedLabel_fill(untypedlabeling, datum, weight):
     if weight > 0.0:
-        for _, v in untypedlabeling.pairs:
+        for _, v in untypedlabeling.pairs.items():
             fill(v, datum, weight)
         untypedlabeling.entries += weight
 
 def UntypedLabel_combine(one, two):
-    if set(one.pairsMap.keys()) != set(two.pairsMap.keys()):
+    if set(one.pairs.keys()) != set(two.pairs.keys()):
         raise Exception
     entries = one.entries + two.entries
-    pairs = []
-    for l, v1 in one.pairs:
-        v2 = two.pairsMap[l]
-        pairs.append((l, combine(v1, v2)))
+    pairs = {}
+    for l, v1 in one.pairs.items():
+        v2 = two.pairs[l]
+        pairs[l] = combine(v1, v2)
     return UntypedLabel.ed(entries, pairs)
 
 def Index_fill(indexing, datum, weight):

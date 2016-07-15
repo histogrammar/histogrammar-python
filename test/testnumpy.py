@@ -591,23 +591,23 @@ class TestNumpy(unittest.TestCase):
     #         self.compare("StackBin holes with holes", Stack(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Stack(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
     #         self.compare("StackBin holes with holes2", Stack(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Stack(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
 
-    def testIrregularlyBinBin(self):
-        with Numpy() as numpy:
-            if numpy is None: return
-            sys.stderr.write("\n")
-            cuts = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-            self.compare("IrregularlyBinBin no data", IrregularlyBin(cuts, lambda x: x["empty"], Bin(100, -3.0, 3.0, lambda x: x["empty"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.empty, 1.0)
-            self.compare("IrregularlyBinBin noholes w/o weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 1.0)
-            self.compare("IrregularlyBinBin noholes const weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 0.5)
-            self.compare("IrregularlyBinBin noholes positive weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.positive)
-            self.compare("IrregularlyBinBin noholes with weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.noholes)
-            self.compare("IrregularlyBinBin noholes with holes", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.withholes)
-            self.compare("IrregularlyBinBin holes w/o weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 1.0)
-            self.compare("IrregularlyBinBin holes const weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 0.5)
-            self.compare("IrregularlyBinBin holes positive weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.positive)
-            self.compare("IrregularlyBinBin holes with weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.noholes)
-            self.compare("IrregularlyBinBin holes with holes", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
-            self.compare("IrregularlyBinBin holes with holes2", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
+    # def testIrregularlyBinBin(self):
+    #     with Numpy() as numpy:
+    #         if numpy is None: return
+    #         sys.stderr.write("\n")
+    #         cuts = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+    #         self.compare("IrregularlyBinBin no data", IrregularlyBin(cuts, lambda x: x["empty"], Bin(100, -3.0, 3.0, lambda x: x["empty"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.empty, 1.0)
+    #         self.compare("IrregularlyBinBin noholes w/o weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 1.0)
+    #         self.compare("IrregularlyBinBin noholes const weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 0.5)
+    #         self.compare("IrregularlyBinBin noholes positive weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.positive)
+    #         self.compare("IrregularlyBinBin noholes with weights", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.noholes)
+    #         self.compare("IrregularlyBinBin noholes with holes", IrregularlyBin(cuts, lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.withholes)
+    #         self.compare("IrregularlyBinBin holes w/o weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 1.0)
+    #         self.compare("IrregularlyBinBin holes const weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 0.5)
+    #         self.compare("IrregularlyBinBin holes positive weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.positive)
+    #         self.compare("IrregularlyBinBin holes with weights", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.noholes)
+    #         self.compare("IrregularlyBinBin holes with holes", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
+    #         self.compare("IrregularlyBinBin holes with holes2", IrregularlyBin(cuts, lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, IrregularlyBin(cuts, lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
 
     # def testSelectBin(self):
     #     with Numpy() as numpy:
@@ -672,22 +672,22 @@ class TestNumpy(unittest.TestCase):
     #         self.compare("LabelBin holes with holes", Label(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Label(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
     #         self.compare("LabelBin holes with holes2", Label(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Label(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
 
-    # def testUntypedLabelBin(self):
-    #     with Numpy() as numpy:
-    #         if numpy is None: return
-    #         sys.stderr.write("\n")
-    #         self.compare("UntypedLabelBin no data", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["empty"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.empty, 1.0)
-    #         self.compare("UntypedLabelBin noholes w/o weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 1.0)
-    #         self.compare("UntypedLabelBin noholes const weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 0.5)
-    #         self.compare("UntypedLabelBin noholes positive weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.positive)
-    #         self.compare("UntypedLabelBin noholes with weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.noholes)
-    #         self.compare("UntypedLabelBin noholes with holes", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.withholes)
-    #         self.compare("UntypedLabelBin holes w/o weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 1.0)
-    #         self.compare("UntypedLabelBin holes const weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 0.5)
-    #         self.compare("UntypedLabelBin holes positive weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.positive)
-    #         self.compare("UntypedLabelBin holes with weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.noholes)
-    #         self.compare("UntypedLabelBin holes with holes", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
-    #         self.compare("UntypedLabelBin holes with holes2", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
+    def testUntypedLabelBin(self):
+        with Numpy() as numpy:
+            if numpy is None: return
+            sys.stderr.write("\n")
+            self.compare("UntypedLabelBin no data", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["empty"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.empty, 1.0)
+            self.compare("UntypedLabelBin noholes w/o weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 1.0)
+            self.compare("UntypedLabelBin noholes const weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 0.5)
+            self.compare("UntypedLabelBin noholes positive weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.positive)
+            self.compare("UntypedLabelBin noholes with weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.noholes)
+            self.compare("UntypedLabelBin noholes with holes", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.withholes)
+            self.compare("UntypedLabelBin holes w/o weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 1.0)
+            self.compare("UntypedLabelBin holes const weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 0.5)
+            self.compare("UntypedLabelBin holes positive weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.positive)
+            self.compare("UntypedLabelBin holes with weights", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.noholes)
+            self.compare("UntypedLabelBin holes with holes", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
+            self.compare("UntypedLabelBin holes with holes2", UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, UntypedLabel(x=Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
 
     # def testIndexBin(self):
     #     with Numpy() as numpy:
