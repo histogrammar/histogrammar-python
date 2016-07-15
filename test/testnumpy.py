@@ -204,14 +204,7 @@ class TestNumpy(unittest.TestCase):
         assert Factory.fromJson((hnp + hnp2).toJson()) == Factory.fromJson((hpy + hpy2).toJson())
         assert Factory.fromJson(hnp3.toJson()) == Factory.fromJson(hpy3.toJson())
 
-        try:
-            assert hpy2 == hpy4
-        except AssertionError:
-            print hpy2.entries, hpy2
-            print hpy4.entries, hpy4
-
-            raise
-            
+        assert hpy2 == hpy4
         assert hpy3 == hpy5
         assert specification.combine(hpy2, hpy2) == specification.combine(hpy3, hpy3.zero())
         assert specification.combine(hpy2, hpy2) == specification.combine(hpy3.zero(), hpy3)
