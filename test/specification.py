@@ -199,9 +199,9 @@ def Deviate_combine(one, two):
         mean = (one.entries*one.mean + two.entries*two.mean) / entries
 
     varianceTimesEntries = one.entries*one.variance + two.entries*two.variance \
-                           + one.entries*one.mean**2 + two.entries*two.mean**2 \
+                           + one.entries*one.mean*one.mean + two.entries*two.mean*two.mean \
                            - 2.0*mean*(one.entries*one.mean + two.entries*two.mean) \
-                           + entries*mean**2
+                           + entries*mean*mean
 
     if entries == 0.0:
         variance = varianceTimesEntries
