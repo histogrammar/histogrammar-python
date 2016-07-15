@@ -23,7 +23,7 @@ import unittest
 
 from histogrammar import *
 
-import specification
+import test.specification
 
 tolerance = 1e-12
 util.relativeTolerance = tolerance
