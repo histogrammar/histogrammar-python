@@ -21,10 +21,7 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Minimize(Factory, Container):
-    """Find the minimum value of a given quantity. If no data are observed, the result is NaN.
-
-    Unlike :doc:`Quantile <histogrammar.primitives.quantile.Quantile>` with a target of 0, Minimize is exact.
-    """
+    """Find the minimum value of a given quantity. If no data are observed, the result is NaN."""
 
     @staticmethod
     def ed(entries, min):
@@ -168,10 +165,7 @@ class Minimize(Factory, Container):
 Factory.register(Minimize)
 
 class Maximize(Factory, Container):
-    """Find the maximum value of a given quantity. If no data are observed, the result is NaN.
-
-    Unlike :doc:`Quantile <histogrammar.primitives.quantile.Quantile>` with a target of 1, Maximize is exact.
-    """
+    """Find the maximum value of a given quantity. If no data are observed, the result is NaN."""
 
     @staticmethod
     def ed(entries, max):

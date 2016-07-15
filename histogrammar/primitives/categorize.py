@@ -25,7 +25,7 @@ class Categorize(Factory, Container):
 
     A bar chart may be thought of as a histogram with string-valued (categorical) bins, so this is the equivalent of :doc:`Bin <histogrammar.primitives.bin.Bin>` for bar charts. The order of the strings is deferred to the visualization stage.
 
-    Unlike :doc:`SparselyBin <histogrammar.primitives.sparsebin.SparselyBin>`, this aggregator has the potential to use unlimited memory. A large number of *distinct* categories can generate many unwanted bins.
+    Unlike :doc:`SparselyBin <histogrammar.primitives.sparselybin.SparselyBin>`, this aggregator has the potential to use unlimited memory. A large number of *distinct* categories can generate many unwanted bins.
     """
 
     @staticmethod

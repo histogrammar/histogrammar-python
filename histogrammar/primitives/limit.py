@@ -34,9 +34,9 @@ class Limit(Factory, Container):
 
     fills a scatter plot in all x-y bins that have fewer than 10 entries and only a number of entries above that. Postprocessing code would use the bin-by-bin numbers of entries to color a heatmap and the raw data points to show outliers in the nearly empty bins.
 
-    Limit can effectively swap between two descriptions if it is embedded in a collection, such as :doc:`Branch <histogrammar.primitives.collection.Branch>`. All elements of the collection would be filled until the Limit saturates, leaving only the low-detail one. For instance, one could aggregate several :doc:`SparselyBin <histogrammar.primitives.sparsebin.SparselyBin>` histograms, each with a different ``binWidth``, and progressively eliminate them in order of increasing ``binWidth``.
+    Limit can effectively swap between two descriptions if it is embedded in a collection, such as :doc:`Branch <histogrammar.primitives.collection.Branch>`. All elements of the collection would be filled until the Limit saturates, leaving only the low-detail one. For instance, one could aggregate several :doc:`SparselyBin <histogrammar.primitives.sparselybin.SparselyBin>` histograms, each with a different ``binWidth``, and progressively eliminate them in order of increasing ``binWidth``.
 
-    Note that Limit saturates when it reaches a specified *total weight,* not the number of data points in a :doc:`Bag <histogrammar.primitives.bag.Bag>`, so it is not certain to control memory use. However, the total weight is of more use to data analysis. (:doc:`Sample <histogrammar.primitives.sample.Sample>` puts a strict limit on memory use.)
+    Note that Limit saturates when it reaches a specified *total weight,* not the number of data points in a :doc:`Bag <histogrammar.primitives.bag.Bag>`, so it is not certain to control memory use. However, the total weight is of more use to data analysis.
     """
 
     @staticmethod
