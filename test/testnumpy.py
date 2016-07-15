@@ -159,7 +159,7 @@ class TestNumpy(unittest.TestCase):
                         d = str(d)
                     else:
                         d = float(d)
-                    specification.fill(h, d, float(w))
+                    test.specification.fill(h, d, float(w))
 
         else:
             startTime = time.time()
@@ -185,7 +185,7 @@ class TestNumpy(unittest.TestCase):
                         d = str(d)
                     else:
                         d = float(d)
-                    specification.fill(h, d, float(weight))
+                    test.specification.fill(h, d, float(weight))
 
         assert (hpy + hpy) == hpy3
         assert (hpy + hpy2) == hpy3
@@ -206,8 +206,8 @@ class TestNumpy(unittest.TestCase):
 
         assert hpy2 == hpy4
         assert hpy3 == hpy5
-        assert specification.combine(hpy2, hpy2) == specification.combine(hpy3, hpy3.zero())
-        assert specification.combine(hpy2, hpy2) == specification.combine(hpy3.zero(), hpy3)
+        assert test.specification.combine(hpy2, hpy2) == test.specification.combine(hpy3, hpy3.zero())
+        assert test.specification.combine(hpy2, hpy2) == test.specification.combine(hpy3.zero(), hpy3)
 
     # Warmup: apparently, Numpy does some dynamic optimization that needs to warm up...
     if empty is not None:
