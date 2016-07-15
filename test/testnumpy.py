@@ -23,6 +23,8 @@ import unittest
 
 from histogrammar import *
 
+import test.specification
+
 tolerance = 1e-12
 util.relativeTolerance = tolerance
 util.absoluteTolerance = tolerance
@@ -107,6 +109,8 @@ class TestNumpy(unittest.TestCase):
         hnp3 = hnp.copy()
         hpy2 = hpy.copy()
         hpy3 = hpy.copy()
+        hpy4 = hpy.copy()
+        hpy5 = hpy.copy()
 
         startTime = time.time()
         hnp.numpy(npdata, weight)
@@ -149,6 +153,14 @@ class TestNumpy(unittest.TestCase):
                         d = float(d)
                     h.fill(d, float(w))
 
+            for h in [hpy4, hpy5, hpy5]:
+                for d, w in zip(pydata, weight):
+                    if isinstance(d, numpy.unicode_):
+                        d = str(d)
+                    else:
+                        d = float(d)
+                    test.specification.fill(h, d, float(w))
+
         else:
             startTime = time.time()
             for d in pydata:
@@ -167,6 +179,15 @@ class TestNumpy(unittest.TestCase):
                         d = float(d)
                     h.fill(d, float(weight))
 
+            for h in [hpy4, hpy5, hpy5]:
+                for d in pydata:
+                    if isinstance(d, numpy.unicode_):
+                        d = str(d)
+                    else:
+                        d = float(d)
+                    test.specification.fill(h, d, float(weight))
+
+        assert (hpy + hpy) == hpy3
         assert (hpy + hpy2) == hpy3
         assert (hpy2 + hpy) == hpy3
         assert (hpy + hpy.zero()) == hpy2
@@ -182,6 +203,11 @@ class TestNumpy(unittest.TestCase):
 
         assert Factory.fromJson((hnp + hnp2).toJson()) == Factory.fromJson((hpy + hpy2).toJson())
         assert Factory.fromJson(hnp3.toJson()) == Factory.fromJson(hpy3.toJson())
+
+        assert hpy2 == hpy4
+        assert hpy3 == hpy5
+        assert test.specification.combine(hpy2, hpy2) == test.specification.combine(hpy3, hpy3.zero())
+        assert test.specification.combine(hpy2, hpy2) == test.specification.combine(hpy3.zero(), hpy3)
 
     # Warmup: apparently, Numpy does some dynamic optimization that needs to warm up...
     if empty is not None:

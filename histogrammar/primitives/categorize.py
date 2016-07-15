@@ -29,7 +29,7 @@ class Categorize(Factory, Container):
     """
 
     @staticmethod
-    def ed(entries, contentType, **pairs):
+    def ed(entries, contentType, pairsAsDict=None, **pairs):
         """Create a Categorize that is only capable of being added.
 
         Parameters:
@@ -48,7 +48,11 @@ class Categorize(Factory, Container):
 
         out = Categorize(None, None)
         out.entries = float(entries)
-        out.pairs = pairs
+        if pairsAsDict is None:
+            out.pairs = {}
+        else:
+            out.pairs = pairsAsDict
+        out.pairs.update(pairs)
         out.contentType = contentType
         return out.specialize()
 
@@ -74,6 +78,8 @@ class Categorize(Factory, Container):
         self.quantity = serializable(quantity)
         self.value = value
         self.pairs = {}
+        if value is not None:
+            self.contentType = str(value.factory.name)
         super(Categorize, self).__init__()
         self.specialize()
 

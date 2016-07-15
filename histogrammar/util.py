@@ -26,7 +26,6 @@ if sys.version_info[0] > 2:
     basestring = str
     xrange = range
     long = int
-    from functools import total_ordering
 
 try:
     from functools import total_ordering

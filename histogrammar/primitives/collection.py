@@ -35,7 +35,7 @@ class Label(Factory, Container, Collection):
     In strongly typed languages, the restriction to a single type allows nested objects to be extracted without casting.
     """
     @staticmethod
-    def ed(entries, **pairs):
+    def ed(entries, pairsAsDict=None, **pairs):
         """Create a Label that is only capable of being added.
 
         Parameters:
@@ -49,7 +49,10 @@ class Label(Factory, Container, Collection):
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
 
-        out = Label(**pairs)
+        if pairsAsDict is None:
+            pairsAsDict = {}
+        pairsAsDict.update(pairs)
+        out = Label(**pairsAsDict)
         out.entries = float(entries)
         return out.specialize()
 
@@ -83,11 +86,6 @@ class Label(Factory, Container, Collection):
 
         super(Label, self).__init__()
         self.specialize()
-
-    @property
-    def pairsMap(self):
-        """Input ``pairs`` as a key-value map."""
-        return self.pairs
 
     @property
     def size(self):
@@ -228,7 +226,7 @@ class UntypedLabel(Factory, Container, Collection):
     """
 
     @staticmethod
-    def ed(entries, **pairs):
+    def ed(entries, pairsAsDict=None, **pairs):
         """Create an UntypedLabel that is only capable of being added.
 
         Parameters:
@@ -242,7 +240,10 @@ class UntypedLabel(Factory, Container, Collection):
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
 
-        out = UntypedLabel(**pairs)
+        if pairsAsDict is None:
+            pairsAsDict = {}
+        pairsAsDict.update(pairs)
+        out = UntypedLabel(**pairsAsDict)
         out.entries = float(entries)
         return out.specialize()
 
@@ -268,11 +269,6 @@ class UntypedLabel(Factory, Container, Collection):
 
         super(UntypedLabel, self).__init__()
         self.specialize()
-
-    @property
-    def pairsMap(self):
-        """Input ``pairs`` as a key-value map."""
-        return self.pairs
 
     @property
     def size(self):
@@ -424,6 +420,9 @@ class Index(Factory, Container, Collection):
             entries (float): the number of entries.
             values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
         """
+        if len(values) == 1 and isinstance(values[0], (list, tuple)):
+            values = values[0]
+
         if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):
@@ -615,6 +614,9 @@ class Branch(Factory, Container, Collection):
             entries (float): the number of entries.
             values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
         """
+        if len(values) == 1 and isinstance(values[0], (list, tuple)):
+            values = values[0]
+
         if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):

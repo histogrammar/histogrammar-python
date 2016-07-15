@@ -26,29 +26,21 @@ class CentrallyBin(Factory, Container):
     """Split a quantity into bins defined by irregularly spaced bin centers, with exactly one sub-aggregator filled per datum (the closest one).
 
     Unlike irregular bins defined by explicit ranges, irregular bins defined by bin centers are guaranteed to fully partition the space with no gaps and no overlaps. It could be viewed as cluster scoring in one dimension.
-
-    The first and last bins cover semi-infinite domains, so it is unclear how to interpret them as part of the probability density function (PDF). Finite-width bins approximate the PDF in piecewise steps, but the first and last bins could be taken as zero (an underestimate) or as uniform from the most extreme point to the inner bin edge (an overestimate, but one that is compensated by underestimating the region just beyond the extreme point). For the sake of the latter interpretation, the minimum and maximum values are accumulated along with the bin values.
     """
 
     @staticmethod
-    def ed(entries, bins, min, max, nanflow):
+    def ed(entries, bins, nanflow):
         """Create a CentrallyBin that is only capable of being added.
 
         Parameters:
             entries (float): the number of entries.
             bins (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the list of bin centers and their accumulated data.
-            min (float): the lowest value of the quantity observed or NaN if no data were observed.
-            max (float): the highest value of the quantity observed or NaN if no data were observed.
             nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
         """
         if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], numbers.Real) and isinstance(v[1], Container) for v in bins):
             raise TypeError("bins ({0}) must be a list of number, Container pairs".format(bins))
-        if not isinstance(min, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("min ({0}) must be a number".format(min))
-        if not isinstance(max, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("max ({0}) must be a number".format(max))
         if not isinstance(nanflow, Container):
             raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
         if entries < 0.0:
@@ -56,8 +48,6 @@ class CentrallyBin(Factory, Container):
         out = CentrallyBin(bins, None, None, nanflow)
         out.entries = float(entries)
         out.bins = bins
-        out.min = float(min)
-        out.max = float(max)
         return out.specialize()
 
     @staticmethod
@@ -77,8 +67,6 @@ class CentrallyBin(Factory, Container):
         Other parameters:
             entries (float): the number of entries, initially 0.0.
             bins (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the bin centers and sub-aggregators in each bin.
-            min (float): the lowest value of the quantity observed, initially NaN.
-            max (float): the highest value of the quantity observed, initially NaN.
         """
 
         if not isinstance(bins, (list, tuple)) and not all(isinstance(v, (list, tuple)) and len(v) == 2 and isinstance(v[0], numbers.Real) and isinstance(v[1], Container) for v in bins):
@@ -95,8 +83,6 @@ class CentrallyBin(Factory, Container):
             self.bins = None
         else:
             self.bins = [(x, value.zero()) for x in sorted(bins)]
-        self.min = float("nan")
-        self.max = float("nan")
 
         self.quantity = serializable(quantity)
         self.value = value
@@ -111,8 +97,6 @@ class CentrallyBin(Factory, Container):
         out.entries = self.entries
         for i, v in self.bins:
             out.bins[i] = Count.ed(v.entries)
-        out.min = self.min
-        out.max = self.max
         return out.specialize()
 
     @property
@@ -174,160 +158,6 @@ class CentrallyBin(Factory, Container):
         else:
             return (below + center)/2.0, (above + center)/2.0
 
-    def pdf(self, *xs):
-        """Probability distribution function (PDF) of one sample point.
-      
-        Computed as the ``entries`` of the corresponding bin divided by total number of entries divided by bin width.
-        """
-        if len(xs) == 0:
-            return self.pdfTimesEntries(xs[0]) / self.entries
-        else:
-            return [x / self.entries for x in self.pdfTimesEntries(*xs)]
-
-    def cdf(self, *xs):
-        """Cumulative distribution function (CDF, or "accumulation function") of one sample point.
-        
-        Computed by adding bin contents from minus infinity to the point in question. This is a continuous, piecewise linear function.
-        """
-        if len(xs) == 0:
-            return self.cdfTimesEntries(xs[0]) / self.entries
-        else:
-            return [x / self.entries for x in self.cdfTimesEntries(*xs)]
-
-    def qf(self, *xs):
-        """Quantile function (QF, or "inverse of the accumulation function") of one sample point.
-       
-        Computed like the CDF, but solving for the point in question, rather than integrating up to it. This is a continuous, piecewise linear function.
-        """
-        if len(xs) == 0:
-            return self.qfTimesEntries(xs[0]) * self.entries
-        else:
-            return [x * self.entries for x in self.qfTimesEntries(*xs)]
-
-    def pdfTimesEntries(self, x, *xs):
-        """PDF without the non-unity number of entries removed (no division by zero when ``entries`` is zero)."""
-
-        xs = [x] + list(xs)
-
-        if len(self.bins) == 0 or math.isnan(self.min) or math.isnan(self.max):
-            out = [0.0] * len(xs)
-
-        elif len(self.bins) == 1:
-            out = [float("inf") if x == self.bins[0][0] else 0.0 for x in xs]
-
-        else:
-            out = [0.0] * len(xs)
-
-            left = self.min
-            for i in xrange(len(self.bins)):
-                if i < len(self.bins) - 1:
-                    right = (self.bins[i][0] + self.bins[i + 1][0]) / 2.0
-                else:
-                    right = self.max
-
-                entries = self.bins[i][1].entries
-
-                for j, x in enumerate(xs):
-                    if left <= x and x < right:
-                        out[j] = entries / (right - left)
-
-                left = right
-            
-        if len(xs) == 1:
-            return out[0]
-        else:
-            return out
-
-    def cdfTimesEntries(self, x, *xs):
-        """CDF without the non-unity number of entries removed (no division by zero when ``entries`` is zero)."""
-
-        xs = [x] + list(xs)
-
-        if len(self.bins) == 0 or math.isnan(self.min) or math.isnan(self.max):
-            out = [0.0] * len(xs)
-
-        elif len(self.bins) == 1:
-            out = []
-            for x in xs:
-                if x < self.bins[0][0]:
-                    out.append(0.0)
-                elif x == self.bins[0][0]:
-                    out.append(self.bins[0][1].entries / 2.0)
-                else:
-                    out.append(self.bins[0][1].entries)
-
-        else:
-            out = [0.0] * len(xs)
-
-            left = self.min
-            cumulative = 0.0
-            for i in xrange(len(self.bins)):
-                if i < len(self.bins) - 1:
-                    right = (self.bins[i][0] + self.bins[i + 1][0]) / 2.0
-                else:
-                    right = self.max
-
-                entries = self.bins[i][1].entries
-
-                for j, x in enumerate(xs):
-                    if left <= x and x < right:
-                        out[j] = cumulative + entries * (x - left)/(right - left)
-
-                left = right
-                cumulative += entries
-
-            for j, x in enumerate(xs):
-                if x >= self.max:
-                    out[j] = cumulative
-
-        if len(xs) == 1:
-            return out[0]
-        else:
-            return out
-
-    def qfTimesEntries(self, y, *ys):
-        """QF without the non-unity number of entries removed (no division by zero when ``entries`` is zero)."""
-
-        ys = [y] + list(ys)
-
-        if len(self.bins) == 0 or math.isnan(self.min) or math.isnan(self.max):
-            out = [float("nan")] * len(ys)
-
-        elif len(self.bins) == 1:
-            out = [self.bins[0][0]] * len(ys)
-
-        else:
-            out = [self.min] * len(ys)
-
-            left = self.min
-            cumulative = 0.0
-            for i in xrange(len(self.bins)):
-                if i < len(self.bins) - 1:
-                    right = (self.bins[i][0] + self.bins[i + 1][0]) / 2.0
-                else:
-                    right = self.max
-
-                entries = self.bins[i][1].entries
-
-                low = cumulative
-                high = cumulative + entries
-
-                for j, y in enumerate(ys):
-                    if low <= y and y < high:
-                        out[j] = left + (right - left)*(y - low)/(high - low)
-
-                left = right
-                cumulative += entries
-
-            for j, y in enumerate(ys):
-                if y >= cumulative:
-                    out[j] = self.max
-
-        if len(ys) == 1:
-            return out[0]
-        else:
-            return out
-
     @inheritdoc(Container)
     def zero(self):
         return CentrallyBin([c for c, v in self.bins], self.quantity, self.value, self.nanflow.zero())
@@ -342,8 +172,6 @@ class CentrallyBin(Factory, Container):
         out = CentrallyBin([c for c, v in self.bins], self.quantity, self.value, self.nanflow + other.nanflow)
         out.entries = self.entries + other.entries
         out.bins = newbins
-        out.min = minplus(self.min, other.min)
-        out.max = maxplus(self.max, other.max)
         return out.specialize()
 
     @inheritdoc(Container)
@@ -362,10 +190,6 @@ class CentrallyBin(Factory, Container):
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
-            if math.isnan(self.min) or q < self.min:
-                self.min = q
-            if math.isnan(self.max) or q > self.max:
-                self.max = q
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
@@ -421,23 +245,6 @@ class CentrallyBin(Factory, Container):
                 self.bins[index][1]._numpy(data, subweights, shape)
 
         # no possibility of exception from here on out (for rollback)
-
-        q = q[weights > 0.0]
-
-        if math.isnan(self.min):
-            if q.shape[0] > 0:
-                self.min = float(q.min())
-        else:
-            if q.shape[0] > 0:
-                self.min = min(self.min, float(q.min()))
-
-        if math.isnan(self.max):
-            if q.shape[0] > 0:
-                self.max = float(q.max())
-        else:
-            if q.shape[0] > 0:
-                self.max = max(self.max, float(q.max()))
-
         self.entries += float(newentries)
 
     @property
@@ -458,8 +265,6 @@ class CentrallyBin(Factory, Container):
             "entries": floatToJson(self.entries),
             "bins:type": self.bins[0][1].name,
             "bins": [{"center": floatToJson(c), "value": v.toJsonFragment(True)} for c, v in self.bins],
-            "min": floatToJson(self.min),
-            "max": floatToJson(self.max),
             "nanflow:type": self.nanflow.name,
             "nanflow": self.nanflow.toJsonFragment(False),
             }, **{"name": None if suppressName else self.quantity.name,
@@ -468,7 +273,7 @@ class CentrallyBin(Factory, Container):
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "bins:type", "bins", "min", "max", "nanflow:type", "nanflow"], ["name", "bins:name"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "bins:type", "bins", "nanflow:type", "nanflow"], ["name", "bins:name"]):
             if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
@@ -505,23 +310,13 @@ class CentrallyBin(Factory, Container):
                     else:
                         raise JsonFormatException(binpair, "CentrallyBin.bins {0}".format(i))
 
-            if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], numbers.Real):
-                min = float(json["min"])
-            else:
-                raise JsonFormatException(json, "CentrallyBin.min")
-
-            if json["max"] in ("nan", "inf", "-inf") or isinstance(json["max"], numbers.Real):
-                max = float(json["max"])
-            else:
-                raise JsonFormatException(json, "CentrallyBin.max")
-
             if isinstance(json["nanflow:type"], basestring):
                 nanflowFactory = Factory.registered[json["nanflow:type"]]
             else:
                 raise JsonFormatException(json, "CentrallyBin.nanflow:type")
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
 
-            out = CentrallyBin.ed(entries, bins, min, max, nanflow)
+            out = CentrallyBin.ed(entries, bins, nanflow)
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
@@ -532,11 +327,11 @@ class CentrallyBin(Factory, Container):
         return "<CentrallyBin bins={0} size={1} nanflow={2}>".format(self.bins[0][1].name, len(self.bins), self.nanflow.name)
 
     def __eq__(self, other):
-        return isinstance(other, CentrallyBin) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.bins == other.bins and numeq(self.min, other.min) and numeq(self.max, other.max) and self.nanflow == other.nanflow
+        return isinstance(other, CentrallyBin) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.bins == other.bins and self.nanflow == other.nanflow
 
     def __ne__(self, other): return not self == other
 
     def __hash__(self):
-        return hash((self.quantity, self.entries, tuple(self.bins), self.min, self.max, self.nanflow))
+        return hash((self.quantity, self.entries, tuple(self.bins), self.nanflow))
 
 Factory.register(CentrallyBin)
