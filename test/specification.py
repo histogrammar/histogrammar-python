@@ -393,18 +393,15 @@ def Categorize_fill(categorizing, datum, weight):
     if weight > 0.0:
         q = categorizing.quantity(datum)
         if q not in categorizing.pairs:
-            categorizing.pairs[q] = value.copy()
+            categorizing.pairs[q] = categorizing.value.copy()
         fill(categorizing.pairs[q], datum, weight)
         categorizing.entries += weight
 
 def Categorize_combine(one, two):
+    if one.contentType != two.contentType:
+        raise Exception
     entries = one.entries + two.entries
-    if len(one.pairs) > 0:
-        contentType = list(one.pairs.values())[0].factory.name
-    elif len(two.pairs) > 0:
-        contentType = list(two.pairs.values())[0].factory.name
-    else:
-        contentType = one.contentType
+    contentType = one.contentType
     pairs = {}
     for key in set(one.pairs.keys()).union(set(two.pairs.keys())):
         if key in one.pairs and key in two.pairs:
