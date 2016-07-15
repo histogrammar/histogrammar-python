@@ -26,19 +26,18 @@ if sys.version_info[0] > 2:
     basestring = str
     xrange = range
     long = int
+
+try:
     from functools import total_ordering
-else:
-    if sys.version_info[0] == 2 and sys.version_info[1] > 6:
-        from functools import total_ordering
-        @total_ordering
-        class LessThanEverything(object):
-            """An object that will always float the the beginning of a list in a sort."""
-            def __le__(self, other):
-                return True
-            def __eq__(self, other):
-                return self is other
-    else:
-        def LessThanEverything(): return None
+    @total_ordering
+    class LessThanEverything(object):
+        """An object that will always float the the beginning of a list in a sort."""
+        def __le__(self, other):
+            return True
+        def __eq__(self, other):
+            return self is other
+except ImportError:
+    def LessThanEverything(): return None
 
 def inheritdoc(cls):
     def _fn(fn):
