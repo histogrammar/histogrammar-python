@@ -374,12 +374,12 @@ def IrregularlyBin_fill(irregularlybinning, datum, weight):
             fill(irregularlybinning.nanflow, datum, weight)
         else:
             lowEdges = irregularlybinning.bins
-            highEdges = irregularlybinning.bins[1:] + [(float("nan"), None)]
+            highEdges = list(irregularlybinning.bins[1:]) + [(float("nan"), None)]
             for (low, sub), (high, _) in zip(lowEdges, highEdges):
-                if low <= q < high:
+                if q >= low and not q >= high:    # include high endpoint only for the last bin
                     fill(sub, datum, weight)
                     break
-            irregularlybinning.entries += weight
+        irregularlybinning.entries += weight
 
 def IrregularlyBin_combine(one, two):
     if one.thresholds != two.thresholds:

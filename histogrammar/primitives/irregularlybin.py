@@ -128,7 +128,6 @@ class IrregularlyBin(Factory, Container):
                     if q >= low and not q >= high:
                         sub.fill(datum, weight)
                         break
-
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
