@@ -28,7 +28,7 @@ class Bag(Factory, Container):
 
     Although the user-defined function may return scalar numbers, fixed-dimension vectors of numbers, or categorical strings, it may not mix types. Different Bag primitives in an analysis tree may collect different types.
 
-    Consider using Bag with :doc:`Limit <histogrammar.primitives.limit.Limit>` for collections that roll over to a mere count when they exceed a limit, or :doc:`Sample <histogrammar.primitives.sample.Sample>` for reservoir sampling.
+    Consider using Bag with :doc:`Limit <histogrammar.primitives.limit.Limit>` for collections that roll over to a mere count when they exceed a limit.
     """
 
     @staticmethod

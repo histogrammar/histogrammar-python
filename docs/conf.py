@@ -307,4 +307,4 @@ def linkcode_resolve(domain, info):
     except:
         return None
     else:
-        return "https://github.com/diana-hep/histogrammar/blob/%s/python/%s.py#L%d" % (release, fileName, lineNumber)
+        return "https://github.com/histogrammar/histogrammar-python/blob/%s/%s.py#L%d" % (release, fileName, lineNumber)

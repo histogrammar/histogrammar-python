@@ -25,7 +25,7 @@ class IrregularlyBin(Factory, Container):
 
     This is a variation on :doc:`Stack <histogrammar.primitives.stack.Stack>`, which fills ``N + 1`` aggregators with ``N`` successively tighter cut thresholds. IrregularlyBin fills ``N + 1`` aggregators in the non-overlapping intervals between ``N`` thresholds.
 
-    IrregularlyBin is also similar to :doc:`CentrallyBin <histogrammar.primitives.centralbin.CentrallyBin>`, in that they both partition a space into irregular subdomains with no gaps and no overlaps. However, CentrallyBin is defined by bin centers and IrregularlyBin is defined by bin edges, the first and last of which are at negative and positive infinity.
+    IrregularlyBin is also similar to :doc:`CentrallyBin <histogrammar.primitives.centrallybin.CentrallyBin>`, in that they both partition a space into irregular subdomains with no gaps and no overlaps. However, CentrallyBin is defined by bin centers and IrregularlyBin is defined by bin edges, the first and last of which are at negative and positive infinity.
     """
 
     @staticmethod
