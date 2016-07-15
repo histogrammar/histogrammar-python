@@ -257,6 +257,8 @@ def Maximize_combine(one, two):
 def Bag_fill(bagging, datum, weight):
     if weight > 0.0:
         q = bagging.quantity(datum)
+        if math.isnan(q):   # something to avoid NaN != NaN
+            q = "nan"       # (handling is more complex in type-safe languages)
         bagging.entries += weight
         if q in bagging.values:
             bagging.values[q] += weight
@@ -268,11 +270,11 @@ def Bag_combine(one, two):
     values = {}
     for v in set(one.values.keys()).union(set(two.values.keys())):
         if v in one.values and v in two.values:
-            values[v] = combine(one.values[v], two.values[v])
+            values[v] = one.values[v] + two.values[v]
         elif v in one.values:
-            values[v] = one.values[v].copy()
+            values[v] = one.values[v]
         elif v in two.values:
-            values[v] = two.values[v].copy()
+            values[v] = two.values[v]
     return Bag.ed(entries, values)
 
 def Bin_fill(binning, datum, weight):

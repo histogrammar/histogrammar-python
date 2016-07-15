@@ -413,13 +413,16 @@ class Index(Factory, Container, Collection):
     """
 
     @staticmethod
-    def ed(entries, valuesAsList=None, *values):
+    def ed(entries, *values):
         """Create an Index that is only capable of being added.
 
         Parameters:
             entries (float): the number of entries.
             values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
         """
+        if len(values) == 1 and isinstance(values[0], (list, tuple)):
+            values = values[0]
+
         if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):
@@ -427,10 +430,7 @@ class Index(Factory, Container, Collection):
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
 
-        if valuesAsList is None:
-            valuesAsList = []
-        valuesAsList.extend(values)
-        out = Index(*valuesAsList)
+        out = Index(*values)
         out.entries = float(entries)
         return out.specialize()
 
@@ -614,6 +614,9 @@ class Branch(Factory, Container, Collection):
             entries (float): the number of entries.
             values (list of :doc:`Container <histogrammar.defs.Container>`): the collection of filled aggregators.
         """
+        if len(values) == 1 and isinstance(values[0], (list, tuple)):
+            values = values[0]
+
         if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not all(isinstance(v, Container) for v in values):
@@ -621,10 +624,7 @@ class Branch(Factory, Container, Collection):
         if entries < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
 
-        if valuesAsList is None:
-            valuesAsList = []
-        valuesAsList.extend(values)
-        out = Branch(*valuesAsList)
+        out = Branch(*values)
         out.entries = float(entries)
         return out.specialize()
 
