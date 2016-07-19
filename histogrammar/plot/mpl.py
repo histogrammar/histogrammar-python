@@ -150,9 +150,10 @@ class SparselyProfileMethods(object):
         return ax
 
 class ProfileErrMethods(object):
-    def matplotlib(self, name=None, **kwargs):
+    def matplotlib(self, name=None, aspect=True, **kwargs):
         """ Plotting method for Bin of Deviate
               name : title of the plot.
+              aspect :
               kwargs :  `matplotlib.collections.LineCollection` properties.
 
             Returns a matplotlib.axes instance
@@ -171,8 +172,13 @@ class ProfileErrMethods(object):
         xmaxs = [x[1] for x in xranges]
         ax.hlines(self.meanValues, xmins, xmaxs, **kwargs)
 
-        ymins = [means[i] - np.sqrt(variances[i]) for i in range(num_bins)]
-        ymaxs = [means[i] + np.sqrt(variances[i]) for i in range(num_bins)]
+        if aspect is True:
+            counts = [p.entries for p in self.values]
+            ymins = [means[i] - np.sqrt(variances[i])/np.sqrt(counts[i]) for i in range(num_bins)]
+            ymaxs = [means[i] + np.sqrt(variances[i])/np.sqrt(counts[i]) for i in range(num_bins)]
+        else:
+            ymins = [means[i] - np.sqrt(variances[i]) for i in range(num_bins)]
+            ymaxs = [means[i] + np.sqrt(variances[i]) for i in range(num_bins)]
         ax.vlines(bin_centers, ymins, ymaxs, **kwargs)
 
         if name is not None:
@@ -183,7 +189,7 @@ class ProfileErrMethods(object):
         return ax
 
 class SparselyProfileErrMethods(object):
-    def matplotlib(self, name=None, **kwargs):
+    def matplotlib(self, name=None, aspect=True, **kwargs):
         """ Plotting method for
         """
         import matplotlib.pyplot as plt
@@ -195,11 +201,13 @@ class SparselyProfileErrMethods(object):
 
         means = np.nan*np.ones(xmaxs.shape)
         variances = np.nan*np.ones(xmaxs.shape)
+        counts = np.nan*np.ones(xmaxs.shape)
 
         for i in xrange(self.minBin, self.maxBin + 1):
             if i in self.bins:
                 means[i - self.minBin] = self.bins[i].mean
                 variances[i - self.minBin] = self.bins[i].variance
+                counts[i - self.minBin] = self.bins[i].entries
         idx = np.isfinite(means)
 
         # pull out non nans
@@ -211,8 +219,12 @@ class SparselyProfileErrMethods(object):
         ax.hlines(means, xmins, xmaxs, **kwargs)
 
         bin_centers = (self.binWidth/2.0) + xmins
-        ymins = [means[i] - np.sqrt(variances[i]) for i in xrange(len(means))]
-        ymaxs = [means[i] + np.sqrt(variances[i]) for i in xrange(len(means))]
+        if aspect is True:
+            ymins = [means[i] - np.sqrt(variances[i])/np.sqrt(counts[i]) for i in xrange(len(means))]
+            ymaxs = [means[i] + np.sqrt(variances[i])/np.sqrt(counts[i]) for i in xrange(len(means))]
+        else:
+            ymins = [means[i] - np.sqrt(variances[i]) for i in xrange(len(means))]
+            ymaxs = [means[i] + np.sqrt(variances[i]) for i in xrange(len(means))]
 
         ax.vlines(bin_centers, ymins, ymaxs, **kwargs)
 
