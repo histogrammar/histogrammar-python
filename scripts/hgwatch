@@ -41,7 +41,7 @@ import ROOT
 # Must give hg.root the right number of "name" strings.
 if isinstance(hg, Fraction):
     roothist = hg.root(newName(), newName())
-elif isinstance(hg, (Stack, Partition)):
+elif isinstance(hg, (Stack, IrregularlyBin)):
     roothist = hg.root(*[newName() for i in xrange(hg.cuts)])
 else:
     roothist = hg.root(newName())
