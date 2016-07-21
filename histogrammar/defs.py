@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 import json as jsonlib
 import math
 import re
@@ -210,10 +211,11 @@ class Container(object):
             derivedFieldTypes = {}
             derivedFieldExprs = {}
 
-            storageStructs = {}
+            storageStructs = collections.OrderedDict()
             initCode = []
             fillCode = []
-            self._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, 6)
+            tmpVarTypes = {}
+            self._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, 6, tmpVarTypes)
 
             className = "HistogrammarClingFiller_" + str(Container.clingClassNameNumber)
             Container.clingClassNameNumber += 1
@@ -221,26 +223,28 @@ class Container(object):
 public:
 {1}{2}
 {3}  double weight;
-{4}  {5} storage;
+{4}{5}  {6} storage;
 
   void fillall(TTree* ttree) {{
     weight = 1.0;
-{6}
 {7}
+{8}
     Long64_t n = ttree->GetEntries();
     Long64_t i;
     for (i = 0;  i < n;  ++i) {{
       ttree->GetEntry(i);
-{8}{9}
+{9}{10}
     }}
+
     ttree->ResetBranchAddresses();
   }}
 }};
 """.format(className,
-           "".join("  struct " + n + ";\n" for n in storageStructs),
+           "",
            "".join(storageStructs.values()),
            "".join("  " + t + " " + self._clingNormalizeTTreeName(n) + ";\n" for n, t in inputFieldTypes.items() if self._clingNormalizeTTreeName(n) in inputFieldNames),
            "".join("  " + t + " " + n + ";\n" for n, t in derivedFieldTypes.items()),
+           "".join("  " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
            self._clingStorageType(),
            "\n".join(initCode),
            "".join("    ttree->SetBranchAddress(" + jsonlib.dumps(key) + ", &" + n + ");\n" for n, key in inputFieldNames.items()),
@@ -286,6 +290,25 @@ public:
                 raise Exception(t)
         return obj
 
+    def _clingQuantityExpr(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
+        if not isinstance(self.quantity.expr, basestring):
+            raise ContainerException(self.factory.name + ".quantity must be provided as a C++ string to use with Cling")
+
+        normexpr = self._clingNormalizeTTreeExpr(inputFieldNames, inputFieldTypes, self.quantity.expr)
+        if self._clingInputFieldRef(self.quantity.expr):
+            return normexpr
+        else:
+            derivedFieldName = None
+            for name, expr in derivedFieldExprs.items():
+                if expr == normexpr:
+                    derivedFieldName = name
+                    break
+            if derivedFieldName is None:
+                derivedFieldName = "quantity_" + str(len(derivedFieldExprs))
+                derivedFieldExprs[derivedFieldName] = normexpr
+                derivedFieldTypes[derivedFieldName] = "double"
+            return derivedFieldName
+
     def _clingInputFieldRef(self, code):
         return re.match("^\s*[a-zA-Z_][a-zA-Z0-9]*\s*$", code) is not None
 
@@ -303,6 +326,12 @@ public:
                     norm = "(*" + norm + ")"
                 return re.sub(freeword, r"\1" + norm + r"\2", expr).strip()
         return expr.strip()
+
+    def _clingStorageType(self):
+        return self._clingStructName()
+
+    def _clingStructName(self):
+        raise NotImplementedError
 
     def numpy(self, data, weights=1.0):
         import numpy

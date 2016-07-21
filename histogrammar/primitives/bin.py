@@ -229,6 +229,33 @@ class Bin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, tmpVarTypes):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(prefix) + ".entries = 0.0;")
+        i = "i_" + str(len(tmpVarTypes))
+        tmpVarTypes[i] = "int"
+        initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(i, len(self.values)))
+
+        normexpr = self._clingQuantityExpr(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(prefix) + ".entries += weight;")
+        fillCode.append(" " * fillIndent + "{0} = floor(({1} - {2}) * {3});".format(i, normexpr, self.low, 1.0/(self.high - self.low)))
+
+        self.values[0]._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "values"), ("index", i)), initIndent + 2, fillCode, fillIndent, tmpVarTypes)
+
+        initCode.append(" " * initIndent + "}")
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    {1} values[{2}];
+  }} {0};
+""".format(self._clingStructName(), self.values[0]._clingStorageType(), len(self.values))
+
+    def _clingUpdate(self, filler, extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, extractorPrefix)
+        self.entries += obj.entries
+        for i in xrange(len(self.values)):
+            self.values[i]._clingUpdate(obj, (("var", "values"), ("index", i)))
+
     def _clingStructName(self):
         return "Bn" + self.values[0]._clingStructName() + self.underflow._clingStructName() + self.overflow._clingStructName() + self.nanflow._clingStructName()
 

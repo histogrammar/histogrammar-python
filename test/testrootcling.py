@@ -87,3 +87,15 @@ class TestRootCling(unittest.TestCase):
     #         self.assertEqual(hg.toJson(), {"data": {"sum": 599640, "name": "event.GetNtrack()", "entries": 1000}, "type": "Sum"})
     #         hg.cling(TestRootCling.ttreeEvent, debug=False)
     #         self.assertEqual(hg.toJson(), {"data": {"sum": 2*599640, "name": "event.GetNtrack()", "entries": 2*1000}, "type": "Sum"})
+
+    ################################################################ Bin
+
+    def testBin(self):
+        if TestRootCling.ttreeFlat is not None:
+            hg = Bin(10, 0, 1, "positive")
+            hg.cling(TestRootCling.ttreeFlat, debug=True)
+            print json.dumps(hg.toJson(), indent=2)
+
+            hg = Bin(10, 0, 1, "positive", Sum("noholes"))
+            hg.cling(TestRootCling.ttreeFlat, debug=True)
+            print json.dumps(hg.toJson(), indent=2)

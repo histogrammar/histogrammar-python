@@ -91,45 +91,25 @@ class Sum(Factory, Container):
             self.entries += weight
             self.sum += q * weight
 
-    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillIndent):
-        if not isinstance(self.quantity.expr, basestring):
-            raise ContainerException("Sum.quantity must be provided as a C++ string to use with Cling")
+    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, tmpVarTypes):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(prefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(prefix) + ".sum = 0.0;")
+
+        normexpr = self._clingQuantityExpr(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(prefix) + ".entries += weight;")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(prefix) + ".sum += " + normexpr + ";")
 
         storageStructs[self._clingStructName()] = """
-  typedef struct {0} {{
+  typedef struct {{
     double entries;
     double sum;
   }} {0};
 """.format(self._clingStructName())
 
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(initPrefix) + ".sum = 0.0;")
-
-        normexpr = self._clingNormalizeTTreeExpr(inputFieldNames, inputFieldTypes, self.quantity.expr)
-        if self._clingInputFieldRef(self.quantity.expr):
-            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + ".entries += weight;")
-            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + ".sum += " + normexpr + ";")
-
-        else:
-            derivedFieldName = None
-            for name, expr in derivedFieldExprs.items():
-                if expr == normexpr:
-                    derivedFieldName = name
-                    break
-            if derivedFieldName is None:
-                derivedFieldName = "quantity_" + str(len(derivedFieldExprs))
-                derivedFieldExprs[derivedFieldName] = normexpr
-                derivedFieldTypes[derivedFieldName] = "double"
-            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + ".entries += weight;")
-            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + ".sum += " + derivedFieldName + ";")
-
     def _clingUpdate(self, filler, extractorPrefix):
         obj = self._clingExpandPrefixPython(filler, extractorPrefix)
         self.entries += obj.entries
         self.sum += obj.sum
-
-    def _clingStorageType(self):
-        return self._clingStructName()
 
     def _clingStructName(self):
         return "Sm"
