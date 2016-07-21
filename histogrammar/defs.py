@@ -231,8 +231,7 @@ public:
     Long64_t i;
     for (i = 0;  i < n;  ++i) {{
       ttree->GetEntry(i);
-{8}
-{9}
+{8}{9}
     }}
     ttree->ResetBranchAddresses();
   }}
@@ -245,7 +244,7 @@ public:
            self._clingStorageType(),
            "\n".join(initCode),
            "".join("    ttree->SetBranchAddress(" + jsonlib.dumps(key) + ", &" + n + ");\n" for n, key in inputFieldNames.items()),
-           "\n".join("      " + n + " = " + e + ";" for n, e in derivedFieldExprs.items()),
+           "".join("      " + n + " = " + e + ";\n" for n, e in derivedFieldExprs.items()),
            "\n".join(fillCode))
 
             if debug:
