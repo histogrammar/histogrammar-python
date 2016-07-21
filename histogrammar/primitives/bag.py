@@ -123,6 +123,9 @@ class Bag(Factory, Container):
         else:
             self.values[q] = weight
 
+    def _clingStructName(self):
+        return "Bg"
+
     def _numpy(self, data, weights, shape):
         import numpy
         q = self.quantity(data)

@@ -16,6 +16,7 @@
 
 import json as jsonlib
 import math
+import re
 
 from histogrammar.util import *
 
@@ -166,7 +167,10 @@ class Container(object):
             import ROOT
 
             inputFieldNames = {}
-            inputFieldTypes = dict((x.GetName(), x.GetClassName()) for x in ttree.GetListOfBranches())
+            inputFieldTypes = {}
+            for branch in ttree.GetListOfBranches():
+                inputFieldTypes[branch.GetName()] = branch.GetClassName() + "*"
+                    
             derivedFieldTypes = {}
             derivedFieldExprs = {}
 
@@ -177,51 +181,51 @@ class Container(object):
 
             className = "HistogrammarClingFiller_" + str(Container.clingClassNameNumber)
             Container.clingClassNameNumber += 1
-            classCode = """
-class {0} {{
+            classCode = """class {0} {{
 public:
-  {1}
+{1}{2}
+{3}  Double_t weight;
+{4}  {5} storage;
 
-  {2}
-  {3}
-  {4} storage;
-
-  void fillall(TTree *ttree) {{
-{5}
+  void fillall(TTree* ttree) {{
+    weight = 1.0;
 {6}
-    Long64_t n = ttree->GetEntries();
-    Long64_t i = 0;
-    for (;  i < n;  ++i) {{
-      ttree->GetEntry(i);
 {7}
+    Long64_t n = ttree->GetEntries();
+    Long64_t i;
+    for (i = 0;  i < n;  ++i) {{
+      ttree->GetEntry(i);
 {8}
+{9}
     }}
   }}
 }};
 """.format(className,
-           "\n\n  ".join(storageStructs),
-           "\n  ".join(t + " " + n + ";" for n, t in inputFieldTypes.items() if n in inputFieldNames),
-           "\n  ".join(t + " " + n + ";" for n, t in derivedFieldTypes.items()),
+           "".join("  struct " + n + ";\n" for n in storageStructs),
+           "".join(storageStructs.values()),
+           "".join("  " + t + " " + self._clingNormalizeTTreeName(n) + ";\n" for n, t in inputFieldTypes.items() if self._clingNormalizeTTreeName(n) in inputFieldNames),
+           "".join("  " + t + " " + n + ";\n" for n, t in derivedFieldTypes.items()),
            self._clingStorageType(),
            "\n".join(initCode),
-           "\n    ".join("ttree->SetBranchAddress(" + jsonlib.dumps(key) + ", &" + n + ");" for n, key in inputFieldNames.items()),
-           "\n      ".join(n + " = " + e + ";" for n, e in derivedFieldExprs.items()),
+           "".join("    ttree->SetBranchAddress(" + jsonlib.dumps(key) + ", &" + n + ");\n" for n, key in inputFieldNames.items()),
+           "\n".join("      " + n + " = " + e + ";" for n, e in derivedFieldExprs.items()),
            "\n".join(fillCode))
 
             if debug:
-                print(classCode)
+                print("line |")
+                print("\n".join("{0:4d} | {1}".format(i + 1, line) for i, line in enumerate(classCode.split("\n"))))
             if not ROOT.gInterpreter.Declare(classCode):
                 if debug:
                     raise SyntaxError("Could not compile the above")
                 else:
-                    raise SyntaxError("Could not compile:\n\n" + classCode)
+                    raise SyntaxError("Could not compile (rerun with debug=True to see the generated C++ code)")
 
             self._clingFiller = getattr(ROOT, className)()
 
         # we already have a _clingFiller; just fill
         self._clingFiller.fillall(ttree)
         self._clingUpdate(self._clingFiller, (("var", "storage"),))
-
+                
     def _clingExpandPrefixCpp(self, prefix):
         out = ""
         for t, x in prefix:
@@ -246,8 +250,23 @@ public:
                 raise Exception(t)
         return obj
 
+    def _clingInputFieldRef(self, code):
+        return re.match("^\s*[a-zA-Z_][a-zA-Z0-9]*\s*$", code) is not None
+
     def _clingNormalizeTTreeName(self, key):
-        return "f_" + key    # FIXME: add rules to turn arbitrary field keys into valid C++ variable names
+        return "input_" + key    # FIXME: add rules to turn arbitrary strings into valid C++ variable names
+
+    def _clingNormalizeTTreeExpr(self, inputFieldNames, inputFieldTypes, expr):
+        expr = " " + expr + " "
+        for name, t in inputFieldTypes.items():
+            freeword = r"(\W)" + name + r"(\W)"
+            if re.search(freeword, expr) is not None:
+                norm = self._clingNormalizeTTreeName(name)
+                inputFieldNames[norm] = name
+                if t.endswith("*"):
+                    norm = "(*" + norm + ")"
+                return re.sub(freeword, r"\1" + norm + r"\2", expr).strip()
+        return expr.strip()
 
     def numpy(self, data, weights=1.0):
         import numpy

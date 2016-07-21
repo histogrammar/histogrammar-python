@@ -149,6 +149,9 @@ class Label(Factory, Container, Collection):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingStructName(self):
+        return "Lb" + self.pairs.values()[0]._clingStructName()
+
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:
             self._checkNPWeights(weights, shape)
@@ -332,6 +335,26 @@ class UntypedLabel(Factory, Container, Collection):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingCannonicalOrder(self):
+        out = [(v._clingStructName(), n, v) for n, v in self.pairs.items()]
+        out.sort(key=lambda x: x[0])
+        return out
+
+    def _clingStructName(self):
+        out = "U_"
+        last = None
+        howmany = 0
+        for t, n, v in self._clingCannonicalOrder():
+            if last is None:
+                out += t
+            elif last != t:
+                out += str(howmany) + t
+                howmany = 0
+            howmany += 1
+            last = t
+        out += str(howmany) + "_u"
+        return out
+
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:
             self._checkNPWeights(weights, shape)
@@ -514,6 +537,9 @@ class Index(Factory, Container, Collection):
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
+
+    def _clingStructName(self):
+        return "Ix" + self.values[0]._clingStructName()
 
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:
@@ -708,6 +734,9 @@ class Branch(Factory, Container, Collection):
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
+
+    def _clingStructName(self):
+        return "B_" + "".join(v._clingStructName() for v in self.values) + "_b"
 
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:

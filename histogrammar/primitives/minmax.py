@@ -95,6 +95,9 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
+    def _clingStructName(self):
+        return "Mn"
+
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)
@@ -233,6 +236,9 @@ class Maximize(Factory, Container):
             self.entries += weight
             if math.isnan(self.max) or q > self.max:
                 self.max = q
+
+    def _clingStructName(self):
+        return "Mx"
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

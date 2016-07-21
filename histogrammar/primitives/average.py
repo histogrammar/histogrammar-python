@@ -113,6 +113,9 @@ class Average(Factory, Container):
                 shift = delta * weight / self.entries
                 self.mean += shift
 
+    def _clingStructName(self):
+        return "Av"
+
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)

@@ -18,6 +18,8 @@ import unittest
 
 from histogrammar import *
 
+def ed(x): return Factory.fromJson(x.toJson())
+
 class TestRootCling(unittest.TestCase):
     ttreeFlat = None
     ttreeEvent = None
@@ -32,8 +34,27 @@ class TestRootCling(unittest.TestCase):
         pass
 
     ################################################################ Count
+
     def testCount(self):
         if TestRootCling.ttreeEvent is not None:
             hg = Count()
-            hg.cling(TestRootCling.ttreeEvent, debug=True)
-            print(hg)
+            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            self.assertEqual(ed(hg), Count.ed(1000))
+            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            self.assertEqual(ed(hg), Count.ed(2000))
+
+            hg = Count("0.5 * weight")
+            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            self.assertEqual(ed(hg), Count.ed(500))
+            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            self.assertEqual(ed(hg), Count.ed(1000))
+
+    ################################################################ Sum
+
+    def testSum(self):
+        if TestRootCling.ttreeEvent is not None:
+            hg = Sum("event.GetNtrack()")
+            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            self.assertEqual(ed(hg), Factory.fromJson({"data": {"sum": 599640.0, "name": "event.GetNtrack()", "entries": 1000.0}, "type": "Sum"}))
+            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            self.assertEqual(ed(hg), Factory.fromJson({"data": {"sum": 2*599640.0, "name": "event.GetNtrack()", "entries": 2*1000.0}, "type": "Sum"}))

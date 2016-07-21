@@ -133,6 +133,9 @@ class Fraction(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingStructName(self):
+        return "Fr" + self.denominator._clingStructName()
+
     def _numpy(self, data, weights, shape):
         w = self.quantity(data)
         self._checkNPQuantity(w, shape)

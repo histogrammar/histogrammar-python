@@ -150,6 +150,9 @@ class Stack(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingStructName(self):
+        return "Sk" + self.bins[0][1]._clingStructName() + self.nanflow._clingStructName()
+
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)

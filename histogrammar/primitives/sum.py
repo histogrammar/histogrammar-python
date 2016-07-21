@@ -91,6 +91,49 @@ class Sum(Factory, Container):
             self.entries += weight
             self.sum += q * weight
 
+    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillIndent):
+        if not isinstance(self.quantity.expr, basestring):
+            raise ContainerException("Sum.quantity must be provided as a C++ string to use with Cling")
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {0} {{
+    Double_t entries;
+    Double_t sum;
+  }} {0};
+""".format(self._clingStructName())
+
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(initPrefix) + ".sum = 0.0;")
+
+        normexpr = self._clingNormalizeTTreeExpr(inputFieldNames, inputFieldTypes, self.quantity.expr)
+        if self._clingInputFieldRef(self.quantity.expr):
+            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + ".entries += weight;")
+            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + ".sum += " + normexpr + ";")
+
+        else:
+            derivedFieldName = None
+            for name, expr in derivedFieldExprs.items():
+                if expr == normexpr:
+                    derivedFieldName = name
+                    break
+            if derivedFieldName is None:
+                derivedFieldName = "quantity_" + str(len(derivedFieldExprs))
+                derivedFieldExprs[derivedFieldName] = normexpr
+                derivedFieldTypes[derivedFieldName] = "Double_t"
+            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + ".entries += weight;")
+            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + ".sum += " + derivedFieldName + ";")
+
+    def _clingUpdate(self, filler, extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, extractorPrefix)
+        self.entries += obj.entries
+        self.sum += obj.sum
+
+    def _clingStorageType(self):
+        return self._clingStructName()
+
+    def _clingStructName(self):
+        return "Sm"
+
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)

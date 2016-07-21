@@ -138,6 +138,9 @@ class Deviate(Factory, Container):
                 self.mean += shift
                 self.varianceTimesEntries += weight * delta * (q - self.mean)
 
+    def _clingStructName(self):
+        return "Dv"
+
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)

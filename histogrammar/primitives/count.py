@@ -91,13 +91,21 @@ class Count(Factory, Container):
 
     def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillIndent):
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(initPrefix) + " = 0.0;")
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + " += 1.0;")
+        if self.transform is not identity:
+            if not isinstance(self.transform.expr, basestring):
+                raise ContainerException("Count.transform must be provided as a C++ string to use with Cling")
+            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + " += " + self.transform.expr + ";")
+        else:
+            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + " += 1.0;")
 
     def _clingUpdate(self, filler, extractorPrefix):
         self.entries += self._clingExpandPrefixPython(filler, extractorPrefix)
 
     def _clingStorageType(self):
         return "Double_t"
+
+    def _clingStructName(self):
+        return "Ct"
 
     def _numpy(self, data, weights, shape):
         import numpy

@@ -158,6 +158,9 @@ class Limit(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingStructName(self):
+        return "Li"
+
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:
             self._checkNPWeights(weights, shape)
