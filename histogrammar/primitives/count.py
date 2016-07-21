@@ -89,6 +89,16 @@ class Count(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += t
 
+    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillIndent):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(initPrefix) + " = 0.0;")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + " += 1.0;")
+
+    def _clingUpdate(self, filler, extractorPrefix):
+        self.entries += self._clingExpandPrefixPython(filler, extractorPrefix)
+
+    def _clingStorageType(self):
+        return "Double_t"
+
     def _numpy(self, data, weights, shape):
         import numpy
         if isinstance(weights, numpy.ndarray):

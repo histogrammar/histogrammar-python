@@ -158,6 +158,97 @@ class Container(object):
         """Used internally to convert the container to JSON without its ``"type"`` header."""
         raise NotImplementedError
 
+    clingClassNameNumber = 0
+    def cling(self, ttree, debug=False):
+        self._checkForCrossReferences()
+
+        if not hasattr(self, "_clingFiller"):
+            import ROOT
+
+            inputFieldNames = {}
+            inputFieldTypes = dict((x.GetName(), x.GetClassName()) for x in ttree.GetListOfBranches())
+            derivedFieldTypes = {}
+            derivedFieldExprs = {}
+
+            storageStructs = {}
+            initCode = []
+            fillCode = []
+            self._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, 6)
+
+            className = "HistogrammarClingFiller_" + str(Container.clingClassNameNumber)
+            Container.clingClassNameNumber += 1
+            classCode = """
+class {0} {{
+public:
+  {1}
+
+  {2}
+  {3}
+  {4} storage;
+
+  void fillall(TTree *ttree) {{
+{5}
+{6}
+    Long64_t n = ttree->GetEntries();
+    Long64_t i = 0;
+    for (;  i < n;  ++i) {{
+      ttree->GetEntry(i);
+{7}
+{8}
+    }}
+  }}
+}};
+""".format(className,
+           "\n\n  ".join(storageStructs),
+           "\n  ".join(t + " " + n + ";" for n, t in inputFieldTypes.items() if n in inputFieldNames),
+           "\n  ".join(t + " " + n + ";" for n, t in derivedFieldTypes.items()),
+           self._clingStorageType(),
+           "\n".join(initCode),
+           "\n    ".join("ttree->SetBranchAddress(" + jsonlib.dumps(key) + ", &" + n + ");" for n, key in inputFieldNames.items()),
+           "\n      ".join(n + " = " + e + ";" for n, e in derivedFieldExprs.items()),
+           "\n".join(fillCode))
+
+            if debug:
+                print(classCode)
+            if not ROOT.gInterpreter.Declare(classCode):
+                if debug:
+                    raise SyntaxError("Could not compile the above")
+                else:
+                    raise SyntaxError("Could not compile:\n\n" + classCode)
+
+            self._clingFiller = getattr(ROOT, className)()
+
+        # we already have a _clingFiller; just fill
+        self._clingFiller.fillall(ttree)
+        self._clingUpdate(self._clingFiller, (("var", "storage"),))
+
+    def _clingExpandPrefixCpp(self, prefix):
+        out = ""
+        for t, x in prefix:
+            if t == "var":
+                if len(out) == 0:
+                    out += x
+                else:
+                    out += "." + x
+            elif t == "index":
+                out += "[" + str(x) + "]"
+            else:
+                raise Exception(t)
+        return out
+
+    def _clingExpandPrefixPython(self, obj, prefix):
+        for t, x in prefix:
+            if t == "var":
+                obj = getattr(obj, x)
+            elif t == "index":
+                obj = obj.__getitem__(x)
+            else:
+                raise Exception(t)
+        return obj
+
+    def _clingNormalizeTTreeName(self, key):
+        return "f_" + key    # FIXME: add rules to turn arbitrary field keys into valid C++ variable names
+
     def numpy(self, data, weights=1.0):
         import numpy
         self._checkForCrossReferences()
