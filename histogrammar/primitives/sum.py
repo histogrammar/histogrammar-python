@@ -97,8 +97,8 @@ class Sum(Factory, Container):
 
         storageStructs[self._clingStructName()] = """
   typedef struct {0} {{
-    Double_t entries;
-    Double_t sum;
+    double entries;
+    double sum;
   }} {0};
 """.format(self._clingStructName())
 
@@ -119,7 +119,7 @@ class Sum(Factory, Container):
             if derivedFieldName is None:
                 derivedFieldName = "quantity_" + str(len(derivedFieldExprs))
                 derivedFieldExprs[derivedFieldName] = normexpr
-                derivedFieldTypes[derivedFieldName] = "Double_t"
+                derivedFieldTypes[derivedFieldName] = "double"
             fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + ".entries += weight;")
             fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(initPrefix) + ".sum += " + derivedFieldName + ";")
 

@@ -169,7 +169,43 @@ class Container(object):
             inputFieldNames = {}
             inputFieldTypes = {}
             for branch in ttree.GetListOfBranches():
-                inputFieldTypes[branch.GetName()] = branch.GetClassName() + "*"
+                if branch.GetClassName() == "":
+                    # FIXME: what about split vs unsplit?
+                    # FIXME: what about leaves that are arrays?
+                    for leaf in branch.GetListOfLeaves():
+                        if leaf.IsA() == ROOT.TLeafO.Class():
+                            inputFieldTypes[leaf.GetName()] = "bool"
+                        elif leaf.IsA() == ROOT.TLeafB.Class() and leaf.IsUnsigned():
+                            inputFieldTypes[leaf.GetName()] = "unsigned char"
+                        elif leaf.IsA() == ROOT.TLeafB.Class():
+                            inputFieldTypes[leaf.GetName()] = "char"
+                        elif leaf.IsA() == ROOT.TLeafS.Class() and leaf.IsUnsigned():
+                            inputFieldTypes[leaf.GetName()] = "unsigned short"
+                        elif leaf.IsA() == ROOT.TLeafS.Class():
+                            inputFieldTypes[leaf.GetName()] = "short"
+                        elif leaf.IsA() == ROOT.TLeafI.Class() and leaf.IsUnsigned():
+                            inputFieldTypes[leaf.GetName()] = "UInt_t"
+                        elif leaf.IsA() == ROOT.TLeafI.Class():
+                            inputFieldTypes[leaf.GetName()] = "Int_t"
+                        elif leaf.IsA() == ROOT.TLeafL.Class() and leaf.IsUnsigned():
+                            inputFieldTypes[leaf.GetName()] = "ULong64_t"
+                        elif leaf.IsA() == ROOT.TLeafL.Class():
+                            inputFieldTypes[leaf.GetName()] = "Long64_t"
+                        elif leaf.IsA() == ROOT.TLeafF.Class():
+                            inputFieldTypes[leaf.GetName()] = "float"
+                        elif leaf.IsA() == ROOT.TLeafD.Class():
+                            inputFieldTypes[leaf.GetName()] = "double"
+                        elif leaf.IsA() == ROOT.TLeafC.Class():
+                            raise NotImplementedError("TODO: TLeafC (string)")
+                        elif leaf.IsA() == ROOT.TLeafElement.Class():
+                            raise NotImplementedError("TODO: TLeafElement")
+                        elif leaf.IsA() == ROOT.TLeafObject.Class():
+                            raise NotImplementedError("TODO: TLeafObject")
+                        else:
+                            raise NotImplementedError("unknown leaf type: " + repr(leaf))
+
+                else:
+                    inputFieldTypes[branch.GetName()] = branch.GetClassName() + "*"
                     
             derivedFieldTypes = {}
             derivedFieldExprs = {}
@@ -184,7 +220,7 @@ class Container(object):
             classCode = """class {0} {{
 public:
 {1}{2}
-{3}  Double_t weight;
+{3}  double weight;
 {4}  {5} storage;
 
   void fillall(TTree* ttree) {{
@@ -198,6 +234,7 @@ public:
 {8}
 {9}
     }}
+    ttree->ResetBranchAddresses();
   }}
 }};
 """.format(className,

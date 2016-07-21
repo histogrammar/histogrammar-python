@@ -102,7 +102,7 @@ class Count(Factory, Container):
         self.entries += self._clingExpandPrefixPython(filler, extractorPrefix)
 
     def _clingStorageType(self):
-        return "Double_t"
+        return "double"
 
     def _clingStructName(self):
         return "Ct"
