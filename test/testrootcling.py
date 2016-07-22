@@ -91,7 +91,7 @@ class TestRootCling(unittest.TestCase):
     def testBin(self):
         if TestRootCling.ttreeFlat is not None:
             hg = Bin(10, 0, 1, "positive")
-            hg.cling(TestRootCling.ttreeFlat, debug=True)
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"data": {
     "nanflow:type": "Count",
     "name": "positive",
@@ -109,7 +109,7 @@ class TestRootCling(unittest.TestCase):
   "type": "Bin"})
 
             hg = Bin(10, 0, 1, "positive", Sum("noholes"))
-            hg.cling(TestRootCling.ttreeFlat, debug=True)
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"data": {
     "values:name": "noholes",
     "nanflow:type": "Count",

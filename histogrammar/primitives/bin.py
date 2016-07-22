@@ -230,16 +230,16 @@ class Bin(Factory, Container):
             self.entries += weight
 
     def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, tmpVarTypes):
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(prefix) + ".entries = 0.0;")
-        i = "i_" + str(len(tmpVarTypes))
-        tmpVarTypes[i] = "int"
-        initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(i, len(self.values)))
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".entries = 0.0;")
+        bin = "bin_" + str(len(tmpVarTypes))
+        tmpVarTypes[bin] = "int"
+        initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
 
         normexpr = self._clingQuantityExpr(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(prefix) + ".entries += weight;")
-        fillCode.append(" " * fillIndent + "{0} = floor(({1} - {2}) * {3});".format(i, normexpr, self.low, 1.0/(self.high - self.low)))
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += weight;")
+        fillCode.append(" " * fillIndent + "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low, 1.0/(self.high - self.low)))
 
-        self.values[0]._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "values"), ("index", i)), initIndent + 2, fillCode, fillIndent, tmpVarTypes)
+        self.values[0]._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillIndent, tmpVarTypes)
 
         initCode.append(" " * initIndent + "}")
 
@@ -251,11 +251,11 @@ class Bin(Factory, Container):
   }} {0};
 """.format(self._clingStructName(), self.values[0]._clingStorageType(), len(self.values))
 
-    def _clingUpdate(self, filler, extractorPrefix):
-        obj = self._clingExpandPrefixPython(filler, extractorPrefix)
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
         self.entries += obj.entries
         for i in xrange(len(self.values)):
-            self.values[i]._clingUpdate(filler, extractorPrefix + (("getValues", i),))
+            self.values[i]._clingUpdate(obj, ("getValues", i))
 
     def _clingStructName(self):
         return "Bn" + str(len(self.values)) + self.values[0]._clingStructName() + self.underflow._clingStructName() + self.overflow._clingStructName() + self.nanflow._clingStructName()

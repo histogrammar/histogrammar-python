@@ -225,14 +225,14 @@ public:
 {3}  double weight;
 {4}{5}  {6} storage;
 
-  void fillall(TTree* ttree) {{
+  void fillall(TTree* ttree, Long64_t start, Long64_t end) {{
     weight = 1.0;
 {7}
 {8}
-    Long64_t n = ttree->GetEntries();
-    Long64_t i;
-    for (i = 0;  i < n;  ++i) {{
-      ttree->GetEntry(i);
+    if (start < 0) start = 0;
+    if (end < 0) end = ttree->GetEntries();
+    for (;  start < end;  ++start) {{
+      ttree->GetEntry(start);
 {9}{10}
     }}
 
@@ -263,10 +263,10 @@ public:
             self._clingFiller = getattr(ROOT, className)()
 
         # we already have a _clingFiller; just fill
-        self._clingFiller.fillall(ttree)
-        self._clingUpdate(self._clingFiller, (("var", "storage"),))
+        self._clingFiller.fillall(ttree, -1, -1)
+        self._clingUpdate(self._clingFiller, ("var", "storage"))
                 
-    def _clingExpandPrefixCpp(self, prefix):
+    def _clingExpandPrefixCpp(self, *prefix):
         out = ""
         for t, x in prefix:
             if t == "var":
@@ -280,7 +280,7 @@ public:
                 raise Exception(t)
         return out
 
-    def _clingExpandPrefixPython(self, obj, prefix):
+    def _clingExpandPrefixPython(self, obj, *prefix):
         for t, x in prefix:
             if t == "var":
                 obj = getattr(obj, x)

@@ -92,12 +92,12 @@ class Sum(Factory, Container):
             self.sum += q * weight
 
     def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, tmpVarTypes):
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(prefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(prefix) + ".sum = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".sum = 0.0;")
 
         normexpr = self._clingQuantityExpr(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(prefix) + ".entries += weight;")
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(prefix) + ".sum += " + normexpr + ";")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += weight;")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".sum += " + normexpr + ";")
 
         storageStructs[self._clingStructName()] = """
   typedef struct {{
@@ -106,8 +106,8 @@ class Sum(Factory, Container):
   }} {0};
 """.format(self._clingStructName())
 
-    def _clingUpdate(self, filler, extractorPrefix):
-        obj = self._clingExpandPrefixPython(filler, extractorPrefix)
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
         self.entries += obj.entries
         self.sum += obj.sum
 
