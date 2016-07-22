@@ -218,28 +218,30 @@ class SparselyProfileErrMethods(object):
     pass
 
 class StackedHistogramMethods(object):
-    nMaxStacked = 7
+    nMaxStacked = 10
     glyphTypeDefaults = ["circle"]*nMaxStacked
     glyphSizeDefaults = [1]*nMaxStacked
     fillColorDefaults = ["red"]*nMaxStacked
-    lineColorDefaults = ["black"]*nMaxStacked
+    lineColorDefaults = ["red"]*nMaxStacked
     lineAlphaDefaults = [1]*nMaxStacked
     fillAlphaDefaults = [0.1]*nMaxStacked
     lineDashDefaults = ["solid"]*nMaxStacked
 
     def bokeh(self,glyphTypes=glyphTypeDefaults,glyphSizes=glyphSizeDefaults,fillColors=fillColorDefaults,lineColors=lineColorDefaults,lineAlphas=lineAlphaDefaults,fillAlphas=fillAlphaDefaults,lineDashes = lineDashDefaults):
-        nTypes = len(glyphTypes)
-        assert nTypes == len(glyphSizes)
-        assert nTypes == len(fillColors)
-        assert nTypes == len(lineColors)
-        assert nTypes == len(lineAlphas)
-        assert nTypes == len(fillAlphas)
-        assert nTypes == len(lineDashes)
+        nChildren = len(self.children)-1
+        
+        assert len(glyphSizes) >= nChildren
+        assert len(glyphTypes) >= nChildren
+        assert len(fillColors) >= nChildren
+        assert len(lineColors) >= nChildren 
+        assert len(lineAlphas) >= nChildren
+        assert len(fillAlphas) >= nChildren
+        assert len(lineDashes) >= nChildren
 
         stackedGlyphs = list()
         #for ichild, p in enumerate(self.children,start=1):
-        for ichild in range(1,len(self.children)):
-            stackedGlyphs.append(self.children[ichild].bokeh(glyphTypes[ichild],glyphSizes[ichild],fillColors[ichild],lineColors[ichild],lineAlphas[ichild],fillAlphas[ichild],lineDashes[ichild]))
+        for ichild in range(nChildren):
+            stackedGlyphs.append(self.children[ichild+1].bokeh(glyphTypes[ichild],glyphSizes[ichild],fillColors[ichild],lineColors[ichild],lineAlphas[ichild],fillAlphas[ichild],lineDashes[ichild]))
 
         return stackedGlyphs
 
