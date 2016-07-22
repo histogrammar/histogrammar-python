@@ -30,6 +30,8 @@ class TestRootCling(unittest.TestCase):
         ROOT.gInterpreter.ProcessLine(".L test/Event.cxx")
         tfileFlat = ROOT.TFile("test/flat.root")
         ttreeFlat = tfileFlat.Get("simple")
+        tfileBig = ROOT.TFile("test/big.root")
+        ttreeBig = tfileBig.Get("big")
         tfileEvent = ROOT.TFile("test/Event.root")
         ttreeEvent = tfileEvent.Get("T")
     except ImportError:
@@ -38,40 +40,40 @@ class TestRootCling(unittest.TestCase):
     ################################################################ Timing
 
     def testTiming(self):
-        if TestRootCling.ttreeFlat is not None:
-            TestRootCling.ttreeFlat.AddBranchToCache("*", True)
-            for row in TestRootCling.ttreeFlat:
+        if TestRootCling.ttreeBig is not None:
+            TestRootCling.ttreeBig.AddBranchToCache("*", True)
+            for row in TestRootCling.ttreeBig:
                 pass
-            print TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
-            print TestRootCling.ttreeFlat.PrintCacheStats()
-            for row in TestRootCling.ttreeFlat:
+            print TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
+            print TestRootCling.ttreeBig.PrintCacheStats()
+            for row in TestRootCling.ttreeBig:
                 pass
-            print TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
-            print TestRootCling.ttreeFlat.PrintCacheStats()
+            print TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
+            print TestRootCling.ttreeBig.PrintCacheStats()
 
-            hg = Select("!boolean", Bin(20, -10, 10, "2 * noholes"))
+            hg = Select("!boolean", Bin(100, -10, 10, "2 * noholes"))
 
             print
             print "Histogrammar JIT-compilation"
 
             startTime = time.time()
-            hg.cling(TestRootCling.ttreeFlat, 0, 1, debug=False)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            hg.cling(TestRootCling.ttreeBig, 0, 1, debug=False)
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             print
             print "Histogrammar running"
 
             startTime = time.time()
-            hg.cling(TestRootCling.ttreeFlat)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            hg.cling(TestRootCling.ttreeBig)
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
-            hg.cling(TestRootCling.ttreeFlat)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            hg.cling(TestRootCling.ttreeBig)
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
-            hg.cling(TestRootCling.ttreeFlat)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            hg.cling(TestRootCling.ttreeBig)
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             controlTestCode = """class ControlTest {
 public:
@@ -107,29 +109,29 @@ public:
             startTime = time.time()
             ROOT.gInterpreter.Declare(controlTestCode)
             controlTest = ROOT.ControlTest()
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             print
             print "ROOT C++ first event"
 
             startTime = time.time()
-            controlTest.fillall(TestRootCling.ttreeFlat, 0, 1)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            controlTest.fillall(TestRootCling.ttreeBig, 0, 1)
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             print
             print "ROOT C++ subsequent"
 
             startTime = time.time()
-            controlTest.fillall(TestRootCling.ttreeFlat, -1, -1)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            controlTest.fillall(TestRootCling.ttreeBig, -1, -1)
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
-            controlTest.fillall(TestRootCling.ttreeFlat, -1, -1)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            controlTest.fillall(TestRootCling.ttreeBig, -1, -1)
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
-            controlTest.fillall(TestRootCling.ttreeFlat, -1, -1)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            controlTest.fillall(TestRootCling.ttreeBig, -1, -1)
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             print
             print "PyROOT first event"
@@ -137,32 +139,32 @@ public:
             histogram = ROOT.TH1D("control2", "", 20, -10, 10)
 
             startTime = time.time()
-            for row in TestRootCling.ttreeFlat:
+            for row in TestRootCling.ttreeBig:
                 if not row.boolean:
                     histogram.Fill(2 * row.noholes)
                 break
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             print
             print "PyROOT subsequent"
 
             startTime = time.time()
-            for row in TestRootCling.ttreeFlat:
+            for row in TestRootCling.ttreeBig:
                 if not row.boolean:
                     histogram.Fill(2 * row.noholes)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
-            for row in TestRootCling.ttreeFlat:
+            for row in TestRootCling.ttreeBig:
                 if not row.boolean:
                     histogram.Fill(2 * row.noholes)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
-            for row in TestRootCling.ttreeFlat:
+            for row in TestRootCling.ttreeBig:
                 if not row.boolean:
                     histogram.Fill(2 * row.noholes)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             print
             print "TFormula first pass"
@@ -170,57 +172,55 @@ public:
             histogram3 = ROOT.TH1D("control3", "", 20, -10, 10)
 
             startTime = time.time()
-            TestRootCling.ttreeFlat.Draw("2 * noholes >>+ control3", "!boolean", "goff")
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            TestRootCling.ttreeBig.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             print
             print "TFormula subsequent"
 
             startTime = time.time()
-            TestRootCling.ttreeFlat.Draw("2 * noholes >>+ control3", "!boolean", "goff")
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            TestRootCling.ttreeBig.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
-            TestRootCling.ttreeFlat.Draw("2 * noholes >>+ control3", "!boolean", "goff")
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            TestRootCling.ttreeBig.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
-            TestRootCling.ttreeFlat.Draw("2 * noholes >>+ control3", "!boolean", "goff")
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
-
-
+            TestRootCling.ttreeBig.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+            print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             import numpy
-            table = {"boolean": numpy.empty(TestRootCling.ttreeFlat.GetEntries(), dtype=numpy.int32),
-                     "noholes": numpy.empty(TestRootCling.ttreeFlat.GetEntries(), dtype=numpy.double)}
+            table = {"boolean": numpy.empty(TestRootCling.ttreeBig.GetEntries(), dtype=numpy.int32),
+                     "noholes": numpy.empty(TestRootCling.ttreeBig.GetEntries(), dtype=numpy.double)}
 
-            for i, row in enumerate(TestRootCling.ttreeFlat):
+            for i, row in enumerate(TestRootCling.ttreeBig):
                 table["boolean"][i] = row.boolean
                 table["noholes"][i] = row.noholes
 
-            hg = Select("logical_not(boolean)", Bin(20, -10, 10, "2 * noholes"))
+            hg = Select("logical_not(boolean)", Bin(100, -10, 10, "2 * noholes"))
 
             print
             print "Numpy first"
 
             startTime = time.time()
             hg.numpy(table)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            print time.time() - startTime
 
             print
             print "Numpy subsequent"
 
             startTime = time.time()
             hg.numpy(table)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            print time.time() - startTime
 
             startTime = time.time()
             hg.numpy(table)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            print time.time() - startTime
 
             startTime = time.time()
             hg.numpy(table)
-            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            print time.time() - startTime
                 
   #   ################################################################ Count
 
