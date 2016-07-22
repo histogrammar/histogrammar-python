@@ -202,3 +202,92 @@ class TestRootCling(unittest.TestCase):
   },
   "type": "Bin"})
 
+    def testSelect(self):
+        if TestRootCling.ttreeFlat is not None:
+            hg = Select("boolean", Bin(20, -10, 10, "noholes"))
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            self.assertEqual(hg.toJson(), {"data": {
+    "type": "Bin", 
+    "data": {
+      "nanflow:type": "Count", 
+      "name": "noholes", 
+      "nanflow": 0.0, 
+      "overflow:type": "Count", 
+      "values:type": "Count", 
+      "high": 10.0, 
+      "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 22.0, 183.0, 425.0, 472.0, 181.0, 29.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
+      "low": -10.0, 
+      "entries": 1317.0, 
+      "overflow": 0.0, 
+      "underflow": 0.0, 
+      "underflow:type": "Count"
+    }, 
+    "name": "boolean", 
+    "entries": 10000.0
+  }, 
+  "type": "Select"}) 
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            self.assertEqual(hg.toJson(), {"data": {
+    "type": "Bin", 
+    "data": {
+      "nanflow:type": "Count", 
+      "name": "noholes", 
+      "nanflow": 2*0.0, 
+      "overflow:type": "Count", 
+      "values:type": "Count", 
+      "high": 10.0, 
+      "values": [2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*3.0, 2*22.0, 2*183.0, 2*425.0, 2*472.0, 2*181.0, 2*29.0, 2*2.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0], 
+      "low": -10.0, 
+      "entries": 2*1317.0, 
+      "overflow": 2*0.0, 
+      "underflow": 2*0.0, 
+      "underflow:type": "Count"
+    }, 
+    "name": "boolean", 
+    "entries": 2*10000.0
+  }, 
+  "type": "Select"}) 
+
+            hg = Select("withholes / 2", Bin(20, -10, 10, "noholes"))
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            self.assertEqual(hg.toJson(), {"data": {
+    "type": "Bin", 
+    "data": {
+      "nanflow:type": "Count", 
+      "name": "noholes", 
+      "nanflow": 0.0, 
+      "overflow:type": "Count", 
+      "values:type": "Count", 
+      "high": 10.0, 
+      "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.7656523132161417, "inf", "inf", "inf", "inf", "inf", 40.84895628585768, 2.824571537630074, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
+      "low": -10.0, 
+      "entries": "inf", 
+      "overflow": 0.0, 
+      "underflow": 0.0, 
+      "underflow:type": "Count"
+    }, 
+    "name": "withholes / 2", 
+    "entries": 10000.0
+  }, 
+  "type": "Select"})
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            self.assertEqual(hg.toJson(), {"data": {
+    "type": "Bin", 
+    "data": {
+      "nanflow:type": "Count", 
+      "name": "noholes", 
+      "nanflow": 2*0.0, 
+      "overflow:type": "Count", 
+      "values:type": "Count", 
+      "high": 10.0, 
+      "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2*3.7656523132161417, "inf", "inf", "inf", "inf", "inf", 2*40.84895628585768, 2*2.824571537630074, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0], 
+      "low": -10.0, 
+      "entries": "inf", 
+      "overflow": 2*0.0, 
+      "underflow": 2*0.0, 
+      "underflow:type": "Count"
+    }, 
+    "name": "withholes / 2", 
+    "entries": 2*10000.0
+  }, 
+  "type": "Select"})

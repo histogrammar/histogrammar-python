@@ -90,17 +90,17 @@ class Count(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += t
 
-    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, tmpVarTypes):
+    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, weightVarStack, tmpVarTypes):
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + " = 0.0;")
         if self.transform is not identity:
             if not isinstance(self.transform.expr, basestring):
                 raise ContainerException("Count.transform must be provided as a C++ string to use with Cling")
 
             normexpr = " " + self.transform.expr + " "
-            normexpr = re.sub(r"(\W)weight(\W)", r"\1" + weightVars[-1] + r"\2", normexpr).strip()
+            normexpr = re.sub(r"(\W)weight(\W)", r"\1" + weightVarStack[-1] + r"\2", normexpr).strip()
             fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + " += " + normexpr + ";")
         else:
-            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + " += " + weightVars[-1] + ";")
+            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + " += " + weightVarStack[-1] + ";")
 
     def _clingUpdate(self, filler, *extractorPrefix):
         self.entries += self._clingExpandPrefixPython(filler, *extractorPrefix)

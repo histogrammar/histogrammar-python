@@ -160,7 +160,7 @@ class Container(object):
         """Used internally to convert the container to JSON without its ``"type"`` header."""
         raise NotImplementedError
 
-    clingClassNameNumber = 0
+    _clingClassNameNumber = 0
     def cling(self, ttree, debug=False):
         self._checkForCrossReferences()
 
@@ -214,17 +214,22 @@ class Container(object):
             storageStructs = collections.OrderedDict()
             initCode = []
             fillCode = []
-            weightVars = ("weight_0",)
+            weightVars = ["weight_0"]
+            weightVarStack = ("weight_0",)
             tmpVarTypes = {}
-            self._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, 6, weightVars, tmpVarTypes)
+            self._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, 6, weightVars, weightVarStack, tmpVarTypes)
 
-            className = "HistogrammarClingFiller_" + str(Container.clingClassNameNumber)
-            Container.clingClassNameNumber += 1
+            className = "HistogrammarClingFiller_" + str(Container._clingClassNameNumber)
+            Container._clingClassNameNumber += 1
             classCode = """class {0} {{
 public:
 {1}
 {2}{3}
 {4}{5}  {6} storage;
+
+  bool isnan(double x) {{ return x != x; }}
+  bool isnan(float x) {{ return x != x; }}
+  bool isnan(int x) {{ return false; }}
 
   void fillall(TTree* ttree, Long64_t start, Long64_t end) {{
 {7}

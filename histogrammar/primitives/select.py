@@ -113,8 +113,35 @@ class Select(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".entries = 0.0;")
+
+        normexpr = self._clingQuantityExpr(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += " + weightVars[-1] + ";")
+        fillCode.append(" " * fillIndent + """if (!isnan({0})  &&  {0} > 0.0) {{""".format(normexpr))
+
+        weightVars.append("weight_" + str(len(weightVars)))
+        weightVarStack = weightVarStack + (weightVars[-1],)
+        fillCode.append(" " * (fillIndent + 2) + """{0} = {1} * {2};""".format(weightVarStack[-1], weightVarStack[-2], normexpr))
+        self.cut._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "cut"),), initIndent, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+
+        fillCode.append(" " * fillIndent + "}")
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    {1} cut;
+  }} {0};
+""".format(self._clingStructName(), self.cut._clingStorageType())
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += obj.entries
+        self.cut._clingUpdate(obj, ("var", "cut"))
+
     def _clingStructName(self):
-        return "Sl" + self.cut._clingStructName()
+        return "Se" + self.cut._clingStructName()
 
     def _numpy(self, data, weights, shape):
         w = self.quantity(data)
