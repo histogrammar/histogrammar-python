@@ -107,6 +107,22 @@ class TestRootCling(unittest.TestCase):
     "underflow:type": "Count"
   }, 
   "type": "Bin"})
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            self.assertEqual(hg.toJson(), {"data": {
+    "nanflow:type": "Count", 
+    "name": "withholes", 
+    "nanflow": 2*96.0, 
+    "overflow:type": "Count", 
+    "values:type": "Count", 
+    "high": 10.0, 
+    "values": [2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*10.0, 2*201.0, 2*1346.0, 2*3385.0, 2*3182.0, 2*1358.0, 2*211.0, 2*15.0, 2*1.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0],
+    "low": -10.0, 
+    "entries": 2*10000.0, 
+    "overflow": 2*99.0, 
+    "underflow": 2*96.0, 
+    "underflow:type": "Count"
+  }, 
+  "type": "Bin"})
 
             hg = Bin(20, -10, 10, "2 * withholes", Sum("positive"))
             hg.cling(TestRootCling.ttreeFlat, debug=False)
@@ -144,6 +160,44 @@ class TestRootCling(unittest.TestCase):
     "entries": 10000.0,
     "overflow": 99.0,
     "underflow": 96.0,
+    "underflow:type": "Count"
+  },
+  "type": "Bin"})
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            self.assertEqual(hg.toJson(), {"data": {
+    "values:name": "positive",
+    "nanflow:type": "Count",
+    "name": "2 * withholes",
+    "nanflow": 2*96.0,
+    "overflow:type": "Count",
+    "values:type": "Sum",
+    "high": 10.0,
+    "values": [
+      {"sum": 2*0.0, "entries": 2*0.0},
+      {"sum": 2*0.0, "entries": 2*0.0},
+      {"sum": 2*0.48081424832344055, "entries": 2*1.0},
+      {"sum": 2*10.879940822720528, "entries": 2*9.0},
+      {"sum": 2*43.35080977156758, "entries": 2*54.0},
+      {"sum": 2*113.69398449920118, "entries": 2*147.0},
+      {"sum": 2*349.6867558255326, "entries": 2*449.0},
+      {"sum": 2*729.5858678516815, "entries": 2*897.0},
+      {"sum": 2*1155.193773361767, "entries": 2*1451.0},
+      {"sum": 2*1520.5854493912775, "entries": 2*1934.0},
+      {"sum": 2*1436.6912576352042, "entries": 2*1796.0},
+      {"sum": 2*1116.2790022112895, "entries": 2*1386.0},
+      {"sum": 2*728.2537153647281, "entries": 2*922.0},
+      {"sum": 2*353.9190010114107, "entries": 2*436.0},
+      {"sum": 2*121.04832566762343, "entries": 2*158.0},
+      {"sum": 2*42.87702897598501, "entries": 2*53.0},
+      {"sum": 2*8.222344039008021, "entries": 2*13.0},
+      {"sum": 2*2.8457946181297302, "entries": 2*2.0},
+      {"sum": 2*0.36020421981811523, "entries": 2*1.0},
+      {"sum": 2*0.0, "entries": 2*0.0}
+    ],
+    "low": -10.0,
+    "entries": 2*10000.0,
+    "overflow": 2*99.0,
+    "underflow": 2*96.0,
     "underflow:type": "Count"
   },
   "type": "Bin"})
