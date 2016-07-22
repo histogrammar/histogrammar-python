@@ -161,7 +161,7 @@ class Container(object):
         raise NotImplementedError
 
     _clingClassNameNumber = 0
-    def cling(self, ttree, debug=False):
+    def cling(self, ttree, start=-1, end=-1, debug=False):
         self._checkForCrossReferences()
 
         if not hasattr(self, "_clingFiller"):
@@ -269,7 +269,7 @@ public:
             self._clingFiller = getattr(ROOT, className)()
 
         # we already have a _clingFiller; just fill
-        self._clingFiller.fillall(ttree, -1, -1)
+        self._clingFiller.fillall(ttree, start, end)
         self._clingUpdate(self._clingFiller, ("var", "storage"))
                 
     def _clingExpandPrefixCpp(self, *prefix):
