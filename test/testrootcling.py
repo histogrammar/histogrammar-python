@@ -39,6 +39,16 @@ class TestRootCling(unittest.TestCase):
 
     def testTiming(self):
         if TestRootCling.ttreeFlat is not None:
+            TestRootCling.ttreeFlat.AddBranchToCache("*", True)
+            for row in TestRootCling.ttreeFlat:
+                pass
+            print TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            print TestRootCling.ttreeFlat.PrintCacheStats()
+            for row in TestRootCling.ttreeFlat:
+                pass
+            print TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+            print TestRootCling.ttreeFlat.PrintCacheStats()
+
             hg = Select("!boolean", Bin(20, -10, 10, "2 * noholes"))
 
             print
@@ -46,22 +56,22 @@ class TestRootCling(unittest.TestCase):
 
             startTime = time.time()
             hg.cling(TestRootCling.ttreeFlat, 0, 1, debug=False)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             print
             print "Histogrammar running"
 
             startTime = time.time()
             hg.cling(TestRootCling.ttreeFlat)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
             hg.cling(TestRootCling.ttreeFlat)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
             hg.cling(TestRootCling.ttreeFlat)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             controlTestCode = """class ControlTest {
 public:
@@ -97,29 +107,29 @@ public:
             startTime = time.time()
             ROOT.gInterpreter.Declare(controlTestCode)
             controlTest = ROOT.ControlTest()
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             print
             print "ROOT C++ first event"
 
             startTime = time.time()
             controlTest.fillall(TestRootCling.ttreeFlat, 0, 1)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             print
             print "ROOT C++ subsequent"
 
             startTime = time.time()
             controlTest.fillall(TestRootCling.ttreeFlat, -1, -1)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
             controlTest.fillall(TestRootCling.ttreeFlat, -1, -1)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
             controlTest.fillall(TestRootCling.ttreeFlat, -1, -1)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             print
             print "PyROOT first event"
@@ -131,7 +141,7 @@ public:
                 if not row.boolean:
                     histogram.Fill(2 * row.noholes)
                 break
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             print
             print "PyROOT subsequent"
@@ -140,19 +150,45 @@ public:
             for row in TestRootCling.ttreeFlat:
                 if not row.boolean:
                     histogram.Fill(2 * row.noholes)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
             for row in TestRootCling.ttreeFlat:
                 if not row.boolean:
                     histogram.Fill(2 * row.noholes)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
             for row in TestRootCling.ttreeFlat:
                 if not row.boolean:
                     histogram.Fill(2 * row.noholes)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+
+            print
+            print "TFormula first pass"
+
+            histogram3 = ROOT.TH1D("control3", "", 20, -10, 10)
+
+            startTime = time.time()
+            TestRootCling.ttreeFlat.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+
+            print
+            print "TFormula subsequent"
+
+            startTime = time.time()
+            TestRootCling.ttreeFlat.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+
+            startTime = time.time()
+            TestRootCling.ttreeFlat.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+
+            startTime = time.time()
+            TestRootCling.ttreeFlat.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
+
+
 
             import numpy
             table = {"boolean": numpy.empty(TestRootCling.ttreeFlat.GetEntries(), dtype=numpy.int32),
@@ -169,22 +205,22 @@ public:
 
             startTime = time.time()
             hg.numpy(table)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             print
             print "Numpy subsequent"
 
             startTime = time.time()
             hg.numpy(table)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
             hg.numpy(table)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
             hg.numpy(table)
-            print time.time() - startTime
+            print time.time() - startTime, TestRootCling.ttreeFlat.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeFlat.GetCurrentFile().GetReadCalls()
                 
   #   ################################################################ Count
 
