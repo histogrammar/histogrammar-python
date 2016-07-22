@@ -247,6 +247,7 @@ class Bin(Factory, Container):
   typedef struct {{
     double entries;
     {1} values[{2}];
+    {1}& getValues(int i) {{ return values[i]; }}
   }} {0};
 """.format(self._clingStructName(), self.values[0]._clingStorageType(), len(self.values))
 
@@ -254,10 +255,10 @@ class Bin(Factory, Container):
         obj = self._clingExpandPrefixPython(filler, extractorPrefix)
         self.entries += obj.entries
         for i in xrange(len(self.values)):
-            self.values[i]._clingUpdate(obj, (("var", "values"), ("index", i)))
+            self.values[i]._clingUpdate(filler, extractorPrefix + (("getValues", i),))
 
     def _clingStructName(self):
-        return "Bn" + self.values[0]._clingStructName() + self.underflow._clingStructName() + self.overflow._clingStructName() + self.nanflow._clingStructName()
+        return "Bn" + str(len(self.values)) + self.values[0]._clingStructName() + self.underflow._clingStructName() + self.overflow._clingStructName() + self.nanflow._clingStructName()
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

@@ -19,8 +19,6 @@ import unittest
 
 from histogrammar import *
 
-def ed(x): return Factory.fromJson(x.toJson())
-
 class TestRootCling(unittest.TestCase):
     ttreeFlat = None
     ttreeEvent = None
@@ -94,8 +92,49 @@ class TestRootCling(unittest.TestCase):
         if TestRootCling.ttreeFlat is not None:
             hg = Bin(10, 0, 1, "positive")
             hg.cling(TestRootCling.ttreeFlat, debug=True)
-            print json.dumps(hg.toJson(), indent=2)
+            self.assertEqual(hg.toJson(), {"data": {
+    "nanflow:type": "Count",
+    "name": "positive",
+    "nanflow": 0.0,
+    "overflow:type": "Count",
+    "values:type": "Count",
+    "high": 1.0,
+    "values": [6853.0, 2699.0, 426.0, 21.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "low": 0.0,
+    "entries": 10000.0,
+    "overflow": 0.0,
+    "underflow": 0.0,
+    "underflow:type": "Count"
+  },
+  "type": "Bin"})
 
             hg = Bin(10, 0, 1, "positive", Sum("noholes"))
             hg.cling(TestRootCling.ttreeFlat, debug=True)
-            print json.dumps(hg.toJson(), indent=2)
+            self.assertEqual(hg.toJson(), {"data": {
+    "values:name": "noholes",
+    "nanflow:type": "Count",
+    "name": "positive",
+    "nanflow": 0.0,
+    "overflow:type": "Count",
+    "values:type": "Sum",
+    "high": 1.0,
+    "values": [
+      {"sum": 66.24699453630666, "entries": 6853.0},
+      {"sum": -4.076107526864597, "entries": 2699.0},
+      {"sum": 14.08908939411051, "entries": 426.0},
+      {"sum": -9.21929781695716, "entries": 21.0},
+      {"sum": 1.769542009679859, "entries": 1.0},
+      {"sum": 0.0, "entries": 0.0},
+      {"sum": 0.0, "entries": 0.0},
+      {"sum": 0.0, "entries": 0.0},
+      {"sum": 0.0, "entries": 0.0},
+      {"sum": 0.0, "entries": 0.0}
+    ],
+    "low": 0.0,
+    "entries": 10000.0,
+    "overflow": 0.0,
+    "underflow": 0.0,
+    "underflow:type": "Count"
+  },
+  "type": "Bin"})
+

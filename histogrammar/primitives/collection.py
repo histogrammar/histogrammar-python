@@ -150,7 +150,7 @@ class Label(Factory, Container, Collection):
             self.entries += weight
 
     def _clingStructName(self):
-        return "Lb" + self.pairs.values()[0]._clingStructName()
+        return "Lb" + str(len(self.pairs)) + self.pairs.values()[0]._clingStructName()
 
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:
@@ -539,7 +539,7 @@ class Index(Factory, Container, Collection):
             self.entries += weight
 
     def _clingStructName(self):
-        return "Ix" + self.values[0]._clingStructName()
+        return "Ix" + str(len(self.values)) + self.values[0]._clingStructName()
 
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:

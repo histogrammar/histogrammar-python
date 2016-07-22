@@ -287,7 +287,7 @@ public:
             elif t == "index":
                 obj = obj.__getitem__(x)
             else:
-                raise Exception(t)
+                obj = getattr(obj, t)(x)
         return obj
 
     def _clingQuantityExpr(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):

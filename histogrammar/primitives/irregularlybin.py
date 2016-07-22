@@ -132,7 +132,7 @@ class IrregularlyBin(Factory, Container):
             self.entries += weight
 
     def _clingStructName(self):
-        return "Ir" + self.bins[0][1]._clingStructName() + self.nanflow._clingStructName()
+        return "Ir" + str(len(self.bins)) + self.bins[0][1]._clingStructName() + self.nanflow._clingStructName()
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
