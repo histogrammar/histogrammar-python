@@ -90,50 +90,60 @@ class TestRootCling(unittest.TestCase):
 
     def testBin(self):
         if TestRootCling.ttreeFlat is not None:
-            hg = Bin(10, 0, 1, "positive")
+            hg = Bin(20, -10, 10, "withholes")
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"data": {
-    "nanflow:type": "Count",
-    "name": "positive",
-    "nanflow": 0.0,
-    "overflow:type": "Count",
-    "values:type": "Count",
-    "high": 1.0,
-    "values": [6853.0, 2699.0, 426.0, 21.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-    "low": 0.0,
-    "entries": 10000.0,
-    "overflow": 0.0,
-    "underflow": 0.0,
+    "nanflow:type": "Count", 
+    "name": "withholes", 
+    "nanflow": 96.0, 
+    "overflow:type": "Count", 
+    "values:type": "Count", 
+    "high": 10.0, 
+    "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 201.0, 1346.0, 3385.0, 3182.0, 1358.0, 211.0, 15.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "low": -10.0, 
+    "entries": 10000.0, 
+    "overflow": 99.0, 
+    "underflow": 96.0, 
     "underflow:type": "Count"
-  },
+  }, 
   "type": "Bin"})
 
-            hg = Bin(10, 0, 1, "positive", Sum("noholes"))
+            hg = Bin(20, -10, 10, "2 * withholes", Sum("positive"))
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"data": {
-    "values:name": "noholes",
+    "values:name": "positive",
     "nanflow:type": "Count",
-    "name": "positive",
-    "nanflow": 0.0,
+    "name": "2 * withholes",
+    "nanflow": 96.0,
     "overflow:type": "Count",
     "values:type": "Sum",
-    "high": 1.0,
+    "high": 10.0,
     "values": [
-      {"sum": 66.24699453630666, "entries": 6853.0},
-      {"sum": -4.076107526864597, "entries": 2699.0},
-      {"sum": 14.08908939411051, "entries": 426.0},
-      {"sum": -9.21929781695716, "entries": 21.0},
-      {"sum": 1.769542009679859, "entries": 1.0},
       {"sum": 0.0, "entries": 0.0},
       {"sum": 0.0, "entries": 0.0},
-      {"sum": 0.0, "entries": 0.0},
-      {"sum": 0.0, "entries": 0.0},
+      {"sum": 0.48081424832344055, "entries": 1.0},
+      {"sum": 10.879940822720528, "entries": 9.0},
+      {"sum": 43.35080977156758, "entries": 54.0},
+      {"sum": 113.69398449920118, "entries": 147.0},
+      {"sum": 349.6867558255326, "entries": 449.0},
+      {"sum": 729.5858678516815, "entries": 897.0},
+      {"sum": 1155.193773361767, "entries": 1451.0},
+      {"sum": 1520.5854493912775, "entries": 1934.0},
+      {"sum": 1436.6912576352042, "entries": 1796.0},
+      {"sum": 1116.2790022112895, "entries": 1386.0},
+      {"sum": 728.2537153647281, "entries": 922.0},
+      {"sum": 353.9190010114107, "entries": 436.0},
+      {"sum": 121.04832566762343, "entries": 158.0},
+      {"sum": 42.87702897598501, "entries": 53.0},
+      {"sum": 8.222344039008021, "entries": 13.0},
+      {"sum": 2.8457946181297302, "entries": 2.0},
+      {"sum": 0.36020421981811523, "entries": 1.0},
       {"sum": 0.0, "entries": 0.0}
     ],
-    "low": 0.0,
+    "low": -10.0,
     "entries": 10000.0,
-    "overflow": 0.0,
-    "underflow": 0.0,
+    "overflow": 99.0,
+    "underflow": 96.0,
     "underflow:type": "Count"
   },
   "type": "Bin"})

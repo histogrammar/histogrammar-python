@@ -229,33 +229,56 @@ class Bin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, tmpVarTypes):
+    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, tmpVarTypes):
+        normexpr = self._clingQuantityExpr(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".entries = 0.0;")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += " + weightVars[-1] + ";")
+
+        fillCode.append(" " * fillIndent + "if ({0} != {0}) {{".format(normexpr))
+        self.nanflow._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "nanflow"),), initIndent, fillCode, fillIndent + 2, weightVars, tmpVarTypes);
+        fillCode.append(" " * fillIndent + "}")
+
+        fillCode.append(" " * fillIndent + "else if ({0} < {1}) {{".format(normexpr, self.low))
+        self.underflow._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "underflow"),), initIndent, fillCode, fillIndent + 2, weightVars, tmpVarTypes);
+        fillCode.append(" " * fillIndent + "}")
+
+        fillCode.append(" " * fillIndent + "else if ({0} >= {1}) {{".format(normexpr, self.high))
+        self.overflow._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "overflow"),), initIndent, fillCode, fillIndent + 2, weightVars, tmpVarTypes);
+        fillCode.append(" " * fillIndent + "}")
+
+        fillCode.append(" " * fillIndent + "else {")
+
         bin = "bin_" + str(len(tmpVarTypes))
         tmpVarTypes[bin] = "int"
         initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
 
-        normexpr = self._clingQuantityExpr(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += weight;")
-        fillCode.append(" " * fillIndent + "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low, 1.0/(self.high - self.low)))
+        fillCode.append(" " * (fillIndent + 2) + "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low, len(self.values)/(self.high - self.low)))
 
-        self.values[0]._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillIndent, tmpVarTypes)
+        self.values[0]._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillIndent + 2, weightVars, tmpVarTypes)
 
         initCode.append(" " * initIndent + "}")
+        fillCode.append(" " * fillIndent + "}")
 
         storageStructs[self._clingStructName()] = """
   typedef struct {{
     double entries;
+    {3} underflow;
+    {4} overflow;
+    {5} nanflow;
     {1} values[{2}];
     {1}& getValues(int i) {{ return values[i]; }}
   }} {0};
-""".format(self._clingStructName(), self.values[0]._clingStorageType(), len(self.values))
+""".format(self._clingStructName(), self.values[0]._clingStorageType(), len(self.values), self.underflow._clingStorageType(), self.overflow._clingStorageType(), self.nanflow._clingStorageType())
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
         self.entries += obj.entries
         for i in xrange(len(self.values)):
-            self.values[i]._clingUpdate(obj, ("getValues", i))
+            self.values[i]._clingUpdate(obj, ("func", ["getValues", i]))
+        self.underflow._clingUpdate(obj, ("var", "underflow"))
+        self.overflow._clingUpdate(obj, ("var", "overflow"))
+        self.nanflow._clingUpdate(obj, ("var", "nanflow"))
 
     def _clingStructName(self):
         return "Bn" + str(len(self.values)) + self.values[0]._clingStructName() + self.underflow._clingStructName() + self.overflow._clingStructName() + self.nanflow._clingStructName()

@@ -214,20 +214,21 @@ class Container(object):
             storageStructs = collections.OrderedDict()
             initCode = []
             fillCode = []
+            weightVars = ("weight_0",)
             tmpVarTypes = {}
-            self._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, 6, tmpVarTypes)
+            self._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, 6, weightVars, tmpVarTypes)
 
             className = "HistogrammarClingFiller_" + str(Container.clingClassNameNumber)
             Container.clingClassNameNumber += 1
             classCode = """class {0} {{
 public:
-{1}{2}
-{3}  double weight;
+{1}
+{2}{3}
 {4}{5}  {6} storage;
 
   void fillall(TTree* ttree, Long64_t start, Long64_t end) {{
-    weight = 1.0;
 {7}
+    weight_0 = 1.0;
 {8}
     if (start < 0) start = 0;
     if (end < 0) end = ttree->GetEntries();
@@ -240,8 +241,8 @@ public:
   }}
 }};
 """.format(className,
-           "",
            "".join(storageStructs.values()),
+           "".join("  double " + n + ";\n" for n in weightVars),
            "".join("  " + t + " " + self._clingNormalizeTTreeName(n) + ";\n" for n, t in inputFieldTypes.items() if self._clingNormalizeTTreeName(n) in inputFieldNames),
            "".join("  " + t + " " + n + ";\n" for n, t in derivedFieldTypes.items()),
            "".join("  " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
@@ -277,7 +278,7 @@ public:
             elif t == "index":
                 out += "[" + str(x) + "]"
             else:
-                raise Exception(t)
+                raise Exception((t, x))
         return out
 
     def _clingExpandPrefixPython(self, obj, *prefix):
@@ -286,8 +287,12 @@ public:
                 obj = getattr(obj, x)
             elif t == "index":
                 obj = obj.__getitem__(x)
+            elif t == "func":
+                name = x[0]
+                args = x[1:]
+                obj = getattr(obj, name)(*args)
             else:
-                obj = getattr(obj, t)(x)
+                raise NotImplementedError((t, x))
         return obj
 
     def _clingQuantityExpr(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
