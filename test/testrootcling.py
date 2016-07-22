@@ -57,7 +57,7 @@ class TestRootCling(unittest.TestCase):
             print "Histogrammar JIT-compilation"
 
             startTime = time.time()
-            hg.cling(TestRootCling.ttreeBig, 0, 1, debug=False)
+            hg.cling(TestRootCling.ttreeBig, 0, 1, debug=True)
             print time.time() - startTime, TestRootCling.ttreeBig.GetCurrentFile().GetBytesRead(), TestRootCling.ttreeBig.GetCurrentFile().GetReadCalls()
 
             print
@@ -79,7 +79,7 @@ class TestRootCling(unittest.TestCase):
 public:
   TH1D histogram;
 
-  ControlTest() : histogram("control1", "", 20, -10, 10) {}
+  ControlTest() : histogram("control1", "", 100, -10, 10) {}
 
   Int_t input_boolean;
   double input_noholes;
@@ -92,7 +92,8 @@ public:
     ttree->SetBranchAddress("boolean", &input_boolean);
 
     for (;  start < end;  ++start) {
-      ttree->GetEntry(start);
+      // ttree->GetEntry(start);
+      continue;
 
       if (!input_boolean)
         histogram.Fill(2 * input_noholes);
@@ -136,7 +137,7 @@ public:
             print
             print "PyROOT first event"
 
-            histogram = ROOT.TH1D("control2", "", 20, -10, 10)
+            histogram = ROOT.TH1D("control2", "", 100, -10, 10)
 
             startTime = time.time()
             for row in TestRootCling.ttreeBig:
@@ -169,7 +170,7 @@ public:
             print
             print "TFormula first pass"
 
-            histogram3 = ROOT.TH1D("control3", "", 20, -10, 10)
+            histogram3 = ROOT.TH1D("control3", "", 100, -10, 10)
 
             startTime = time.time()
             TestRootCling.ttreeBig.Draw("2 * noholes >>+ control3", "!boolean", "goff")
@@ -221,7 +222,41 @@ public:
             startTime = time.time()
             hg.numpy(table)
             print time.time() - startTime
-                
+
+            print
+            print "Native Histogrammar first pass"
+
+            class Row(object):
+                __slots__ = ["boolean", "noholes"]
+                def __init__(self, boolean, noholes):
+                    self.boolean = boolean
+                    self.noholes = noholes
+
+            table2 = []
+            for i in xrange(len(table["boolean"])):
+                table2.append(Row(table["boolean"][i], table["noholes"][i]))
+
+            hg = Select(lambda t: not t.boolean, Bin(100, -10, 10, lambda t: 2 * t.noholes))
+
+            startTime = time.time()
+            for t in table2: hg.fill(t)
+            print time.time() - startTime
+
+            print
+            print "Native Histogrammar subsequent"
+
+            startTime = time.time()
+            for t in table2: hg.fill(t)
+            print time.time() - startTime
+
+            startTime = time.time()
+            for t in table2: hg.fill(t)
+            print time.time() - startTime
+
+            startTime = time.time()
+            for t in table2: hg.fill(t)
+            print time.time() - startTime
+
   #   ################################################################ Count
 
   #   def testCount(self):

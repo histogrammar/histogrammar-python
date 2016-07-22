@@ -238,7 +238,8 @@ public:
     if (start < 0) start = 0;
     if (end < 0) end = ttree->GetEntries();
     for (;  start < end;  ++start) {{
-      ttree->GetEntry(start);
+      // ttree->GetEntry(start);
+      continue;
 {9}{10}
     }}
 
