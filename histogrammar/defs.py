@@ -228,7 +228,7 @@ class Container(object):
             for name, expr in exprs.items():
                 self._clingAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
 
-            self._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, 6, weightVars, weightVarStack, tmpVarTypes)
+            self._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, (("var", "storage"),), 6, weightVars, weightVarStack, tmpVarTypes)
 
             className = "HistogrammarClingFiller_" + str(Container._clingClassNameNumber)
             Container._clingClassNameNumber += 1

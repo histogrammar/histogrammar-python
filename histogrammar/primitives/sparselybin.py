@@ -241,6 +241,74 @@ class SparselyBin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".bins.clear();")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+
+        fillCode.append(" " * fillIndent + "if (std::isnan({0})) {{".format(normexpr))
+        self.nanflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        fillCode.append(" " * fillIndent + "}")
+        fillCode.append(" " * fillIndent + "else {")
+
+        softbin = "softbin_" + str(len(tmpVarTypes))
+        tmpVarTypes[softbin] = "double"
+        key = "key_" + str(len(tmpVarTypes))
+        tmpVarTypes[key] = "Long64_t"
+        value = "value_" + str(len(tmpVarTypes))
+        tmpVarTypes[value] = self.value._clingStorageType() + "*"
+
+        fillCode.append("""{indent}{softbin} = ({q} - {origin}) * {scale};
+{indent}if ({softbin} <= {LONG_MINUSINF})
+{indent}  {key} = {LONG_MINUSINF};
+{indent}else if ({softbin} >= {LONG_PLUSINF})
+{indent}  {key} = {LONG_PLUSINF};
+{indent}else
+{indent}  {key} = floor({softbin});
+{indent}if ({bins}.find({key}) == {bins}.end())
+{indent}  {bins}[{key}] = {prototype};    // copy
+{indent}{value} = &({bins}[{key}]);    // reference""".format(
+            indent = " " * (fillIndent + 2),
+            softbin = softbin,
+            q = normexpr,
+            origin = self.origin,
+            scale = 1.0/self.binWidth,
+            key = key,
+            value = value,
+            prototype = self._clingExpandPrefixCpp(*fillPrefix) + ".value",
+            bins = self._clingExpandPrefixCpp(*fillPrefix) + ".bins",
+            LONG_MINUSINF = LONG_MINUSINF,
+            LONG_PLUSINF = LONG_PLUSINF
+            ))
+
+        self.value._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "value"),), initIndent, fillCode, (("var", "(*" + value + ")"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+
+        fillCode.append(" " * fillIndent + "}")
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    {2} nanflow;
+    {1} value;
+    std::unordered_map<Long64_t, {1}> bins;
+    {1}& getValues(Long64_t i) {{ return bins[i]; }}
+  }} {0};
+""".format(self._clingStructName(), self.value._clingStorageType(), self.nanflow._clingStorageType())
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += obj.entries
+
+        for i in obj.bins:
+            key = i.first
+            if key not in self.bins:
+                self.bins[key] = self.value.copy()
+            self.bins[key]._clingUpdate(obj, ("func", ["getValues", key]))
+
+        self.nanflow._clingUpdate(obj, ("var", "nanflow"))
+
     def _clingStructName(self):
         return "Sb" + self.value._clingStructName() + self.nanflow._clingStructName()
 

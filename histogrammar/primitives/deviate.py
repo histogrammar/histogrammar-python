@@ -138,13 +138,13 @@ class Deviate(Factory, Container):
                 self.mean += shift
                 self.varianceTimesEntries += weight * delta * (q - self.mean)
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".mean = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".varianceTimesEntries = 0.0;")
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".mean = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".varianceTimesEntries = 0.0;")
 
         normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += " + weightVarStack[-1] + ";")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
         
         delta = "delta_" + str(len(tmpVarTypes))
         tmpVarTypes[delta] = "double"
@@ -172,9 +172,9 @@ class Deviate(Factory, Container):
 {indent}  {mean} += {shift};
 {indent}  {varianceTimesEntries} += {weight} * {delta} * ({q} - {mean});
 {indent}}}""".format(indent = " " * fillIndent,
-           entries = self._clingExpandPrefixCpp(*prefix) + ".entries",
-           mean = self._clingExpandPrefixCpp(*prefix) + ".mean",
-           varianceTimesEntries = self._clingExpandPrefixCpp(*prefix) + ".varianceTimesEntries",
+           entries = self._clingExpandPrefixCpp(*fillPrefix) + ".entries",
+           mean = self._clingExpandPrefixCpp(*fillPrefix) + ".mean",
+           varianceTimesEntries = self._clingExpandPrefixCpp(*fillPrefix) + ".varianceTimesEntries",
            q = normexpr,
            delta = delta,
            shift = shift,
