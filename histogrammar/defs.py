@@ -362,7 +362,7 @@ public:
                 raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.transform.expr, str(err)))
         else:
             if not isinstance(self.quantity.expr, basestring):
-                raise ContainerException(self.factory.name + ".quantity must be provided as a C99 string when used with Cling")
+                raise ContainerException(self.name + ".quantity must be provided as a C99 string when used with Cling")
             try:
                 ast = parser(self.quantity.expr)
             except Exception as err:

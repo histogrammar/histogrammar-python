@@ -138,6 +138,70 @@ class Deviate(Factory, Container):
                 self.mean += shift
                 self.varianceTimesEntries += weight * delta * (q - self.mean)
 
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".mean = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".varianceTimesEntries = 0.0;")
+
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += " + weightVarStack[-1] + ";")
+        
+        delta = "delta_" + str(len(tmpVarTypes))
+        tmpVarTypes[delta] = "double"
+        shift = "shift_" + str(len(tmpVarTypes))
+        tmpVarTypes[shift] = "double"
+
+        fillCode.append("""{indent}if (std::isnan({mean})  ||  std::isnan({q})) {{
+{indent}  {mean} = NAN;
+{indent}  {varianceTimesEntries} = NAN;
+{indent}}}
+{indent}else if (std::isinf({mean})  ||  std::isinf({q})) {{
+{indent}  if (std::isinf({mean})  &&  std::isinf({q})  &&  {mean} * {q} < 0.0)
+{indent}    {mean} = NAN;
+{indent}  else if (std::isinf({q}))
+{indent}    {mean} = {q};
+{indent}  else
+{indent}    {{ }}
+{indent}  if (std::isinf({entries})  ||  std::isnan({entries}))
+{indent}    {mean} = NAN;
+{indent}  {varianceTimesEntries} = NAN;
+{indent}}}
+{indent}else {{
+{indent}  {delta} = {q} - {mean};
+{indent}  {shift} = {delta} * {weight} / {entries};
+{indent}  {mean} += {shift};
+{indent}  {varianceTimesEntries} += {weight} * {delta} * ({q} - {mean});
+{indent}}}""".format(indent = " " * fillIndent,
+           entries = self._clingExpandPrefixCpp(*prefix) + ".entries",
+           mean = self._clingExpandPrefixCpp(*prefix) + ".mean",
+           varianceTimesEntries = self._clingExpandPrefixCpp(*prefix) + ".varianceTimesEntries",
+           q = normexpr,
+           delta = delta,
+           shift = shift,
+           weight = weightVarStack[-1]))
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    double mean;
+    double varianceTimesEntries;
+  }} {0};
+""".format(self._clingStructName())
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+
+        entries = self.entries + obj.entries
+        if entries == 0.0:
+            mean = (self.mean + obj.mean)/2.0
+        else:
+            mean = (self.entries*self.mean + obj.entries*obj.mean)/(self.entries + obj.entries)
+        varianceTimesEntries = self.varianceTimesEntries + obj.varianceTimesEntries + self.entries*self.mean*self.mean + obj.entries*obj.mean*obj.mean - 2.0*mean*(self.entries*self.mean + obj.entries*obj.mean) + mean*mean*entries
+
+        self.entries = entries
+        self.mean = mean
+        self.varianceTimesEntries = varianceTimesEntries
+
     def _clingStructName(self):
         return "Dv"
 
