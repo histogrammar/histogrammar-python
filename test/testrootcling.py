@@ -271,6 +271,12 @@ class TestRootCling(unittest.TestCase):
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"type": "Count", "data": 10000})
 
+            hg = Count("double twice = weight * 2; twice")
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            self.assertEqual(hg.toJson(), {"type": "Count", "data": 20000})
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            self.assertEqual(hg.toJson(), {"type": "Count", "data": 40000})
+
         # if TestRootCling.ttreeEvent is not None:
         #     hg = Count()
         #     hg.cling(TestRootCling.ttreeEvent, debug=False)
@@ -299,6 +305,12 @@ class TestRootCling(unittest.TestCase):
             self.assertEqual(hg.toJson(), {"data": {"sum": 137.62044119255137, "name": "2 * noholes", "entries": 10000}, "type": "Sum"})
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "2 * noholes", "entries": 20000}, "type": "Sum"})
+
+            hg = Sum("double twice = 2 * noholes; twice;")
+            hg.cling(TestRootCling.ttreeFlat, debug=True)
+            self.assertEqual(hg.toJson(), {"data": {"sum": 137.62044119255137, "name": "double twice = 2 * noholes; twice;", "entries": 10000}, "type": "Sum"})
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "double twice = 2 * noholes; twice;", "entries": 20000}, "type": "Sum"})
 
         # if TestRootCling.ttreeEvent is not None:
         #     hg = Sum("event.GetNtrack()")

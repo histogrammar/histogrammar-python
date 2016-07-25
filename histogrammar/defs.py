@@ -260,7 +260,7 @@ public:
            self._clingStorageType(),
            "\n".join(initCode),
            "".join("    ttree->SetBranchAddress(" + jsonlib.dumps(key) + ", &" + n + ");\n" for n, key in inputFieldNames.items()),
-           "".join("      " + n + " = " + e + ";\n" for n, e in derivedFieldExprs.items()),
+           "".join(x for x in derivedFieldExprs.values()),
            "\n".join(fillCode))
 
             if debug:
@@ -356,7 +356,10 @@ public:
                     break
             if derivedFieldName is None:
                 derivedFieldName = "quantity_" + str(len(derivedFieldExprs))
-                derivedFieldExprs[derivedFieldName] = normexpr
+                if len(ast) > 1:
+                    derivedFieldExprs[derivedFieldName] = "      {\n        " + ";\n        ".join(generator(x) for x in ast[:-1]) + ";\n        " + derivedFieldName + " = " + generator(ast[-1]) + ";\n      }\n"
+                else:
+                    derivedFieldExprs[derivedFieldName] = "      " + derivedFieldName + " = " + normexpr + ";\n"
                 derivedFieldTypes[derivedFieldName] = "double"
             return derivedFieldName
 

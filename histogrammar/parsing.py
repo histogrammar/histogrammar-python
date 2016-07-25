@@ -29,7 +29,11 @@ class C99SourceToAst(object):
             return self.parser.parse(src)
         else:
             src = "void wrappedAsFcn() {" + src + ";}"
-            return [x for x in self.parser.parse(src).ext[0].body.block_items if not isinstance(x, histogrammar.pycparser.c_ast.EmptyStatement)]
+            ast = self.parser.parse(src).ext[0].body.block_items
+            if len(ast) < 1:
+                raise SyntaxError("empty expression")
+            else:
+                return [x for x in ast if not isinstance(x, histogrammar.pycparser.c_ast.EmptyStatement)]
 
 class C99AstToSource(object):
     def __init__(self):
