@@ -16,6 +16,7 @@
 
 import histogrammar.pycparser.c_parser
 import histogrammar.pycparser.c_generator
+import histogrammar.pycparser.c_ast
 
 class C99SourceToAst(object):
     def __init__(self, wholeFile=False):
@@ -28,7 +29,7 @@ class C99SourceToAst(object):
             return self.parser.parse(src)
         else:
             src = "void wrappedAsFcn() {" + src + ";}"
-            return self.parser.parse(src).ext[0].body.block_items
+            return [x for x in self.parser.parse(src).ext[0].body.block_items if not isinstance(x, histogrammar.pycparser.c_ast.EmptyStatement)]
 
 class C99AstToSource(object):
     def __init__(self):

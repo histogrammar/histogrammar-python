@@ -22,6 +22,7 @@ import re
 from histogrammar.util import *
 from histogrammar.parsing import C99SourceToAst
 from histogrammar.parsing import C99AstToSource
+from histogrammar.pycparser import c_ast
 
 class ContainerException(Exception):
     """Exception type for improperly configured containers."""
@@ -305,14 +306,39 @@ public:
                 raise NotImplementedError((t, x))
         return obj
 
+    def _clingNormalizeTTreeName(self, key):
+        return "input_" + key    # FIXME: add rules to turn arbitrary strings into valid C++ variable names
+
+    def _clingNormalizeExpr(self, ast, inputFieldNames, inputFieldTypes):
+        if isinstance(ast, c_ast.ID) and ast.name in inputFieldTypes:
+            norm = self._clingNormalizeTTreeName(ast.name)
+            inputFieldNames[norm] = ast.name
+            if inputFieldTypes[ast.name].endswith("*"):
+                norm = "(*" + norm + ")"
+            ast.name = norm
+
+        if isinstance(ast, c_ast.StructRef):
+            self._clingNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes)
+        else:
+            for _, field in ast.children():
+                self._clingNormalizeExpr(field, inputFieldNames, inputFieldTypes)
+
     def _clingQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
         if not isinstance(self.quantity.expr, basestring):
-            raise ContainerException(self.factory.name + ".quantity must be provided as a C++ string to use with Cling")
+            raise ContainerException(self.factory.name + ".quantity must be provided as a C99 string to use with Cling")
+        
+        try:
+            ast = parser(self.quantity.expr)
+        except Exception as err:
+            raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.quantity.expr, str(err)))
 
-        normexpr = self._clingNormalizeTTreeExpr(inputFieldNames, inputFieldTypes, self.quantity.expr)
-        if self._clingInputFieldRef(self.quantity.expr):
-            return normexpr
+        for x in ast:
+            self._clingNormalizeExpr(x, inputFieldNames, inputFieldTypes)
+
+        if len(ast) == 1 and isinstance(ast[0], c_ast.ID):
+            return generator(ast)
         else:
+            normexpr = generator(ast)
             derivedFieldName = None
             for name, expr in derivedFieldExprs.items():
                 if expr == normexpr:
@@ -323,24 +349,6 @@ public:
                 derivedFieldExprs[derivedFieldName] = normexpr
                 derivedFieldTypes[derivedFieldName] = "double"
             return derivedFieldName
-
-    def _clingInputFieldRef(self, code):
-        return re.match("^\s*[a-zA-Z_][a-zA-Z0-9]*\s*$", code) is not None
-
-    def _clingNormalizeTTreeName(self, key):
-        return "input_" + key    # FIXME: add rules to turn arbitrary strings into valid C++ variable names
-
-    def _clingNormalizeTTreeExpr(self, inputFieldNames, inputFieldTypes, expr):
-        expr = " " + expr + " "
-        for name, t in inputFieldTypes.items():
-            freeword = r"(\W)" + name + r"(\W)"
-            if re.search(freeword, expr) is not None:
-                norm = self._clingNormalizeTTreeName(name)
-                inputFieldNames[norm] = name
-                if t.endswith("*"):
-                    norm = "(*" + norm + ")"
-                return re.sub(freeword, r"\1" + norm + r"\2", expr).strip()
-        return expr.strip()
 
     def _clingStorageType(self):
         return self._clingStructName()
