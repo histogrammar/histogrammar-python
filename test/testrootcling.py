@@ -277,18 +277,18 @@ class TestRootCling(unittest.TestCase):
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"type": "Count", "data": 40000})
 
-        if TestRootCling.ttreeEvent is not None:
-            hg = Count()
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 1000})
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 2000})
+        # if TestRootCling.ttreeEvent is not None:
+        #     hg = Count()
+        #     hg.cling(TestRootCling.ttreeEvent, debug=False)
+        #     self.assertEqual(hg.toJson(), {"type": "Count", "data": 1000})
+        #     hg.cling(TestRootCling.ttreeEvent, debug=False)
+        #     self.assertEqual(hg.toJson(), {"type": "Count", "data": 2000})
 
-            hg = Count("0.5 * weight")
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 500})
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 1000})
+        #     hg = Count("0.5 * weight")
+        #     hg.cling(TestRootCling.ttreeEvent, debug=False)
+        #     self.assertEqual(hg.toJson(), {"type": "Count", "data": 500})
+        #     hg.cling(TestRootCling.ttreeEvent, debug=False)
+        #     self.assertEqual(hg.toJson(), {"type": "Count", "data": 1000})
 
     ################################################################ Sum
 
@@ -318,12 +318,24 @@ class TestRootCling(unittest.TestCase):
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "double twice = 2 * noholes; twice;", "entries": 20000}, "type": "Sum"})
 
-        if TestRootCling.ttreeEvent is not None:
-            hg = Sum("event.GetNtrack()")
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 599640, "name": "event.GetNtrack()", "entries": 1000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 2*599640, "name": "event.GetNtrack()", "entries": 2*1000}, "type": "Sum"})
+            hg = Sum("twice")
+            hg.cling(TestRootCling.ttreeFlat, debug=True, twice="2 * noholes")
+            self.assertEqual(hg.toJson(), {"data": {"sum": 137.62044119255137, "name": "twice", "entries": 10000}, "type": "Sum"})
+            hg.cling(TestRootCling.ttreeFlat, debug=False, twice="2 * noholes")
+            self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "twice", "entries": 20000}, "type": "Sum"})
+
+            hg = Sum("quadruple")
+            hg.cling(TestRootCling.ttreeFlat, debug=True, quadruple="double x = 2 * noholes; x*2")
+            self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "quadruple", "entries": 10000}, "type": "Sum"})
+            hg.cling(TestRootCling.ttreeFlat, debug=False, quadruple="double x = 2 * noholes; x*2")
+            self.assertEqual(hg.toJson(), {"data": {"sum": 4*137.62044119255137, "name": "quadruple", "entries": 20000}, "type": "Sum"})
+
+        # if TestRootCling.ttreeEvent is not None:
+        #     hg = Sum("event.GetNtrack()")
+        #     hg.cling(TestRootCling.ttreeEvent, debug=False)
+        #     self.assertEqual(hg.toJson(), {"data": {"sum": 599640, "name": "event.GetNtrack()", "entries": 1000}, "type": "Sum"})
+        #     hg.cling(TestRootCling.ttreeEvent, debug=False)
+        #     self.assertEqual(hg.toJson(), {"data": {"sum": 2*599640, "name": "event.GetNtrack()", "entries": 2*1000}, "type": "Sum"})
 
     ################################################################ Bin
 

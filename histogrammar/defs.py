@@ -165,7 +165,7 @@ class Container(object):
         raise NotImplementedError
 
     _clingClassNameNumber = 0
-    def cling(self, ttree, start=-1, end=-1, debug=False):
+    def cling(self, ttree, start=-1, end=-1, debug=False, debugOnError=True, **exprs):
         self._checkForCrossReferences()
 
         if not hasattr(self, "_clingFiller"):
@@ -224,6 +224,10 @@ class Container(object):
             weightVars = ["weight_0"]
             weightVarStack = ("weight_0",)
             tmpVarTypes = {}
+
+            for name, expr in exprs.items():
+                self._clingAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+
             self._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, 6, weightVars, weightVarStack, tmpVarTypes)
 
             className = "HistogrammarClingFiller_" + str(Container._clingClassNameNumber)
@@ -256,7 +260,7 @@ public:
            "".join(storageStructs.values()),
            "".join("  double " + n + ";\n" for n in weightVars),
            "".join("  " + t + " " + self._clingNormalizeTTreeName(n) + ";\n" for n, t in inputFieldTypes.items() if self._clingNormalizeTTreeName(n) in inputFieldNames),
-           "".join("  " + t + " " + n + ";\n" for n, t in derivedFieldTypes.items()),
+           "".join("  " + t + " " + n + ";\n" for n, t in derivedFieldTypes.items() if t != "auto"),
            "".join("  " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
            self._clingStorageType(),
            "\n".join(initCode),
@@ -270,6 +274,8 @@ public:
             if not ROOT.gInterpreter.Declare(classCode):
                 if debug:
                     raise SyntaxError("Could not compile the above")
+                elif debugOnError:
+                    raise SyntaxError("Could not compile the following:\n\n" + "\n".join("{0:4d} | {1}".format(i + 1, line) for i, line in enumerate(classCode.split("\n"))))
                 else:
                     raise SyntaxError("Could not compile (rerun with debug=True to see the generated C++ code)")
 
@@ -386,6 +392,23 @@ public:
                 # FIXME: a few primitives have exceptions (Categorize should be a string)
                 derivedFieldTypes[derivedFieldName] = "double"
             return derivedFieldName
+
+    def _clingAddExpr(self, parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
+        if not isinstance(expr, basestring):
+            raise ContainerException("expressions like {0} must be provided as a C99 string".format(name))
+        try:
+            ast = parser(expr)
+        except Exception as err:
+            raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(expr, str(err)))
+
+        ast = [self._clingNormalizeExpr(x, inputFieldNames, inputFieldTypes, None) for x in ast]
+
+        normexpr = generator(ast)
+        if len(ast) > 1:
+            derivedFieldExprs[name] = "      auto " + name + " = [this]{\n        " + ";\n        ".join(generator(x) for x in ast[:-1]) + ";\n        return " + generator(ast[-1]) + ";\n      }();\n"
+        else:
+            derivedFieldExprs[name] = "      auto " + name + " = " + normexpr + ";\n"
+        derivedFieldTypes[name] = "auto"
 
     def _clingStorageType(self):
         return self._clingStructName()
