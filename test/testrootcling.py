@@ -300,6 +300,12 @@ class TestRootCling(unittest.TestCase):
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"data": {"sum": 2*7970.933535083706, "name": "positive", "entries": 20000}, "type": "Sum"})
 
+            hg = Sum("""2 * t("positive")""")
+            hg.cling(TestRootCling.ttreeFlat, debug=True)
+            self.assertEqual(hg.toJson(), {"data": {"sum": 2*7970.933535083706, "name": """2 * t("positive")""", "entries": 10000}, "type": "Sum"})
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            self.assertEqual(hg.toJson(), {"data": {"sum": 4*7970.933535083706, "name": """2 * t("positive")""", "entries": 20000}, "type": "Sum"})
+
             hg = Sum("2 * noholes")
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"data": {"sum": 137.62044119255137, "name": "2 * noholes", "entries": 10000}, "type": "Sum"})
@@ -307,7 +313,7 @@ class TestRootCling(unittest.TestCase):
             self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "2 * noholes", "entries": 20000}, "type": "Sum"})
 
             hg = Sum("double twice = 2 * noholes; twice;")
-            hg.cling(TestRootCling.ttreeFlat, debug=True)
+            hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"data": {"sum": 137.62044119255137, "name": "double twice = 2 * noholes; twice;", "entries": 10000}, "type": "Sum"})
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "double twice = 2 * noholes; twice;", "entries": 20000}, "type": "Sum"})

@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
 import collections
 import json as jsonlib
 import math
@@ -307,9 +308,13 @@ public:
         return obj
 
     def _clingNormalizeTTreeName(self, key):
-        return "input_" + key    # FIXME: add rules to turn arbitrary strings into valid C++ variable names
+        if re.match("^[a-zA-Z0-9]*$", key) is not None:
+            return "input_" + key
+        else:
+            return "input_" + base64.b64encode(key).replace("=", "")
 
     def _clingNormalizeExpr(self, ast, inputFieldNames, inputFieldTypes, weightVar):
+        # interpret raw identifiers as tree field names IF they're in the tree (otherwise, leave them alone)
         if isinstance(ast, c_ast.ID):
             if weightVar is not None and ast.name == "weight":
                 ast.name = weightVar
@@ -319,12 +324,29 @@ public:
                 if inputFieldTypes[ast.name].endswith("*"):
                     norm = "(*" + norm + ")"
                 ast.name = norm
-            
-        if isinstance(ast, c_ast.StructRef):
+
+        elif isinstance(ast, c_ast.FuncCall):
+            # t("field name") for field names that aren't valid C identifiers
+            if isinstance(ast.name, c_ast.ID) and ast.name.name == "t" and isinstance(ast.args, c_ast.ExprList) and len(ast.args.exprs) == 1 and isinstance(ast.args.exprs[0], c_ast.Constant) and ast.args.exprs[0].type == "string":
+                ast = self._clingNormalizeExpr(c_ast.ID(jsonlib.loads(ast.args.exprs[0].value)), inputFieldNames, inputFieldTypes, weightVar)
+            # ordinary function: don't translate the name (let function names live in a different namespace from variables)
+            elif isinstance(ast.name, c_ast.ID):
+                self._clingNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
+            # weird function: calling the result of an evaluation, probably an overloaded operator() in C++
+            else:
+                self._clingNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar)
+                self._clingNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
+
+        # only the top (x) of a dotted expression (x.y.z) should be interpreted as a field name
+        elif isinstance(ast, c_ast.StructRef):
             self._clingNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar)
+
+        # anything else
         else:
-            for _, field in ast.children():
-                self._clingNormalizeExpr(field, inputFieldNames, inputFieldTypes, weightVar)
+            for fieldName, fieldValue in ast.children():
+                setattr(ast, fieldName, self._clingNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
+
+        return ast
 
     def _clingQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
         if weightVar is not None:
@@ -342,9 +364,8 @@ public:
             except Exception as err:
                 raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.quantity.expr, str(err)))
 
-        for x in ast:
-            self._clingNormalizeExpr(x, inputFieldNames, inputFieldTypes, weightVar)
-
+        ast = [self._clingNormalizeExpr(x, inputFieldNames, inputFieldTypes, weightVar) for x in ast]
+            
         if len(ast) == 1 and isinstance(ast[0], c_ast.ID):
             return generator(ast)
         else:
