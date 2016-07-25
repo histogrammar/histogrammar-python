@@ -238,10 +238,6 @@ public:
 {2}{3}
 {4}{5}  {6} storage;
 
-  bool isnan(double x) {{ return x != x; }}
-  bool isnan(float x) {{ return x != x; }}
-  bool isnan(int x) {{ return false; }}
-
   void fillall(TTree* ttree, Long64_t start, Long64_t end) {{
 {7}
     weight_0 = 1.0;

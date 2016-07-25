@@ -55,524 +55,524 @@ class TestRootCling(unittest.TestCase):
     except ImportError:
         pass
 
-    ################################################################ Timing
+#     ################################################################ Timing
 
-    def testTiming(self):
-        which = TestRootCling.ttreeFlat
+#     def testTiming(self):
+#         which = TestRootCling.ttreeFlat
 
-        if which is not None:
-            which.AddBranchToCache("*", True)
-            for row in which:
-                pass
-            # print which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
-            # print which.PrintCacheStats()
-            for row in which:
-                pass
-            # print which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
-            # print which.PrintCacheStats()
+#         if which is not None:
+#             which.AddBranchToCache("*", True)
+#             for row in which:
+#                 pass
+#             # print which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             # print which.PrintCacheStats()
+#             for row in which:
+#                 pass
+#             # print which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             # print which.PrintCacheStats()
 
-            hg = Select("!boolean", Bin(100, -10, 10, "2 * noholes"))
+#             hg = Select("!boolean", Bin(100, -10, 10, "2 * noholes"))
 
-            # print
-            # print "Histogrammar JIT-compilation"
+#             # print
+#             # print "Histogrammar JIT-compilation"
 
-            startTime = time.time()
-            hg.cling(which, 0, 1, debug=False)
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             hg.cling(which, 0, 1, debug=False)
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            # print
-            # print "Histogrammar running"
+#             # print
+#             # print "Histogrammar running"
 
-            startTime = time.time()
-            hg.cling(which)
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             hg.cling(which)
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            startTime = time.time()
-            hg.cling(which)
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             hg.cling(which)
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            startTime = time.time()
-            hg.cling(which)
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             hg.cling(which)
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            controlTestCode = """class ControlTest {
-public:
-  TH1D histogram;
+#             controlTestCode = """class ControlTest {
+# public:
+#   TH1D histogram;
 
-  ControlTest() : histogram("control1", "", 100, -10, 10) {}
+#   ControlTest() : histogram("control1", "", 100, -10, 10) {}
 
-  Int_t input_boolean;
-  double input_noholes;
+#   Int_t input_boolean;
+#   double input_noholes;
  
-  void fillall(TTree* ttree, Long64_t start, Long64_t end) {
-    if (start < 0) start = 0;
-    if (end < 0) end = ttree->GetEntries();
+#   void fillall(TTree* ttree, Long64_t start, Long64_t end) {
+#     if (start < 0) start = 0;
+#     if (end < 0) end = ttree->GetEntries();
 
-    ttree->SetBranchAddress("noholes", &input_noholes);
-    ttree->SetBranchAddress("boolean", &input_boolean);
+#     ttree->SetBranchAddress("noholes", &input_noholes);
+#     ttree->SetBranchAddress("boolean", &input_boolean);
 
-    for (;  start < end;  ++start) {
-      ttree->GetEntry(start);
-      if (!input_boolean)
-        histogram.Fill(2 * input_noholes);
-    }
+#     for (;  start < end;  ++start) {
+#       ttree->GetEntry(start);
+#       if (!input_boolean)
+#         histogram.Fill(2 * input_noholes);
+#     }
 
-    ttree->ResetBranchAddresses();
-  }
-};"""
+#     ttree->ResetBranchAddresses();
+#   }
+# };"""
 
-            # print
-            # print "ROOT C++ compilation"
+#             # print
+#             # print "ROOT C++ compilation"
 
-            import ROOT
-            startTime = time.time()
-            ROOT.gInterpreter.Declare(controlTestCode)
-            controlTest = ROOT.ControlTest()
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             import ROOT
+#             startTime = time.time()
+#             ROOT.gInterpreter.Declare(controlTestCode)
+#             controlTest = ROOT.ControlTest()
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            # print
-            # print "ROOT C++ first event"
+#             # print
+#             # print "ROOT C++ first event"
 
-            startTime = time.time()
-            controlTest.fillall(which, 0, 1)
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             controlTest.fillall(which, 0, 1)
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            # print
-            # print "ROOT C++ subsequent"
+#             # print
+#             # print "ROOT C++ subsequent"
 
-            startTime = time.time()
-            controlTest.fillall(which, -1, -1)
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             controlTest.fillall(which, -1, -1)
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            startTime = time.time()
-            controlTest.fillall(which, -1, -1)
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             controlTest.fillall(which, -1, -1)
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            startTime = time.time()
-            controlTest.fillall(which, -1, -1)
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             controlTest.fillall(which, -1, -1)
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            # print
-            # print "PyROOT first event"
+#             # print
+#             # print "PyROOT first event"
 
-            histogram = ROOT.TH1D("control2", "", 100, -10, 10)
+#             histogram = ROOT.TH1D("control2", "", 100, -10, 10)
 
-            startTime = time.time()
-            for row in which:
-                if not row.boolean:
-                    histogram.Fill(2 * row.noholes)
-                break
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             for row in which:
+#                 if not row.boolean:
+#                     histogram.Fill(2 * row.noholes)
+#                 break
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            # print
-            # print "PyROOT subsequent"
+#             # print
+#             # print "PyROOT subsequent"
 
-            startTime = time.time()
-            for row in which:
-                if not row.boolean:
-                    histogram.Fill(2 * row.noholes)
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             for row in which:
+#                 if not row.boolean:
+#                     histogram.Fill(2 * row.noholes)
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            startTime = time.time()
-            for row in which:
-                if not row.boolean:
-                    histogram.Fill(2 * row.noholes)
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             for row in which:
+#                 if not row.boolean:
+#                     histogram.Fill(2 * row.noholes)
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            startTime = time.time()
-            for row in which:
-                if not row.boolean:
-                    histogram.Fill(2 * row.noholes)
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             for row in which:
+#                 if not row.boolean:
+#                     histogram.Fill(2 * row.noholes)
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            # print
-            # print "TFormula first pass"
+#             # print
+#             # print "TFormula first pass"
 
-            histogram3 = ROOT.TH1D("control3", "", 100, -10, 10)
+#             histogram3 = ROOT.TH1D("control3", "", 100, -10, 10)
 
-            startTime = time.time()
-            which.Draw("2 * noholes >>+ control3", "!boolean", "goff")
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             which.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            # print
-            # print "TFormula subsequent"
+#             # print
+#             # print "TFormula subsequent"
 
-            startTime = time.time()
-            which.Draw("2 * noholes >>+ control3", "!boolean", "goff")
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             which.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            startTime = time.time()
-            which.Draw("2 * noholes >>+ control3", "!boolean", "goff")
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             which.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            startTime = time.time()
-            which.Draw("2 * noholes >>+ control3", "!boolean", "goff")
-            # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
+#             startTime = time.time()
+#             which.Draw("2 * noholes >>+ control3", "!boolean", "goff")
+#             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
-            import numpy
-            table = {"boolean": numpy.empty(which.GetEntries(), dtype=numpy.int32),
-                     "noholes": numpy.empty(which.GetEntries(), dtype=numpy.double)}
+#             import numpy
+#             table = {"boolean": numpy.empty(which.GetEntries(), dtype=numpy.int32),
+#                      "noholes": numpy.empty(which.GetEntries(), dtype=numpy.double)}
 
-            for i, row in enumerate(which):
-                table["boolean"][i] = row.boolean
-                table["noholes"][i] = row.noholes
+#             for i, row in enumerate(which):
+#                 table["boolean"][i] = row.boolean
+#                 table["noholes"][i] = row.noholes
 
-            hg = Select("logical_not(boolean)", Bin(100, -10, 10, "2 * noholes"))
+#             hg = Select("logical_not(boolean)", Bin(100, -10, 10, "2 * noholes"))
 
-            # print
-            # print "Numpy first"
+#             # print
+#             # print "Numpy first"
 
-            startTime = time.time()
-            hg.numpy(table)
-            # print time.time() - startTime
+#             startTime = time.time()
+#             hg.numpy(table)
+#             # print time.time() - startTime
 
-            # print
-            # print "Numpy subsequent"
+#             # print
+#             # print "Numpy subsequent"
 
-            startTime = time.time()
-            hg.numpy(table)
-            # print time.time() - startTime
+#             startTime = time.time()
+#             hg.numpy(table)
+#             # print time.time() - startTime
 
-            startTime = time.time()
-            hg.numpy(table)
-            # print time.time() - startTime
+#             startTime = time.time()
+#             hg.numpy(table)
+#             # print time.time() - startTime
 
-            startTime = time.time()
-            hg.numpy(table)
-            # print time.time() - startTime
+#             startTime = time.time()
+#             hg.numpy(table)
+#             # print time.time() - startTime
 
-            # print
-            # print "Native Histogrammar first pass"
+#             # print
+#             # print "Native Histogrammar first pass"
 
-            class Row(object):
-                __slots__ = ["boolean", "noholes"]
-                def __init__(self, boolean, noholes):
-                    self.boolean = boolean
-                    self.noholes = noholes
+#             class Row(object):
+#                 __slots__ = ["boolean", "noholes"]
+#                 def __init__(self, boolean, noholes):
+#                     self.boolean = boolean
+#                     self.noholes = noholes
 
-            table2 = []
-            for i in xrange(len(table["boolean"])):
-                table2.append(Row(table["boolean"][i], table["noholes"][i]))
+#             table2 = []
+#             for i in xrange(len(table["boolean"])):
+#                 table2.append(Row(table["boolean"][i], table["noholes"][i]))
 
-            hg = Select(lambda t: not t.boolean, Bin(100, -10, 10, lambda t: 2 * t.noholes))
+#             hg = Select(lambda t: not t.boolean, Bin(100, -10, 10, lambda t: 2 * t.noholes))
 
-            startTime = time.time()
-            for t in table2: hg.fill(t)
-            # print time.time() - startTime
+#             startTime = time.time()
+#             for t in table2: hg.fill(t)
+#             # print time.time() - startTime
 
-            # print
-            # print "Native Histogrammar subsequent"
+#             # print
+#             # print "Native Histogrammar subsequent"
 
-            startTime = time.time()
-            for t in table2: hg.fill(t)
-            # print time.time() - startTime
+#             startTime = time.time()
+#             for t in table2: hg.fill(t)
+#             # print time.time() - startTime
 
-            startTime = time.time()
-            for t in table2: hg.fill(t)
-            # print time.time() - startTime
+#             startTime = time.time()
+#             for t in table2: hg.fill(t)
+#             # print time.time() - startTime
 
-            startTime = time.time()
-            for t in table2: hg.fill(t)
-            # print time.time() - startTime
+#             startTime = time.time()
+#             for t in table2: hg.fill(t)
+#             # print time.time() - startTime
 
-    ################################################################ OriginalCount
+#     ################################################################ OriginalCount
 
-    def testOriginalCount(self):
-        if TestRootCling.ttreeFlat is not None:
-            hg = Count()
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 10000})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 20000})
+#     def testOriginalCount(self):
+#         if TestRootCling.ttreeFlat is not None:
+#             hg = Count()
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"type": "Count", "data": 10000})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"type": "Count", "data": 20000})
 
-            hg = Count("0.5 * weight")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 5000})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 10000})
+#             hg = Count("0.5 * weight")
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"type": "Count", "data": 5000})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"type": "Count", "data": 10000})
 
-            hg = Count("double twice = weight * 2; twice")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 20000})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 40000})
+#             hg = Count("double twice = weight * 2; twice")
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"type": "Count", "data": 20000})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"type": "Count", "data": 40000})
 
-        if TestRootCling.ttreeEvent is not None:
-            hg = Count()
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 1000})
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 2000})
+#         if TestRootCling.ttreeEvent is not None:
+#             hg = Count()
+#             hg.cling(TestRootCling.ttreeEvent, debug=False)
+#             self.assertEqual(hg.toJson(), {"type": "Count", "data": 1000})
+#             hg.cling(TestRootCling.ttreeEvent, debug=False)
+#             self.assertEqual(hg.toJson(), {"type": "Count", "data": 2000})
 
-            hg = Count("0.5 * weight")
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 500})
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"type": "Count", "data": 1000})
+#             hg = Count("0.5 * weight")
+#             hg.cling(TestRootCling.ttreeEvent, debug=False)
+#             self.assertEqual(hg.toJson(), {"type": "Count", "data": 500})
+#             hg.cling(TestRootCling.ttreeEvent, debug=False)
+#             self.assertEqual(hg.toJson(), {"type": "Count", "data": 1000})
 
-    ################################################################ OriginalSum
+#     ################################################################ OriginalSum
 
-    def testOriginalSum(self):
-        if TestRootCling.ttreeFlat is not None:
-            hg = Sum("positive")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 7970.933535083706, "name": "positive", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 2*7970.933535083706, "name": "positive", "entries": 20000}, "type": "Sum"})
+#     def testOriginalSum(self):
+#         if TestRootCling.ttreeFlat is not None:
+#             hg = Sum("positive")
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 7970.933535083706, "name": "positive", "entries": 10000}, "type": "Sum"})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 2*7970.933535083706, "name": "positive", "entries": 20000}, "type": "Sum"})
 
-            hg = Sum("""2 * t("positive")""")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 2*7970.933535083706, "name": """2 * t("positive")""", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 4*7970.933535083706, "name": """2 * t("positive")""", "entries": 20000}, "type": "Sum"})
+#             hg = Sum("""2 * t("positive")""")
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 2*7970.933535083706, "name": """2 * t("positive")""", "entries": 10000}, "type": "Sum"})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 4*7970.933535083706, "name": """2 * t("positive")""", "entries": 20000}, "type": "Sum"})
 
-            hg = Sum("2 * noholes")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 137.62044119255137, "name": "2 * noholes", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "2 * noholes", "entries": 20000}, "type": "Sum"})
+#             hg = Sum("2 * noholes")
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 137.62044119255137, "name": "2 * noholes", "entries": 10000}, "type": "Sum"})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "2 * noholes", "entries": 20000}, "type": "Sum"})
 
-            hg = Sum("double twice = 2 * noholes; twice;")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 137.62044119255137, "name": "double twice = 2 * noholes; twice;", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "double twice = 2 * noholes; twice;", "entries": 20000}, "type": "Sum"})
+#             hg = Sum("double twice = 2 * noholes; twice;")
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 137.62044119255137, "name": "double twice = 2 * noholes; twice;", "entries": 10000}, "type": "Sum"})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "double twice = 2 * noholes; twice;", "entries": 20000}, "type": "Sum"})
 
-            hg = Sum("twice")
-            hg.cling(TestRootCling.ttreeFlat, debug=False, twice="2 * noholes")
-            self.assertEqual(hg.toJson(), {"data": {"sum": 137.62044119255137, "name": "twice", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False, twice="2 * noholes")
-            self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "twice", "entries": 20000}, "type": "Sum"})
+#             hg = Sum("twice")
+#             hg.cling(TestRootCling.ttreeFlat, debug=False, twice="2 * noholes")
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 137.62044119255137, "name": "twice", "entries": 10000}, "type": "Sum"})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False, twice="2 * noholes")
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "twice", "entries": 20000}, "type": "Sum"})
 
-            hg = Sum("quadruple")
-            hg.cling(TestRootCling.ttreeFlat, debug=False, quadruple="double x = 2 * noholes; x*2")
-            self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "quadruple", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False, quadruple="double x = 2 * noholes; x*2")
-            self.assertEqual(hg.toJson(), {"data": {"sum": 4*137.62044119255137, "name": "quadruple", "entries": 20000}, "type": "Sum"})
+#             hg = Sum("quadruple")
+#             hg.cling(TestRootCling.ttreeFlat, debug=False, quadruple="double x = 2 * noholes; x*2")
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 2*137.62044119255137, "name": "quadruple", "entries": 10000}, "type": "Sum"})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False, quadruple="double x = 2 * noholes; x*2")
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 4*137.62044119255137, "name": "quadruple", "entries": 20000}, "type": "Sum"})
 
-        if TestRootCling.ttreeEvent is not None:
-            hg = Sum("event.GetNtrack()")
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 599640, "name": "event.GetNtrack()", "entries": 1000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {"sum": 2*599640, "name": "event.GetNtrack()", "entries": 2*1000}, "type": "Sum"})
+#         if TestRootCling.ttreeEvent is not None:
+#             hg = Sum("event.GetNtrack()")
+#             hg.cling(TestRootCling.ttreeEvent, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 599640, "name": "event.GetNtrack()", "entries": 1000}, "type": "Sum"})
+#             hg.cling(TestRootCling.ttreeEvent, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {"sum": 2*599640, "name": "event.GetNtrack()", "entries": 2*1000}, "type": "Sum"})
 
-    ################################################################ OriginalBin
+#     ################################################################ OriginalBin
 
-    def testOriginalBin(self):
-        if TestRootCling.ttreeFlat is not None:
-            hg = Bin(20, -10, 10, "withholes")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+#     def testOriginalBin(self):
+#         if TestRootCling.ttreeFlat is not None:
+#             hg = Bin(20, -10, 10, "withholes")
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
 
-            self.assertEqual(hg.toJson(), {"data": {
-    "nanflow:type": "Count", 
-    "name": "withholes", 
-    "nanflow": 96.0, 
-    "overflow:type": "Count", 
-    "values:type": "Count", 
-    "high": 10.0, 
-    "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 201.0, 1346.0, 3385.0, 3182.0, 1358.0, 211.0, 15.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-    "low": -10.0, 
-    "entries": 10000.0, 
-    "overflow": 99.0, 
-    "underflow": 96.0, 
-    "underflow:type": "Count"
-  }, 
-  "type": "Bin"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {
-    "nanflow:type": "Count", 
-    "name": "withholes", 
-    "nanflow": 2*96.0, 
-    "overflow:type": "Count", 
-    "values:type": "Count", 
-    "high": 10.0, 
-    "values": [2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*10.0, 2*201.0, 2*1346.0, 2*3385.0, 2*3182.0, 2*1358.0, 2*211.0, 2*15.0, 2*1.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0],
-    "low": -10.0, 
-    "entries": 2*10000.0, 
-    "overflow": 2*99.0, 
-    "underflow": 2*96.0, 
-    "underflow:type": "Count"
-  }, 
-  "type": "Bin"})
+#             self.assertEqual(hg.toJson(), {"data": {
+#     "nanflow:type": "Count", 
+#     "name": "withholes", 
+#     "nanflow": 96.0, 
+#     "overflow:type": "Count", 
+#     "values:type": "Count", 
+#     "high": 10.0, 
+#     "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 201.0, 1346.0, 3385.0, 3182.0, 1358.0, 211.0, 15.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+#     "low": -10.0, 
+#     "entries": 10000.0, 
+#     "overflow": 99.0, 
+#     "underflow": 96.0, 
+#     "underflow:type": "Count"
+#   }, 
+#   "type": "Bin"})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {
+#     "nanflow:type": "Count", 
+#     "name": "withholes", 
+#     "nanflow": 2*96.0, 
+#     "overflow:type": "Count", 
+#     "values:type": "Count", 
+#     "high": 10.0, 
+#     "values": [2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*10.0, 2*201.0, 2*1346.0, 2*3385.0, 2*3182.0, 2*1358.0, 2*211.0, 2*15.0, 2*1.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0],
+#     "low": -10.0, 
+#     "entries": 2*10000.0, 
+#     "overflow": 2*99.0, 
+#     "underflow": 2*96.0, 
+#     "underflow:type": "Count"
+#   }, 
+#   "type": "Bin"})
 
-            hg = Bin(20, -10, 10, "2 * withholes", Sum("positive"))
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {
-    "values:name": "positive",
-    "nanflow:type": "Count",
-    "name": "2 * withholes",
-    "nanflow": 96.0,
-    "overflow:type": "Count",
-    "values:type": "Sum",
-    "high": 10.0,
-    "values": [
-      {"sum": 0.0, "entries": 0.0},
-      {"sum": 0.0, "entries": 0.0},
-      {"sum": 0.48081424832344055, "entries": 1.0},
-      {"sum": 10.879940822720528, "entries": 9.0},
-      {"sum": 43.35080977156758, "entries": 54.0},
-      {"sum": 113.69398449920118, "entries": 147.0},
-      {"sum": 349.6867558255326, "entries": 449.0},
-      {"sum": 729.5858678516815, "entries": 897.0},
-      {"sum": 1155.193773361767, "entries": 1451.0},
-      {"sum": 1520.5854493912775, "entries": 1934.0},
-      {"sum": 1436.6912576352042, "entries": 1796.0},
-      {"sum": 1116.2790022112895, "entries": 1386.0},
-      {"sum": 728.2537153647281, "entries": 922.0},
-      {"sum": 353.9190010114107, "entries": 436.0},
-      {"sum": 121.04832566762343, "entries": 158.0},
-      {"sum": 42.87702897598501, "entries": 53.0},
-      {"sum": 8.222344039008021, "entries": 13.0},
-      {"sum": 2.8457946181297302, "entries": 2.0},
-      {"sum": 0.36020421981811523, "entries": 1.0},
-      {"sum": 0.0, "entries": 0.0}
-    ],
-    "low": -10.0,
-    "entries": 10000.0,
-    "overflow": 99.0,
-    "underflow": 96.0,
-    "underflow:type": "Count"
-  },
-  "type": "Bin"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {
-    "values:name": "positive",
-    "nanflow:type": "Count",
-    "name": "2 * withholes",
-    "nanflow": 2*96.0,
-    "overflow:type": "Count",
-    "values:type": "Sum",
-    "high": 10.0,
-    "values": [
-      {"sum": 2*0.0, "entries": 2*0.0},
-      {"sum": 2*0.0, "entries": 2*0.0},
-      {"sum": 2*0.48081424832344055, "entries": 2*1.0},
-      {"sum": 2*10.879940822720528, "entries": 2*9.0},
-      {"sum": 2*43.35080977156758, "entries": 2*54.0},
-      {"sum": 2*113.69398449920118, "entries": 2*147.0},
-      {"sum": 2*349.6867558255326, "entries": 2*449.0},
-      {"sum": 2*729.5858678516815, "entries": 2*897.0},
-      {"sum": 2*1155.193773361767, "entries": 2*1451.0},
-      {"sum": 2*1520.5854493912775, "entries": 2*1934.0},
-      {"sum": 2*1436.6912576352042, "entries": 2*1796.0},
-      {"sum": 2*1116.2790022112895, "entries": 2*1386.0},
-      {"sum": 2*728.2537153647281, "entries": 2*922.0},
-      {"sum": 2*353.9190010114107, "entries": 2*436.0},
-      {"sum": 2*121.04832566762343, "entries": 2*158.0},
-      {"sum": 2*42.87702897598501, "entries": 2*53.0},
-      {"sum": 2*8.222344039008021, "entries": 2*13.0},
-      {"sum": 2*2.8457946181297302, "entries": 2*2.0},
-      {"sum": 2*0.36020421981811523, "entries": 2*1.0},
-      {"sum": 2*0.0, "entries": 2*0.0}
-    ],
-    "low": -10.0,
-    "entries": 2*10000.0,
-    "overflow": 2*99.0,
-    "underflow": 2*96.0,
-    "underflow:type": "Count"
-  },
-  "type": "Bin"})
+#             hg = Bin(20, -10, 10, "2 * withholes", Sum("positive"))
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {
+#     "values:name": "positive",
+#     "nanflow:type": "Count",
+#     "name": "2 * withholes",
+#     "nanflow": 96.0,
+#     "overflow:type": "Count",
+#     "values:type": "Sum",
+#     "high": 10.0,
+#     "values": [
+#       {"sum": 0.0, "entries": 0.0},
+#       {"sum": 0.0, "entries": 0.0},
+#       {"sum": 0.48081424832344055, "entries": 1.0},
+#       {"sum": 10.879940822720528, "entries": 9.0},
+#       {"sum": 43.35080977156758, "entries": 54.0},
+#       {"sum": 113.69398449920118, "entries": 147.0},
+#       {"sum": 349.6867558255326, "entries": 449.0},
+#       {"sum": 729.5858678516815, "entries": 897.0},
+#       {"sum": 1155.193773361767, "entries": 1451.0},
+#       {"sum": 1520.5854493912775, "entries": 1934.0},
+#       {"sum": 1436.6912576352042, "entries": 1796.0},
+#       {"sum": 1116.2790022112895, "entries": 1386.0},
+#       {"sum": 728.2537153647281, "entries": 922.0},
+#       {"sum": 353.9190010114107, "entries": 436.0},
+#       {"sum": 121.04832566762343, "entries": 158.0},
+#       {"sum": 42.87702897598501, "entries": 53.0},
+#       {"sum": 8.222344039008021, "entries": 13.0},
+#       {"sum": 2.8457946181297302, "entries": 2.0},
+#       {"sum": 0.36020421981811523, "entries": 1.0},
+#       {"sum": 0.0, "entries": 0.0}
+#     ],
+#     "low": -10.0,
+#     "entries": 10000.0,
+#     "overflow": 99.0,
+#     "underflow": 96.0,
+#     "underflow:type": "Count"
+#   },
+#   "type": "Bin"})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {
+#     "values:name": "positive",
+#     "nanflow:type": "Count",
+#     "name": "2 * withholes",
+#     "nanflow": 2*96.0,
+#     "overflow:type": "Count",
+#     "values:type": "Sum",
+#     "high": 10.0,
+#     "values": [
+#       {"sum": 2*0.0, "entries": 2*0.0},
+#       {"sum": 2*0.0, "entries": 2*0.0},
+#       {"sum": 2*0.48081424832344055, "entries": 2*1.0},
+#       {"sum": 2*10.879940822720528, "entries": 2*9.0},
+#       {"sum": 2*43.35080977156758, "entries": 2*54.0},
+#       {"sum": 2*113.69398449920118, "entries": 2*147.0},
+#       {"sum": 2*349.6867558255326, "entries": 2*449.0},
+#       {"sum": 2*729.5858678516815, "entries": 2*897.0},
+#       {"sum": 2*1155.193773361767, "entries": 2*1451.0},
+#       {"sum": 2*1520.5854493912775, "entries": 2*1934.0},
+#       {"sum": 2*1436.6912576352042, "entries": 2*1796.0},
+#       {"sum": 2*1116.2790022112895, "entries": 2*1386.0},
+#       {"sum": 2*728.2537153647281, "entries": 2*922.0},
+#       {"sum": 2*353.9190010114107, "entries": 2*436.0},
+#       {"sum": 2*121.04832566762343, "entries": 2*158.0},
+#       {"sum": 2*42.87702897598501, "entries": 2*53.0},
+#       {"sum": 2*8.222344039008021, "entries": 2*13.0},
+#       {"sum": 2*2.8457946181297302, "entries": 2*2.0},
+#       {"sum": 2*0.36020421981811523, "entries": 2*1.0},
+#       {"sum": 2*0.0, "entries": 2*0.0}
+#     ],
+#     "low": -10.0,
+#     "entries": 2*10000.0,
+#     "overflow": 2*99.0,
+#     "underflow": 2*96.0,
+#     "underflow:type": "Count"
+#   },
+#   "type": "Bin"})
 
-    def testSelect(self):
-        if TestRootCling.ttreeFlat is not None:
-            hg = Select("boolean", Bin(20, -10, 10, "noholes"))
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {
-    "type": "Bin", 
-    "data": {
-      "nanflow:type": "Count", 
-      "name": "noholes", 
-      "nanflow": 0.0, 
-      "overflow:type": "Count", 
-      "values:type": "Count", 
-      "high": 10.0, 
-      "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 22.0, 183.0, 425.0, 472.0, 181.0, 29.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-      "low": -10.0, 
-      "entries": 1317.0, 
-      "overflow": 0.0, 
-      "underflow": 0.0, 
-      "underflow:type": "Count"
-    }, 
-    "name": "boolean", 
-    "entries": 10000.0
-  }, 
-  "type": "Select"}) 
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {
-    "type": "Bin", 
-    "data": {
-      "nanflow:type": "Count", 
-      "name": "noholes", 
-      "nanflow": 2*0.0, 
-      "overflow:type": "Count", 
-      "values:type": "Count", 
-      "high": 10.0, 
-      "values": [2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*3.0, 2*22.0, 2*183.0, 2*425.0, 2*472.0, 2*181.0, 2*29.0, 2*2.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0], 
-      "low": -10.0, 
-      "entries": 2*1317.0, 
-      "overflow": 2*0.0, 
-      "underflow": 2*0.0, 
-      "underflow:type": "Count"
-    }, 
-    "name": "boolean", 
-    "entries": 2*10000.0
-  }, 
-  "type": "Select"}) 
+#     def testSelect(self):
+#         if TestRootCling.ttreeFlat is not None:
+#             hg = Select("boolean", Bin(20, -10, 10, "noholes"))
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {
+#     "type": "Bin", 
+#     "data": {
+#       "nanflow:type": "Count", 
+#       "name": "noholes", 
+#       "nanflow": 0.0, 
+#       "overflow:type": "Count", 
+#       "values:type": "Count", 
+#       "high": 10.0, 
+#       "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 22.0, 183.0, 425.0, 472.0, 181.0, 29.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
+#       "low": -10.0, 
+#       "entries": 1317.0, 
+#       "overflow": 0.0, 
+#       "underflow": 0.0, 
+#       "underflow:type": "Count"
+#     }, 
+#     "name": "boolean", 
+#     "entries": 10000.0
+#   }, 
+#   "type": "Select"}) 
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {
+#     "type": "Bin", 
+#     "data": {
+#       "nanflow:type": "Count", 
+#       "name": "noholes", 
+#       "nanflow": 2*0.0, 
+#       "overflow:type": "Count", 
+#       "values:type": "Count", 
+#       "high": 10.0, 
+#       "values": [2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*3.0, 2*22.0, 2*183.0, 2*425.0, 2*472.0, 2*181.0, 2*29.0, 2*2.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0], 
+#       "low": -10.0, 
+#       "entries": 2*1317.0, 
+#       "overflow": 2*0.0, 
+#       "underflow": 2*0.0, 
+#       "underflow:type": "Count"
+#     }, 
+#     "name": "boolean", 
+#     "entries": 2*10000.0
+#   }, 
+#   "type": "Select"}) 
 
-            hg = Select("withholes / 2", Bin(20, -10, 10, "noholes"))
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {
-    "type": "Bin", 
-    "data": {
-      "nanflow:type": "Count", 
-      "name": "noholes", 
-      "nanflow": 0.0, 
-      "overflow:type": "Count", 
-      "values:type": "Count", 
-      "high": 10.0, 
-      "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.7656523132161417, "inf", "inf", "inf", "inf", "inf", 40.84895628585768, 2.824571537630074, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-      "low": -10.0, 
-      "entries": "inf", 
-      "overflow": 0.0, 
-      "underflow": 0.0, 
-      "underflow:type": "Count"
-    }, 
-    "name": "withholes / 2", 
-    "entries": 10000.0
-  }, 
-  "type": "Select"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
-            self.assertEqual(hg.toJson(), {"data": {
-    "type": "Bin", 
-    "data": {
-      "nanflow:type": "Count", 
-      "name": "noholes", 
-      "nanflow": 2*0.0, 
-      "overflow:type": "Count", 
-      "values:type": "Count", 
-      "high": 10.0, 
-      "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2*3.7656523132161417, "inf", "inf", "inf", "inf", "inf", 2*40.84895628585768, 2*2.824571537630074, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0], 
-      "low": -10.0, 
-      "entries": "inf", 
-      "overflow": 2*0.0, 
-      "underflow": 2*0.0, 
-      "underflow:type": "Count"
-    }, 
-    "name": "withholes / 2", 
-    "entries": 2*10000.0
-  }, 
-  "type": "Select"})
+#             hg = Select("withholes / 2", Bin(20, -10, 10, "noholes"))
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {
+#     "type": "Bin", 
+#     "data": {
+#       "nanflow:type": "Count", 
+#       "name": "noholes", 
+#       "nanflow": 0.0, 
+#       "overflow:type": "Count", 
+#       "values:type": "Count", 
+#       "high": 10.0, 
+#       "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.7656523132161417, "inf", "inf", "inf", "inf", "inf", 40.84895628585768, 2.824571537630074, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
+#       "low": -10.0, 
+#       "entries": "inf", 
+#       "overflow": 0.0, 
+#       "underflow": 0.0, 
+#       "underflow:type": "Count"
+#     }, 
+#     "name": "withholes / 2", 
+#     "entries": 10000.0
+#   }, 
+#   "type": "Select"})
+#             hg.cling(TestRootCling.ttreeFlat, debug=False)
+#             self.assertEqual(hg.toJson(), {"data": {
+#     "type": "Bin", 
+#     "data": {
+#       "nanflow:type": "Count", 
+#       "name": "noholes", 
+#       "nanflow": 2*0.0, 
+#       "overflow:type": "Count", 
+#       "values:type": "Count", 
+#       "high": 10.0, 
+#       "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2*3.7656523132161417, "inf", "inf", "inf", "inf", "inf", 2*40.84895628585768, 2*2.824571537630074, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0, 2*0.0], 
+#       "low": -10.0, 
+#       "entries": "inf", 
+#       "overflow": 2*0.0, 
+#       "underflow": 2*0.0, 
+#       "underflow:type": "Count"
+#     }, 
+#     "name": "withholes / 2", 
+#     "entries": 2*10000.0
+#   }, 
+#   "type": "Select"})
 
     ################################################################ Tests copied from Numpy
 
     def twosigfigs(self, number):
         return round(number, 1 - int(math.floor(math.log10(number))))
 
-    def compare(self, name, hrc, hpy, pydata):
+    def compare(self, name, hrc, hpy, pydata, debug=False):
         sys.stderr.write(name + "\n")
 
-        hrc.cling(TestRootCling.ttreeFlat)
+        hrc.cling(TestRootCling.ttreeFlat, debug=debug)
         for x in pydata:
             hpy.fill(x)
         
@@ -601,20 +601,20 @@ public:
             self.compare("Sum holes with holes", Sum("withholes"), Sum(named("withholes", lambda x: x)), self.withholes)
             self.compare("Sum holes with holes2", Sum("withholes"), Sum(named("withholes", lambda x: x)), self.withholes)
 
-    # def testAverage(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("Average noholes w/o weights", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Average noholes const weights", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Average noholes positive weights", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Average noholes with weights", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Average noholes with holes", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Average holes w/o weights", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
-    #         self.compare("Average holes const weights", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
-    #         self.compare("Average holes positive weights", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
-    #         self.compare("Average holes with weights", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
-    #         self.compare("Average holes with holes", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
-    #         self.compare("Average holes with holes2", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
+    def testAverage(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("Average noholes w/o weights", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes, debug=True)
+            self.compare("Average noholes const weights", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes)
+            self.compare("Average noholes positive weights", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes)
+            self.compare("Average noholes with weights", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes)
+            self.compare("Average noholes with holes", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes)
+            self.compare("Average holes w/o weights", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
+            self.compare("Average holes const weights", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
+            self.compare("Average holes positive weights", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
+            self.compare("Average holes with weights", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
+            self.compare("Average holes with holes", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
+            self.compare("Average holes with holes2", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
 
     # def testDeviate(self):
     #     if TestRootCling.ttreeFlat is not None:
@@ -661,37 +661,37 @@ public:
     #         self.compare("Maximize holes with holes", Maximize("withholes"), Maximize(named("withholes", lambda x: x)), self.withholes)
     #         self.compare("Maximize holes with holes2", Maximize("withholes"), Maximize(named("withholes", lambda x: x)), self.withholes)
 
-    def testBin(self):
-        if TestRootCling.ttreeFlat is not None:
-            sys.stderr.write("\n")
-            for bins in [10, 100]:
-                self.compare("Bin ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
-                self.compare("Bin ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
-                self.compare("Bin ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
-                self.compare("Bin ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
-                self.compare("Bin ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
-                self.compare("Bin ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
-                self.compare("Bin ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
-                self.compare("Bin ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
-                self.compare("Bin ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
-                self.compare("Bin ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
-                self.compare("Bin ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
+    # def testBin(self):
+    #     if TestRootCling.ttreeFlat is not None:
+    #         sys.stderr.write("\n")
+    #         for bins in [10, 100]:
+    #             self.compare("Bin ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
+    #             self.compare("Bin ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
+    #             self.compare("Bin ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
+    #             self.compare("Bin ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
+    #             self.compare("Bin ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
+    #             self.compare("Bin ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
+    #             self.compare("Bin ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
+    #             self.compare("Bin ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
+    #             self.compare("Bin ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
+    #             self.compare("Bin ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
+    #             self.compare("Bin ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
 
-    def testBinTrans(self):
-        if TestRootCling.ttreeFlat is not None:
-            sys.stderr.write("\n")
-            for bins in [10, 100]:
-                self.compare("BinTrans ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-                self.compare("BinTrans ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-                self.compare("BinTrans ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-                self.compare("BinTrans ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-                self.compare("BinTrans ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-                self.compare("BinTrans ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
-                self.compare("BinTrans ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
-                self.compare("BinTrans ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
-                self.compare("BinTrans ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
-                self.compare("BinTrans ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
-                self.compare("BinTrans ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    # def testBinTrans(self):
+    #     if TestRootCling.ttreeFlat is not None:
+    #         sys.stderr.write("\n")
+    #         for bins in [10, 100]:
+    #             self.compare("BinTrans ({0} bins) noholes w/o weights".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+    #             self.compare("BinTrans ({0} bins) noholes const weights".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+    #             self.compare("BinTrans ({0} bins) noholes positive weights".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+    #             self.compare("BinTrans ({0} bins) noholes with weights".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+    #             self.compare("BinTrans ({0} bins) noholes with holes".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+    #             self.compare("BinTrans ({0} bins) holes w/o weights".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    #             self.compare("BinTrans ({0} bins) holes const weights".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    #             self.compare("BinTrans ({0} bins) holes positive weights".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    #             self.compare("BinTrans ({0} bins) holes with weights".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    #             self.compare("BinTrans ({0} bins) holes with holes".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    #             self.compare("BinTrans ({0} bins) holes with holes2".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
 
     # def testBinAverage(self):
     #     if TestRootCling.ttreeFlat is not None:

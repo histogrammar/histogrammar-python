@@ -235,7 +235,7 @@ class Bin(Factory, Container):
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".entries = 0.0;")
         fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += " + weightVarStack[-1] + ";")
 
-        fillCode.append(" " * fillIndent + "if (isnan({0})) {{".format(normexpr))
+        fillCode.append(" " * fillIndent + "if (std::isnan({0})) {{".format(normexpr))
         self.nanflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "nanflow"),), initIndent, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes);
         fillCode.append(" " * fillIndent + "}")
 
