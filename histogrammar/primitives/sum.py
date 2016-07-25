@@ -91,11 +91,11 @@ class Sum(Factory, Container):
             self.entries += weight
             self.sum += q * weight
 
-    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, weightVarStack, tmpVarTypes):
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".entries = 0.0;")
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".sum = 0.0;")
 
-        normexpr = self._clingQuantityExpr(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
         fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += " + weightVarStack[-1] + ";")
         fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".sum += " + normexpr + ";")
 

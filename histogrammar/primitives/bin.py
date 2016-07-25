@@ -229,22 +229,22 @@ class Bin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        normexpr = self._clingQuantityExpr(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
 
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".entries = 0.0;")
         fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += " + weightVarStack[-1] + ";")
 
         fillCode.append(" " * fillIndent + "if (isnan({0})) {{".format(normexpr))
-        self.nanflow._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "nanflow"),), initIndent, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes);
+        self.nanflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "nanflow"),), initIndent, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes);
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else if ({0} < {1}) {{".format(normexpr, self.low))
-        self.underflow._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "underflow"),), initIndent, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes);
+        self.underflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "underflow"),), initIndent, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes);
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else if ({0} >= {1}) {{".format(normexpr, self.high))
-        self.overflow._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "overflow"),), initIndent, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes);
+        self.overflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "overflow"),), initIndent, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes);
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else {")
@@ -255,7 +255,7 @@ class Bin(Factory, Container):
 
         fillCode.append(" " * (fillIndent + 2) + "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low, len(self.values)/(self.high - self.low)))
 
-        self.values[0]._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        self.values[0]._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
 
         initCode.append(" " * initIndent + "}")
         fillCode.append(" " * fillIndent + "}")

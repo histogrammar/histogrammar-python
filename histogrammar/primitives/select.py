@@ -113,10 +113,10 @@ class Select(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _clingGenerateCode(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, weightVarStack, tmpVarTypes):
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".entries = 0.0;")
 
-        normexpr = self._clingQuantityExpr(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
 
         fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += " + weightVars[-1] + ";")
         fillCode.append(" " * fillIndent + """if (!isnan({0})  &&  {0} > 0.0) {{""".format(normexpr))
@@ -124,7 +124,7 @@ class Select(Factory, Container):
         weightVars.append("weight_" + str(len(weightVars)))
         weightVarStack = weightVarStack + (weightVars[-1],)
         fillCode.append(" " * (fillIndent + 2) + """{0} = {1} * {2};""".format(weightVarStack[-1], weightVarStack[-2], normexpr))
-        self.cut._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "cut"),), initIndent, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        self.cut._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix + (("var", "cut"),), initIndent, fillCode, fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
 
         fillCode.append(" " * fillIndent + "}")
 

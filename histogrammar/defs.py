@@ -20,6 +20,8 @@ import math
 import re
 
 from histogrammar.util import *
+from histogrammar.parsing import C99SourceToAst
+from histogrammar.parsing import C99AstToSource
 
 class ContainerException(Exception):
     """Exception type for improperly configured containers."""
@@ -167,6 +169,9 @@ class Container(object):
         if not hasattr(self, "_clingFiller"):
             import ROOT
 
+            parser = C99SourceToAst()
+            generator = C99AstToSource()
+
             inputFieldNames = {}
             inputFieldTypes = {}
             for branch in ttree.GetListOfBranches():
@@ -217,7 +222,7 @@ class Container(object):
             weightVars = ["weight_0"]
             weightVarStack = ("weight_0",)
             tmpVarTypes = {}
-            self._clingGenerateCode(inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, 6, weightVars, weightVarStack, tmpVarTypes)
+            self._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, 6, weightVars, weightVarStack, tmpVarTypes)
 
             className = "HistogrammarClingFiller_" + str(Container._clingClassNameNumber)
             Container._clingClassNameNumber += 1
@@ -238,8 +243,7 @@ public:
     if (start < 0) start = 0;
     if (end < 0) end = ttree->GetEntries();
     for (;  start < end;  ++start) {{
-      // ttree->GetEntry(start);
-      continue;
+      ttree->GetEntry(start);
 {9}{10}
     }}
 
@@ -301,7 +305,7 @@ public:
                 raise NotImplementedError((t, x))
         return obj
 
-    def _clingQuantityExpr(self, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
+    def _clingQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
         if not isinstance(self.quantity.expr, basestring):
             raise ContainerException(self.factory.name + ".quantity must be provided as a C++ string to use with Cling")
 
@@ -340,9 +344,6 @@ public:
 
     def _clingStorageType(self):
         return self._clingStructName()
-
-    def _clingStructName(self):
-        raise NotImplementedError
 
     def numpy(self, data, weights=1.0):
         import numpy
