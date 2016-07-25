@@ -178,8 +178,6 @@ class Container(object):
             inputFieldTypes = {}
             for branch in ttree.GetListOfBranches():
                 if branch.GetClassName() == "":
-                    # FIXME: what about split vs unsplit?
-                    # FIXME: what about leaves that are arrays?
                     for leaf in branch.GetListOfLeaves():
                         if leaf.IsA() == ROOT.TLeafO.Class():
                             inputFieldTypes[leaf.GetName()] = "bool"
@@ -211,6 +209,8 @@ class Container(object):
                             raise NotImplementedError("TODO: TLeafObject")
                         else:
                             raise NotImplementedError("unknown leaf type: " + repr(leaf))
+
+                        inputFieldTypes[leaf.GetName()] += "*" * leaf.GetTitle().count("[")
 
                 else:
                     inputFieldTypes[branch.GetName()] = branch.GetClassName() + "*"
@@ -311,7 +311,7 @@ public:
         if re.match("^[a-zA-Z0-9]*$", key) is not None:
             return "input_" + key
         else:
-            return "input_" + base64.b64encode(key).replace("=", "")
+            return "input_" + base64.b64encode(key).replace("+", "_1").replace("/", "_2").replace("=", "")
 
     def _clingNormalizeExpr(self, ast, inputFieldNames, inputFieldTypes, weightVar):
         # interpret raw identifiers as tree field names IF they're in the tree (otherwise, leave them alone)
@@ -322,7 +322,7 @@ public:
                 norm = self._clingNormalizeTTreeName(ast.name)
                 inputFieldNames[norm] = ast.name
                 if inputFieldTypes[ast.name].endswith("*"):
-                    norm = "(*" + norm + ")"
+                    norm = "(" + ("*" * inputFieldTypes[ast.name].count("*")) + norm + ")"
                 ast.name = norm
 
         elif isinstance(ast, c_ast.FuncCall):
@@ -331,11 +331,13 @@ public:
                 ast = self._clingNormalizeExpr(c_ast.ID(jsonlib.loads(ast.args.exprs[0].value)), inputFieldNames, inputFieldTypes, weightVar)
             # ordinary function: don't translate the name (let function names live in a different namespace from variables)
             elif isinstance(ast.name, c_ast.ID):
-                self._clingNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
+                if ast.args is not None:
+                    ast.args = self._clingNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
             # weird function: calling the result of an evaluation, probably an overloaded operator() in C++
             else:
-                self._clingNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar)
-                self._clingNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
+                ast.name = self._clingNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar)
+                if ast.args is not None:
+                    ast.args = self._clingNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
 
         # only the top (x) of a dotted expression (x.y.z) should be interpreted as a field name
         elif isinstance(ast, c_ast.StructRef):
@@ -381,6 +383,7 @@ public:
                     derivedFieldExprs[derivedFieldName] = "      {\n        " + ";\n        ".join(generator(x) for x in ast[:-1]) + ";\n        " + derivedFieldName + " = " + generator(ast[-1]) + ";\n      }\n"
                 else:
                     derivedFieldExprs[derivedFieldName] = "      " + derivedFieldName + " = " + normexpr + ";\n"
+                # FIXME: a few primitives have exceptions (Categorize should be a string)
                 derivedFieldTypes[derivedFieldName] = "double"
             return derivedFieldName
 
