@@ -95,7 +95,7 @@ class Sum(Factory, Container):
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".entries = 0.0;")
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + ".sum = 0.0;")
 
-        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
         fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".entries += " + weightVarStack[-1] + ";")
         fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + ".sum += " + normexpr + ";")
 

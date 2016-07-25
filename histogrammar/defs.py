@@ -309,31 +309,41 @@ public:
     def _clingNormalizeTTreeName(self, key):
         return "input_" + key    # FIXME: add rules to turn arbitrary strings into valid C++ variable names
 
-    def _clingNormalizeExpr(self, ast, inputFieldNames, inputFieldTypes):
-        if isinstance(ast, c_ast.ID) and ast.name in inputFieldTypes:
-            norm = self._clingNormalizeTTreeName(ast.name)
-            inputFieldNames[norm] = ast.name
-            if inputFieldTypes[ast.name].endswith("*"):
-                norm = "(*" + norm + ")"
-            ast.name = norm
-
+    def _clingNormalizeExpr(self, ast, inputFieldNames, inputFieldTypes, weightVar):
+        if isinstance(ast, c_ast.ID):
+            if weightVar is not None and ast.name == "weight":
+                ast.name = weightVar
+            elif ast.name in inputFieldTypes:
+                norm = self._clingNormalizeTTreeName(ast.name)
+                inputFieldNames[norm] = ast.name
+                if inputFieldTypes[ast.name].endswith("*"):
+                    norm = "(*" + norm + ")"
+                ast.name = norm
+            
         if isinstance(ast, c_ast.StructRef):
-            self._clingNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes)
+            self._clingNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar)
         else:
             for _, field in ast.children():
-                self._clingNormalizeExpr(field, inputFieldNames, inputFieldTypes)
+                self._clingNormalizeExpr(field, inputFieldNames, inputFieldTypes, weightVar)
 
-    def _clingQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
-        if not isinstance(self.quantity.expr, basestring):
-            raise ContainerException(self.factory.name + ".quantity must be provided as a C99 string to use with Cling")
-        
-        try:
-            ast = parser(self.quantity.expr)
-        except Exception as err:
-            raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.quantity.expr, str(err)))
+    def _clingQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
+        if weightVar is not None:
+            if not isinstance(self.transform.expr, basestring):
+                raise ContainerException("Count.transform must be provided as a C99 string when used with Cling")
+            try:
+                ast = parser(self.transform.expr)
+            except Exception as err:
+                raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.transform.expr, str(err)))
+        else:
+            if not isinstance(self.quantity.expr, basestring):
+                raise ContainerException(self.factory.name + ".quantity must be provided as a C99 string when used with Cling")
+            try:
+                ast = parser(self.quantity.expr)
+            except Exception as err:
+                raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.quantity.expr, str(err)))
 
         for x in ast:
-            self._clingNormalizeExpr(x, inputFieldNames, inputFieldTypes)
+            self._clingNormalizeExpr(x, inputFieldNames, inputFieldTypes, weightVar)
 
         if len(ast) == 1 and isinstance(ast[0], c_ast.ID):
             return generator(ast)

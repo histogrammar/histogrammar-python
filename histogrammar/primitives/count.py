@@ -19,6 +19,9 @@ import re
 
 from histogrammar.defs import *
 from histogrammar.util import *
+from histogrammar.parsing import C99SourceToAst
+from histogrammar.parsing import C99AstToSource
+from histogrammar.pycparser import c_ast
 
 class Count(Factory, Container):
     """Count entries by accumulating the sum of all observed weights or a sum of transformed weights (e.g. sum of squares of weights).
@@ -93,11 +96,7 @@ class Count(Factory, Container):
     def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, prefix, initIndent, fillCode, fillIndent, weightVars, weightVarStack, tmpVarTypes):
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*prefix) + " = 0.0;")
         if self.transform is not identity:
-            if not isinstance(self.transform.expr, basestring):
-                raise ContainerException("Count.transform must be provided as a C++ string to use with Cling")
-
-            normexpr = " " + self.transform.expr + " "
-            normexpr = re.sub(r"(\W)weight(\W)", r"\1" + weightVarStack[-1] + r"\2", normexpr).strip()
+            normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVarStack[-1])
             fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + " += " + normexpr + ";")
         else:
             fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*prefix) + " += " + weightVarStack[-1] + ";")
