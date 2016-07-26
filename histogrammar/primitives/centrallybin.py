@@ -14,12 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import bisect
 import math
 import numbers
 
 from histogrammar.defs import *
-from histogrammar.util import *
 from histogrammar.primitives.count import *
 
 class CentrallyBin(Factory, Container):
@@ -114,15 +112,13 @@ class CentrallyBin(Factory, Container):
 
     def index(self, x):
         """Find the closest index to ``x``."""
-        closestIndex = bisect.bisect_left(self.bins, (x, LessThanEverything()))
-        if closestIndex == len(self.bins):
-            closestIndex = len(self.bins) - 1
-        elif closestIndex > 0:
-            x1 = self.bins[closestIndex - 1][0]
-            x2 = self.bins[closestIndex][0]
-            if abs(x - x1) < abs(x - x2):
-                closestIndex = closestIndex - 1
-        return closestIndex
+        for index in xrange(len(self.bins)):
+            if index == len(self.bins) - 1:
+                return index
+            thisCenter = self.bins[index][0]
+            nextCenter = self.bins[index + 1][0]
+            if x < (thisCenter + nextCenter)/2.0:
+                return index
 
     def center(self, x):
         """Return the exact center of the bin that ``x`` belongs to."""
@@ -190,6 +186,58 @@ class CentrallyBin(Factory, Container):
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
+
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+
+        fillCode.append(" " * fillIndent + "if (std::isnan({0})) {{".format(normexpr))
+        self.nanflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        fillCode.append(" " * fillIndent + "}")
+        fillCode.append(" " * fillIndent + "else {")
+
+        bin = "bin_" + str(len(tmpVarTypes))
+        tmpVarTypes[bin] = "int"
+
+        initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins)))
+    
+        fillCode.append(" " * fillIndent + "  const double edges[{0}] = {{{1}}};".format(
+            len(self.values) - 1,
+            ", ".join(str((self.bins[index - 1][0] + self.bins[index][0])/2.0) for index in xrange(1, len(self.bins)))))
+
+        fillCode.append(" " * fillIndent + "  for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins) - 1))
+        fillCode.append(" " * fillIndent + "    if ({0} < edges[{1}])".format(normexpr, bin))
+        fillCode.append(" " * fillIndent + "      break;")
+        fillCode.append(" " * fillIndent + "  }")
+
+        self.bins[0][1]._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+
+        initCode.append(" " * initIndent + "}")
+        fillCode.append(" " * fillIndent + "}")
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    {3} nanflow;
+    {1} values[{2}];
+    {1}& getValues(int i) {{ return values[i]; }}
+  }} {0};
+""".format(self._clingStructName(),
+           self.bins[0][1]._clingStorageType(),
+           len(self.values),
+           self.nanflow._clingStorageType())
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += obj.entries
+        for i in xrange(len(self.values)):
+            self.bins[i][1]._clingUpdate(obj, ("func", ["getValues", i]))
+        self.nanflow._clingUpdate(obj, ("var", "nanflow"))
+
+    def _clingStructName(self):
+        return "Cb" + str(len(self.bins)) + self.bins[0][1]._clingStructName() + self.nanflow._clingStructName()
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

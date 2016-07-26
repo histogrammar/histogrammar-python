@@ -131,6 +131,58 @@ class IrregularlyBin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+
+        fillCode.append(" " * fillIndent + "if (std::isnan({0})) {{".format(normexpr))
+        self.nanflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        fillCode.append(" " * fillIndent + "}")
+        fillCode.append(" " * fillIndent + "else {")
+
+        bin = "bin_" + str(len(tmpVarTypes))
+        tmpVarTypes[bin] = "int"
+
+        initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins)))
+    
+        fillCode.append(" " * fillIndent + "  const double edges[{0}] = {{{1}}};".format(
+            len(self.values) - 1,
+            ", ".join(str(low) for low, v in self.bins[1:])))
+
+        fillCode.append(" " * fillIndent + "  for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins) - 1))
+        fillCode.append(" " * fillIndent + "    if ({0} < edges[{1}])".format(normexpr, bin))
+        fillCode.append(" " * fillIndent + "      break;")
+        fillCode.append(" " * fillIndent + "  }")
+
+        self.bins[0][1]._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+
+        initCode.append(" " * initIndent + "}")
+        fillCode.append(" " * fillIndent + "}")
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    {3} nanflow;
+    {1} values[{2}];
+    {1}& getValues(int i) {{ return values[i]; }}
+  }} {0};
+""".format(self._clingStructName(),
+           self.bins[0][1]._clingStorageType(),
+           len(self.values),
+           self.nanflow._clingStorageType())
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += obj.entries
+        for i in xrange(len(self.values)):
+            self.bins[i][1]._clingUpdate(obj, ("func", ["getValues", i]))
+        self.nanflow._clingUpdate(obj, ("var", "nanflow"))
+
+    def _clingStructName(self):
+        return "Ir" + str(len(self.bins)) + self.bins[0][1]._clingStructName() + self.nanflow._clingStructName()
+
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)

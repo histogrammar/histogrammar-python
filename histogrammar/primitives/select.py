@@ -113,6 +113,36 @@ class Select(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        fillCode.append(" " * fillIndent + """if (!std::isnan({0})  &&  {0} > 0.0) {{""".format(normexpr))
+
+        weightVars.append("weight_" + str(len(weightVars)))
+        weightVarStack = weightVarStack + (weightVars[-1],)
+        fillCode.append(" " * (fillIndent + 2) + """{0} = {1} * {2};""".format(weightVarStack[-1], weightVarStack[-2], normexpr))
+        self.cut._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "cut"),), initIndent, fillCode, fillPrefix + (("var", "cut"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+
+        fillCode.append(" " * fillIndent + "}")
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    {1} cut;
+  }} {0};
+""".format(self._clingStructName(), self.cut._clingStorageType())
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += obj.entries
+        self.cut._clingUpdate(obj, ("var", "cut"))
+
+    def _clingStructName(self):
+        return "Se" + self.cut._clingStructName()
+
     def _numpy(self, data, weights, shape):
         w = self.quantity(data)
         self._checkNPQuantity(w, shape)

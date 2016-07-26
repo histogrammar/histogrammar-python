@@ -15,9 +15,13 @@
 # limitations under the License.
 
 import numbers
+import re
 
 from histogrammar.defs import *
 from histogrammar.util import *
+from histogrammar.parsing import C99SourceToAst
+from histogrammar.parsing import C99AstToSource
+from histogrammar.pycparser import c_ast
 
 class Count(Factory, Container):
     """Count entries by accumulating the sum of all observed weights or a sum of transformed weights (e.g. sum of squares of weights).
@@ -88,6 +92,23 @@ class Count(Factory, Container):
 
             # no possibility of exception from here on out (for rollback)
             self.entries += t
+
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + " = 0.0;")
+        if self.transform is not identity:
+            normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVarStack[-1])
+            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + " += " + normexpr + ";")
+        else:
+            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + " += " + weightVarStack[-1] + ";")
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        self.entries += self._clingExpandPrefixPython(filler, *extractorPrefix)
+
+    def _clingStorageType(self):
+        return "double"
+
+    def _clingStructName(self):
+        return "Ct"
 
     def _numpy(self, data, weights, shape):
         import numpy

@@ -158,6 +158,34 @@ class Limit(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+
+        fillCode.append(" " * fillIndent + "if ({0}.entries <= {1}) {{".format(self._clingExpandPrefixCpp(*fillPrefix), self.limit))
+        self.value._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "value"),), initIndent, fillCode, fillPrefix + (("var", "value"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        fillCode.append(" " * fillIndent + "}")
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    {1} value;
+  }} {0};
+""".format(self._clingStructName(), self.value._clingStorageType())
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += obj.entries
+        if self.entries > self.limit:
+            self.value = None
+        else:
+            self.value._clingUpdate(obj, ("var", "value"))
+
+    def _clingStructName(self):
+        return "Li"
+
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:
             self._checkNPWeights(weights, shape)
