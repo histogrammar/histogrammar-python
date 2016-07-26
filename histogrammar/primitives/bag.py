@@ -31,64 +31,6 @@ class Bag(Factory, Container):
     Consider using Bag with :doc:`Limit <histogrammar.primitives.limit.Limit>` for collections that roll over to a mere count when they exceed a limit.
     """
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".values.clear();")
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
-
-        fillCode.append("""{indent}if ({values}.find({q}) == {values}.end())
-{indent}  {values}[{q}] = 0.0;
-{indent}{values}[{q}] += {weight};""".format(
-           indent = " " * fillIndent,
-           values = self._clingExpandPrefixCpp(*fillPrefix) + ".values",
-           q = normexpr,
-           weight = weightVarStack[-1]
-           ))
-
-        if self.range[0] == "N" and len(self.range) > 1:
-           storageStructs[self.range] = """
-  class {0} {{
-    public:
-      double {1};
-      {0}({2}): {3} {{ }}
-      {0}(const {0}& other): {4} {{ }}
-      {0}(): {5} {{ }}
-      Bool_t operator<(const {0}& other) const {{
-        {6}
-        else return false;
-      }}
-  }};
-""".format(self.range,
-           ", ".join("v" + str(i) for i in xrange(self.dimension)),
-           ", ".join("double v" + str(i) for i in xrange(self.dimension)),
-           ", ".join("v" + str(i) + "(v" + str(i) + ")" for i in xrange(self.dimension)),
-           ", ".join("v" + str(i) + "(other.v" + str(i) + ")" for i in xrange(self.dimension)),
-           ", ".join("v" + str(i) + "(0.0)" for i in xrange(self.dimension)),
-           "\n        ".join(("else " if i != 0 else "") + "if (v" + str(i) + " < other.v" + str(i) + ") return true;" for i in xrange(self.dimension))
-           )
-
-        storageStructs[self._clingStructName()] = """
-  typedef struct {{
-    double entries;
-    std::map<{1}, double> values;
-    double getValues({1} i) {{ return values[i]; }}
-  }} {0};
-""".format(self._clingStructName(), "double" if self.range == "N" else "std::string" if self.range == "S" else self.range)
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-       obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
-       self.entries += obj.entries
-
-       for i in obj.values:
-          key = i.first
-          if self.range[0] == "N" and len(self.range) > 1:
-             key = tuple(getattr(key, "v" + str(x)) for x in xrange(self.dimension))
-          if key not in self.values:
-             self.values[key] = 0.0
-          self.values[key] += i.second
-
     @staticmethod
     def ed(entries, values, range):
         """Create a Bag that is only capable of being added.
@@ -194,6 +136,64 @@ class Bag(Factory, Container):
             self.values[q] += weight
         else:
             self.values[q] = weight
+
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".values.clear();")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+
+        fillCode.append("""{indent}if ({values}.find({q}) == {values}.end())
+{indent}  {values}[{q}] = 0.0;
+{indent}{values}[{q}] += {weight};""".format(
+           indent = " " * fillIndent,
+           values = self._clingExpandPrefixCpp(*fillPrefix) + ".values",
+           q = normexpr,
+           weight = weightVarStack[-1]
+           ))
+
+        if self.range[0] == "N" and len(self.range) > 1:
+           storageStructs[self.range] = """
+  class {0} {{
+    public:
+      double {1};
+      {0}({2}): {3} {{ }}
+      {0}(const {0}& other): {4} {{ }}
+      {0}(): {5} {{ }}
+      Bool_t operator<(const {0}& other) const {{
+        {6}
+        else return false;
+      }}
+  }};
+""".format(self.range,
+           ", ".join("v" + str(i) for i in xrange(self.dimension)),
+           ", ".join("double v" + str(i) for i in xrange(self.dimension)),
+           ", ".join("v" + str(i) + "(v" + str(i) + ")" for i in xrange(self.dimension)),
+           ", ".join("v" + str(i) + "(other.v" + str(i) + ")" for i in xrange(self.dimension)),
+           ", ".join("v" + str(i) + "(0.0)" for i in xrange(self.dimension)),
+           "\n        ".join(("else " if i != 0 else "") + "if (v" + str(i) + " < other.v" + str(i) + ") return true;" for i in xrange(self.dimension))
+           )
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    std::map<{1}, double> values;
+    double getValues({1} i) {{ return values[i]; }}
+  }} {0};
+""".format(self._clingStructName(), "double" if self.range == "N" else "std::string" if self.range == "S" else self.range)
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+       obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+       self.entries += obj.entries
+
+       for i in obj.values:
+          key = i.first
+          if self.range[0] == "N" and len(self.range) > 1:
+             key = tuple(getattr(key, "v" + str(x)) for x in xrange(self.dimension))
+          if key not in self.values:
+             self.values[key] = 0.0
+          self.values[key] += i.second
 
     def _clingStructName(self):
         return "Bg" + self.range + "_"
