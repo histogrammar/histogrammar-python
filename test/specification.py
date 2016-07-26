@@ -347,14 +347,14 @@ def CentrallyBin_fill(centrallybinning, datum, weight):
         if math.isnan(q):
             fill(centrallybinning.nanflow, datum, weight)
         else:
-            if math.isinf(q):
-                if q < 0.0:
-                    closest = centrallybinning.bins[0][1]
-                else:
-                    closest = centrallybinning.bins[-1][1]
-            else:
-                dist, closest = min((abs(c - q), v) for c, v in centrallybinning.bins)
-            fill(closest, datum, weight)
+            for index in range(len(centrallybinning.bins)):
+                if index == len(centrallybinning.bins) - 1:
+                    break
+                thisCenter = centrallybinning.bins[index][0]
+                nextCenter = centrallybinning.bins[index + 1][0]
+                if q < (thisCenter + nextCenter)/2.0:
+                    break
+            fill(centrallybinning.bins[index][1], datum, weight)
         centrallybinning.entries += weight
 
 def CentrallyBin_combine(one, two):
