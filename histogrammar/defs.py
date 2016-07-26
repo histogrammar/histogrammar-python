@@ -405,7 +405,7 @@ public:
                     elif self.range == "N":
                         derivedFieldTypes[derivedFieldName] = "double"
                     else:
-                        derivedFieldTypes[derivedFieldName] = "std::vector<double>"
+                        derivedFieldTypes[derivedFieldName] = self.range
                 else:
                     derivedFieldTypes[derivedFieldName] = "double"
 

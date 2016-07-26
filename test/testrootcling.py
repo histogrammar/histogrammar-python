@@ -819,17 +819,9 @@ public:
             self.compare("BranchBin different structs holes", Branch(Bin(100, -3.0, 3.0, "withholes"), Bin(50, -3.0, 3.0, "withholes")), Branch(Bin(100, -3.0, 3.0, named("withholes", lambda x: x)), Bin(50, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
             self.compare("BranchBin deeply different structs holes", Branch(Bin(100, -3.0, 3.0, "withholes"), Bin(100, -3.0, 3.0, "withholes", Sum("withholes"))), Branch(Bin(100, -3.0, 3.0, named("withholes", lambda x: x)), Bin(100, -3.0, 3.0, named("withholes", lambda x: x), Sum(named("withholes", lambda x: x)))), self.withholes)
 
-    # def testBag(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("Bag noholes w/o weights", Bag("noholes"), Bag(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Bag noholes const weights", Bag("noholes"), Bag(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Bag noholes positive weights", Bag("noholes"), Bag(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Bag noholes with weights", Bag("noholes"), Bag(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Bag noholes with holes", Bag("noholes"), Bag(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Bag holes w/o weights", Bag("withholes"), Bag(named("withholes", lambda x: x)), self.withholes)
-    #         self.compare("Bag holes const weights", Bag("withholes"), Bag(named("withholes", lambda x: x)), self.withholes)
-    #         self.compare("Bag holes positive weights", Bag("withholes"), Bag(named("withholes", lambda x: x)), self.withholes)
-    #         self.compare("Bag holes with weights", Bag("withholes"), Bag(named("withholes", lambda x: x)), self.withholes)
-    #         self.compare("Bag holes with holes", Bag("withholes"), Bag(named("withholes", lambda x: x)), self.withholes)
-    #         self.compare("Bag holes with holes2", Bag("withholes"), Bag(named("withholes", lambda x: x)), self.withholes)
+    def testBag(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("Bag numbers noholes", Bag("noholes", "N"), Bag(named("noholes", lambda x: x), "N"), self.noholes)
+            self.compare("Bag numeric vectors noholes", Bag("N2(noholes, noholes)", "N2"), Bag(named("N2(noholes, noholes)", lambda x: [x, x]), "N2"), self.noholes)
+            self.compare("Bag strings noholes", Bag("to_string((int)floor(noholes))", "S"), Bag(named("to_string((int)floor(noholes))", lambda x: str(int(math.floor(x)))), "S"), self.noholes)
