@@ -31,6 +31,16 @@ class Bag(Factory, Container):
     Consider using Bag with :doc:`Limit <histogrammar.primitives.limit.Limit>` for collections that roll over to a mere count when they exceed a limit.
     """
 
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".bins.clear();")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+
+
+
+
     @staticmethod
     def ed(entries, values, range):
         """Create a Bag that is only capable of being added.

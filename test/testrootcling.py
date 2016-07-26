@@ -605,159 +605,159 @@ public:
                     sys.stderr.write("{0:50s} | {1}\n".format(leftline, rightline))
             self.assertEqual(Factory.fromJson(hrc.toJson()), Factory.fromJson(hpy.toJson()))
 
-    # def testSum(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("Sum noholes", Sum("noholes"), Sum(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Sum holes", Sum("withholes"), Sum(named("withholes", lambda x: x)), self.withholes)
+    def testSum(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("Sum noholes", Sum("noholes"), Sum(named("noholes", lambda x: x)), self.noholes)
+            self.compare("Sum holes", Sum("withholes"), Sum(named("withholes", lambda x: x)), self.withholes)
 
-    # def testAverage(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("Average noholes", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Average holes", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
+    def testAverage(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("Average noholes", Average("noholes"), Average(named("noholes", lambda x: x)), self.noholes)
+            self.compare("Average holes", Average("withholes"), Average(named("withholes", lambda x: x)), self.withholes)
 
-    # def testDeviate(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("Deviate noholes", Deviate("noholes"), Deviate(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Deviate holes", Deviate("withholes"), Deviate(named("withholes", lambda x: x)), self.withholes)
+    def testDeviate(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("Deviate noholes", Deviate("noholes"), Deviate(named("noholes", lambda x: x)), self.noholes)
+            self.compare("Deviate holes", Deviate("withholes"), Deviate(named("withholes", lambda x: x)), self.withholes)
 
-    # def testMinimize(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("Minimize noholes", Minimize("noholes"), Minimize(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Minimize holes", Minimize("withholes"), Minimize(named("withholes", lambda x: x)), self.withholes)
+    def testMinimize(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("Minimize noholes", Minimize("noholes"), Minimize(named("noholes", lambda x: x)), self.noholes)
+            self.compare("Minimize holes", Minimize("withholes"), Minimize(named("withholes", lambda x: x)), self.withholes)
 
-    # def testMaximize(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("Maximize noholes", Maximize("noholes"), Maximize(named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("Maximize holes", Maximize("withholes"), Maximize(named("withholes", lambda x: x)), self.withholes)
+    def testMaximize(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("Maximize noholes", Maximize("noholes"), Maximize(named("noholes", lambda x: x)), self.noholes)
+            self.compare("Maximize holes", Maximize("withholes"), Maximize(named("withholes", lambda x: x)), self.withholes)
 
-    # def testBin(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         for bins in [10, 100]:
-    #             self.compare("Bin ({0} bins) noholes".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
-    #             self.compare("Bin ({0} bins) holes".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
+    def testBin(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            for bins in [10, 100]:
+                self.compare("Bin ({0} bins) noholes".format(bins), Bin(bins, -3.0, 3.0, "noholes"), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x)), self.noholes)
+                self.compare("Bin ({0} bins) holes".format(bins), Bin(bins, -3.0, 3.0, "withholes"), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x)), self.withholes)
 
-    # def testBinTrans(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         for bins in [10, 100]:
-    #             self.compare("BinTrans ({0} bins) noholes".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-    #             self.compare("BinTrans ({0} bins) holes".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    def testBinTrans(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            for bins in [10, 100]:
+                self.compare("BinTrans ({0} bins) noholes".format(bins), Bin(bins, -3.0, 3.0, "noholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+                self.compare("BinTrans ({0} bins) holes".format(bins), Bin(bins, -3.0, 3.0, "withholes", Count("0.5*weight")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
 
-    # def testBinAverage(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         for bins in [10, 100]:
-    #             self.compare("BinAverage ({0} bins) noholes".format(bins), Bin(bins, -3.0, 3.0, "noholes", Average("noholes")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
-    #             self.compare("BinAverage ({0} bins) holes".format(bins), Bin(bins, -3.0, 3.0, "withholes", Average("withholes")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
+    def testBinAverage(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            for bins in [10, 100]:
+                self.compare("BinAverage ({0} bins) noholes".format(bins), Bin(bins, -3.0, 3.0, "noholes", Average("noholes")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
+                self.compare("BinAverage ({0} bins) holes".format(bins), Bin(bins, -3.0, 3.0, "withholes", Average("withholes")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
 
-    # def testBinDeviate(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         for bins in [10, 100]:
-    #             self.compare("BinDeviate ({0} bins) noholes".format(bins), Bin(bins, -3.0, 3.0, "noholes", Deviate("noholes")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
-    #             self.compare("BinDeviate ({0} bins) holes".format(bins), Bin(bins, -3.0, 3.0, "withholes", Deviate("withholes")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
+    def testBinDeviate(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            for bins in [10, 100]:
+                self.compare("BinDeviate ({0} bins) noholes".format(bins), Bin(bins, -3.0, 3.0, "noholes", Deviate("noholes")), Bin(bins, -3.0, 3.0, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
+                self.compare("BinDeviate ({0} bins) holes".format(bins), Bin(bins, -3.0, 3.0, "withholes", Deviate("withholes")), Bin(bins, -3.0, 3.0, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
 
-    # def testSparselyBin(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("SparselyBin noholes", SparselyBin(0.1, "noholes"), SparselyBin(0.1, named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("SparselyBin holes", SparselyBin(0.1, "withholes"), SparselyBin(0.1, named("withholes", lambda x: x)), self.withholes)
+    def testSparselyBin(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("SparselyBin noholes", SparselyBin(0.1, "noholes"), SparselyBin(0.1, named("noholes", lambda x: x)), self.noholes)
+            self.compare("SparselyBin holes", SparselyBin(0.1, "withholes"), SparselyBin(0.1, named("withholes", lambda x: x)), self.withholes)
 
-    # def testSparselyBinTrans(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("SparselyBinTrans noholes", SparselyBin(0.1, "noholes", Count("0.5*weight")), SparselyBin(0.1, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-    #         self.compare("SparselyBinTrans holes", SparselyBin(0.1, "withholes", Count("0.5*weight")), SparselyBin(0.1, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    def testSparselyBinTrans(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("SparselyBinTrans noholes", SparselyBin(0.1, "noholes", Count("0.5*weight")), SparselyBin(0.1, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+            self.compare("SparselyBinTrans holes", SparselyBin(0.1, "withholes", Count("0.5*weight")), SparselyBin(0.1, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
 
-    # def testSparselyBinAverage(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("SparselyBinAverage noholes", SparselyBin(0.1, "noholes", Average("noholes")), SparselyBin(0.1, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("SparselyBinAverage holes", SparselyBin(0.1, "withholes", Average("withholes")), SparselyBin(0.1, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
+    def testSparselyBinAverage(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("SparselyBinAverage noholes", SparselyBin(0.1, "noholes", Average("noholes")), SparselyBin(0.1, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
+            self.compare("SparselyBinAverage holes", SparselyBin(0.1, "withholes", Average("withholes")), SparselyBin(0.1, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
 
-    # def testSparselyBinDeviate(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("SparselyBinDeviate noholes", SparselyBin(0.1, "noholes", Deviate("noholes")), SparselyBin(0.1, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("SparselyBinDeviate holes", SparselyBin(0.1, "withholes", Deviate("withholes")), SparselyBin(0.1, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
+    def testSparselyBinDeviate(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("SparselyBinDeviate noholes", SparselyBin(0.1, "noholes", Deviate("noholes")), SparselyBin(0.1, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
+            self.compare("SparselyBinDeviate holes", SparselyBin(0.1, "withholes", Deviate("withholes")), SparselyBin(0.1, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
 
-    # def testCentrallyBin(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-    #         self.compare("CentrallyBin noholes", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
-    #         self.compare("CentrallyBin holes", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
+    def testCentrallyBin(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+            self.compare("CentrallyBin noholes", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
+            self.compare("CentrallyBin holes", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
 
-    # def testCentrallyBinTrans(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-    #         self.compare("CentrallyBinTrans noholes", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-    #         self.compare("CentrallyBinTrans holes", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    def testCentrallyBinTrans(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+            self.compare("CentrallyBinTrans noholes", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+            self.compare("CentrallyBinTrans holes", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
 
-    # def testCentrallyBinAverage(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-    #         self.compare("CentrallyBinAverage noholes", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("CentrallyBinAverage holes", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
+    def testCentrallyBinAverage(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+            self.compare("CentrallyBinAverage noholes", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
+            self.compare("CentrallyBinAverage holes", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
 
-    # def testCentrallyBinDeviate(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-    #         self.compare("CentrallyBinDeviate noholes", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("CentrallyBinDeviate holes", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
+    def testCentrallyBinDeviate(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+            self.compare("CentrallyBinDeviate noholes", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
+            self.compare("CentrallyBinDeviate holes", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
 
-    # def testCategorize(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("Categorize noholes", Categorize("to_string((int)floor(noholes))"), Categorize(named("to_string((int)floor(noholes))", lambda x: str(int(math.floor(x))))), self.noholes)
+    def testCategorize(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("Categorize noholes", Categorize("to_string((int)floor(noholes))"), Categorize(named("to_string((int)floor(noholes))", lambda x: str(int(math.floor(x))))), self.noholes)
 
-    # def testCategorizeTrans(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("CategorizeTrans noholes", Categorize("to_string((int)floor(noholes))", Count("0.5*weight")), Categorize(named("to_string((int)floor(noholes))", lambda x: str(int(math.floor(x)))), Count(lambda x: 0.5*x)), self.noholes)
+    def testCategorizeTrans(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("CategorizeTrans noholes", Categorize("to_string((int)floor(noholes))", Count("0.5*weight")), Categorize(named("to_string((int)floor(noholes))", lambda x: str(int(math.floor(x)))), Count(lambda x: 0.5*x)), self.noholes)
 
-    # def testFractionBin(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("FractionBin noholes", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("FractionBin holes", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    def testFractionBin(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("FractionBin noholes", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("FractionBin holes", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
 
-    # def testStackBin(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         cuts = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-    #         self.compare("StackBin noholes", Stack(cuts, "noholes", Bin(100, -3.0, 3.0, "noholes")), Stack(cuts, named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("StackBin holes", Stack(cuts, "withholes", Bin(100, -3.0, 3.0, "withholes")), Stack(cuts, named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    def testStackBin(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            cuts = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+            self.compare("StackBin noholes", Stack(cuts, "noholes", Bin(100, -3.0, 3.0, "noholes")), Stack(cuts, named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("StackBin holes", Stack(cuts, "withholes", Bin(100, -3.0, 3.0, "withholes")), Stack(cuts, named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
 
-    # def testIrregularlyBinBin(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         cuts = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-    #         self.compare("IrregularlyBinBin noholes", IrregularlyBin(cuts, "noholes", Bin(100, -3.0, 3.0, "noholes")), IrregularlyBin(cuts, named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("IrregularlyBinBin holes", IrregularlyBin(cuts, "withholes", Bin(100, -3.0, 3.0, "withholes")), IrregularlyBin(cuts, named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    def testIrregularlyBinBin(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            cuts = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+            self.compare("IrregularlyBinBin noholes", IrregularlyBin(cuts, "noholes", Bin(100, -3.0, 3.0, "noholes")), IrregularlyBin(cuts, named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("IrregularlyBinBin holes", IrregularlyBin(cuts, "withholes", Bin(100, -3.0, 3.0, "withholes")), IrregularlyBin(cuts, named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
 
-    # def testSelectBin(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("SelectBin noholes weights", Select("noholes", Bin(100, -3.0, 3.0, "noholes")), Select(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("SelectBin holes", Select("withholes", Bin(100, -3.0, 3.0, "withholes")), Select(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    def testSelectBin(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("SelectBin noholes weights", Select("noholes", Bin(100, -3.0, 3.0, "noholes")), Select(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("SelectBin holes", Select("withholes", Bin(100, -3.0, 3.0, "withholes")), Select(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
 
-    # def testLimitBin(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("LimitBin SIZE - 1 noholes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE - 1 holes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE noholes", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE holes", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    def testLimitBin(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("LimitBin SIZE - 1 noholes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("LimitBin SIZE - 1 holes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+            self.compare("LimitBin SIZE noholes", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("LimitBin SIZE holes", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
 
     def testLabelBin(self):
         if TestRootCling.ttreeFlat is not None:

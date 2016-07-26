@@ -399,6 +399,13 @@ public:
 
                 if self.name == "Categorize":
                     derivedFieldTypes[derivedFieldName] = "std::string"
+                elif self.name == "Bag":
+                    if self.range == "S":
+                        derivedFieldTypes[derivedFieldName] = "std::string"
+                    elif self.range == "N":
+                        derivedFieldTypes[derivedFieldName] = "double"
+                    else:
+                        derivedFieldTypes[derivedFieldName] = "std::vector<double>"
                 else:
                     derivedFieldTypes[derivedFieldName] = "double"
 
