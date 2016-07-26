@@ -32,12 +32,13 @@ class Bag(Factory, Container):
     """
 
     @staticmethod
-    def ed(entries, values):
+    def ed(entries, values, range):
         """Create a Bag that is only capable of being added.
 
         Parameters:
             entries (float): the number of entries.
             values (dict from float, tuple of floats, or str to float): the number of entries for each unique item.
+            range ("N", "N#" where "#" is a positive integer, or "S"): the data type: number, vector of numbers, or string.
         """
 
         if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
@@ -46,7 +47,7 @@ class Bag(Factory, Container):
             raise TypeError("values ({0}) must be a dict from numbers to range type".format(values))
         if float(entries) < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
-        out = Bag(None)
+        out = Bag(None, range)
         out.entries = float(entries)
         out.values = values
         return out.specialize()
@@ -56,7 +57,7 @@ class Bag(Factory, Container):
         """Synonym for ``__init__``."""
         return Bag(quantity)
 
-    def __init__(self, quantity):
+    def __init__(self, quantity, range):
         """Create a Bag that is capable of being filled and added.
 
         Parameters:
@@ -65,20 +66,29 @@ class Bag(Factory, Container):
         Other parameters:
             entries (float): the number of entries, initially 0.0.
             values (dict from quantity return type to float): the number of entries for each unique item.
+            range ("N", "N#" where "#" is a positive integer, or "S"): the data type: number, vector of numbers, or string.
         """
         self.quantity = serializable(quantity)
         self.entries = 0.0
         self.values = {}
+        self.range = range
+        try:
+            self.dimension = int(range[1:])
+        except:
+            self.dimension = 0
         super(Bag, self).__init__()
         self.specialize()
 
     @inheritdoc(Container)
-    def zero(self): return Bag(self.quantity)
+    def zero(self): return Bag(self.quantity, self.range)
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Bag):
-            out = Bag(self.quantity)
+            if self.range != other.range:
+                raise ContainerException("cannot add Bag because range differs ({0} vs {1})".format(self.range, other.range))
+
+            out = Bag(self.quantity, self.range)
 
             out.entries = self.entries + other.entries
 
@@ -103,18 +113,22 @@ class Bag(Factory, Container):
             self._update(q, weight)
 
     def _update(self, q, weight):
-        if isinstance(q, basestring):
-            pass
-        elif isinstance(q, (list, tuple)):
-            try:
-                q = tuple(floatOrNan(qi) for qi in q)
-            except:
-                raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
-        else:
+        if self.range == "S":
+            if not isinstance(q, basestring):
+                raise TypeError("function return value ({0}) must be a string for range type {1}".format(q, self.range))
+
+        elif self.range == "N":
             try:
                 q = floatOrNan(q)
             except:
-                raise TypeError("function return value ({0}) must be boolean, number, string, or list/tuple of numbers".format(q))
+                raise TypeError("function return value ({0}) must be a number for range type {1}".format(q, self.range))
+
+        else:
+            try:
+                q = tuple(floatOrNan(qi) for qi in q)
+                assert len(q) == self.dimension
+            except:
+                raise TypeError("function return value ({0}) must be a list/tuple of numbers with length {1} for range type {2}".format(q, self.dimension, self.range))
 
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
@@ -124,7 +138,7 @@ class Bag(Factory, Container):
             self.values[q] = weight
 
     def _clingStructName(self):
-        return "Bg"
+        return "Bg" + self.range
 
     def _numpy(self, data, weights, shape):
         import numpy
@@ -157,12 +171,13 @@ class Bag(Factory, Container):
         return maybeAdd({
             "entries": floatToJson(self.entries),
             "values": [{"w": floatToJson(n), "v": rangeToJson(v)} for v, n in aslist],
+            "range": self.range,
             }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "values"], ["name"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "values", "range"], ["name"]):
             if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = json["entries"]
             else:
@@ -210,7 +225,12 @@ class Bag(Factory, Container):
             else:
                 raise JsonFormatException(json["values"], "Bag.values")
 
-            out = Bag.ed(entries, values)
+            if isinstance(json["range"], basestring):
+                range = json["range"]
+            else:
+                raise JsonFormatException(json["range"], "Bag.range")
+
+            out = Bag.ed(entries, values, range)
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
@@ -218,7 +238,7 @@ class Bag(Factory, Container):
             raise JsonFormatException(json, "Bag")
         
     def __repr__(self):
-        return "<Bag size={0}>".format(len(self.values))
+        return "<Bag size={0} range={1}>".format(len(self.values), self.range)
 
     def __eq__(self, other):
         if len(self.values) != len(other.values):
@@ -252,11 +272,11 @@ class Bag(Factory, Container):
             else:
                 return False
 
-        return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries)
+        return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.range == other.range
 
     def __ne__(self, other): return not self == other
 
     def __hash__(self):
-       return hash((self.quantity, self.entries, tuple(self.values.items())))
+       return hash((self.quantity, self.entries, tuple(self.values.items()), self.range))
 
 Factory.register(Bag)
