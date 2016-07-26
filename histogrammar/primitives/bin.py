@@ -229,6 +229,60 @@ class Bin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+
+        fillCode.append(" " * fillIndent + "if (std::isnan({0})) {{".format(normexpr))
+        self.nanflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        fillCode.append(" " * fillIndent + "}")
+
+        fillCode.append(" " * fillIndent + "else if ({0} < {1}) {{".format(normexpr, self.low))
+        self.underflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "underflow"),), initIndent, fillCode, fillPrefix + (("var", "underflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        fillCode.append(" " * fillIndent + "}")
+
+        fillCode.append(" " * fillIndent + "else if ({0} >= {1}) {{".format(normexpr, self.high))
+        self.overflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "overflow"),), initIndent, fillCode, fillPrefix + (("var", "overflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        fillCode.append(" " * fillIndent + "}")
+
+        fillCode.append(" " * fillIndent + "else {")
+
+        bin = "bin_" + str(len(tmpVarTypes))
+        tmpVarTypes[bin] = "int"
+        initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
+
+        fillCode.append(" " * (fillIndent + 2) + "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low, len(self.values)/(self.high - self.low)))
+
+        self.values[0]._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+
+        initCode.append(" " * initIndent + "}")
+        fillCode.append(" " * fillIndent + "}")
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    {3} underflow;
+    {4} overflow;
+    {5} nanflow;
+    {1} values[{2}];
+    {1}& getValues(int i) {{ return values[i]; }}
+  }} {0};
+""".format(self._clingStructName(), self.values[0]._clingStorageType(), len(self.values), self.underflow._clingStorageType(), self.overflow._clingStorageType(), self.nanflow._clingStorageType())
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += obj.entries
+        for i in xrange(len(self.values)):
+            self.values[i]._clingUpdate(obj, ("func", ["getValues", i]))
+        self.underflow._clingUpdate(obj, ("var", "underflow"))
+        self.overflow._clingUpdate(obj, ("var", "overflow"))
+        self.nanflow._clingUpdate(obj, ("var", "nanflow"))
+
+    def _clingStructName(self):
+        return "Bn" + str(len(self.values)) + self.values[0]._clingStructName() + self.underflow._clingStructName() + self.overflow._clingStructName() + self.nanflow._clingStructName()
+
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)

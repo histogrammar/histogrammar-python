@@ -19,7 +19,77 @@ import numbers
 from histogrammar.defs import *
 from histogrammar.util import *
 
-class Collection(object): pass
+class Collection(object):
+    def _clingCanonicalOrder(self, items):
+        return sorted((v._clingStructName(), k, v) for k, v in items)
+
+    def _clingStructName(self):
+        letter = self.name[0]
+        out = [letter, "_"]
+        last = None
+        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+            if s != last:
+                if last is not None:
+                    out.append(str(count))
+                    out.append("_")
+                out.append(s)
+                count = 0
+            count += 1
+            last = s
+        out.extend([str(count), "_", letter.lower()])
+        return "".join(out)
+
+    def _clingStruct(self):
+        out = ["""
+  typedef struct {
+    """]
+        last = None
+        n = 0
+        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+            if s != last:
+                if last is not None:
+                    out.append("[{0}];\n    ".format(count))
+                    out.append("{0}& getSub{1}(int i) {{ return sub{1}[i]; }}\n    ".format(lastType, lastN))
+                out.append("{0} sub{1}".format(s, n))
+                lastType = s
+                lastN = n
+                n += 1
+                count = 0
+            count += 1
+            last = s
+        out.append("""[{0}];\n    {1}& getSub{2}(int i) {{ return sub{2}[i]; }}\n    double entries;\n  }} {3};""".format(count, lastType, lastN, self._clingStructName()))
+        return "".join(out)
+
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+
+        last = None
+        n = 0
+        i = 0
+        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+            if last is not None and s != last:
+                n += 1
+                i = 0
+            v._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, weightVars, weightVarStack, tmpVarTypes)
+            i += 1
+            last = s
+
+        storageStructs[self._clingStructName()] = self._clingStruct()
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += obj.entries
+        last = None
+        n = 0
+        i = 0
+        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+            if last is not None and s != last:
+                n += 1
+                i = 0
+            v._clingUpdate(obj, ("func", ["getSub" + str(n), i]))
+            i += 1
+            last = s
 
 ################################################################ Label
 
@@ -467,6 +537,10 @@ class Index(Factory, Container, Collection):
         """Number of ``values``."""
         return len(self.values)
 
+    @property
+    def pairs(self):
+        return dict(enumerate(self.values))
+
     def __call__(self, i, *rest):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
@@ -660,6 +734,10 @@ class Branch(Factory, Container, Collection):
     def size(self):
         """Return the number of containers."""
         return len(self.values)
+
+    @property
+    def pairs(self):
+        return dict(enumerate(self.values))
 
     def __call__(self, i, *rest):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""

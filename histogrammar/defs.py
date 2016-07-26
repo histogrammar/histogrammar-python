@@ -14,10 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
+import collections
 import json as jsonlib
 import math
+import re
 
 from histogrammar.util import *
+from histogrammar.parsing import C99SourceToAst
+from histogrammar.parsing import C99AstToSource
+from histogrammar.pycparser import c_ast
 
 class ContainerException(Exception):
     """Exception type for improperly configured containers."""
@@ -157,6 +163,273 @@ class Container(object):
     def toJsonFragment(self, suppressName):
         """Used internally to convert the container to JSON without its ``"type"`` header."""
         raise NotImplementedError
+
+    _clingClassNameNumber = 0
+    def cling(self, ttree, start=-1, end=-1, debug=False, debugOnError=True, **exprs):
+        self._checkForCrossReferences()
+
+        if not hasattr(self, "_clingFiller"):
+            import ROOT
+
+            parser = C99SourceToAst()
+            generator = C99AstToSource()
+
+            inputFieldNames = {}
+            inputFieldTypes = {}
+            for branch in ttree.GetListOfBranches():
+                if branch.GetClassName() == "":
+                    for leaf in branch.GetListOfLeaves():
+                        if leaf.IsA() == ROOT.TLeafO.Class():
+                            inputFieldTypes[leaf.GetName()] = "bool"
+                        elif leaf.IsA() == ROOT.TLeafB.Class() and leaf.IsUnsigned():
+                            inputFieldTypes[leaf.GetName()] = "unsigned char"
+                        elif leaf.IsA() == ROOT.TLeafB.Class():
+                            inputFieldTypes[leaf.GetName()] = "char"
+                        elif leaf.IsA() == ROOT.TLeafS.Class() and leaf.IsUnsigned():
+                            inputFieldTypes[leaf.GetName()] = "unsigned short"
+                        elif leaf.IsA() == ROOT.TLeafS.Class():
+                            inputFieldTypes[leaf.GetName()] = "short"
+                        elif leaf.IsA() == ROOT.TLeafI.Class() and leaf.IsUnsigned():
+                            inputFieldTypes[leaf.GetName()] = "UInt_t"
+                        elif leaf.IsA() == ROOT.TLeafI.Class():
+                            inputFieldTypes[leaf.GetName()] = "Int_t"
+                        elif leaf.IsA() == ROOT.TLeafL.Class() and leaf.IsUnsigned():
+                            inputFieldTypes[leaf.GetName()] = "ULong64_t"
+                        elif leaf.IsA() == ROOT.TLeafL.Class():
+                            inputFieldTypes[leaf.GetName()] = "Long64_t"
+                        elif leaf.IsA() == ROOT.TLeafF.Class():
+                            inputFieldTypes[leaf.GetName()] = "float"
+                        elif leaf.IsA() == ROOT.TLeafD.Class():
+                            inputFieldTypes[leaf.GetName()] = "double"
+                        elif leaf.IsA() == ROOT.TLeafC.Class():
+                            raise NotImplementedError("TODO: TLeafC (string)")
+                        elif leaf.IsA() == ROOT.TLeafElement.Class():
+                            raise NotImplementedError("TODO: TLeafElement")
+                        elif leaf.IsA() == ROOT.TLeafObject.Class():
+                            raise NotImplementedError("TODO: TLeafObject")
+                        else:
+                            raise NotImplementedError("unknown leaf type: " + repr(leaf))
+
+                        inputFieldTypes[leaf.GetName()] += "*" * leaf.GetTitle().count("[")
+
+                else:
+                    inputFieldTypes[branch.GetName()] = branch.GetClassName() + "*"
+                    
+            derivedFieldTypes = {}
+            derivedFieldExprs = {}
+
+            storageStructs = collections.OrderedDict()
+            initCode = []
+            fillCode = []
+            weightVars = ["weight_0"]
+            weightVarStack = ("weight_0",)
+            tmpVarTypes = {}
+
+            for name, expr in exprs.items():
+                self._clingAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+
+            self._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, (("var", "storage"),), 6, weightVars, weightVarStack, tmpVarTypes)
+
+            className = "HistogrammarClingFiller_" + str(Container._clingClassNameNumber)
+            Container._clingClassNameNumber += 1
+            classCode = """class {0} {{
+public:
+{1}
+{2}{3}
+{4}{5}  {6} storage;
+
+  void init() {{
+{7}
+    weight_0 = 1.0;
+  }}
+
+  void fillall(TTree* ttree, Long64_t start, Long64_t end) {{
+    init();
+{8}
+    if (start < 0) start = 0;
+    if (end < 0) end = ttree->GetEntries();
+    for (;  start < end;  ++start) {{
+      ttree->GetEntry(start);
+{9}{10}
+    }}
+
+    ttree->ResetBranchAddresses();
+  }}
+}};
+""".format(className,
+           "".join(storageStructs.values()),
+           "".join("  double " + n + ";\n" for n in weightVars),
+           "".join("  " + t + " " + self._clingNormalizeTTreeName(n) + ";\n" for n, t in inputFieldTypes.items() if self._clingNormalizeTTreeName(n) in inputFieldNames),
+           "".join("  " + t + " " + n + ";\n" for n, t in derivedFieldTypes.items() if t != "auto"),
+           "".join("  " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
+           self._clingStorageType(),
+           "\n".join(initCode),
+           "".join("    ttree->SetBranchAddress(" + jsonlib.dumps(key) + ", &" + n + ");\n" for n, key in inputFieldNames.items()),
+           "".join(x for x in derivedFieldExprs.values()),
+           "\n".join(fillCode))
+
+            if debug:
+                print("line |")
+                print("\n".join("{0:4d} | {1}".format(i + 1, line) for i, line in enumerate(classCode.split("\n"))))
+            if not ROOT.gInterpreter.Declare(classCode):
+                if debug:
+                    raise SyntaxError("Could not compile the above")
+                elif debugOnError:
+                    raise SyntaxError("Could not compile the following:\n\n" + "\n".join("{0:4d} | {1}".format(i + 1, line) for i, line in enumerate(classCode.split("\n"))))
+                else:
+                    raise SyntaxError("Could not compile (rerun with debug=True to see the generated C++ code)")
+
+            self._clingFiller = getattr(ROOT, className)()
+
+        # we already have a _clingFiller; just fill
+        self._clingFiller.fillall(ttree, start, end)
+        self._clingUpdate(self._clingFiller, ("var", "storage"))
+                
+    def _clingExpandPrefixCpp(self, *prefix):
+        out = ""
+        for t, x in prefix:
+            if t == "var":
+                if len(out) == 0:
+                    out += x
+                else:
+                    out += "." + x
+            elif t == "index":
+                out += "[" + str(x) + "]"
+            else:
+                raise Exception((t, x))
+        return out
+
+    def _clingExpandPrefixPython(self, obj, *prefix):
+        for t, x in prefix:
+            if t == "var":
+                obj = getattr(obj, x)
+            elif t == "index":
+                obj = obj.__getitem__(x)
+            elif t == "func":
+                name = x[0]
+                args = x[1:]
+                obj = getattr(obj, name)(*args)
+            else:
+                raise NotImplementedError((t, x))
+        return obj
+
+    def _clingNormalizeTTreeName(self, key):
+        if re.match("^[a-zA-Z0-9]*$", key) is not None:
+            return "input_" + key
+        else:
+            return "input_" + base64.b64encode(key).replace("+", "_1").replace("/", "_2").replace("=", "")
+
+    def _clingNormalizeExpr(self, ast, inputFieldNames, inputFieldTypes, weightVar):
+        # interpret raw identifiers as tree field names IF they're in the tree (otherwise, leave them alone)
+        if isinstance(ast, c_ast.ID):
+            if weightVar is not None and ast.name == "weight":
+                ast.name = weightVar
+            elif ast.name in inputFieldTypes:
+                norm = self._clingNormalizeTTreeName(ast.name)
+                inputFieldNames[norm] = ast.name
+                if inputFieldTypes[ast.name].endswith("*"):
+                    norm = "(" + ("*" * inputFieldTypes[ast.name].count("*")) + norm + ")"
+                ast.name = norm
+
+        elif isinstance(ast, c_ast.FuncCall):
+            # t("field name") for field names that aren't valid C identifiers
+            if isinstance(ast.name, c_ast.ID) and ast.name.name == "t" and isinstance(ast.args, c_ast.ExprList) and len(ast.args.exprs) == 1 and isinstance(ast.args.exprs[0], c_ast.Constant) and ast.args.exprs[0].type == "string":
+                ast = self._clingNormalizeExpr(c_ast.ID(jsonlib.loads(ast.args.exprs[0].value)), inputFieldNames, inputFieldTypes, weightVar)
+            # ordinary function: don't translate the name (let function names live in a different namespace from variables)
+            elif isinstance(ast.name, c_ast.ID):
+                if ast.args is not None:
+                    ast.args = self._clingNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
+            # weird function: calling the result of an evaluation, probably an overloaded operator() in C++
+            else:
+                ast.name = self._clingNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar)
+                if ast.args is not None:
+                    ast.args = self._clingNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
+
+        # only the top (x) of a dotted expression (x.y.z) should be interpreted as a field name
+        elif isinstance(ast, c_ast.StructRef):
+            self._clingNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar)
+
+        # anything else
+        else:
+            for fieldName, fieldValue in ast.children():
+                m = re.match("([^[]+)\[([0-9]+)\]", fieldName)
+                if m is not None:
+                    tmp = getattr(ast, m.group(1))
+                    tmp.__setitem__(int(m.group(2)), self._clingNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
+                else:
+                    setattr(ast, fieldName, self._clingNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
+
+        return ast
+
+    def _clingQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
+        if weightVar is not None:
+            if not isinstance(self.transform.expr, basestring):
+                raise ContainerException("Count.transform must be provided as a C99 string when used with Cling")
+            try:
+                ast = parser(self.transform.expr)
+            except Exception as err:
+                raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.transform.expr, str(err)))
+        else:
+            if not isinstance(self.quantity.expr, basestring):
+                raise ContainerException(self.name + ".quantity must be provided as a C99 string when used with Cling")
+            try:
+                ast = parser(self.quantity.expr)
+            except Exception as err:
+                raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.quantity.expr, str(err)))
+
+        ast = [self._clingNormalizeExpr(x, inputFieldNames, inputFieldTypes, weightVar) for x in ast]
+            
+        if len(ast) == 1 and isinstance(ast[0], c_ast.ID):
+            return generator(ast)
+
+        else:
+            normexpr = generator(ast)
+            derivedFieldName = None
+            for name, expr in derivedFieldExprs.items():
+                if expr == normexpr:
+                    derivedFieldName = name
+                    break
+
+            if derivedFieldName is None:
+                derivedFieldName = "quantity_" + str(len(derivedFieldExprs))
+                if len(ast) > 1:
+                    derivedFieldExprs[derivedFieldName] = "      {\n        " + ";\n        ".join(generator(x) for x in ast[:-1]) + ";\n        " + derivedFieldName + " = " + generator(ast[-1]) + ";\n      }\n"
+                else:
+                    derivedFieldExprs[derivedFieldName] = "      " + derivedFieldName + " = " + normexpr + ";\n"
+
+                if self.name == "Categorize":
+                    derivedFieldTypes[derivedFieldName] = "std::string"
+                elif self.name == "Bag":
+                    if self.range == "S":
+                        derivedFieldTypes[derivedFieldName] = "std::string"
+                    elif self.range == "N":
+                        derivedFieldTypes[derivedFieldName] = "double"
+                    else:
+                        derivedFieldTypes[derivedFieldName] = self.range
+                else:
+                    derivedFieldTypes[derivedFieldName] = "double"
+
+            return derivedFieldName
+
+    def _clingAddExpr(self, parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
+        if not isinstance(expr, basestring):
+            raise ContainerException("expressions like {0} must be provided as a C99 string".format(name))
+        try:
+            ast = parser(expr)
+        except Exception as err:
+            raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(expr, str(err)))
+
+        ast = [self._clingNormalizeExpr(x, inputFieldNames, inputFieldTypes, None) for x in ast]
+
+        normexpr = generator(ast)
+        if len(ast) > 1:
+            derivedFieldExprs[name] = "      auto " + name + " = [this]{\n        " + ";\n        ".join(generator(x) for x in ast[:-1]) + ";\n        return " + generator(ast[-1]) + ";\n      }();\n"
+        else:
+            derivedFieldExprs[name] = "      auto " + name + " = " + normexpr + ";\n"
+        derivedFieldTypes[name] = "auto"
+
+    def _clingStorageType(self):
+        return self._clingStructName()
 
     def numpy(self, data, weights=1.0):
         import numpy

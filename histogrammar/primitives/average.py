@@ -113,6 +113,65 @@ class Average(Factory, Container):
                 shift = delta * weight / self.entries
                 self.mean += shift
 
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".mean = 0.0;")
+
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        
+        delta = "delta_" + str(len(tmpVarTypes))
+        tmpVarTypes[delta] = "double"
+        shift = "shift_" + str(len(tmpVarTypes))
+        tmpVarTypes[shift] = "double"
+
+        fillCode.append("""{indent}if (std::isnan({mean})  ||  std::isnan({q})) {{
+{indent}  {mean} = NAN;
+{indent}}}
+{indent}else if (std::isinf({mean})  ||  std::isinf({q})) {{
+{indent}  if (std::isinf({mean})  &&  std::isinf({q})  &&  {mean} * {q} < 0.0)
+{indent}    {mean} = NAN;
+{indent}  else if (std::isinf({q}))
+{indent}    {mean} = {q};
+{indent}  else
+{indent}    {{ }}
+{indent}  if (std::isinf({entries})  ||  std::isnan({entries}))
+{indent}    {mean} = NAN;
+{indent}}}
+{indent}else {{
+{indent}  {delta} = {q} - {mean};
+{indent}  {shift} = {delta} * {weight} / {entries};
+{indent}  {mean} += {shift};
+{indent}}}""".format(indent = " " * fillIndent,
+           entries = self._clingExpandPrefixCpp(*fillPrefix) + ".entries",
+           mean = self._clingExpandPrefixCpp(*fillPrefix) + ".mean",
+           q = normexpr,
+           delta = delta,
+           shift = shift,
+           weight = weightVarStack[-1]))
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    double mean;
+  }} {0};
+""".format(self._clingStructName())
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+
+        entries = self.entries + obj.entries
+        if entries == 0.0:
+            mean = (self.mean + obj.mean)/2.0
+        else:
+            mean = (self.entries*self.mean + obj.entries*obj.mean)/(self.entries + obj.entries)
+
+        self.entries = entries
+        self.mean = mean
+
+    def _clingStructName(self):
+        return "Av"
+
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)

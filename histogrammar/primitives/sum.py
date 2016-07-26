@@ -91,6 +91,29 @@ class Sum(Factory, Container):
             self.entries += weight
             self.sum += q * weight
 
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".sum = 0.0;")
+
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".sum += " + normexpr + ";")
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    double sum;
+  }} {0};
+""".format(self._clingStructName())
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += obj.entries
+        self.sum += obj.sum
+
+    def _clingStructName(self):
+        return "Sm"
+
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)

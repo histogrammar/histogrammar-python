@@ -472,15 +472,15 @@ class TestOriginal(unittest.TestCase):
     ################################################################ Bag
 
     def testBag(self):
-        one = Bag(named("something", lambda x: x))
+        one = Bag(named("something", lambda x: x), "N")
         for _ in self.simple: one.fill(_)
         self.assertEqual(one.values, {7.3: 1.0, 2.2: 1.0, -1.7: 1.0, -4.7: 1.0, 0.0: 2.0, -1.8: 1.0, -3.0: 1.0, 1.6: 1.0, 3.4: 1.0})
 
-        two = Bag(lambda x: (x, x))
+        two = Bag(lambda x: (x, x), "N2")
         for _ in self.simple: two.fill(_)
         self.assertEqual(two.values, {(7.3, 7.3): 1.0, (2.2, 2.2): 1.0, (-1.7, -1.7): 1.0, (-4.7, -4.7): 1.0, (0.0, 0.0): 2.0, (-1.8, -1.8): 1.0, (-3.0, -3.0): 1.0, (1.6, 1.6): 1.0, (3.4, 3.4): 1.0})
 
-        three = Bag(lambda x: x.string[0])
+        three = Bag(lambda x: x.string[0], "S")
         for _ in self.struct: three.fill(_)
         self.assertEqual(three.values, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
 
@@ -495,11 +495,11 @@ class TestOriginal(unittest.TestCase):
         self.checkName(three)
 
     def testBagWithLimit(self):
-        one = Limit(20, Bag(lambda x: x.string))
+        one = Limit(20, Bag(lambda x: x.string, "S"))
         for _ in self.struct: one.fill(_)
         self.assertEqual(one.get.values, {"one": 1.0, "two": 1.0, "three": 1.0, "four": 1.0, "five": 1.0, "six": 1.0, "seven": 1.0, "eight": 1.0, "nine": 1.0, "ten": 1.0})
 
-        two = Limit(9, Bag(lambda x: x.string))
+        two = Limit(9, Bag(lambda x: x.string, "S"))
         for _ in self.struct: two.fill(_)
         self.assertTrue(two.saturated)
 
