@@ -801,69 +801,69 @@ class TestRootCling(unittest.TestCase):
     #         self.compare("SparselyBinDeviate holes with holes", SparselyBin(0.1, "withholes", Deviate("withholes")), SparselyBin(0.1, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
     #         self.compare("SparselyBinDeviate holes with holes2", SparselyBin(0.1, "withholes", Deviate("withholes")), SparselyBin(0.1, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
 
-    def testCentrallyBin(self):
-        if TestRootCling.ttreeFlat is not None:
-            sys.stderr.write("\n")
-            centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-            self.compare("CentrallyBin noholes w/o weights", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
-            self.compare("CentrallyBin noholes const weights", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
-            self.compare("CentrallyBin noholes positive weights", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
-            self.compare("CentrallyBin noholes with weights", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
-            self.compare("CentrallyBin noholes with holes", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
-            self.compare("CentrallyBin holes w/o weights", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
-            self.compare("CentrallyBin holes const weights", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
-            self.compare("CentrallyBin holes positive weights", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
-            self.compare("CentrallyBin holes with weights", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
-            self.compare("CentrallyBin holes with holes", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
-            self.compare("CentrallyBin holes with holes2", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
+    # def testCentrallyBin(self):
+    #     if TestRootCling.ttreeFlat is not None:
+    #         sys.stderr.write("\n")
+    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+    #         self.compare("CentrallyBin noholes w/o weights", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
+    #         self.compare("CentrallyBin noholes const weights", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
+    #         self.compare("CentrallyBin noholes positive weights", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
+    #         self.compare("CentrallyBin noholes with weights", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
+    #         self.compare("CentrallyBin noholes with holes", CentrallyBin(centers, "noholes"), CentrallyBin(centers, named("noholes", lambda x: x)), self.noholes)
+    #         self.compare("CentrallyBin holes w/o weights", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
+    #         self.compare("CentrallyBin holes const weights", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
+    #         self.compare("CentrallyBin holes positive weights", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
+    #         self.compare("CentrallyBin holes with weights", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
+    #         self.compare("CentrallyBin holes with holes", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
+    #         self.compare("CentrallyBin holes with holes2", CentrallyBin(centers, "withholes"), CentrallyBin(centers, named("withholes", lambda x: x)), self.withholes)
 
-    def testCentrallyBinTrans(self):
-        if TestRootCling.ttreeFlat is not None:
-            sys.stderr.write("\n")
-            centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-            self.compare("CentrallyBinTrans noholes w/o weights", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-            self.compare("CentrallyBinTrans noholes const weights", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-            self.compare("CentrallyBinTrans noholes positive weights", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-            self.compare("CentrallyBinTrans noholes with weights", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-            self.compare("CentrallyBinTrans noholes with holes", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
-            self.compare("CentrallyBinTrans holes w/o weights", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
-            self.compare("CentrallyBinTrans holes const weights", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
-            self.compare("CentrallyBinTrans holes positive weights", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
-            self.compare("CentrallyBinTrans holes with weights", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
-            self.compare("CentrallyBinTrans holes with holes", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
-            self.compare("CentrallyBinTrans holes with holes2", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    # def testCentrallyBinTrans(self):
+    #     if TestRootCling.ttreeFlat is not None:
+    #         sys.stderr.write("\n")
+    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+    #         self.compare("CentrallyBinTrans noholes w/o weights", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+    #         self.compare("CentrallyBinTrans noholes const weights", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+    #         self.compare("CentrallyBinTrans noholes positive weights", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+    #         self.compare("CentrallyBinTrans noholes with weights", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+    #         self.compare("CentrallyBinTrans noholes with holes", CentrallyBin(centers, "noholes", Count("0.5*weight")), CentrallyBin(centers, named("noholes", lambda x: x), Count("0.5*weight")), self.noholes)
+    #         self.compare("CentrallyBinTrans holes w/o weights", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    #         self.compare("CentrallyBinTrans holes const weights", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    #         self.compare("CentrallyBinTrans holes positive weights", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    #         self.compare("CentrallyBinTrans holes with weights", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    #         self.compare("CentrallyBinTrans holes with holes", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
+    #         self.compare("CentrallyBinTrans holes with holes2", CentrallyBin(centers, "withholes", Count("0.5*weight")), CentrallyBin(centers, named("withholes", lambda x: x), Count("0.5*weight")), self.withholes)
 
-    def testCentrallyBinAverage(self):
-        if TestRootCling.ttreeFlat is not None:
-            sys.stderr.write("\n")
-            centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-            self.compare("CentrallyBinAverage noholes w/o weights", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
-            self.compare("CentrallyBinAverage noholes const weights", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
-            self.compare("CentrallyBinAverage noholes positive weights", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
-            self.compare("CentrallyBinAverage noholes with weights", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
-            self.compare("CentrallyBinAverage noholes with holes", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
-            self.compare("CentrallyBinAverage holes w/o weights", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
-            self.compare("CentrallyBinAverage holes const weights", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
-            self.compare("CentrallyBinAverage holes positive weights", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
-            self.compare("CentrallyBinAverage holes with weights", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
-            self.compare("CentrallyBinAverage holes with holes", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
-            self.compare("CentrallyBinAverage holes with holes2", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
+    # def testCentrallyBinAverage(self):
+    #     if TestRootCling.ttreeFlat is not None:
+    #         sys.stderr.write("\n")
+    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+    #         self.compare("CentrallyBinAverage noholes w/o weights", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("CentrallyBinAverage noholes const weights", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("CentrallyBinAverage noholes positive weights", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("CentrallyBinAverage noholes with weights", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("CentrallyBinAverage noholes with holes", CentrallyBin(centers, "noholes", Average("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Average(named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("CentrallyBinAverage holes w/o weights", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("CentrallyBinAverage holes const weights", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("CentrallyBinAverage holes positive weights", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("CentrallyBinAverage holes with weights", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("CentrallyBinAverage holes with holes", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("CentrallyBinAverage holes with holes2", CentrallyBin(centers, "withholes", Average("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Average(named("withholes", lambda x: x))), self.withholes)
 
-    def testCentrallyBinDeviate(self):
-        if TestRootCling.ttreeFlat is not None:
-            sys.stderr.write("\n")
-            centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
-            self.compare("CentrallyBinDeviate noholes w/o weights", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
-            self.compare("CentrallyBinDeviate noholes const weights", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
-            self.compare("CentrallyBinDeviate noholes positive weights", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
-            self.compare("CentrallyBinDeviate noholes with weights", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
-            self.compare("CentrallyBinDeviate noholes with holes", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
-            self.compare("CentrallyBinDeviate holes w/o weights", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
-            self.compare("CentrallyBinDeviate holes const weights", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
-            self.compare("CentrallyBinDeviate holes positive weights", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
-            self.compare("CentrallyBinDeviate holes with weights", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
-            self.compare("CentrallyBinDeviate holes with holes", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
-            self.compare("CentrallyBinDeviate holes with holes2", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
+    # def testCentrallyBinDeviate(self):
+    #     if TestRootCling.ttreeFlat is not None:
+    #         sys.stderr.write("\n")
+    #         centers = [-3.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.0]
+    #         self.compare("CentrallyBinDeviate noholes w/o weights", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("CentrallyBinDeviate noholes const weights", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("CentrallyBinDeviate noholes positive weights", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("CentrallyBinDeviate noholes with weights", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("CentrallyBinDeviate noholes with holes", CentrallyBin(centers, "noholes", Deviate("noholes")), CentrallyBin(centers, named("noholes", lambda x: x), Deviate(named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("CentrallyBinDeviate holes w/o weights", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("CentrallyBinDeviate holes const weights", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("CentrallyBinDeviate holes positive weights", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("CentrallyBinDeviate holes with weights", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("CentrallyBinDeviate holes with holes", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("CentrallyBinDeviate holes with holes2", CentrallyBin(centers, "withholes", Deviate("withholes")), CentrallyBin(centers, named("withholes", lambda x: x), Deviate(named("withholes", lambda x: x))), self.withholes)
 
     # def testCategorize(self):
     #     if TestRootCling.ttreeFlat is not None:
@@ -895,20 +895,20 @@ class TestRootCling(unittest.TestCase):
     #         self.compare("CategorizeTrans holes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5"), Count("0.5*weight")), self.data, Categorize(lambda x: x, Count("0.5*weight")), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.withholes)
     #         self.compare("CategorizeTrans holes with holes2", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5"), Count("0.5*weight")), self.data, Categorize(lambda x: x, Count("0.5*weight")), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.withholes)
 
-    # def testFractionBin(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("FractionBin noholes w/o weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("FractionBin noholes const weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("FractionBin noholes positive weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("FractionBin noholes with weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("FractionBin noholes with holes", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("FractionBin holes w/o weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("FractionBin holes const weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("FractionBin holes positive weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("FractionBin holes with weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("FractionBin holes with holes", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("FractionBin holes with holes2", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    def testFractionBin(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("FractionBin noholes w/o weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("FractionBin noholes const weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("FractionBin noholes positive weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("FractionBin noholes with weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("FractionBin noholes with holes", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("FractionBin holes w/o weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+            self.compare("FractionBin holes const weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+            self.compare("FractionBin holes positive weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+            self.compare("FractionBin holes with weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+            self.compare("FractionBin holes with holes", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+            self.compare("FractionBin holes with holes2", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
 
     # def testStackBin(self):
     #     if TestRootCling.ttreeFlat is not None:
