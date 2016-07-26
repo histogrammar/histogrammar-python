@@ -27,6 +27,8 @@ util.relativeTolerance = tolerance
 util.absoluteTolerance = tolerance
 
 class TestRootCling(unittest.TestCase):
+    SIZE = 10000
+
     ttreeFlat = None
     ttreeEvent = None
     positive = []
@@ -951,43 +953,43 @@ class TestRootCling(unittest.TestCase):
     # def testLimitBin(self):
     #     if TestRootCling.ttreeFlat is not None:
     #         sys.stderr.write("\n")
-    #         self.compare("LimitBin SIZE - 1 noholes w/o weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes"), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE - 1 noholes const weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes"), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE - 1 noholes positive weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes"), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE - 1 noholes with weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes"), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE - 1 noholes with holes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes"), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE - 1 holes w/o weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE - 1 holes const weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE - 1 holes positive weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE - 1 holes with weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE - 1 holes with holes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE - 1 holes with holes2", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE noholes w/o weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes"), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE noholes const weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes"), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE noholes positive weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes"), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE noholes with weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes"), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE noholes with holes", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes"), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LimitBin SIZE holes w/o weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE holes const weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE holes positive weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE holes with weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE holes with holes", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LimitBin SIZE holes with holes2", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes"), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE - 1 noholes w/o weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("LimitBin SIZE - 1 noholes const weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("LimitBin SIZE - 1 noholes positive weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("LimitBin SIZE - 1 noholes with weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("LimitBin SIZE - 1 noholes with holes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("LimitBin SIZE - 1 holes w/o weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE - 1 holes const weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE - 1 holes positive weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE - 1 holes with weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE - 1 holes with holes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE - 1 holes with holes2", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE noholes w/o weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("LimitBin SIZE noholes const weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("LimitBin SIZE noholes positive weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("LimitBin SIZE noholes with weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("LimitBin SIZE noholes with holes", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("LimitBin SIZE holes w/o weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE holes const weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE holes positive weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE holes with weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE holes with holes", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("LimitBin SIZE holes with holes2", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
 
-    # def testLabelBin(self):
-    #     if TestRootCling.ttreeFlat is not None:
-    #         sys.stderr.write("\n")
-    #         self.compare("LabelBin noholes w/o weights", Label(x=Bin(100, -3.0, 3.0, "noholes"), Label(x=Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LabelBin noholes const weights", Label(x=Bin(100, -3.0, 3.0, "noholes"), Label(x=Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LabelBin noholes positive weights", Label(x=Bin(100, -3.0, 3.0, "noholes"), Label(x=Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LabelBin noholes with weights", Label(x=Bin(100, -3.0, 3.0, "noholes"), Label(x=Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LabelBin noholes with holes", Label(x=Bin(100, -3.0, 3.0, "noholes"), Label(x=Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-    #         self.compare("LabelBin holes w/o weights", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LabelBin holes const weights", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LabelBin holes positive weights", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LabelBin holes with weights", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LabelBin holes with holes", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-    #         self.compare("LabelBin holes with holes2", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    def testLabelBin(self):
+        if TestRootCling.ttreeFlat is not None:
+            sys.stderr.write("\n")
+            self.compare("LabelBin noholes w/o weights", Label(x=Bin(100, -3.0, 3.0, "noholes"), Label(x=Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("LabelBin noholes const weights", Label(x=Bin(100, -3.0, 3.0, "noholes"), Label(x=Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("LabelBin noholes positive weights", Label(x=Bin(100, -3.0, 3.0, "noholes"), Label(x=Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("LabelBin noholes with weights", Label(x=Bin(100, -3.0, 3.0, "noholes"), Label(x=Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("LabelBin noholes with holes", Label(x=Bin(100, -3.0, 3.0, "noholes"), Label(x=Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+            self.compare("LabelBin holes w/o weights", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+            self.compare("LabelBin holes const weights", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+            self.compare("LabelBin holes positive weights", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+            self.compare("LabelBin holes with weights", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+            self.compare("LabelBin holes with holes", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+            self.compare("LabelBin holes with holes2", Label(x=Bin(100, -3.0, 3.0, "withholes"), Label(x=Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
 
     # def testUntypedLabelBin(self):
     #     if TestRootCling.ttreeFlat is not None:
