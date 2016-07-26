@@ -162,7 +162,7 @@ class Limit(Factory, Container):
         normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
 
         initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVars[-1] + ";")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
 
         fillCode.append(" " * fillIndent + "if ({0}.entries <= {1}) {{".format(self._clingExpandPrefixCpp(*fillPrefix), self.limit))
         self.value._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "value"),), initIndent, fillCode, fillPrefix + (("var", "value"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)

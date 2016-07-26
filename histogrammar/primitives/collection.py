@@ -19,7 +19,77 @@ import numbers
 from histogrammar.defs import *
 from histogrammar.util import *
 
-class Collection(object): pass
+class Collection(object):
+    def _clingCanonicalOrder(self, items):
+        return sorted((v._clingStructName(), k, v) for k, v in items)
+
+    def _clingStructName(self):
+        letter = self.name[0]
+        out = [letter, "_"]
+        last = None
+        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+            if s != last:
+                if last is not None:
+                    out.append(str(count))
+                    out.append("_")
+                out.append(s)
+                count = 0
+            count += 1
+            last = s
+        out.extend([str(count), "_", letter.lower()])
+        return "".join(out)
+
+    def _clingStruct(self):
+        out = ["""
+  typedef struct {
+    """]
+        last = None
+        n = 0
+        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+            if s != last:
+                if last is not None:
+                    out.append("[{0}];\n    ".format(count))
+                    out.append("{0}& getSub{1}(int i) {{ return sub{1}[i]; }}\n    ".format(lastType, lastN))
+                out.append("{0} sub{1}".format(s, n))
+                lastType = s
+                lastN = n
+                n += 1
+                count = 0
+            count += 1
+            last = s
+        out.append("""[{0}];\n    {1}& getSub{2}(int i) {{ return sub{2}[i]; }}\n    double entries;\n  }} {3};""".format(count, lastType, lastN, self._clingStructName()))
+        return "".join(out)
+
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+
+        last = None
+        n = 0
+        i = 0
+        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+            if last is not None and s != last:
+                n += 1
+                i = 0
+            v._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, weightVars, weightVarStack, tmpVarTypes)
+            i += 1
+            last = s
+
+        storageStructs[self._clingStructName()] = self._clingStruct()
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += obj.entries
+        last = None
+        n = 0
+        i = 0
+        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+            if last is not None and s != last:
+                n += 1
+                i = 0
+            v._clingUpdate(obj, ("func", ["getSub" + str(n), i]))
+            i += 1
+            last = s
 
 ################################################################ Label
 
@@ -148,9 +218,6 @@ class Label(Factory, Container, Collection):
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
-
-    def _clingStructName(self):
-        return "Lb" + str(len(self.pairs)) + self.pairs.values()[0]._clingStructName()
 
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:
@@ -335,26 +402,6 @@ class UntypedLabel(Factory, Container, Collection):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _clingCannonicalOrder(self):
-        out = [(v._clingStructName(), n, v) for n, v in self.pairs.items()]
-        out.sort(key=lambda x: x[0])
-        return out
-
-    def _clingStructName(self):
-        out = "U_"
-        last = None
-        howmany = 0
-        for t, n, v in self._clingCannonicalOrder():
-            if last is None:
-                out += t
-            elif last != t:
-                out += str(howmany) + t
-                howmany = 0
-            howmany += 1
-            last = t
-        out += str(howmany) + "_u"
-        return out
-
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:
             self._checkNPWeights(weights, shape)
@@ -490,6 +537,10 @@ class Index(Factory, Container, Collection):
         """Number of ``values``."""
         return len(self.values)
 
+    @property
+    def pairs(self):
+        return dict(enumerate(self.values))
+
     def __call__(self, i, *rest):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
@@ -537,9 +588,6 @@ class Index(Factory, Container, Collection):
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
-
-    def _clingStructName(self):
-        return "Ix" + str(len(self.values)) + self.values[0]._clingStructName()
 
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:
@@ -687,6 +735,10 @@ class Branch(Factory, Container, Collection):
         """Return the number of containers."""
         return len(self.values)
 
+    @property
+    def pairs(self):
+        return dict(enumerate(self.values))
+
     def __call__(self, i, *rest):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
@@ -734,9 +786,6 @@ class Branch(Factory, Container, Collection):
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
-
-    def _clingStructName(self):
-        return "B_" + "".join(v._clingStructName() for v in self.values) + "_b"
 
     def _numpy(self, data, weights, shape):
         if shape[0] is not None:

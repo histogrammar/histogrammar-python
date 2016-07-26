@@ -118,7 +118,7 @@ class Select(Factory, Container):
 
         normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
 
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVars[-1] + ";")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
         fillCode.append(" " * fillIndent + """if (!std::isnan({0})  &&  {0} > 0.0) {{""".format(normexpr))
 
         weightVars.append("weight_" + str(len(weightVars)))

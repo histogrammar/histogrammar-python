@@ -238,9 +238,13 @@ public:
 {2}{3}
 {4}{5}  {6} storage;
 
-  void fillall(TTree* ttree, Long64_t start, Long64_t end) {{
+  void init() {{
 {7}
     weight_0 = 1.0;
+  }}
+
+  void fillall(TTree* ttree, Long64_t start, Long64_t end) {{
+    init();
 {8}
     if (start < 0) start = 0;
     if (end < 0) end = ttree->GetEntries();
