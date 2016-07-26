@@ -157,6 +157,46 @@ class Categorize(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
+    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".pairs.clear();")
+        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+
+        value = "value_" + str(len(tmpVarTypes))
+        tmpVarTypes[value] = self.value._clingStorageType() + "*"
+
+        fillCode.append("""{indent}if ({pairs}.find({q}) == {pairs}.end())
+{indent}  {pairs}[{q}] = {prototype};    // copy
+{indent}{value} = &({pairs}[{q}]);    // reference""".format(
+            indent = " " * fillIndent,
+            q = normexpr,
+            value = value,
+            prototype = self._clingExpandPrefixCpp(*fillPrefix) + ".value",
+            pairs = self._clingExpandPrefixCpp(*fillPrefix) + ".pairs"))
+
+        self.value._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "value"),), initIndent, fillCode, (("var", "(*" + value + ")"),), fillIndent, weightVars, weightVarStack, tmpVarTypes)
+
+        storageStructs[self._clingStructName()] = """
+  typedef struct {{
+    double entries;
+    {1} value;
+    std::unordered_map<std::string, {1}> pairs;
+    {1}& getValues(std::string i) {{ return pairs[i]; }}
+  }} {0};
+""".format(self._clingStructName(), self.value._clingStorageType())
+
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += obj.entries
+
+        for i in obj.pairs:
+            key = i.first
+            if key not in self.pairs:
+                self.pairs[key] = self.value.copy()
+            self.pairs[key]._clingUpdate(obj, ("func", ["getValues", key]))
+
     def _clingStructName(self):
         return "Cz" + self.value._clingStructName()
 

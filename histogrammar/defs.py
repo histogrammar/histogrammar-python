@@ -348,7 +348,12 @@ public:
         # anything else
         else:
             for fieldName, fieldValue in ast.children():
-                setattr(ast, fieldName, self._clingNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
+                m = re.match("([^[]+)\[([0-9]+)\]", fieldName)
+                if m is not None:
+                    tmp = getattr(ast, m.group(1))
+                    tmp.__setitem__(int(m.group(2)), self._clingNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
+                else:
+                    setattr(ast, fieldName, self._clingNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
 
         return ast
 
@@ -372,6 +377,7 @@ public:
             
         if len(ast) == 1 and isinstance(ast[0], c_ast.ID):
             return generator(ast)
+
         else:
             normexpr = generator(ast)
             derivedFieldName = None
@@ -379,14 +385,19 @@ public:
                 if expr == normexpr:
                     derivedFieldName = name
                     break
+
             if derivedFieldName is None:
                 derivedFieldName = "quantity_" + str(len(derivedFieldExprs))
                 if len(ast) > 1:
                     derivedFieldExprs[derivedFieldName] = "      {\n        " + ";\n        ".join(generator(x) for x in ast[:-1]) + ";\n        " + derivedFieldName + " = " + generator(ast[-1]) + ";\n      }\n"
                 else:
                     derivedFieldExprs[derivedFieldName] = "      " + derivedFieldName + " = " + normexpr + ";\n"
-                # FIXME: a few primitives have exceptions (Categorize should be a string)
-                derivedFieldTypes[derivedFieldName] = "double"
+
+                if self.name == "Categorize":
+                    derivedFieldTypes[derivedFieldName] = "std::string"
+                else:
+                    derivedFieldTypes[derivedFieldName] = "double"
+
             return derivedFieldName
 
     def _clingAddExpr(self, parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):

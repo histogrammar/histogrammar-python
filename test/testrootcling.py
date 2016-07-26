@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import json
+import math
 import sys
 import time
 import unittest
@@ -868,17 +869,7 @@ class TestRootCling(unittest.TestCase):
     # def testCategorize(self):
     #     if TestRootCling.ttreeFlat is not None:
     #         sys.stderr.write("\n")
-    #         self.compare("Categorize noholes w/o weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="<U5"), 1.0)
-    #         self.compare("Categorize noholes const weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="<U5"), 0.5)
-    #         self.compare("Categorize noholes positive weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="<U5"), self.positive)
-    #         self.compare("Categorize noholes with weights", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="<U5"), self.noholes)
-    #         self.compare("Categorize noholes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["noholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.noholes), dtype="<U5"), self.withholes)
-    #         self.compare("Categorize holes w/o weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), 1.0)
-    #         self.compare("Categorize holes const weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), 0.5)
-    #         self.compare("Categorize holes positive weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.positive)
-    #         self.compare("Categorize holes with weights", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.noholes)
-    #         self.compare("Categorize holes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.withholes)
-    #         self.compare("Categorize holes with holes2", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5")), self.data, Categorize(lambda x: x), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.withholes)
+    #         self.compare("Categorize noholes", Categorize("to_string((int)floor(noholes))"), Categorize(named("to_string((int)floor(noholes))", lambda x: str(int(math.floor(x))))), self.noholes)
 
     # def testCategorizeTrans(self):
     #     if TestRootCling.ttreeFlat is not None:
@@ -895,20 +886,20 @@ class TestRootCling(unittest.TestCase):
     #         self.compare("CategorizeTrans holes with holes", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5"), Count("0.5*weight")), self.data, Categorize(lambda x: x, Count("0.5*weight")), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.withholes)
     #         self.compare("CategorizeTrans holes with holes2", Categorize(lambda x: numpy.array(numpy.floor(x["withholes"]), dtype="<U5"), Count("0.5*weight")), self.data, Categorize(lambda x: x, Count("0.5*weight")), numpy.array(numpy.floor(self.withholes), dtype="<U5"), self.withholes)
 
-    def testFractionBin(self):
-        if TestRootCling.ttreeFlat is not None:
-            sys.stderr.write("\n")
-            self.compare("FractionBin noholes w/o weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-            self.compare("FractionBin noholes const weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-            self.compare("FractionBin noholes positive weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-            self.compare("FractionBin noholes with weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-            self.compare("FractionBin noholes with holes", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-            self.compare("FractionBin holes w/o weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-            self.compare("FractionBin holes const weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-            self.compare("FractionBin holes positive weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-            self.compare("FractionBin holes with weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-            self.compare("FractionBin holes with holes", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-            self.compare("FractionBin holes with holes2", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    # def testFractionBin(self):
+    #     if TestRootCling.ttreeFlat is not None:
+    #         sys.stderr.write("\n")
+    #         self.compare("FractionBin noholes w/o weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("FractionBin noholes const weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("FractionBin noholes positive weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("FractionBin noholes with weights", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("FractionBin noholes with holes", Fraction("noholes", Bin(100, -3.0, 3.0, "noholes")), Fraction(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
+    #         self.compare("FractionBin holes w/o weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("FractionBin holes const weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("FractionBin holes positive weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("FractionBin holes with weights", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("FractionBin holes with holes", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
+    #         self.compare("FractionBin holes with holes2", Fraction("withholes", Bin(100, -3.0, 3.0, "withholes")), Fraction(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
 
     # def testStackBin(self):
     #     if TestRootCling.ttreeFlat is not None:
