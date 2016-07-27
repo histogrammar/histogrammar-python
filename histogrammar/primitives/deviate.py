@@ -64,13 +64,13 @@ class Deviate(Factory, Container):
 
         Other parameters:
             entries (float): the number of entries, initially 0.0.
-            mean (float): the running mean, initially 0.0. Note that this value contributes to the total mean with weight zero (because `entries` is initially zero), so this arbitrary choice does not bias the final result.
-            variance (float): the running variance, initially 0.0. Note that this also contributes nothing to the final result.
+            mean (float): the running mean, initially NaN.
+            variance (float): the running variance, initially NaN.
         """
         self.quantity = serializable(quantity)
         self.entries = 0.0
-        self.mean = 0.0
-        self.varianceTimesEntries = 0.0
+        self.mean = float("nan")
+        self.varianceTimesEntries = float("nan")
         super(Deviate, self).__init__()
         self.specialize()
 
@@ -94,11 +94,15 @@ class Deviate(Factory, Container):
         if isinstance(other, Deviate):
             out = Deviate(self.quantity)
             out.entries = self.entries + other.entries
-            if out.entries == 0.0:
-                out.mean = (self.mean + other.mean)/2.0
+            if self.entries == 0.0:
+                out.mean = other.mean
+                out.varianceTimesEntries = other.varianceTimesEntries
+            elif other.entries == 0.0:
+                out.mean = self.mean
+                out.varianceTimesEntries = self.varianceTimesEntries
             else:
                 out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
-            out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + self.entries*self.mean*self.mean + other.entries*other.mean*other.mean - 2.0*out.mean*(self.entries*self.mean + other.entries*other.mean) + out.mean*out.mean*out.entries
+                out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + self.entries*self.mean*self.mean + other.entries*other.mean*other.mean - 2.0*out.mean*(self.entries*self.mean + other.entries*other.mean) + out.mean*out.mean*out.entries
             return out.specialize()
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
@@ -113,6 +117,9 @@ class Deviate(Factory, Container):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
+            if self.entries == 0.0:
+                self.mean = q
+                self.varianceTimesEntries = 0.0
             self.entries += weight
 
             if math.isnan(self.mean) or math.isnan(q):
@@ -195,11 +202,15 @@ class Deviate(Factory, Container):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)
 
         entries = self.entries + obj.entries
-        if entries == 0.0:
-            mean = (self.mean + obj.mean)/2.0
+        if self.entries == 0.0:
+            mean = obj.mean
+            varianceTimesEntries = obj.varianceTimesEntries
+        elif obj.entries == 0.0:
+            mean = self.mean
+            varianceTimesEntries = self.varianceTimesEntries
         else:
             mean = (self.entries*self.mean + obj.entries*obj.mean)/(self.entries + obj.entries)
-        varianceTimesEntries = self.varianceTimesEntries + obj.varianceTimesEntries + self.entries*self.mean*self.mean + obj.entries*obj.mean*obj.mean - 2.0*mean*(self.entries*self.mean + obj.entries*obj.mean) + mean*mean*entries
+            varianceTimesEntries = self.varianceTimesEntries + obj.varianceTimesEntries + self.entries*self.mean*self.mean + obj.entries*obj.mean*obj.mean - 2.0*mean*(self.entries*self.mean + obj.entries*obj.mean) + mean*mean*entries
 
         self.entries = entries
         self.mean = mean
@@ -216,6 +227,9 @@ class Deviate(Factory, Container):
 
         # no possibility of exception from here on out (for rollback)
         ca, ma, sa = self.entries, self.mean, self.varianceTimesEntries
+        if ca == 0.0:
+            ma = 0.0
+            sa = 0.0
 
         import numpy
         selection = weights > 0.0
