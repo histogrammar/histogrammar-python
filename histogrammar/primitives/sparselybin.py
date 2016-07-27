@@ -241,15 +241,15 @@ class SparselyBin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
 
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".bins.clear();")
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".bins.clear();")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
 
         fillCode.append(" " * fillIndent + "if (std::isnan({0})) {{".format(normexpr))
-        self.nanflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        self.nanflow._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
         fillCode.append(" " * fillIndent + "}")
         fillCode.append(" " * fillIndent + "else {")
 
@@ -258,7 +258,7 @@ class SparselyBin(Factory, Container):
         key = "key_" + str(len(tmpVarTypes))
         tmpVarTypes[key] = "Long64_t"
         value = "value_" + str(len(tmpVarTypes))
-        tmpVarTypes[value] = self.value._clingStorageType() + "*"
+        tmpVarTypes[value] = self.value._c99StorageType() + "*"
 
         fillCode.append("""{indent}{softbin} = ({q} - {origin}) * {scale};
 {indent}if ({softbin} <= {LONG_MINUSINF})
@@ -277,17 +277,17 @@ class SparselyBin(Factory, Container):
             scale = 1.0/self.binWidth,
             key = key,
             value = value,
-            prototype = self._clingExpandPrefixCpp(*fillPrefix) + ".value",
-            bins = self._clingExpandPrefixCpp(*fillPrefix) + ".bins",
+            prototype = self._c99ExpandPrefix(*fillPrefix) + ".value",
+            bins = self._c99ExpandPrefix(*fillPrefix) + ".bins",
             LONG_MINUSINF = LONG_MINUSINF,
             LONG_PLUSINF = LONG_PLUSINF
             ))
 
-        self.value._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "value"),), initIndent, fillCode, (("var", "(*" + value + ")"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        self.value._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "value"),), initIndent, fillCode, (("var", "(*" + value + ")"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
 
         fillCode.append(" " * fillIndent + "}")
 
-        storageStructs[self._clingStructName()] = """
+        storageStructs[self._c99StructName()] = """
   typedef struct {{
     double entries;
     {2} nanflow;
@@ -295,10 +295,13 @@ class SparselyBin(Factory, Container):
     std::unordered_map<Long64_t, {1}> bins;
     {1}& getValues(Long64_t i) {{ return bins[i]; }}
   }} {0};
-""".format(self._clingStructName(), self.value._clingStorageType(), self.nanflow._clingStorageType())
+""".format(self._c99StructName(), self.value._c99StorageType(), self.nanflow._c99StorageType())
+
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        raise NotImplementedError("no C99-compliant implementation of SparselyBin (only C++)")
 
     def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
         self.entries += obj.entries
 
         for i in obj.bins:
@@ -309,8 +312,8 @@ class SparselyBin(Factory, Container):
 
         self.nanflow._clingUpdate(obj, ("var", "nanflow"))
 
-    def _clingStructName(self):
-        return "Sb" + self.value._clingStructName() + self.nanflow._clingStructName()
+    def _c99StructName(self):
+        return "Sb" + self.value._c99StructName() + self.nanflow._c99StructName()
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

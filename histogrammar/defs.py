@@ -228,7 +228,7 @@ class Container(object):
             for name, expr in exprs.items():
                 self._clingAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
 
-            self._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, (("var", "storage"),), 6, weightVars, weightVarStack, tmpVarTypes)
+            self._cppGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, (("var", "storage"),), 6, weightVars, weightVarStack, tmpVarTypes)
 
             className = "HistogrammarClingFiller_" + str(Container._clingClassNameNumber)
             Container._clingClassNameNumber += 1
@@ -259,10 +259,10 @@ public:
 """.format(className,
            "".join(storageStructs.values()),
            "".join("  double " + n + ";\n" for n in weightVars),
-           "".join("  " + t + " " + self._clingNormalizeTTreeName(n) + ";\n" for n, t in inputFieldTypes.items() if self._clingNormalizeTTreeName(n) in inputFieldNames),
+           "".join("  " + t + " " + self._cppNormalizeInputName(n) + ";\n" for n, t in inputFieldTypes.items() if self._cppNormalizeInputName(n) in inputFieldNames),
            "".join("  " + t + " " + n + ";\n" for n, t in derivedFieldTypes.items() if t != "auto"),
            "".join("  " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
-           self._clingStorageType(),
+           self._cppStorageType(),
            "\n".join(initCode),
            "".join("    ttree->SetBranchAddress(" + jsonlib.dumps(key) + ", &" + n + ");\n" for n, key in inputFieldNames.items()),
            "".join(x for x in derivedFieldExprs.values()),
@@ -285,7 +285,10 @@ public:
         self._clingFiller.fillall(ttree, start, end)
         self._clingUpdate(self._clingFiller, ("var", "storage"))
                 
-    def _clingExpandPrefixCpp(self, *prefix):
+    def _cppExpandPrefix(self, *prefix):
+        return self._c99ExpandPrefix(*prefix)
+
+    def _c99ExpandPrefix(self, *prefix):
         out = ""
         for t, x in prefix:
             if t == "var":
@@ -299,7 +302,7 @@ public:
                 raise Exception((t, x))
         return out
 
-    def _clingExpandPrefixPython(self, obj, *prefix):
+    def _clingExpandPrefix(self, obj, *prefix):
         for t, x in prefix:
             if t == "var":
                 obj = getattr(obj, x)
@@ -313,19 +316,25 @@ public:
                 raise NotImplementedError((t, x))
         return obj
 
-    def _clingNormalizeTTreeName(self, key):
+    def _cppNormalizeInputName(self, key):
+        return self._c99NormalizeInputName(key)
+
+    def _c99NormalizeInputName(self, key):
         if re.match("^[a-zA-Z0-9]*$", key) is not None:
             return "input_" + key
         else:
             return "input_" + base64.b64encode(key).replace("+", "_1").replace("/", "_2").replace("=", "")
 
-    def _clingNormalizeExpr(self, ast, inputFieldNames, inputFieldTypes, weightVar):
+    def _cppNormalizeExpr(self, ast, inputFieldNames, inputFieldTypes, weightVar):
+        return self._c99NormalizeExpr(ast, inputFieldNames, inputFieldTypes, weightVar)
+
+    def _c99NormalizeExpr(self, ast, inputFieldNames, inputFieldTypes, weightVar):
         # interpret raw identifiers as tree field names IF they're in the tree (otherwise, leave them alone)
         if isinstance(ast, c_ast.ID):
             if weightVar is not None and ast.name == "weight":
                 ast.name = weightVar
             elif ast.name in inputFieldTypes:
-                norm = self._clingNormalizeTTreeName(ast.name)
+                norm = self._cppNormalizeInputName(ast.name)
                 inputFieldNames[norm] = ast.name
                 if inputFieldTypes[ast.name].endswith("*"):
                     norm = "(" + ("*" * inputFieldTypes[ast.name].count("*")) + norm + ")"
@@ -334,20 +343,20 @@ public:
         elif isinstance(ast, c_ast.FuncCall):
             # t("field name") for field names that aren't valid C identifiers
             if isinstance(ast.name, c_ast.ID) and ast.name.name == "t" and isinstance(ast.args, c_ast.ExprList) and len(ast.args.exprs) == 1 and isinstance(ast.args.exprs[0], c_ast.Constant) and ast.args.exprs[0].type == "string":
-                ast = self._clingNormalizeExpr(c_ast.ID(jsonlib.loads(ast.args.exprs[0].value)), inputFieldNames, inputFieldTypes, weightVar)
+                ast = self._cppNormalizeExpr(c_ast.ID(jsonlib.loads(ast.args.exprs[0].value)), inputFieldNames, inputFieldTypes, weightVar)
             # ordinary function: don't translate the name (let function names live in a different namespace from variables)
             elif isinstance(ast.name, c_ast.ID):
                 if ast.args is not None:
-                    ast.args = self._clingNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
+                    ast.args = self._cppNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
             # weird function: calling the result of an evaluation, probably an overloaded operator() in C++
             else:
-                ast.name = self._clingNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar)
+                ast.name = self._cppNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar)
                 if ast.args is not None:
-                    ast.args = self._clingNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
+                    ast.args = self._cppNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
 
         # only the top (x) of a dotted expression (x.y.z) should be interpreted as a field name
         elif isinstance(ast, c_ast.StructRef):
-            self._clingNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar)
+            self._cppNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar)
 
         # anything else
         else:
@@ -355,13 +364,16 @@ public:
                 m = re.match("([^[]+)\[([0-9]+)\]", fieldName)
                 if m is not None:
                     tmp = getattr(ast, m.group(1))
-                    tmp.__setitem__(int(m.group(2)), self._clingNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
+                    tmp.__setitem__(int(m.group(2)), self._cppNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
                 else:
-                    setattr(ast, fieldName, self._clingNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
+                    setattr(ast, fieldName, self._cppNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
 
         return ast
 
-    def _clingQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
+    def _cppQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
+        return self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar)
+
+    def _c99QuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
         if weightVar is not None:
             if not isinstance(self.transform.expr, basestring):
                 raise ContainerException("Count.transform must be provided as a C99 string when used with Cling")
@@ -377,7 +389,7 @@ public:
             except Exception as err:
                 raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.quantity.expr, str(err)))
 
-        ast = [self._clingNormalizeExpr(x, inputFieldNames, inputFieldTypes, weightVar) for x in ast]
+        ast = [self._cppNormalizeExpr(x, inputFieldNames, inputFieldTypes, weightVar) for x in ast]
             
         if len(ast) == 1 and isinstance(ast[0], c_ast.ID):
             return generator(ast)
@@ -419,7 +431,7 @@ public:
         except Exception as err:
             raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(expr, str(err)))
 
-        ast = [self._clingNormalizeExpr(x, inputFieldNames, inputFieldTypes, None) for x in ast]
+        ast = [self._cppNormalizeExpr(x, inputFieldNames, inputFieldTypes, None) for x in ast]
 
         normexpr = generator(ast)
         if len(ast) > 1:
@@ -428,8 +440,11 @@ public:
             derivedFieldExprs[name] = "      auto " + name + " = " + normexpr + ";\n"
         derivedFieldTypes[name] = "auto"
 
-    def _clingStorageType(self):
-        return self._clingStructName()
+    def _cppStorageType(self):
+        return self._c99StorageType()
+
+    def _c99StorageType(self):
+        return self._c99StructName()
 
     def numpy(self, data, weights=1.0):
         import numpy

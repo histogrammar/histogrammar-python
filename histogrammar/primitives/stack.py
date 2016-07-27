@@ -150,14 +150,17 @@ class Stack(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
 
         fillCode.append(" " * fillIndent + "if (std::isnan({0})) {{".format(normexpr))
-        self.nanflow._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        self.nanflow._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
         fillCode.append(" " * fillIndent + "}")
         fillCode.append(" " * fillIndent + "else {")
 
@@ -172,34 +175,34 @@ class Stack(Factory, Container):
 
         fillCode.append(" " * fillIndent + "  for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins)))
         fillCode.append(" " * fillIndent + "    if ({1} == 0  ||  {0} >= edges[{1} - 1]) {{".format(normexpr, bin))
-        self.bins[0][1]._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 6, weightVars, weightVarStack, tmpVarTypes)
+        self.bins[0][1]._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 6, weightVars, weightVarStack, tmpVarTypes)
         fillCode.append(" " * fillIndent + "    }")
         fillCode.append(" " * fillIndent + "  }")
 
         initCode.append(" " * initIndent + "}")
         fillCode.append(" " * fillIndent + "}")
 
-        storageStructs[self._clingStructName()] = """
+        storageStructs[self._c99StructName()] = """
   typedef struct {{
     double entries;
     {3} nanflow;
     {1} values[{2}];
     {1}& getValues(int i) {{ return values[i]; }}
   }} {0};
-""".format(self._clingStructName(),
-           self.bins[0][1]._clingStorageType(),
+""".format(self._c99StructName(),
+           self.bins[0][1]._c99StorageType(),
            len(self.values),
-           self.nanflow._clingStorageType())
+           self.nanflow._c99StorageType())
 
     def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
         self.entries += obj.entries
         for i in xrange(len(self.values)):
             self.bins[i][1]._clingUpdate(obj, ("func", ["getValues", i]))
         self.nanflow._clingUpdate(obj, ("var", "nanflow"))
 
-    def _clingStructName(self):
-        return "Sk" + str(len(self.bins)) + self.bins[0][1]._clingStructName() + self.nanflow._clingStructName()
+    def _c99StructName(self):
+        return "Sk" + str(len(self.bins)) + self.bins[0][1]._c99StructName() + self.nanflow._c99StructName()
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

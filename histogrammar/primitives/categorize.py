@@ -157,15 +157,15 @@ class Categorize(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
 
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".pairs.clear();")
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".pairs.clear();")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
 
         value = "value_" + str(len(tmpVarTypes))
-        tmpVarTypes[value] = self.value._clingStorageType() + "*"
+        tmpVarTypes[value] = self.value._c99StorageType() + "*"
 
         fillCode.append("""{indent}if ({pairs}.find({q}) == {pairs}.end())
 {indent}  {pairs}[{q}] = {prototype};    // copy
@@ -173,22 +173,25 @@ class Categorize(Factory, Container):
             indent = " " * fillIndent,
             q = normexpr,
             value = value,
-            prototype = self._clingExpandPrefixCpp(*fillPrefix) + ".value",
-            pairs = self._clingExpandPrefixCpp(*fillPrefix) + ".pairs"))
+            prototype = self._c99ExpandPrefix(*fillPrefix) + ".value",
+            pairs = self._c99ExpandPrefix(*fillPrefix) + ".pairs"))
 
-        self.value._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "value"),), initIndent, fillCode, (("var", "(*" + value + ")"),), fillIndent, weightVars, weightVarStack, tmpVarTypes)
+        self.value._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "value"),), initIndent, fillCode, (("var", "(*" + value + ")"),), fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-        storageStructs[self._clingStructName()] = """
+        storageStructs[self._c99StructName()] = """
   typedef struct {{
     double entries;
     {1} value;
     std::unordered_map<std::string, {1}> pairs;
     {1}& getValues(std::string i) {{ return pairs[i]; }}
   }} {0};
-""".format(self._clingStructName(), self.value._clingStorageType())
+""".format(self._c99StructName(), self.value._c99StorageType())
+
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        raise NotImplementedError("no C99-compliant implementation of Categorize (only C++)")
 
     def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
         self.entries += obj.entries
 
         for i in obj.pairs:
@@ -197,8 +200,8 @@ class Categorize(Factory, Container):
                 self.pairs[key] = self.value.copy()
             self.pairs[key]._clingUpdate(obj, ("func", ["getValues", key]))
 
-    def _clingStructName(self):
-        return "Cz" + self.value._clingStructName()
+    def _c99StructName(self):
+        return "Cz" + self.value._c99StructName()
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

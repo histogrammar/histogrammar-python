@@ -113,12 +113,15 @@ class Average(Factory, Container):
                 shift = delta * weight / self.entries
                 self.mean += shift
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".mean = 0.0;")
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".mean = 0.0;")
+
+        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
         
         delta = "delta_" + str(len(tmpVarTypes))
         tmpVarTypes[delta] = "double"
@@ -143,22 +146,22 @@ class Average(Factory, Container):
 {indent}  {shift} = {delta} * {weight} / {entries};
 {indent}  {mean} += {shift};
 {indent}}}""".format(indent = " " * fillIndent,
-           entries = self._clingExpandPrefixCpp(*fillPrefix) + ".entries",
-           mean = self._clingExpandPrefixCpp(*fillPrefix) + ".mean",
+           entries = self._c99ExpandPrefix(*fillPrefix) + ".entries",
+           mean = self._c99ExpandPrefix(*fillPrefix) + ".mean",
            q = normexpr,
            delta = delta,
            shift = shift,
            weight = weightVarStack[-1]))
 
-        storageStructs[self._clingStructName()] = """
+        storageStructs[self._c99StructName()] = """
   typedef struct {{
     double entries;
     double mean;
   }} {0};
-""".format(self._clingStructName())
+""".format(self._c99StructName())
 
     def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
 
         entries = self.entries + obj.entries
         if entries == 0.0:
@@ -169,7 +172,7 @@ class Average(Factory, Container):
         self.entries = entries
         self.mean = mean
 
-    def _clingStructName(self):
+    def _c99StructName(self):
         return "Av"
 
     def _numpy(self, data, weights, shape):
