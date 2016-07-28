@@ -14,4 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 __version__ = "0.9-prerelease"
+
+version = __version__
+
+version_info = tuple(re.split(r"[-\.]", __version__))
+
+specification = ".".join(version_info[:2])
+
+def compatible(serializedVersion):
+    selfMajor, selfMinor = map(int, version_info[:2])
+    otherMajor, otherMinor = map(int, re.split(r"[-\.]", serializedVersion)[:2])
+    if selfMajor >= otherMajor:
+        return True
+    elif selfMinor >= otherMinor:
+        return True
+    else:
+        return False

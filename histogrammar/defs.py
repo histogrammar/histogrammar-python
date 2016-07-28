@@ -24,6 +24,7 @@ from histogrammar.util import *
 from histogrammar.parsing import C99SourceToAst
 from histogrammar.parsing import C99AstToSource
 from histogrammar.pycparser import c_ast
+import histogrammar.version
 
 class ContainerException(Exception):
     """Exception type for improperly configured containers."""
@@ -81,13 +82,27 @@ class Factory(object):
         raise NotImplementedError
 
     @staticmethod
+    def fromJsonFile(fileName):
+        return Factory.fromJson(jsonlib.load(open(fileName), json))
+
+    @staticmethod
+    def fromJsonString(json):
+        return Factory.fromJson(jsonlib.loads(json))
+
+    @staticmethod
     def fromJson(json):
         """User's entry point for reconstructing a container from JSON text."""
 
         if isinstance(json, basestring):
             json = jsonlib.loads(json)
 
-        if isinstance(json, dict) and set(json.keys()) == set(["type", "data"]):
+        if isinstance(json, dict) and "type" in json and "data" in json and "version" in json:
+            if isinstance(json["version"], basestring):
+                if not histogrammar.version.compatible(json["version"]):
+                    raise ContainerException("cannot read a Histogrammar {0} document with histogrammar-python version {1}".format(json["version"], histogrammar.version.version))
+            else:
+                raise JsonFormatException(json["version"], "Factory.version")
+
             if isinstance(json["type"], basestring):
                 name = json["type"]
             else:
@@ -153,12 +168,18 @@ class Container(object):
                 child._checkForCrossReferences(memo)
             self._checkedForCrossReferences = True
 
+    def toJsonFile(self, fileName):
+        return jsonlib.dump(self.toJson(), open(fileName, "w"))
+
+    def toJsonString(self):
+        return jsonlib.dumps(self.toJson())
+
     def toJson(self):
         """Convert this container to dicts and lists representing JSON (dropping its ``fill`` method).
        
         Note that the dicts and lists can be turned into a string with ``json.dumps``.
         """
-        return {"type": self.name, "data": self.toJsonFragment(False)}
+        return {"type": self.name, "data": self.toJsonFragment(False), "version": histogrammar.version.specification}
 
     def toJsonFragment(self, suppressName):
         """Used internally to convert the container to JSON without its ``"type"`` header."""
