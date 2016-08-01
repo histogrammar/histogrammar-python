@@ -40,5 +40,5 @@ setup(name="Histogrammar",
       author_email="pivarski@fnal.gov",
       url="https://github.com/diana-hep/histogrammar",
       cmdclass={"test": TestCommand},
-      packages=["histogrammar", "histogrammar.primitives", "histogrammar.plot"],
+      packages=["histogrammar", "histogrammar.primitives", "histogrammar.plot", "histogrammar.pycparser", "histogrammar.pycparser.ply"],
       )
