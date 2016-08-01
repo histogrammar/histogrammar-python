@@ -95,30 +95,33 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".min = NAN;")
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".min = NAN;")
+
+        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
 
         fillCode.append(" " * fillIndent + "if (std::isnan({min})  ||  {q} < {min}) {min} = {q};".format(
-            min = self._clingExpandPrefixCpp(*fillPrefix) + ".min",
+            min = self._c99ExpandPrefix(*fillPrefix) + ".min",
             q = normexpr))
 
-        storageStructs[self._clingStructName()] = """
+        storageStructs[self._c99StructName()] = """
   typedef struct {{
     double entries;
     double min;
   }} {0};
-""".format(self._clingStructName())
+""".format(self._c99StructName())
 
     def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
         self.entries = self.entries + obj.entries
         self.min = minplus(self.min, obj.min)
 
-    def _clingStructName(self):
+    def _c99StructName(self):
         return "Mn"
 
     def _numpy(self, data, weights, shape):
@@ -260,30 +263,33 @@ class Maximize(Factory, Container):
             if math.isnan(self.max) or q > self.max:
                 self.max = q
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".max = NAN;")
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".max = NAN;")
+
+        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
 
         fillCode.append(" " * fillIndent + "if (std::isnan({max})  ||  {q} > {max}) {max} = {q};".format(
-            max = self._clingExpandPrefixCpp(*fillPrefix) + ".max",
+            max = self._c99ExpandPrefix(*fillPrefix) + ".max",
             q = normexpr))
 
-        storageStructs[self._clingStructName()] = """
+        storageStructs[self._c99StructName()] = """
   typedef struct {{
     double entries;
     double max;
   }} {0};
-""".format(self._clingStructName())
+""".format(self._c99StructName())
 
     def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
         self.entries = self.entries + obj.entries
         self.max = maxplus(self.max, obj.max)
 
-    def _clingStructName(self):
+    def _c99StructName(self):
         return "Mx"
 
     def _numpy(self, data, weights, shape):

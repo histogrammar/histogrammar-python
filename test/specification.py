@@ -130,6 +130,8 @@ def Sum_combine(one, two):
 def Average_fill(averaging, datum, weight):
     if weight > 0.0:
         q = averaging.quantity(datum)
+        if averaging.entries == 0.0:
+            averaging.mean = 0.0               # make it not NaN (has no weight in total)
         averaging.entries += weight
 
         if math.isnan(averaging.mean) or math.isnan(q):
@@ -152,8 +154,10 @@ def Average_fill(averaging, datum, weight):
 
 def Average_combine(one, two):
     entries = one.entries + two.entries
-    if entries == 0.0:
-        mean = (one.mean + two.mean) / 2.0
+    if one.entries == 0.0:
+        mean = two.mean
+    elif two.entries == 0.0:
+        mean = one.mean
     else:
         mean = (one.entries*one.mean + two.entries*two.mean)/entries
     out = Average.ed(entries, mean)
@@ -163,6 +167,9 @@ def Average_combine(one, two):
 def Deviate_fill(deviating, datum, weight):
     if weight > 0.0:
         q = deviating.quantity(datum)
+        if deviating.entries == 0.0:
+            deviating.mean = 0.0              # make it not NaN (has no weight in total)
+            deviating.variance = 0.0
         varianceTimesEntries = deviating.variance * deviating.entries
         deviating.entries += weight
 
@@ -193,15 +200,18 @@ def Deviate_fill(deviating, datum, weight):
 
 def Deviate_combine(one, two):
     entries = one.entries + two.entries
-    if entries == 0.0:
-        mean = (one.mean + two.mean) / 2.0
+    if one.entries == 0.0:
+        mean = two.mean
+        varianceTimesEntries = two.variance * two.entries
+    elif two.entries == 0.0:
+        mean = one.mean
+        varianceTimesEntries = one.variance * one.entries
     else:
         mean = (one.entries*one.mean + two.entries*two.mean) / entries
-
-    varianceTimesEntries = one.entries*one.variance + two.entries*two.variance \
-                           + one.entries*one.mean*one.mean + two.entries*two.mean*two.mean \
-                           - 2.0*mean*(one.entries*one.mean + two.entries*two.mean) \
-                           + entries*mean*mean
+        varianceTimesEntries = one.entries*one.variance + two.entries*two.variance \
+                               + one.entries*one.mean*one.mean + two.entries*two.mean*two.mean \
+                               - 2.0*mean*(one.entries*one.mean + two.entries*two.mean) \
+                               + entries*mean*mean
 
     if entries == 0.0:
         variance = varianceTimesEntries

@@ -93,21 +93,24 @@ class Count(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += t
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + " = 0.0;")
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
+
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + " = 0.0;")
         if self.transform is not identity:
-            normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVarStack[-1])
-            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + " += " + normexpr + ";")
+            normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVarStack[-1])
+            fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + " += " + normexpr + ";")
         else:
-            fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + " += " + weightVarStack[-1] + ";")
+            fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + " += " + weightVarStack[-1] + ";")
 
     def _clingUpdate(self, filler, *extractorPrefix):
-        self.entries += self._clingExpandPrefixPython(filler, *extractorPrefix)
+        self.entries += self._clingExpandPrefix(filler, *extractorPrefix)
 
-    def _clingStorageType(self):
+    def _c99StorageType(self):
         return "double"
 
-    def _clingStructName(self):
+    def _c99StructName(self):
         return "Ct"
 
     def _numpy(self, data, weights, shape):

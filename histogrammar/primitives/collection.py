@@ -20,14 +20,14 @@ from histogrammar.defs import *
 from histogrammar.util import *
 
 class Collection(object):
-    def _clingCanonicalOrder(self, items):
-        return sorted((v._clingStructName(), k, v) for k, v in items)
+    def _c99CanonicalOrder(self, items):
+        return sorted((v._c99StructName(), k, v) for k, v in items)
 
-    def _clingStructName(self):
+    def _c99StructName(self):
         letter = self.name[0]
         out = [letter, "_"]
         last = None
-        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
             if s != last:
                 if last is not None:
                     out.append(str(count))
@@ -39,13 +39,13 @@ class Collection(object):
         out.extend([str(count), "_", letter.lower()])
         return "".join(out)
 
-    def _clingStruct(self):
+    def _c99Struct(self):
         out = ["""
   typedef struct {
     """]
         last = None
         n = 0
-        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
             if s != last:
                 if last is not None:
                     out.append("[{0}];\n    ".format(count))
@@ -57,33 +57,36 @@ class Collection(object):
                 count = 0
             count += 1
             last = s
-        out.append("""[{0}];\n    {1}& getSub{2}(int i) {{ return sub{2}[i]; }}\n    double entries;\n  }} {3};""".format(count, lastType, lastN, self._clingStructName()))
+        out.append("""[{0}];\n    {1}& getSub{2}(int i) {{ return sub{2}[i]; }}\n    double entries;\n  }} {3};""".format(count, lastType, lastN, self._c99StructName()))
         return "".join(out)
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
+
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
 
         last = None
         n = 0
         i = 0
-        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
             if last is not None and s != last:
                 n += 1
                 i = 0
-            v._clingGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, weightVars, weightVarStack, tmpVarTypes)
+            v._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, weightVars, weightVarStack, tmpVarTypes)
             i += 1
             last = s
 
-        storageStructs[self._clingStructName()] = self._clingStruct()
+        storageStructs[self._c99StructName()] = self._c99Struct()
 
     def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
         self.entries += obj.entries
         last = None
         n = 0
         i = 0
-        for s, k, v in self._clingCanonicalOrder(self.pairs.items()):
+        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
             if last is not None and s != last:
                 n += 1
                 i = 0

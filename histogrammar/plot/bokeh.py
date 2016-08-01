@@ -17,6 +17,8 @@
 # "Public" methods; what we want to attach to the Histogram as a mix-in.
 from __future__ import absolute_import
 
+import math
+
 class HistogramMethods(object):
     def bokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
 
@@ -135,9 +137,10 @@ class ProfileMethods(object):
         y = list()
         center = l
         for v in self.values:
-            y.append(v.mean)
-            x.append(center+bin_width/2)
-            center += bin_width
+            if not math.isnan(v.mean):
+                y.append(v.mean)
+                x.append(center+bin_width/2)
+                center += bin_width
 
         source = ColumnDataSource(data=dict(x=x, y=y))
 
@@ -186,9 +189,10 @@ class ProfileErrMethods(object):
         y = list()
         center = l
         for v in self.values:
-            y.append(v.mean)
-            x.append(center+bin_width/2)
-            center += bin_width
+            if not math.isnan(v.mean):
+                y.append(v.mean)
+                x.append(center+bin_width/2)
+                center += bin_width
 
         source = ColumnDataSource(data=dict(x=x, y=y))
 

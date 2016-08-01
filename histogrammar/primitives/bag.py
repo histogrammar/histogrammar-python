@@ -137,18 +137,18 @@ class Bag(Factory, Container):
         else:
             self.values[q] = weight
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
 
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".values.clear();")
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".values.clear();")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
 
         fillCode.append("""{indent}if ({values}.find({q}) == {values}.end())
 {indent}  {values}[{q}] = 0.0;
 {indent}{values}[{q}] += {weight};""".format(
            indent = " " * fillIndent,
-           values = self._clingExpandPrefixCpp(*fillPrefix) + ".values",
+           values = self._c99ExpandPrefix(*fillPrefix) + ".values",
            q = normexpr,
            weight = weightVarStack[-1]
            ))
@@ -175,27 +175,30 @@ class Bag(Factory, Container):
            "\n        ".join(("else " if i != 0 else "") + "if (v" + str(i) + " < other.v" + str(i) + ") return true;" for i in xrange(self.dimension))
            )
 
-        storageStructs[self._clingStructName()] = """
+        storageStructs[self._c99StructName()] = """
   typedef struct {{
     double entries;
     std::map<{1}, double> values;
     double getValues({1} i) {{ return values[i]; }}
   }} {0};
-""".format(self._clingStructName(), "double" if self.range == "N" else "std::string" if self.range == "S" else self.range)
+""".format(self._c99StructName(), "double" if self.range == "N" else "std::string" if self.range == "S" else self.range)
+
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        raise NotImplementedError("no C99-compliant implementation of Bag (only C++)")
 
     def _clingUpdate(self, filler, *extractorPrefix):
-       obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
-       self.entries += obj.entries
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
+        self.entries += obj.entries
 
-       for i in obj.values:
-          key = i.first
-          if self.range[0] == "N" and len(self.range) > 1:
-             key = tuple(getattr(key, "v" + str(x)) for x in xrange(self.dimension))
-          if key not in self.values:
-             self.values[key] = 0.0
-          self.values[key] += i.second
+        for i in obj.values:
+           key = i.first
+           if self.range[0] == "N" and len(self.range) > 1:
+              key = tuple(getattr(key, "v" + str(x)) for x in xrange(self.dimension))
+           if key not in self.values:
+              self.values[key] = 0.0
+           self.values[key] += i.second
 
-    def _clingStructName(self):
+    def _c99StructName(self):
         return "Bg" + self.range + "_"
 
     def _numpy(self, data, weights, shape):

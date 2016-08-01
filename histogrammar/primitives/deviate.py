@@ -64,13 +64,13 @@ class Deviate(Factory, Container):
 
         Other parameters:
             entries (float): the number of entries, initially 0.0.
-            mean (float): the running mean, initially 0.0. Note that this value contributes to the total mean with weight zero (because `entries` is initially zero), so this arbitrary choice does not bias the final result.
-            variance (float): the running variance, initially 0.0. Note that this also contributes nothing to the final result.
+            mean (float): the running mean, initially NaN.
+            variance (float): the running variance, initially NaN.
         """
         self.quantity = serializable(quantity)
         self.entries = 0.0
-        self.mean = 0.0
-        self.varianceTimesEntries = 0.0
+        self.mean = float("nan")
+        self.varianceTimesEntries = float("nan")
         super(Deviate, self).__init__()
         self.specialize()
 
@@ -94,11 +94,15 @@ class Deviate(Factory, Container):
         if isinstance(other, Deviate):
             out = Deviate(self.quantity)
             out.entries = self.entries + other.entries
-            if out.entries == 0.0:
-                out.mean = (self.mean + other.mean)/2.0
+            if self.entries == 0.0:
+                out.mean = other.mean
+                out.varianceTimesEntries = other.varianceTimesEntries
+            elif other.entries == 0.0:
+                out.mean = self.mean
+                out.varianceTimesEntries = self.varianceTimesEntries
             else:
                 out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
-            out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + self.entries*self.mean*self.mean + other.entries*other.mean*other.mean - 2.0*out.mean*(self.entries*self.mean + other.entries*other.mean) + out.mean*out.mean*out.entries
+                out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + self.entries*self.mean*self.mean + other.entries*other.mean*other.mean - 2.0*out.mean*(self.entries*self.mean + other.entries*other.mean) + out.mean*out.mean*out.entries
             return out.specialize()
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
@@ -113,6 +117,9 @@ class Deviate(Factory, Container):
                 raise TypeError("function return value ({0}) must be boolean or number".format(q))
 
             # no possibility of exception from here on out (for rollback)
+            if self.entries == 0.0:
+                self.mean = q
+                self.varianceTimesEntries = 0.0
             self.entries += weight
 
             if math.isnan(self.mean) or math.isnan(q):
@@ -138,13 +145,16 @@ class Deviate(Factory, Container):
                 self.mean += shift
                 self.varianceTimesEntries += weight * delta * (q - self.mean)
 
-    def _clingGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".mean = 0.0;")
-        initCode.append(" " * initIndent + self._clingExpandPrefixCpp(*initPrefix) + ".varianceTimesEntries = 0.0;")
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-        normexpr = self._clingQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + self._clingExpandPrefixCpp(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".mean = 0.0;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".varianceTimesEntries = 0.0;")
+
+        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
         
         delta = "delta_" + str(len(tmpVarTypes))
         tmpVarTypes[delta] = "double"
@@ -172,37 +182,41 @@ class Deviate(Factory, Container):
 {indent}  {mean} += {shift};
 {indent}  {varianceTimesEntries} += {weight} * {delta} * ({q} - {mean});
 {indent}}}""".format(indent = " " * fillIndent,
-           entries = self._clingExpandPrefixCpp(*fillPrefix) + ".entries",
-           mean = self._clingExpandPrefixCpp(*fillPrefix) + ".mean",
-           varianceTimesEntries = self._clingExpandPrefixCpp(*fillPrefix) + ".varianceTimesEntries",
+           entries = self._c99ExpandPrefix(*fillPrefix) + ".entries",
+           mean = self._c99ExpandPrefix(*fillPrefix) + ".mean",
+           varianceTimesEntries = self._c99ExpandPrefix(*fillPrefix) + ".varianceTimesEntries",
            q = normexpr,
            delta = delta,
            shift = shift,
            weight = weightVarStack[-1]))
 
-        storageStructs[self._clingStructName()] = """
+        storageStructs[self._c99StructName()] = """
   typedef struct {{
     double entries;
     double mean;
     double varianceTimesEntries;
   }} {0};
-""".format(self._clingStructName())
+""".format(self._c99StructName())
 
     def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefixPython(filler, *extractorPrefix)
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
 
         entries = self.entries + obj.entries
-        if entries == 0.0:
-            mean = (self.mean + obj.mean)/2.0
+        if self.entries == 0.0:
+            mean = obj.mean
+            varianceTimesEntries = obj.varianceTimesEntries
+        elif obj.entries == 0.0:
+            mean = self.mean
+            varianceTimesEntries = self.varianceTimesEntries
         else:
             mean = (self.entries*self.mean + obj.entries*obj.mean)/(self.entries + obj.entries)
-        varianceTimesEntries = self.varianceTimesEntries + obj.varianceTimesEntries + self.entries*self.mean*self.mean + obj.entries*obj.mean*obj.mean - 2.0*mean*(self.entries*self.mean + obj.entries*obj.mean) + mean*mean*entries
+            varianceTimesEntries = self.varianceTimesEntries + obj.varianceTimesEntries + self.entries*self.mean*self.mean + obj.entries*obj.mean*obj.mean - 2.0*mean*(self.entries*self.mean + obj.entries*obj.mean) + mean*mean*entries
 
         self.entries = entries
         self.mean = mean
         self.varianceTimesEntries = varianceTimesEntries
 
-    def _clingStructName(self):
+    def _c99StructName(self):
         return "Dv"
 
     def _numpy(self, data, weights, shape):
@@ -213,6 +227,9 @@ class Deviate(Factory, Container):
 
         # no possibility of exception from here on out (for rollback)
         ca, ma, sa = self.entries, self.mean, self.varianceTimesEntries
+        if ca == 0.0:
+            ma = 0.0
+            sa = 0.0
 
         import numpy
         selection = weights > 0.0

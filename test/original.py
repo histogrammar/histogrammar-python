@@ -53,14 +53,14 @@ class TestOriginal(unittest.TestCase):
     @staticmethod
     def mean(x):
         if len(x) == 0:
-            return 0.0
+            return float("nan")
         else:
             return sum(x) / len(x)
 
     @staticmethod
     def meanWeighted(x, w):
         if not any(_ > 0.0 for _ in w):
-            return 0.0
+            return float("nan")
         else:
             w = list(w)
             return sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0)
@@ -288,8 +288,15 @@ class TestOriginal(unittest.TestCase):
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
 
-            self.assertAlmostEqual(leftAveraging.mean, self.mean(left))
-            self.assertAlmostEqual(rightAveraging.mean, self.mean(right))
+            if len(left) == 0:
+                self.assertTrue(math.isnan(leftAveraging.mean))
+            else:
+                self.assertAlmostEqual(leftAveraging.mean, self.mean(left))
+
+            if len(right) == 0:
+                self.assertTrue(math.isnan(rightAveraging.mean))
+            else:
+                self.assertAlmostEqual(rightAveraging.mean, self.mean(right))
 
             finalResult = leftAveraging + rightAveraging
 
@@ -309,8 +316,14 @@ class TestOriginal(unittest.TestCase):
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
 
-            self.assertAlmostEqual(leftAveraging.cut.mean, self.mean([_.double for _ in left if _.bool]))
-            self.assertAlmostEqual(rightAveraging.cut.mean, self.mean([_.double for _ in right if _.bool]))
+            if len([_.double for _ in left if _.bool]) == 0:
+                self.assertTrue(math.isnan(leftAveraging.mean))
+            else:
+                self.assertAlmostEqual(leftAveraging.cut.mean, self.mean([_.double for _ in left if _.bool]))
+            if len([_.double for _ in right if _.bool]) == 0:
+                self.assertTrue(math.isnan(rightAveraging.mean))
+            else:
+                self.assertAlmostEqual(rightAveraging.cut.mean, self.mean([_.double for _ in right if _.bool]))
 
             finalResult = leftAveraging + rightAveraging
 
@@ -331,9 +344,14 @@ class TestOriginal(unittest.TestCase):
             for _ in left: leftAveraging.fill(_)
             for _ in right: rightAveraging.fill(_)
 
-
-            self.assertAlmostEqual(leftAveraging.cut.mean, self.meanWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
-            self.assertAlmostEqual(rightAveraging.cut.mean, self.meanWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
+            if sum(map(lambda _: _.int if _.int > 0.0 else 0.0, left)) == 0.0:
+                self.assertTrue(math.isnan(leftAveraging.cut.mean))
+            else:
+                self.assertAlmostEqual(leftAveraging.cut.mean, self.meanWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
+            if sum(map(lambda _: _.int if _.int > 0.0 else 0.0, right)) == 0.0:
+                self.assertTrue(math.isnan(rightAveraging.cut.mean))
+            else:
+                self.assertAlmostEqual(rightAveraging.cut.mean, self.meanWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
 
             finalResult = leftAveraging + rightAveraging
 
@@ -355,8 +373,19 @@ class TestOriginal(unittest.TestCase):
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
 
-            self.assertAlmostEqual(leftDeviating.variance, self.variance(left))
-            self.assertAlmostEqual(rightDeviating.variance, self.variance(right))
+            if len(left) == 0:
+                self.assertTrue(math.isnan(leftDeviating.mean))
+                self.assertTrue(math.isnan(leftDeviating.variance))
+            else:
+                self.assertAlmostEqual(leftDeviating.mean, self.mean(left))
+                self.assertAlmostEqual(leftDeviating.variance, self.variance(left))
+
+            if len(right) == 0:
+                self.assertTrue(math.isnan(rightDeviating.mean))
+                self.assertTrue(math.isnan(rightDeviating.variance))
+            else:
+                self.assertAlmostEqual(rightDeviating.mean, self.mean(right))
+                self.assertAlmostEqual(rightDeviating.variance, self.variance(right))
 
             finalResult = leftDeviating + rightDeviating
 
@@ -375,11 +404,21 @@ class TestOriginal(unittest.TestCase):
 
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
+
+            if len([_.double for _ in left if _.bool]) == 0:
+                self.assertTrue(math.isnan(leftDeviating.cut.mean))
+                self.assertTrue(math.isnan(leftDeviating.cut.variance))
+            else:
+                self.assertAlmostEqual(leftDeviating.cut.mean, self.mean([_.double for _ in left if _.bool]))
+                self.assertAlmostEqual(leftDeviating.cut.variance, self.variance([_.double for _ in left if _.bool]))
+
+            if len([_.double for _ in right if _.bool]) == 0:
+                self.assertTrue(math.isnan(rightDeviating.cut.mean))
+                self.assertTrue(math.isnan(rightDeviating.cut.variance))
+            else:
+                self.assertAlmostEqual(rightDeviating.cut.mean, self.mean([_.double for _ in right if _.bool]))
+                self.assertAlmostEqual(rightDeviating.cut.variance, self.variance([_.double for _ in right if _.bool]))
             
-
-            self.assertAlmostEqual(leftDeviating.cut.variance, self.variance([_.double for _ in left if _.bool]))
-            self.assertAlmostEqual(rightDeviating.cut.variance, self.variance([_.double for _ in right if _.bool]))
-
             finalResult = leftDeviating + rightDeviating
 
             self.assertAlmostEqual(finalResult.cut.variance, self.variance([_.double for _ in self.struct if _.bool]))
@@ -398,8 +437,19 @@ class TestOriginal(unittest.TestCase):
             for _ in left: leftDeviating.fill(_)
             for _ in right: rightDeviating.fill(_)
 
-            self.assertAlmostEqual(leftDeviating.cut.variance, self.varianceWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
-            self.assertAlmostEqual(rightDeviating.cut.variance, self.varianceWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
+            if sum(map(lambda _: _.int if _.int > 0.0 else 0.0, left)) == 0.0:
+                self.assertTrue(math.isnan(leftDeviating.cut.mean))
+                self.assertTrue(math.isnan(leftDeviating.cut.variance))
+            else:
+                self.assertAlmostEqual(leftDeviating.cut.mean, self.meanWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
+                self.assertAlmostEqual(leftDeviating.cut.variance, self.varianceWeighted(list(map(lambda _: _.double, left)), list(map(lambda _: _.int, left))))
+
+            if sum(map(lambda _: _.int if _.int > 0.0 else 0.0, right)) == 0.0:
+                self.assertTrue(math.isnan(rightDeviating.cut.mean))
+                self.assertTrue(math.isnan(rightDeviating.cut.variance))
+            else:
+                self.assertAlmostEqual(rightDeviating.cut.mean, self.meanWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
+                self.assertAlmostEqual(rightDeviating.cut.variance, self.varianceWeighted(list(map(lambda _: _.double, right)), list(map(lambda _: _.int, right))))
 
             finalResult = leftDeviating + rightDeviating
 
