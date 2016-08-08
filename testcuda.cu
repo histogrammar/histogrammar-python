@@ -6,51 +6,79 @@ typedef struct {
 
 typedef Bn10CtCtCtCt Aggregator;
 
+#define numBlocks 1
+
+#define numThreadsPerBlock 100
+
+#define threadId ((blockIdx.x + blockIdx.y * gridDim.x + gridDim.x * gridDim.y * blockIdx.z) * (blockDim.x * blockDim.y * blockDim.z) + (threadIdx.z * (blockDim.x * blockDim.y)) + (threadIdx.y * blockDim.x) + threadIdx.x)
+
 extern __shared__ Aggregator threadLocal[];
 
 void __global__ initialize() {
-  Aggregator* mine = &threadLocal[threadIdx.x + blockIdx.x*blockDim.x];
+  Aggregator* mine = &threadLocal[threadId];
 
   for (int i = 0;  i < 10;  ++i)
     mine->values[i] = 0;
 }
 
 void __global__ increment() {
-  Aggregator* mine = &threadLocal[threadIdx.x + blockIdx.x*blockDim.x];
+  Aggregator* mine = &threadLocal[threadId];
   for (int i = 0;  i < 10;  ++i)
     mine->values[i] += 1;
 }
 
-void __global__ extract(Aggregator* globalOnGPU) {
+void __device__ initTotalGPU(Aggregator* total) {
   for (int i = 0;  i < 10;  ++i)
-    globalOnGPU->values[i] = 0;
+    total->values[i] = 0;
+}
 
-  for (int index = 0;  index < 100;  ++index) {
+void __device__ addToTotalGPU(Aggregator* total, Aggregator* item) {
+  for (int i = 0;  i < 10;  ++i)
+    total->values[i] += item->values[i];
+}
+
+void initTotalCPU(Aggregator* total) {
+  for (int i = 0;  i < 10;  ++i)
+    total->values[i] = 0;
+}
+
+void addToTotalCPU(Aggregator* total, Aggregator* item) {
+  for (int i = 0;  i < 10;  ++i)
+    total->values[i] += item->values[i];
+}
+
+void __global__ extract(Aggregator* globalOnGPU) {
+  initTotalGPU(globalOnGPU);
+  for (int index = 0;  index < numThreadsPerBlock;  ++index) {
     Aggregator* mine = &threadLocal[index];
-
-    for (int i = 0;  i < 10;  ++i)
-      globalOnGPU->values[i] += mine->values[i];
+    addToTotalGPU(globalOnGPU, mine);
   }
 }
 
 int main(int argc, char** argv) {
+    initialize<<<numBlocks, numThreadsPerBlock, numThreadsPerBlock * sizeof(Aggregator)>>>();
+
+    increment<<<numBlocks, numThreadsPerBlock, numThreadsPerBlock * sizeof(Aggregator)>>>();
+    increment<<<numBlocks, numThreadsPerBlock, numThreadsPerBlock * sizeof(Aggregator)>>>();
+    increment<<<numBlocks, numThreadsPerBlock, numThreadsPerBlock * sizeof(Aggregator)>>>();
+
     Aggregator *globalOnGPU = NULL;
-    Aggregator globalOnCPU;
-  
-    initialize<<<1, 100, 100 * sizeof(Aggregator)>>>();
-
-    increment<<<1, 100, 100 * sizeof(Aggregator)>>>();
-    increment<<<1, 100, 100 * sizeof(Aggregator)>>>();
-    increment<<<1, 100, 100 * sizeof(Aggregator)>>>();
-
     cudaMalloc((void**)&globalOnGPU, sizeof(Aggregator));
 
-    extract<<<1, 1, 100 * sizeof(Aggregator)>>>(globalOnGPU);
+    Aggregator total;
+    initTotalCPU(&total);
 
-    cudaMemcpy(&globalOnCPU, globalOnGPU, sizeof(Aggregator), cudaMemcpyDeviceToHost);
+    for (int block = 0;  block < numBlocks;  ++block) {
+      extract<<<1, 1, numThreadsPerBlock * sizeof(Aggregator)>>>(globalOnGPU);
+
+      Aggregator globalOnCPU;
+      cudaMemcpy(&globalOnCPU, globalOnGPU, sizeof(Aggregator), cudaMemcpyDeviceToHost);
+
+      addToTotalCPU(&total, &globalOnCPU);
+    }
 
     cudaFree(globalOnGPU);
 
     for (int i = 0;  i < 10;  i++)
-      printf("values[%d] = %g\n", i, globalOnCPU.values[i]);
+      printf("values[%d] = %g\n", i, total.values[i]);
 }
