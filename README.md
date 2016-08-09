@@ -32,25 +32,25 @@ The tests are thorough.
 
 Primitive implementation is mature. CUDA implementation has begun.
 
-| Primitive         | Pure Python | Numpy | ROOT/Cling | CUDA |
-|:------------------|:------------|:------|:-----------|:-----|
-| Count             | done        | done  | done       |      |
-| Sum               | done        | done  | done       | done |
-| Average           | done        | done  | done       |      |
-| Deviate           | done        | done  | done       |      |
-| Minimize          | done        | done  | done       |      |
-| Maximize          | done        | done  | done       |      |
-| Bag               | done        | done  | done       |      |
-| Bin               | done        | done  | done       |      |
-| SparselyBin       | done        | done  | done       |      |
-| CentrallyBin      | done        | done  | done       |      |
-| IrregularlyBin    | done        | done  | done       |      |
-| Categorize        | done        | done  | done       |      |
-| Fraction          | done        | done  | done       |      |
-| Stack             | done        | done  | done       |      |
-| Select            | done        | done  | done       |      |
-| Limit             | done        | done  | done       |      |
-| Label             | done        | done  | done       |      |
-| UntypedLabel      | done        | done  | done       |      |
-| Index             | done        | done  | done       |      |
-| Branch            | done        | done  | done       |      |
+| Primitive         | Pure Python | Numpy | ROOT/Cling | CUDA GPU   |
+|:------------------|:------------|:------|:-----------|:-----------|
+| Count             | done        | done  | done       |            |
+| Sum               | done        | done  | done       | done       |
+| Average           | done        | done  | done       |            |
+| Deviate           | done        | done  | done       |            |
+| Minimize          | done        | done  | done       |            |
+| Maximize          | done        | done  | done       |            |
+| Bag               | done        | done  | done       | impossible |
+| Bin               | done        | done  | done       |            |
+| SparselyBin       | done        | done  | done       | impossible |
+| CentrallyBin      | done        | done  | done       |            |
+| IrregularlyBin    | done        | done  | done       |            |
+| Categorize        | done        | done  | done       | impossible |
+| Fraction          | done        | done  | done       |            |
+| Stack             | done        | done  | done       |            |
+| Select            | done        | done  | done       |            |
+| Limit             | done        | done  | done       |            |
+| Label             | done        | done  | done       |            |
+| UntypedLabel      | done        | done  | done       |            |
+| Index             | done        | done  | done       |            |
+| Branch            | done        | done  | done       |            |
