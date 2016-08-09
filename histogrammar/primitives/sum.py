@@ -109,6 +109,26 @@ class Sum(Factory, Container):
   }} {0};
 """.format(self._c99StructName())
 
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum = 0.0f;")
+
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".sum += " + normexpr + ";")
+
+        combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
+        combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".sum += " + self._c99ExpandPrefix(*itemPrefix) + ".sum;")
+
+        jsonCode.append(" " * jsonIndent + '''fprintf(out, "{{\\"entries\\": %g, \\"sum\\": %g}}", {0}.entries, {0}.sum);'''.format(self._c99ExpandPrefix(*jsonPrefix)))
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    float sum;
+  }} {0};
+""".format(self._c99StructName())
+
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)
         self.entries += obj.entries

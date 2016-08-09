@@ -305,7 +305,80 @@ public:
         # we already have a _clingFiller; just fill
         self._clingFiller.fillall(ttree, start, end)
         self._clingUpdate(self._clingFiller, ("var", "storage"))
-                
+
+    _cudaNamespaceNumber = 0
+    def cuda(self, **exprs):
+        parser = C99SourceToAst()
+        generator = C99AstToSource()
+
+        inputFieldNames = collections.OrderedDict()
+        inputFieldTypes = {}
+        derivedFieldTypes = {}
+        derivedFieldExprs = collections.OrderedDict()
+        storageStructs = collections.OrderedDict()
+        initCode = []
+        fillCode = []
+        combineCode = []
+        jsonCode = []
+        weightVars = ["weight_0"]
+        weightVarStack = ("weight_0",)
+        tmpVarTypes = {}
+
+        for name, expr in exprs.items():
+            self._cudaAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+
+        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 4, weightVars, weightVarStack, tmpVarTypes)
+
+        namespaceName = "HistogrammarCUDA_" + str(Container._cudaNamespaceNumber)
+        Container._cudaNamespaceNumber += 1
+        return '''#ifndef {NS}
+#define {NS}
+
+#include <stdio.h>
+
+namespace {ns} {{
+{typedefs}
+  typedef {lastStructName} Aggregator;
+
+  __host__ __device__ void zero(Aggregator* aggregator) {{
+{initCode}
+  }}
+
+  __host__ __device__ void increment(Aggregator* aggregator, {inputArgList}, float weight) {{
+    const int weight_0 = weight;
+{quantities}
+{fillCode}
+  }}
+
+  __host__ __device__ void combine(Aggregator* total, Aggregator* item) {{
+{combineCode}
+  }}
+
+  __host__ void toJson(Aggregator* aggregator, FILE* out) {{
+    fprintf(out, "{{\\"version\\": \\"{specVersion}\\", \\"type\\": \\"{factoryName}\\", \\"data\\": ");
+{jsonCode}
+    fprintf(out, "}}");
+  }}
+
+
+
+}}
+
+#endif  // {NS}
+'''.format(ns = namespaceName,
+           NS = namespaceName.upper(),
+           specVersion = histogrammar.version.specification,
+           factoryName = self.name,
+           typedefs = "".join(storageStructs.values()),
+           lastStructName = self._c99StructName(),
+           initCode = "\n".join(initCode),
+           fillCode = "\n".join(fillCode),
+           combineCode = "\n".join(combineCode),
+           jsonCode = "\n".join(jsonCode),
+           inputArgList = ", ".join(inputFieldTypes[name] + " " + norm for norm, name in inputFieldNames.items()),
+           quantities = "".join(derivedFieldExprs.values())
+           )
+
     def _cppExpandPrefix(self, *prefix):
         return self._c99ExpandPrefix(*prefix)
 
@@ -391,6 +464,50 @@ public:
 
         return ast
 
+    def _cudaNormalizeExpr(self, ast, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates):
+        if isinstance(ast, c_ast.ID):
+            if weightVar is not None and ast.name == "weight":
+                ast.name = weightVar
+            elif ast.name in derivedFieldExprs:
+                norm = "quantity_" + ast.name
+                ast.name = norm
+            elif ast.name not in intermediates:
+                norm = "input_" + ast.name
+                inputFieldNames[norm] = ast.name
+                inputFieldTypes[ast.name] = "float"
+                ast.name = norm
+
+        elif isinstance(ast, c_ast.Decl):
+            intermediates.add(ast.name)
+            self._cudaNormalizeExpr(ast.init, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+
+        elif isinstance(ast, c_ast.FuncCall):
+            # ordinary function: don't translate the name (let function names live in a different namespace from variables)
+            if isinstance(ast.name, c_ast.ID):
+                if ast.args is not None:
+                    ast.args = self._cudaNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+            # weird function: calling the result of an evaluation, probably an overloaded operator() in C++
+            else:
+                ast.name = self._cudaNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+                if ast.args is not None:
+                    ast.args = self._cudaNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+
+        # only the top (x) of a dotted expression (x.y.z) should be interpreted as a field name
+        elif isinstance(ast, c_ast.StructRef):
+            self._cudaNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+
+        # anything else
+        else:
+            for fieldName, fieldValue in ast.children():
+                m = re.match("([^[]+)\[([0-9]+)\]", fieldName)
+                if m is not None:
+                    tmp = getattr(ast, m.group(1))
+                    tmp.__setitem__(int(m.group(2)), self._cudaNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates))
+                else:
+                    setattr(ast, fieldName, self._cudaNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates))
+
+        return ast
+
     def _cppQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
         return self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar)
 
@@ -444,6 +561,47 @@ public:
 
             return derivedFieldName
 
+    def _cudaQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
+        if weightVar is not None:
+            if not isinstance(self.transform.expr, basestring):
+                raise ContainerException("Count.transform must be provided as a C99 string when used with CUDA")
+            try:
+                ast = parser(self.transform.expr)
+            except Exception as err:
+                raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.transform.expr, str(err)))
+        else:
+            if not isinstance(self.quantity.expr, basestring):
+                raise ContainerException(self.name + ".quantity must be provided as a C99 string when used with CUDA")
+            try:
+                ast = parser(self.quantity.expr)
+            except Exception as err:
+                raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.quantity.expr, str(err)))
+
+        intermediates = set()
+        ast = [self._cudaNormalizeExpr(x, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates) for x in ast]
+            
+        if len(ast) == 1 and isinstance(ast[0], c_ast.ID):
+            return generator(ast)
+
+        else:
+            normexpr = generator(ast)
+            derivedFieldName = None
+            for name, expr in derivedFieldExprs.items():
+                if expr == normexpr:
+                    derivedFieldName = name
+                    break
+
+            if derivedFieldName is None:
+                derivedFieldName = "quantity_" + str(len(derivedFieldExprs))
+                if len(ast) > 1:
+                    derivedFieldExprs[derivedFieldName] = "    float " + derivedFieldName + ";\n    {\n      " + ";\n      ".join(generator(x) for x in ast[:-1]) + ";\n      " + derivedFieldName + " = " + generator(ast[-1]) + ";\n    }\n"
+                else:
+                    derivedFieldExprs[derivedFieldName] = "    float " + derivedFieldName + " = " + normexpr + ";\n"
+
+                derivedFieldTypes[derivedFieldName] = "float"
+
+            return derivedFieldName
+
     def _clingAddExpr(self, parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
         if not isinstance(expr, basestring):
             raise ContainerException("expressions like {0} must be provided as a C99 string".format(name))
@@ -454,12 +612,28 @@ public:
 
         ast = [self._cppNormalizeExpr(x, inputFieldNames, inputFieldTypes, None) for x in ast]
 
-        normexpr = generator(ast)
         if len(ast) > 1:
             derivedFieldExprs[name] = "      auto " + name + " = [this]{\n        " + ";\n        ".join(generator(x) for x in ast[:-1]) + ";\n        return " + generator(ast[-1]) + ";\n      }();\n"
         else:
-            derivedFieldExprs[name] = "      auto " + name + " = " + normexpr + ";\n"
+            derivedFieldExprs[name] = "      auto " + name + " = " + generator(ast[0]) + ";\n"
         derivedFieldTypes[name] = "auto"
+
+    def _cudaAddExpr(self, parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
+        if not isinstance(expr, basestring):
+            raise ContainerException("expressions like {0} must be provided as a C99 string".format(name))
+        try:
+            ast = parser(expr)
+        except Exception as err:
+            raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(expr, str(err)))
+
+        intermediates = set()
+        ast = [self._cudaNormalizeExpr(x, inputFieldNames, inputFieldTypes, None, derivedFieldExprs, intermediates) for x in ast]
+
+        if len(ast) > 1:
+            derivedFieldExprs[name] = "    float quantity_" + name + ";\n    {\n      " + ";\n      ".join(generator(x) for x in ast[:-1]) + ";\n      quantity_" + name + " = " + generator(ast[-1]) + ";\n    }\n"
+        else:
+            derivedFieldExprs[name] = "    float quantity_" + name + " = " + generator(ast[0]) + ";\n"
+        derivedFieldTypes[name] = "float"
 
     def _cppStorageType(self):
         return self._c99StorageType()

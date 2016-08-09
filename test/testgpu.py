@@ -21,7 +21,7 @@ import sys
 import time
 import unittest
 
-# from histogrammar import *
+from histogrammar import *
 
 tolerance = 1e-12
 util.relativeTolerance = tolerance
@@ -31,63 +31,5 @@ class TestGPU(unittest.TestCase):
     def runTest(self):
         pass
 
-    def testAnything(self):
-        try:
-            import pycuda.autoinit
-            import pycuda.driver
-            import numpy
-            from pycuda.compiler import SourceModule
-        except ImportError:
-            pass
-        else:
-
-if True:
-            module = SourceModule("""
-#include <stdio.h>
-
-typedef struct {
-  float test;
-} Histogram;
-
-namespace histogrammar {
-  __global__ void init(Histogram* histogram) {
-    const int index = threadIdx.x;
-    histogram[index].test = 5;
-  }
-
-  void fillall() {
-    Histogram *working;
-    Histogram output[100];
-
-    cudaMalloc((void**)&working, 100 * sizeof(Histogram));
-
-    histogrammar::init<<<1, 100>>>(working);
-
-    cudaMemcpy(output, working, 100 * sizeof(Histogram), cudaMemcpyDeviceToHost);
-
-    cudaFree(working);
-
-    for (int i = 0;  i < 100;  i++)
-      printf("%g\\n", output[i].test);
-  }
-}
-""")
-            output = numpy.empty(100, dtype=numpy.float32)
-            doinit = module.get_function("doinit")
-            dofill = module.get_function("dofill")
-            fill(pycuda.driver.Out(output), block=(100, 1, 1))
-
-
-
-            
-#             module = SourceModule("""
-  # float values[100];
-  # float overflow;
-  # float underflow;
-  # float nanflow;
-
-# __global__ void fill(Histogram* histogram, float* data, float* weights) {
-
-# }
-# """)
-
+    def testSum(self):
+        print Sum("float tmp = 2 * q; tmp").cuda(q = "float tmp = x + y; tmp")
