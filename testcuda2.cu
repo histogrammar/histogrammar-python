@@ -36,11 +36,9 @@ __device__ int threadId() {
 
 extern __shared__ unsigned char sharedMemory[];
 
-#define cudaErrorCheck(code) { cudaAssert(code, __FILE__, __LINE__); }
-
-void cudaAssert(cudaError_t code, const char* file, int line) {
+void errorCheck(cudaError_t code) {
   if (code != cudaSuccess) {
-    fprintf(stderr, "cudaAssert: %s at %s:%d\n", cudaGetErrorString(code), file, line);
+    fprintf(stderr, "CUDA error: %s\n", cudaGetErrorString(code));
     exit(code);
   }
 }
@@ -82,13 +80,13 @@ void extractAll(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, A
   printf("eight\n");
 
   Aggregator* sumOverBlock = NULL;
-  cudaErrorCheck(cudaMalloc((void**)&sumOverBlock, numBlocks * sizeof(Aggregator)));
+  errorCheck(cudaMalloc((void**)&sumOverBlock, numBlocks * sizeof(Aggregator)));
 
   printf("nine\n");
 
   extractFromBlock<<<numBlocks, 1, sharedMemoryOffset + numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset, numThreadsPerBlock, sumOverBlock);
-  cudaErrorCheck(cudaPeekAtLastError());
-  cudaErrorCheck(cudaDeviceSynchronize());
+  errorCheck(cudaPeekAtLastError());
+  errorCheck(cudaDeviceSynchronize());
 
   printf("ten\n");
 
@@ -96,11 +94,11 @@ void extractAll(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, A
 
   printf("eleven\n");
 
-  cudaErrorCheck(cudaMemcpy(sumOverBlock2, sumOverBlock, numBlocks * sizeof(Aggregator), cudaMemcpyDeviceToHost));
+  errorCheck(cudaMemcpy(sumOverBlock2, sumOverBlock, numBlocks * sizeof(Aggregator), cudaMemcpyDeviceToHost));
 
   printf("twelve\n");
 
-  cudaErrorCheck(cudaFree(sumOverBlock));
+  errorCheck(cudaFree(sumOverBlock));
 
   printf("thirteen\n");
 
@@ -122,15 +120,15 @@ void extractAll(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, A
 }
 
 int main(int argc, char** argv) {
-  int numBlocks = 1;
-  int numThreadsPerBlock = 1;
-  int sharedMemoryOffset = 0;
+  int numBlocks = 3;
+  int numThreadsPerBlock = 2;
+  int sharedMemoryOffset = 4;
 
   printf("one\n");
 
   initialize<<<numBlocks, numThreadsPerBlock, numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset);
-  cudaErrorCheck(cudaPeekAtLastError());
-  cudaErrorCheck(cudaDeviceSynchronize());
+  errorCheck(cudaPeekAtLastError());
+  errorCheck(cudaDeviceSynchronize());
 
   printf("two\n");
 
@@ -144,27 +142,27 @@ int main(int argc, char** argv) {
 
   printf("three\n");
 
-  cudaErrorCheck(cudaMalloc((void**)&x_gpu, 10 * sizeof(float)));
-  cudaErrorCheck(cudaMalloc((void**)&y_gpu, 10 * sizeof(float)));
-  cudaErrorCheck(cudaMalloc((void**)&weight_gpu, 10 * sizeof(float)));
+  errorCheck(cudaMalloc((void**)&x_gpu, 10 * sizeof(float)));
+  errorCheck(cudaMalloc((void**)&y_gpu, 10 * sizeof(float)));
+  errorCheck(cudaMalloc((void**)&weight_gpu, 10 * sizeof(float)));
 
   printf("four\n");
 
-  cudaErrorCheck(cudaMemcpy(x_gpu, x_cpu, 10 * sizeof(float), cudaMemcpyHostToDevice));
-  cudaErrorCheck(cudaMemcpy(y_gpu, y_cpu, 10 * sizeof(float), cudaMemcpyHostToDevice));
-  cudaErrorCheck(cudaMemcpy(weight_gpu, weight_cpu, 10 * sizeof(float), cudaMemcpyHostToDevice));
+  errorCheck(cudaMemcpy(x_gpu, x_cpu, 10 * sizeof(float), cudaMemcpyHostToDevice));
+  errorCheck(cudaMemcpy(y_gpu, y_cpu, 10 * sizeof(float), cudaMemcpyHostToDevice));
+  errorCheck(cudaMemcpy(weight_gpu, weight_cpu, 10 * sizeof(float), cudaMemcpyHostToDevice));
 
   printf("five\n");
 
   fillAll<<<numBlocks, numThreadsPerBlock, numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset, x_gpu, y_gpu, weight_gpu);
-  cudaErrorCheck(cudaPeekAtLastError());
-  cudaErrorCheck(cudaDeviceSynchronize());
+  errorCheck(cudaPeekAtLastError());
+  errorCheck(cudaDeviceSynchronize());
 
   printf("six\n");
 
-  cudaErrorCheck(cudaFree(x_gpu));
-  cudaErrorCheck(cudaFree(y_gpu));
-  cudaErrorCheck(cudaFree(weight_gpu));
+  errorCheck(cudaFree(x_gpu));
+  errorCheck(cudaFree(y_gpu));
+  errorCheck(cudaFree(weight_gpu));
 
   printf("seven\n");
 
