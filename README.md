@@ -30,27 +30,27 @@ The tests are thorough.
    * `testnumpy.py` tests numerical agreement between the conventional implementation and the Numpy implementation, which are very different. Also tests much larger datasets and infinity/NaN handling.
      * contrary to its name, `testnumpy.py` also compares its implementation with the literal code given in [the specification](http://histogrammar.org/docs/specification/) as well.
 
-Primitive implementation is mature. Notes in the "Numpy" column are rough speedup factors for a range of tests.
+Primitive implementation is mature. CUDA implementation has begun.
 
-| Primitive         | Pure Python | Numpy            | ROOT/Cling | CUDA |
-|:------------------|:------------|:-----------------|:-----------|:-----|
-| Count             | done        | 100X             | done       |      |
-| Sum               | done        | 40-100X          | done       | done |
-| Average           | done        | 40-100X          | done       |      |
-| Deviate           | done        | 40-80X           | done       |      |
-| Minimize          | done        | 50-150X          | done       |      |
-| Maximize          | done        | 50-150X          | done       |      |
-| Bag               | done        | 1.5-2X           | done       |      |
-| Bin               | done        | 5-25X (100 bins) | done       |      |
-| SparselyBin       | done        | 4-5X (~100 bins) | done       |      |
-| CentrallyBin      | done        | 25-40X (10 bins) | done       |      |
-| IrregularlyBin    | done        | 1-4X (10 plots)  | done       |      |
-| Categorize        | done        | 1.5X             | done       |      |
-| Fraction          | done        | 4-20X (100 bins) | done       |      |
-| Stack             | done        | 2-12X (10 plots) | done       |      |
-| Select            | done        | 4-20X (100 bins) | done       |      |
-| Limit             | done        | pass-through     | done       |      |
-| Label             | done        | pass-through     | done       |      |
-| UntypedLabel      | done        | pass-through     | done       |      |
-| Index             | done        | pass-through     | done       |      |
-| Branch            | done        | pass-through     | done       |      |
+| Primitive         | Pure Python | Numpy | ROOT/Cling | CUDA |
+|:------------------|:------------|:------|:-----------|:-----|
+| Count             | done        | done  | done       |      |
+| Sum               | done        | done  | done       | done |
+| Average           | done        | done  | done       |      |
+| Deviate           | done        | done  | done       |      |
+| Minimize          | done        | done  | done       |      |
+| Maximize          | done        | done  | done       |      |
+| Bag               | done        | done  | done       |      |
+| Bin               | done        | done  | done       |      |
+| SparselyBin       | done        | done  | done       |      |
+| CentrallyBin      | done        | done  | done       |      |
+| IrregularlyBin    | done        | done  | done       |      |
+| Categorize        | done        | done  | done       |      |
+| Fraction          | done        | done  | done       |      |
+| Stack             | done        | done  | done       |      |
+| Select            | done        | done  | done       |      |
+| Limit             | done        | done  | done       |      |
+| Label             | done        | done  | done       |      |
+| UntypedLabel      | done        | done  | done       |      |
+| Index             | done        | done  | done       |      |
+| Branch            | done        | done  | done       |      |
