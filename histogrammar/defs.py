@@ -344,8 +344,8 @@ namespace {ns} {{
 {initCode}
   }}
 
-  __host__ __device__ void increment(Aggregator* aggregator, {inputArgList}, float weight) {{
-    const int weight_0 = weight;
+  __host__ __device__ void increment(Aggregator* aggregator, {inputArgList}) {{
+    const int weight_0 = 1.0f;
 {quantities}
 {fillCode}
   }}
@@ -362,6 +362,109 @@ namespace {ns} {{
 
 
 
+  __device__ int blockId() {{
+    return blockIdx.x + blockIdx.y * gridDim.x + blockIdx.z * gridDim.x * gridDim.y;
+  }}
+
+  __device__ int blockSize() {{
+    return blockDim.x * blockDim.y * blockDim.z;
+  }}
+
+  __device__ int threadId() {{
+    return threadIdx.x + threadIdx.y * blockDim.x + threadIdx.z * blockDim.x * blockDim.y;
+  }}
+
+  extern __shared__ unsigned char sharedMemory[];
+
+  void errorCheck(cudaError_t code) {{
+    if (code != cudaSuccess) {{
+      fprintf(stderr, "CUDA error: %s\\n", cudaGetErrorString(code));
+      exit(code);
+    }}
+  }}
+
+  __global__ void initialize(int sharedMemoryOffset) {{
+    Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
+    zero(threadLocal);
+  }}
+
+  __device__ void fill(int sharedMemoryOffset, float input_x, float input_y) {{
+    Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
+    increment(threadLocal, input_x, input_y);
+  }}
+
+  __global__ void fillAll(int sharedMemoryOffset, float* input_x, float* input_y) {{
+    int id = threadId() + blockId() * blockSize();
+    fill(sharedMemoryOffset, input_x[id], input_y[id]);
+  }}
+
+  __global__ void extractFromBlock(int sharedMemoryOffset, int numThreadsPerBlock, Aggregator* sumOverBlock) {{
+    Aggregator *blockLocal = &sumOverBlock[blockId()];
+    zero(blockLocal);
+    for (int thread = 0;  thread < numThreadsPerBlock;  ++thread) {{
+      Aggregator* singleAggregator = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + thread*sizeof(Aggregator));
+      combine(blockLocal, singleAggregator);
+    }}
+  }}
+
+  void extractAll(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, Aggregator* sumOverAll) {{
+    Aggregator* sumOverBlock = NULL;
+    errorCheck(cudaMalloc((void**)&sumOverBlock, numBlocks * sizeof(Aggregator)));
+
+    extractFromBlock<<<numBlocks, 1, sharedMemoryOffset + numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset, numThreadsPerBlock, sumOverBlock);
+    errorCheck(cudaPeekAtLastError());
+    errorCheck(cudaDeviceSynchronize());
+
+    Aggregator* sumOverBlock2 = (Aggregator*)malloc(numBlocks * sizeof(Aggregator));
+    errorCheck(cudaMemcpy(sumOverBlock2, sumOverBlock, numBlocks * sizeof(Aggregator), cudaMemcpyDeviceToHost));
+    errorCheck(cudaFree(sumOverBlock));
+
+    zero(sumOverAll);
+    for (int block = 0;  block < numBlocks;  ++block)
+      combine(sumOverAll, &sumOverBlock2[block]);
+
+    free(sumOverBlock2);
+  }}
+
+  void test(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, int numDataPoints, float *input_x, float *input_y) {{
+    initialize<<<numBlocks, numThreadsPerBlock, numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset);
+    errorCheck(cudaPeekAtLastError());
+    errorCheck(cudaDeviceSynchronize());
+
+    float* gpu_x;
+    float* gpu_y;
+
+    errorCheck(cudaMalloc((void**)&gpu_x, numDataPoints * sizeof(float)));
+    errorCheck(cudaMalloc((void**)&gpu_y, numDataPoints * sizeof(float)));
+
+    errorCheck(cudaMemcpy(gpu_x, input_x, numDataPoints * sizeof(float), cudaMemcpyHostToDevice));
+    errorCheck(cudaMemcpy(gpu_y, input_y, numDataPoints * sizeof(float), cudaMemcpyHostToDevice));
+
+    fillAll<<<numBlocks, numThreadsPerBlock, numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset, gpu_x, gpu_y);
+    errorCheck(cudaPeekAtLastError());
+    errorCheck(cudaDeviceSynchronize());
+
+    errorCheck(cudaFree(gpu_x));
+    errorCheck(cudaFree(gpu_y));
+
+    Aggregator sumOverAll;
+    extractAll(sharedMemoryOffset, numBlocks, numThreadsPerBlock, &sumOverAll);
+
+    toJson(&sumOverAll, stdout);
+    fprintf(stdout, "\\n");
+  }}
+}}
+
+int main(int argc, char** argv) {{
+  int sharedMemoryOffset = 8;
+  int numBlocks = 2;
+  int numThreadsPerBlock = 5;
+
+  int numDataPoints = 10;
+  float input_x[10] = {{1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f}};
+  float input_y[10] = {{2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f}};
+
+  {ns}::test(sharedMemoryOffset, numBlocks, numThreadsPerBlock, numDataPoints, input_x, input_y);
 }}
 
 #endif  // {NS}
