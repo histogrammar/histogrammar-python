@@ -13,11 +13,7 @@ __host__ __device__ void zero(Aggregator* aggregator) {
 }
 
 __host__ __device__ void increment(Aggregator* aggregator, float input_x, float input_y, float weight) {
-  printf("before %g %g %g %g ", aggregator->test, weight, input_x, input_y);
-
   aggregator->test += weight * (input_x + input_y);
-
-  printf("after %g\n", aggregator->test);
 }
 
 __host__ __device__ void combine(Aggregator* total, Aggregator* item) {
@@ -26,8 +22,16 @@ __host__ __device__ void combine(Aggregator* total, Aggregator* item) {
 
 //////
 
+__device__ int blockId() {
+  return blockIdx.x + blockIdx.y * gridDim.x + blockIdx.z * gridDim.x * gridDim.y;
+}
+
+__device__ int blockSize() {
+  return blockDim.x * blockDim.y * blockDim.z;
+}
+
 __device__ int threadId() {
-  return (blockIdx.x + blockIdx.y * gridDim.x + gridDim.x * gridDim.y * blockIdx.z) * (blockDim.x * blockDim.y * blockDim.z) + (threadIdx.z * (blockDim.x * blockDim.y)) + (threadIdx.y * blockDim.x) + threadIdx.x;
+  return threadIdx.x + threadIdx.y * blockDim.x + threadIdx.z * blockDim.x * blockDim.y;
 }
 
 extern __shared__ unsigned char sharedMemory[];
@@ -50,21 +54,26 @@ __global__ void initialize(int sharedMemoryOffset) {
 __device__ void fill(int sharedMemoryOffset, float input_x, float input_y, float weight) {
   Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
   increment(threadLocal, input_x, input_y, weight);
+
+  printf("    fill %ld %g\n", (size_t)threadLocal, threadLocal->test);
 }
 
 // the input fields are auto-generated
 __global__ void fillAll(int sharedMemoryOffset, float* input_x, float* input_y, float* weight) {
   printf("here %g %g %g\n", input_x[0], input_y[0], weight[0]);
 
-  int id = threadId();
+  int id = threadId() + blockId() * blockSize();
   fill(sharedMemoryOffset, input_x[id], input_y[id], weight[id]);
 }
 
 __global__ void extractFromBlock(int sharedMemoryOffset, int numThreadsPerBlock, Aggregator* sumOverBlock) {
-  Aggregator *blockLocal = &sumOverBlock[blockIdx.x + blockIdx.y * gridDim.x + gridDim.x * gridDim.y * blockIdx.z];
-  zero(sumOverBlock);
+  Aggregator *blockLocal = &sumOverBlock[blockId()];
+  zero(blockLocal);
   for (int thread = 0;  thread < numThreadsPerBlock;  ++thread) {
     Aggregator* singleAggregator = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + thread*sizeof(Aggregator));
+
+    printf("    extract %ld %g\n", (size_t)singleAggregator, singleAggregator->test);
+
     combine(blockLocal, singleAggregator);
   }
 }
@@ -97,10 +106,13 @@ void extractAll(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, A
 
   zero(sumOverAll);
 
-  printf("fourteen %d\n", numBlocks);
+  printf("fourteen\n");
 
-  for (int block = 0;  block < numBlocks;  ++block)
+  for (int block = 0;  block < numBlocks;  ++block) {
+    printf("    block %d %g\n", block, sumOverBlock2[block].test);
+
     combine(sumOverAll, &sumOverBlock2[block]);
+  }
 
   printf("fifteen\n");
 
@@ -123,7 +135,7 @@ int main(int argc, char** argv) {
   printf("two\n");
 
   float x_cpu[10] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f};
-  float y_cpu[10] = {10.0f, 9.0f, 8.0f, 7.0f, 6.0f, 5.0f, 4.0f, 3.0f, 2.0f, 1.0f};
+  float y_cpu[10] = {2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f};
   float weight_cpu[10] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
 
   float* x_gpu;
