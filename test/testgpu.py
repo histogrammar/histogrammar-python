@@ -32,4 +32,4 @@ class TestGPU(unittest.TestCase):
         pass
 
     def testSum(self):
-        print Sum("float tmp = 2 * q; tmp").cuda(q = "float tmp = x + y; tmp")
+        print Sum("x").cuda()

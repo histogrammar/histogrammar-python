@@ -16,8 +16,10 @@
 
 import base64
 import collections
+import datetime
 import json as jsonlib
 import math
+import random
 import re
 
 from histogrammar.util import *
@@ -307,7 +309,7 @@ public:
         self._clingUpdate(self._clingFiller, ("var", "storage"))
 
     _cudaNamespaceNumber = 0
-    def cuda(self, **exprs):
+    def cuda(self, namespaceName=None, **exprs):
         parser = C99SourceToAst()
         generator = C99AstToSource()
 
@@ -329,53 +331,66 @@ public:
 
         self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 4, weightVars, weightVarStack, tmpVarTypes)
 
-        namespaceName = "HistogrammarCUDA_" + str(Container._cudaNamespaceNumber)
-        Container._cudaNamespaceNumber += 1
+        if namespaceName is None:
+            namespaceName = "HistogrammarCUDA_" + str(Container._cudaNamespaceNumber)
+            Container._cudaNamespaceNumber += 1
+
         return '''#ifndef {NS}
 #define {NS}
 
 #include <stdio.h>
 
+// Auto-generated on {timestamp:%Y-%m-%d %H:%M:%S}
+// If you edit this file, it will be hard to swap it out for another auto-generated copy.
+
 namespace {ns} {{
+  // How the aggregator is laid out in memory (CPU main memory and GPU shared memory).
 {typedefs}
   typedef {lastStructName} Aggregator;
 
+  // Specific logic of how to zero out the aggregator.
   __host__ __device__ void zero(Aggregator* aggregator) {{
 {initCode}
   }}
 
+  // Specific logic of how to increment the aggregator with input values.
   __host__ __device__ void increment(Aggregator* aggregator, {inputArgList}) {{
     const int weight_0 = 1.0f;
 {quantities}
 {fillCode}
   }}
 
+  // Specific logic of how to combine two aggregators.
   __host__ __device__ void combine(Aggregator* total, Aggregator* item) {{
 {combineCode}
   }}
 
+  // Specific logic of how to print out the aggregator.
   __host__ void toJson(Aggregator* aggregator, FILE* out) {{
     fprintf(out, "{{\\"version\\": \\"{specVersion}\\", \\"type\\": \\"{factoryName}\\", \\"data\\": ");
 {jsonCode}
     fprintf(out, "}}");
   }}
 
-
-
+  // Generic blockId calculation (3D is the most general).
   __device__ int blockId() {{
     return blockIdx.x + blockIdx.y * gridDim.x + blockIdx.z * gridDim.x * gridDim.y;
   }}
 
+  // Generic blockSize calculation (3D is the most general).
   __device__ int blockSize() {{
     return blockDim.x * blockDim.y * blockDim.z;
   }}
 
+  // Generic threadId calculation (3D is the most general).
   __device__ int threadId() {{
     return threadIdx.x + threadIdx.y * blockDim.x + threadIdx.z * blockDim.x * blockDim.y;
   }}
 
+  // Reference to shared memory on the block.
   extern __shared__ unsigned char sharedMemory[];
 
+  // Wrapper for CUDA calls to report errors.
   void errorCheck(cudaError_t code) {{
     if (code != cudaSuccess) {{
       fprintf(stderr, "CUDA error: %s\\n", cudaGetErrorString(code));
@@ -383,21 +398,43 @@ namespace {ns} {{
     }}
   }}
 
-  __global__ void initialize(int sharedMemoryOffset) {{
+  // User-level API for initializing the aggregator (from CPU or GPU).
+  //
+  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory
+  //
+  __global__ void initialize(int sharedMemoryOffset = 0) {{
     Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
     zero(threadLocal);
   }}
 
-  __device__ void fill(int sharedMemoryOffset, float input_x, float input_y) {{
+  // User-level API for filling the aggregator with a single value (from GPU).
+  //
+  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory.
+  //     input arguments: the input variables you used in the aggregator\'s fill rule.
+  //
+  __device__ void fill(int sharedMemoryOffset, {inputArgList}) {{
     Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
-    increment(threadLocal, input_x, input_y);
+    increment(threadLocal, {inputList});
   }}
 
-  __global__ void fillAll(int sharedMemoryOffset, float* input_x, float* input_y) {{
+  // User-level API for filling the aggregator with arrays of values (from CPU or GPU).
+  //
+  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory.
+  //     input arguments: the input variables you used in the aggregator\'s fill rule.
+  //
+  __global__ void fillAll(int sharedMemoryOffset, {inputArgStarList}) {{
     int id = threadId() + blockId() * blockSize();
-    fill(sharedMemoryOffset, input_x[id], input_y[id]);
+    fill(sharedMemoryOffset, {inputListId});
   }}
 
+  // User-level API for combining all aggregators in a block (from CPU or GPU).
+  //
+  // If called from the CPU, be sure to call with exactly one thread per block.
+  //
+  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory.
+  //     numThreadsPerBlock: number of threads per block *when initializing or filling*. This function should be called with one thread per block.
+  //     sumOverBlock: aggregators (one per block) that will be zeroed out and filled with the sum of shared-memory aggregators filled by all the threads that ran in this block.
+  //
   __global__ void extractFromBlock(int sharedMemoryOffset, int numThreadsPerBlock, Aggregator* sumOverBlock) {{
     Aggregator *blockLocal = &sumOverBlock[blockId()];
     zero(blockLocal);
@@ -407,6 +444,13 @@ namespace {ns} {{
     }}
   }}
 
+  // User-level API for combining all aggregators (from CPU).
+  //
+  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory.
+  //     numBlocks: number of blocks when initializing or filling.
+  //     numThreadsPerBlock: number of threads per block when initializing or filling.
+  //     sumOverAll: single aggregator that will be zeroed out and filled with the sum of all aggregators filled by all the threads that ran in all the blocks.
+  //
   void extractAll(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, Aggregator* sumOverAll) {{
     Aggregator* sumOverBlock = NULL;
     errorCheck(cudaMalloc((void**)&sumOverBlock, numBlocks * sizeof(Aggregator)));
@@ -426,49 +470,57 @@ namespace {ns} {{
     free(sumOverBlock2);
   }}
 
-  void test(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, int numDataPoints, float *input_x, float *input_y) {{
-    initialize<<<numBlocks, numThreadsPerBlock, numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset);
+  // Test function provides an example of how to use the API.
+  //
+  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory.
+  //     numBlocks: number of independent blocks to run.
+  //     numThreadsPerBlock: number of threads to run in each block.
+  //     input arguments: the input variables you used in the aggregator\'s fill rule.
+  //
+  void test(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, int numDataPoints, {inputArgStarList}) {{
+    // Call initialize first.
+    // Provide a memory allocation that includes *your* application\'s data (if any) and
+    // enough memory for each thread to get one Aggregator (ignore blocks in this calculation).
+    initialize<<<numBlocks, numThreadsPerBlock, sharedMemoryOffset + numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset);
     errorCheck(cudaPeekAtLastError());
     errorCheck(cudaDeviceSynchronize());
 
-    float* gpu_x;
-    float* gpu_y;
-
-    errorCheck(cudaMalloc((void**)&gpu_x, numDataPoints * sizeof(float)));
-    errorCheck(cudaMalloc((void**)&gpu_y, numDataPoints * sizeof(float)));
-
-    errorCheck(cudaMemcpy(gpu_x, input_x, numDataPoints * sizeof(float), cudaMemcpyHostToDevice));
-    errorCheck(cudaMemcpy(gpu_y, input_y, numDataPoints * sizeof(float), cudaMemcpyHostToDevice));
-
-    fillAll<<<numBlocks, numThreadsPerBlock, numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset, gpu_x, gpu_y);
+{copyTestData}
+    // Call fill next, using the same number of blocks, threads per block, and memory allocation.
+    // fillAll is a __global__ function that takes arrays; fill is a __device__ function that
+    // takes single entries. Use the latter if filling from your GPU application.
+    fillAll<<<numBlocks, numThreadsPerBlock, sharedMemoryOffset + numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset, {gpuList});
     errorCheck(cudaPeekAtLastError());
     errorCheck(cudaDeviceSynchronize());
 
-    errorCheck(cudaFree(gpu_x));
-    errorCheck(cudaFree(gpu_y));
-
+{freeTestData}
+    // Call extractAll (always on the CPU) last and give it an Aggregator to overwrite.
     Aggregator sumOverAll;
     extractAll(sharedMemoryOffset, numBlocks, numThreadsPerBlock, &sumOverAll);
 
+    // This Aggregator can be written to stdout as JSON for other Histogrammar programs to interpret
+    // (and plot).
     toJson(&sumOverAll, stdout);
     fprintf(stdout, "\\n");
   }}
 }}
 
+// Optional main runs a tiny test.
+/*
 int main(int argc, char** argv) {{
   int sharedMemoryOffset = 8;
   int numBlocks = 2;
   int numThreadsPerBlock = 5;
 
   int numDataPoints = 10;
-  float input_x[10] = {{1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f}};
-  float input_y[10] = {{2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f}};
-
-  {ns}::test(sharedMemoryOffset, numBlocks, numThreadsPerBlock, numDataPoints, input_x, input_y);
+{randomTestData}
+  {ns}::test(sharedMemoryOffset, numBlocks, numThreadsPerBlock, numDataPoints, {inputList});
 }}
+*/
 
 #endif  // {NS}
-'''.format(ns = namespaceName,
+'''.format(timestamp = datetime.datetime.now(),
+           ns = namespaceName,
            NS = namespaceName.upper(),
            specVersion = histogrammar.version.specification,
            factoryName = self.name,
@@ -478,8 +530,20 @@ int main(int argc, char** argv) {{
            fillCode = "\n".join(fillCode),
            combineCode = "\n".join(combineCode),
            jsonCode = "\n".join(jsonCode),
+           inputList = ", ".join(norm for norm, name in inputFieldNames.items()),
+           gpuList = ", ".join("gpu_" + name for norm, name in inputFieldNames.items()),
+           inputListId = ", ".join(norm + "[id]" for norm, name in inputFieldNames.items()),
            inputArgList = ", ".join(inputFieldTypes[name] + " " + norm for norm, name in inputFieldNames.items()),
-           quantities = "".join(derivedFieldExprs.values())
+           inputArgStarList = ", ".join(inputFieldTypes[name] + "* " + norm for norm, name in inputFieldNames.items()),
+           quantities = "".join(derivedFieldExprs.values()),
+           copyTestData = "".join('''    float* gpu_{1};
+    errorCheck(cudaMalloc((void**)&gpu_{1}, numDataPoints * sizeof(float)));
+    errorCheck(cudaMemcpy(gpu_{1}, {0}, numDataPoints * sizeof(float), cudaMemcpyHostToDevice));
+'''.format(norm, name) for norm, name in inputFieldNames.items()),
+           freeTestData = "".join('''    errorCheck(cudaFree(gpu_{0}));
+'''.format(name) for name in inputFieldNames.values()),
+           randomTestData = "".join('''  float {0}[10] = {{{1}f, {2}f, {3}f, {4}f, {5}f, {6}f, {7}f, {8}f, {9}f, {10}f}};
+'''.format(norm, round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2)) for norm in inputFieldNames)
            )
 
     def _cppExpandPrefix(self, *prefix):
