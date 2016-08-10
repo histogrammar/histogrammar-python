@@ -400,7 +400,7 @@ namespace {ns} {{
 
   // User-level API for initializing the aggregator (from CPU or GPU).
   //
-  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory
+  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
   __global__ void initialize(int sharedMemoryOffset = 0) {{
     Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
@@ -409,34 +409,32 @@ namespace {ns} {{
 
   // User-level API for filling the aggregator with a single value (from GPU).
   //
-  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory.
   //     input arguments: the input variables you used in the aggregator\'s fill rule.
+  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
-  __device__ void fill(int sharedMemoryOffset, {inputArgList}) {{
+  __device__ void fill({inputArgList}, int sharedMemoryOffset = 0) {{
     Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
     increment(threadLocal, {inputList});
   }}
 
   // User-level API for filling the aggregator with arrays of values (from CPU or GPU).
   //
-  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory.
   //     input arguments: the input variables you used in the aggregator\'s fill rule.
+  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
-  __global__ void fillAll(int sharedMemoryOffset, {inputArgStarList}) {{
+  __global__ void fillAll({inputArgStarList}, int sharedMemoryOffset = 0) {{
     int id = threadId() + blockId() * blockSize();
-    fill(sharedMemoryOffset, {inputListId});
+    fill({inputListId}, sharedMemoryOffset);
   }}
 
   // User-level API for combining all aggregators in a block (from CPU or GPU).
   //
-  // If called from the CPU, be sure to call with exactly one thread per block.
+  //     numThreadsPerBlock: number of threads per block to combine on the GPU.
+  //     result: outputs (one Aggregator per block) that are returned to the CPU for final combining.
+  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
-  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory.
-  //     numThreadsPerBlock: number of threads per block *when initializing or filling*. This function should be called with one thread per block.
-  //     sumOverBlock: aggregators (one per block) that will be zeroed out and filled with the sum of shared-memory aggregators filled by all the threads that ran in this block.
-  //
-  __global__ void extractFromBlock(int sharedMemoryOffset, int numThreadsPerBlock, Aggregator* sumOverBlock) {{
-    Aggregator *blockLocal = &sumOverBlock[blockId()];
+  __global__ void extractFromBlock(int numThreadsPerBlock, Aggregator* result, int sharedMemoryOffset = 0) {{
+    Aggregator *blockLocal = &result[blockId()];
     zero(blockLocal);
     for (int thread = 0;  thread < numThreadsPerBlock;  ++thread) {{
       Aggregator* singleAggregator = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + thread*sizeof(Aggregator));
@@ -446,16 +444,16 @@ namespace {ns} {{
 
   // User-level API for combining all aggregators (from CPU).
   //
-  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory.
-  //     numBlocks: number of blocks when initializing or filling.
-  //     numThreadsPerBlock: number of threads per block when initializing or filling.
-  //     sumOverAll: single aggregator that will be zeroed out and filled with the sum of all aggregators filled by all the threads that ran in all the blocks.
+  //     numBlocks: number of blocks to combine on the CPU.
+  //     numThreadsPerBlock: number of threads per block to combine on the GPU.
+  //     result: output (exactly one Aggregator) that is the result of all combining.
+  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
-  void extractAll(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, Aggregator* sumOverAll) {{
+  void extractAll(int numBlocks, int numThreadsPerBlock, Aggregator* result, int sharedMemoryOffset = 0) {{
     Aggregator* sumOverBlock = NULL;
     errorCheck(cudaMalloc((void**)&sumOverBlock, numBlocks * sizeof(Aggregator)));
 
-    extractFromBlock<<<numBlocks, 1, sharedMemoryOffset + numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset, numThreadsPerBlock, sumOverBlock);
+    extractFromBlock<<<numBlocks, numThreadsPerBlock, sharedMemoryOffset + numThreadsPerBlock * sizeof(Aggregator)>>>(numThreadsPerBlock, sumOverBlock, sharedMemoryOffset);
     errorCheck(cudaPeekAtLastError());
     errorCheck(cudaDeviceSynchronize());
 
@@ -463,9 +461,9 @@ namespace {ns} {{
     errorCheck(cudaMemcpy(sumOverBlock2, sumOverBlock, numBlocks * sizeof(Aggregator), cudaMemcpyDeviceToHost));
     errorCheck(cudaFree(sumOverBlock));
 
-    zero(sumOverAll);
+    zero(result);
     for (int block = 0;  block < numBlocks;  ++block)
-      combine(sumOverAll, &sumOverBlock2[block]);
+      combine(result, &sumOverBlock2[block]);
 
     free(sumOverBlock2);
   }}
@@ -489,14 +487,14 @@ namespace {ns} {{
     // Call fill next, using the same number of blocks, threads per block, and memory allocation.
     // fillAll is a __global__ function that takes arrays; fill is a __device__ function that
     // takes single entries. Use the latter if filling from your GPU application.
-    fillAll<<<numBlocks, numThreadsPerBlock, sharedMemoryOffset + numThreadsPerBlock * sizeof(Aggregator)>>>(sharedMemoryOffset, {gpuList});
+    fillAll<<<numBlocks, numThreadsPerBlock, sharedMemoryOffset + numThreadsPerBlock * sizeof(Aggregator)>>>({gpuList}, sharedMemoryOffset);
     errorCheck(cudaPeekAtLastError());
     errorCheck(cudaDeviceSynchronize());
 
 {freeTestData}
     // Call extractAll (always on the CPU) last and give it an Aggregator to overwrite.
     Aggregator sumOverAll;
-    extractAll(sharedMemoryOffset, numBlocks, numThreadsPerBlock, &sumOverAll);
+    extractAll(numBlocks, numThreadsPerBlock, &sumOverAll, sharedMemoryOffset);
 
     // This Aggregator can be written to stdout as JSON for other Histogrammar programs to interpret
     // (and plot).
