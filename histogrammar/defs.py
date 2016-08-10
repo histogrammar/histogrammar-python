@@ -369,7 +369,7 @@ namespace {ns} {{
   __host__ void toJson(Aggregator* aggregator, FILE* out) {{
     fprintf(out, "{{\\"version\\": \\"{specVersion}\\", \\"type\\": \\"{factoryName}\\", \\"data\\": ");
 {jsonCode}
-    fprintf(out, "}}");
+    fprintf(out, "}}\\n");
   }}
 
   // Generic blockId calculation (3D is the most general).
@@ -400,7 +400,7 @@ namespace {ns} {{
 
   // User-level API for initializing the aggregator (from CPU or GPU).
   //
-  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
+  //   sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
   __global__ void initialize(int sharedMemoryOffset = 0) {{
     Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
@@ -409,8 +409,8 @@ namespace {ns} {{
 
   // User-level API for filling the aggregator with a single value (from GPU).
   //
-  //     input arguments: the input variables you used in the aggregator\'s fill rule.
-  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
+  //   input arguments: the input variables you used in the aggregator\'s fill rule.
+  //   sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
   __device__ void fill({inputArgList}, int sharedMemoryOffset = 0) {{
     Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
@@ -419,8 +419,8 @@ namespace {ns} {{
 
   // User-level API for filling the aggregator with arrays of values (from CPU or GPU).
   //
-  //     input arguments: the input variables you used in the aggregator\'s fill rule.
-  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
+  //   input arguments: the input variables you used in the aggregator\'s fill rule.
+  //   sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
   __global__ void fillAll({inputArgStarList}, int sharedMemoryOffset = 0) {{
     int id = threadId() + blockId() * blockSize();
@@ -429,25 +429,45 @@ namespace {ns} {{
 
   // User-level API for combining all aggregators in a block (from CPU or GPU).
   //
-  //     numThreadsPerBlock: number of threads per block to combine on the GPU.
-  //     result: outputs (one Aggregator per block) that are returned to the CPU for final combining.
-  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
+  //   numThreadsPerBlock: number of threads per block to combine on the GPU.
+  //   result: outputs (one Aggregator per block) that are returned to the CPU for final combining.
+  //   sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
   __global__ void extractFromBlock(int numThreadsPerBlock, Aggregator* result, int sharedMemoryOffset = 0) {{
-    Aggregator *blockLocal = &result[blockId()];
-    zero(blockLocal);
-    for (int thread = 0;  thread < numThreadsPerBlock;  ++thread) {{
-      Aggregator* singleAggregator = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + thread*sizeof(Aggregator));
-      combine(blockLocal, singleAggregator);
+    // merge down in log(N) steps until the thread with id == 0 has the total for this block
+    int id = threadId();
+
+    // i should be the first power of 2 larger than numThreadsPerBlock/2
+    int i = 1;
+    while (2*i < numThreadsPerBlock) i <<= 1;
+
+    // iteratively split the sample and combine the upper half into the lower half
+    while (i != 0) {{
+      if (id < i  &&  id + i < numThreadsPerBlock) {{
+        Aggregator* ours = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + id*sizeof(Aggregator));
+        Aggregator* theirs = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + (id + i)*sizeof(Aggregator));
+        combine(ours, theirs);
+      }}
+
+      // every iteration should be in lock-step across threads in this block
+      __syncthreads();
+      i >>= 1;
+    }}
+
+    // return the result, which is in thread 0\'s copy
+    if (id == 0) {{
+      Aggregator* singleAggregator = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset);
+      Aggregator* blockLocal = &result[blockId()];
+      memcpy(blockLocal, singleAggregator, sizeof(Aggregator));
     }}
   }}
 
   // User-level API for combining all aggregators (from CPU).
   //
-  //     numBlocks: number of blocks to combine on the CPU.
-  //     numThreadsPerBlock: number of threads per block to combine on the GPU.
-  //     result: output (exactly one Aggregator) that is the result of all combining.
-  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
+  //   numBlocks: number of blocks to combine on the CPU.
+  //   numThreadsPerBlock: number of threads per block to combine on the GPU.
+  //   result: output (exactly one Aggregator) that is the result of all combining.
+  //   sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
   void extractAll(int numBlocks, int numThreadsPerBlock, Aggregator* result, int sharedMemoryOffset = 0) {{
     Aggregator* sumOverBlock = NULL;
@@ -470,10 +490,10 @@ namespace {ns} {{
 
   // Test function provides an example of how to use the API.
   //
-  //     sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory.
-  //     numBlocks: number of independent blocks to run.
-  //     numThreadsPerBlock: number of threads to run in each block.
-  //     input arguments: the input variables you used in the aggregator\'s fill rule.
+  //   sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory.
+  //   numBlocks: number of independent blocks to run.
+  //   numThreadsPerBlock: number of threads to run in each block.
+  //   input arguments: the input variables you used in the aggregator\'s fill rule.
   //
   void test(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, int numDataPoints, {inputArgStarList}) {{
     // Call initialize first.
@@ -499,14 +519,13 @@ namespace {ns} {{
     // This Aggregator can be written to stdout as JSON for other Histogrammar programs to interpret
     // (and plot).
     toJson(&sumOverAll, stdout);
-    fprintf(stdout, "\\n");
   }}
 }}
 
 // Optional main runs a tiny test.
 /*
 int main(int argc, char** argv) {{
-  int sharedMemoryOffset = 8;
+  int sharedMemoryOffset = 8;    // say you have something important in the first 8 bytes; don\'t overwrite it
   int numBlocks = 2;
   int numThreadsPerBlock = 5;
 
