@@ -115,7 +115,7 @@ class Count(Factory, Container):
 
         combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + " += " + self._c99ExpandPrefix(*itemPrefix) + ";")
 
-        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ");")
 
     def _clingUpdate(self, filler, *extractorPrefix):
         self.entries += self._clingExpandPrefix(filler, *extractorPrefix)

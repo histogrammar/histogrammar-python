@@ -17,35 +17,49 @@
 import json
 import math
 import random
+import subprocess
 import sys
 import time
 import unittest
+from distutils import spawn
 
 from histogrammar import *
 
-tolerance = 1e-12
+tolerance = 1e-6
 util.relativeTolerance = tolerance
 util.absoluteTolerance = tolerance
 
 class TestGPU(unittest.TestCase):
+    nvcc = spawn.find_executable("nvcc")
+
+    def runStandalone(self, code, expected):
+        if self.nvcc is not None:
+            open("compileme.cu", "w").write(code)
+            compilation = subprocess.Popen([self.nvcc, "-o", "runme", "compileme.cu"])
+            if compilation.wait() == 0:
+                execution = subprocess.Popen(["./runme"], stdout=subprocess.PIPE)
+                if execution.wait() == 0:
+                    result = Factory.fromJson(execution.stdout.read())
+                    self.assertEqual(result, expected)
+
     def runTest(self):
         pass
 
     def testCount(self):
-        Count().cuda()
-        Count("weight**2").cuda()
+        self.runStandalone(Count().cuda(commentMain=False, testData=range(10)), Count.ed(10.0))
+        self.runStandalone(Count("2*weight").cuda(commentMain=False, testData=range(10)), Count.ed(20.0))
 
     def testSum(self):
-        Sum("x").cuda()
+        self.runStandalone(Sum("x").cuda(commentMain=False, testData=range(10)), Sum.ed(10, 45.0))
 
     def testAverage(self):
-        Average("x").cuda()
+        self.runStandalone(Average("x").cuda(commentMain=False, testData=range(10)), Average.ed(10, 4.5))
 
     def testDeviate(self):
-        Deviate("x").cuda()
+        self.runStandalone(Deviate("x").cuda(commentMain=False, testData=range(10)), Deviate.ed(10, 4.5, 8.25))
 
     def testMinimize(self):
-        Minimize("x").cuda()
+        self.runStandalone(Minimize("x").cuda(commentMain=False, testData=range(10)), Minimize.ed(10, 0.0))
 
     def testMaximize(self):
-        Maximize("x").cuda()
+        self.runStandalone(Maximize("x").cuda(commentMain=False, testData=range(10)), Maximize.ed(10, 9.0))

@@ -118,7 +118,7 @@ class Minimize(Factory, Container):
 
     def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".min = CUDART_NAN_F;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".min = UNIVERSAL_NAN;")
 
         normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
         fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
@@ -128,16 +128,16 @@ class Minimize(Factory, Container):
 
         combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
         combineCode.append("""{indent}if (isnan({totalmin})  &&  isnan({itemmin}))
-{indent}  {totalmin} = CUDART_NAN_F;
+{indent}  {totalmin} = UNIVERSAL_NAN;
 {indent}else if (isnan({totalmin})  ||  {totalmin} > {itemmin})
 {indent}  {totalmin} = {itemmin};""".format(indent = " " * combineIndent,
             totalmin = self._c99ExpandPrefix(*totalPrefix) + ".min",
             itemmin = self._c99ExpandPrefix(*itemPrefix) + ".min"))
 
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
-        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"min\\\": \");")
-        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".min);")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".min);")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
 
         storageStructs[self._c99StructName()] = """
@@ -317,7 +317,7 @@ class Maximize(Factory, Container):
 
     def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".max = CUDART_NAN_F;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".max = UNIVERSAL_NAN;")
 
         normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
         fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
@@ -327,16 +327,16 @@ class Maximize(Factory, Container):
 
         combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
         combineCode.append("""{indent}if (isnan({totalmax})  &&  isnan({itemmax}))
-{indent}  {totalmax} = CUDART_NAN_F;
+{indent}  {totalmax} = UNIVERSAL_NAN;
 {indent}else if (isnan({totalmax})  ||  {totalmax} < {itemmax})
 {indent}  {totalmax} = {itemmax};""".format(indent = " " * combineIndent,
             totalmax = self._c99ExpandPrefix(*totalPrefix) + ".max",
             itemmax = self._c99ExpandPrefix(*itemPrefix) + ".max"))
 
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
-        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"max\\\": \");")
-        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".max);")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".max);")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
 
         storageStructs[self._c99StructName()] = """

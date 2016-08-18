@@ -34,12 +34,12 @@ Primitive implementation is mature. CUDA implementation has begun.
 
 | Primitive         | Pure Python | Numpy | ROOT/Cling | CUDA GPU   |
 |:------------------|:------------|:------|:-----------|:-----------|
-| Count             | done        | done  | done       | written    |
+| Count             | done        | done  | done       | done       |
 | Sum               | done        | done  | done       | done       |
-| Average           | done        | done  | done       | written    |
-| Deviate           | done        | done  | done       | written    |
-| Minimize          | done        | done  | done       | written    |
-| Maximize          | done        | done  | done       | written    |
+| Average           | done        | done  | done       | done       |
+| Deviate           | done        | done  | done       | done       |
+| Minimize          | done        | done  | done       | done       |
+| Maximize          | done        | done  | done       | done       |
 | Bag               | done        | done  | done       | impossible |
 | Bin               | done        | done  | done       |            |
 | SparselyBin       | done        | done  | done       | impossible |

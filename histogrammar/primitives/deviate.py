@@ -212,19 +212,19 @@ class Deviate(Factory, Container):
         tmpVarTypes[shift] = "float"
 
         fillCode.append("""{indent}if (isnan({mean})  ||  isnan({q})) {{
-{indent}  {mean} = CUDART_NAN_F;
-{indent}  {varianceTimesEntries} = CUDART_NAN_F;
+{indent}  {mean} = UNIVERSAL_NAN;
+{indent}  {varianceTimesEntries} = UNIVERSAL_NAN;
 {indent}}}
 {indent}else if (isinf({mean})  ||  isinf({q})) {{
 {indent}  if (isinf({mean})  &&  isinf({q})  &&  {mean} * {q} < 0.0f)
-{indent}    {mean} = CUDART_NAN_F;
+{indent}    {mean} = UNIVERSAL_NAN;
 {indent}  else if (isinf({q}))
 {indent}    {mean} = {q};
 {indent}  else
 {indent}    {{ }}
 {indent}  if (isinf({entries})  ||  isnan({entries}))
-{indent}    {mean} = CUDART_NAN_F;
-{indent}  {varianceTimesEntries} = CUDART_NAN_F;
+{indent}    {mean} = UNIVERSAL_NAN;
+{indent}  {varianceTimesEntries} = UNIVERSAL_NAN;
 {indent}}}
 {indent}else {{
 {indent}  {delta} = {q} - {mean};
@@ -262,14 +262,14 @@ class Deviate(Factory, Container):
             ))
 
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
-        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"mean\\\": \");")
-        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".mean);")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".mean);")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"variance\\\": \");")
         jsonCode.append(" " * jsonIndent + "if (" + self._c99ExpandPrefix(*jsonPrefix) + ".entries == 0.0f)")
-        jsonCode.append(" " * jsonIndent + "  floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".varianceTimesEntries);")
+        jsonCode.append(" " * jsonIndent + "  floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".varianceTimesEntries);")
         jsonCode.append(" " * jsonIndent + "else")
-        jsonCode.append(" " * jsonIndent + "  floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".varianceTimesEntries / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "  floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".varianceTimesEntries / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
 
         storageStructs[self._c99StructName()] = """

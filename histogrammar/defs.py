@@ -309,7 +309,7 @@ public:
         self._clingUpdate(self._clingFiller, ("var", "storage"))
 
     _cudaNamespaceNumber = 0
-    def cuda(self, namespaceName=None, **exprs):
+    def cuda(self, namespaceName=None, commentMain=True, testData=[round(random.gauss(0, 1), 2) for x in xrange(10)], **exprs):
         parser = C99SourceToAst()
         generator = C99AstToSource()
 
@@ -335,13 +335,14 @@ public:
             namespaceName = "HistogrammarCUDA_" + str(Container._cudaNamespaceNumber)
             Container._cudaNamespaceNumber += 1
 
-        return '''#ifndef {NS}
+        return '''// Auto-generated on {timestamp:%Y-%m-%d %H:%M:%S}
+// If you edit this file, it will be hard to swap it out for another auto-generated copy.
+
+#ifndef {NS}
 #define {NS}
 
 #include <stdio.h>
-
-// Auto-generated on {timestamp:%Y-%m-%d %H:%M:%S}
-// If you edit this file, it will be hard to swap it out for another auto-generated copy.
+#include <math_constants.h>
 
 namespace {ns} {{
   // How the aggregator is laid out in memory (CPU main memory and GPU shared memory).
@@ -349,20 +350,31 @@ namespace {ns} {{
   typedef {lastStructName} Aggregator;
 
   // Specific logic of how to zero out the aggregator.
-  __host__ __device__ void zero(Aggregator* aggregator) {{
-{initCode}
+  __host__ void zeroHost(Aggregator* aggregator) {{
+{initCodeHost}
+  }}
+  __device__ void zeroDevice(Aggregator* aggregator) {{
+{initCodeDevice}
   }}
 
   // Specific logic of how to increment the aggregator with input values.
-  __host__ __device__ void increment(Aggregator* aggregator{comma}{inputArgList}) {{
+  __host__ void incrementHost(Aggregator* aggregator{comma}{inputArgList}) {{
     const int weight_0 = 1.0f;
-{quantities}
-{fillCode}
+{tmpVarDeclarations}{quantitiesHost}
+{fillCodeHost}
+  }}
+  __device__ void incrementDevice(Aggregator* aggregator{comma}{inputArgList}) {{
+    const int weight_0 = 1.0f;
+{tmpVarDeclarations}{quantitiesDevice}
+{fillCodeDevice}
   }}
 
   // Specific logic of how to combine two aggregators.
-  __host__ __device__ void combine(Aggregator* total, Aggregator* item) {{
-{combineCode}
+  __host__ void combineHost(Aggregator* total, Aggregator* item) {{
+{combineCodeHost}
+  }}
+  __device__ void combineDevice(Aggregator* total, Aggregator* item) {{
+{combineCodeDevice}
   }}
 
   __host__ void floatToJson(FILE* out, float x) {{
@@ -415,7 +427,7 @@ namespace {ns} {{
   //
   __global__ void initialize(int sharedMemoryOffset = 0) {{
     Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
-    zero(threadLocal);
+    zeroDevice(threadLocal);
   }}
 
   // User-level API for filling the aggregator with a single value (from GPU).
@@ -425,7 +437,7 @@ namespace {ns} {{
   //
   __device__ void fill({inputArgList}{comma}int sharedMemoryOffset = 0) {{
     Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
-    increment(threadLocal{comma}{inputList});
+    incrementDevice(threadLocal{comma}{inputList});
   }}
 
   // User-level API for filling the aggregator with arrays of values (from CPU or GPU).
@@ -457,7 +469,7 @@ namespace {ns} {{
       if (id < i  &&  id + i < numThreadsPerBlock) {{
         Aggregator* ours = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + id*sizeof(Aggregator));
         Aggregator* theirs = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + (id + i)*sizeof(Aggregator));
-        combine(ours, theirs);
+        combineDevice(ours, theirs);
       }}
 
       // every iteration should be in lock-step across threads in this block
@@ -492,9 +504,9 @@ namespace {ns} {{
     errorCheck(cudaMemcpy(sumOverBlock2, sumOverBlock, numBlocks * sizeof(Aggregator), cudaMemcpyDeviceToHost));
     errorCheck(cudaFree(sumOverBlock));
 
-    zero(result);
+    zeroHost(result);
     for (int block = 0;  block < numBlocks;  ++block)
-      combine(result, &sumOverBlock2[block]);
+      combineHost(result, &sumOverBlock2[block]);
 
     free(sumOverBlock2);
   }}
@@ -534,17 +546,17 @@ namespace {ns} {{
 }}
 
 // Optional main runs a tiny test.
-/*
+{startComment}
 int main(int argc, char** argv) {{
   int sharedMemoryOffset = 8;    // say you have something important in the first 8 bytes; don\'t overwrite it
   int numBlocks = 2;
   int numThreadsPerBlock = 5;
 
   int numDataPoints = 10;
-{randomTestData}
+{initTestData}
   {ns}::test(sharedMemoryOffset, numBlocks, numThreadsPerBlock, numDataPoints{comma}{inputList});
 }}
-*/
+{endComment}
 
 #endif  // {NS}
 '''.format(timestamp = datetime.datetime.now(),
@@ -553,10 +565,15 @@ int main(int argc, char** argv) {{
            specVersion = histogrammar.version.specification,
            factoryName = self.name,
            typedefs = "".join(storageStructs.values()),
-           lastStructName = self._c99StructName(),
-           initCode = "\n".join(initCode),
-           fillCode = "\n".join(fillCode),
-           combineCode = "\n".join(combineCode),
+           lastStructName = "float" if self._c99StructName() == "Ct" else self._c99StructName(),
+           initCodeHost = re.sub(r"\bUNIVERSAL_INF\b", "INFINITY", re.sub(r"\bUNIVERSAL_NAN\b", "NAN", "\n".join(initCode))),
+           initCodeDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "\n".join(initCode))),
+           fillCodeHost = re.sub(r"\bUNIVERSAL_INF\b", "INFINITY", re.sub(r"\bUNIVERSAL_NAN\b", "NAN", "\n".join(fillCode))),
+           fillCodeDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "\n".join(fillCode))),
+           combineCodeHost = re.sub(r"\bUNIVERSAL_INF\b", "INFINITY", re.sub(r"\bUNIVERSAL_NAN\b", "NAN", "\n".join(combineCode))),
+           combineCodeDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "\n".join(combineCode))),
+           quantitiesHost = re.sub(r"\bUNIVERSAL_INF\b", "INFINITY", re.sub(r"\bUNIVERSAL_NAN\b", "NAN", "".join(derivedFieldExprs.values()))),
+           quantitiesDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "".join(derivedFieldExprs.values()))),
            jsonCode = "\n".join(jsonCode),
            comma = ", " if len(inputFieldNames) > 0 else "",
            inputList = ", ".join(norm for norm, name in inputFieldNames.items()),
@@ -564,15 +581,17 @@ int main(int argc, char** argv) {{
            inputListId = ", ".join(norm + "[id]" for norm, name in inputFieldNames.items()),
            inputArgList = ", ".join(inputFieldTypes[name] + " " + norm for norm, name in inputFieldNames.items()),
            inputArgStarList = ", ".join(inputFieldTypes[name] + "* " + norm for norm, name in inputFieldNames.items()),
-           quantities = "".join(derivedFieldExprs.values()),
+           tmpVarDeclarations = "".join("    " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
            copyTestData = "".join('''    float* gpu_{1};
     errorCheck(cudaMalloc((void**)&gpu_{1}, numDataPoints * sizeof(float)));
     errorCheck(cudaMemcpy(gpu_{1}, {0}, numDataPoints * sizeof(float), cudaMemcpyHostToDevice));
 '''.format(norm, name) for norm, name in inputFieldNames.items()),
            freeTestData = "".join('''    errorCheck(cudaFree(gpu_{0}));
 '''.format(name) for name in inputFieldNames.values()),
-           randomTestData = "".join('''  float {0}[10] = {{{1}f, {2}f, {3}f, {4}f, {5}f, {6}f, {7}f, {8}f, {9}f, {10}f}};
-'''.format(norm, round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2), round(random.gauss(0, 1), 2)) for norm in inputFieldNames)
+           initTestData = "".join('''  float {0}[10] = {{{1}}};
+'''.format(norm, ", ".join(str(float(x)) + "f" for x in (testData[name] if isinstance(testData, dict) else testData))) for norm, name in inputFieldNames.items()),
+           startComment = "/*" if commentMain else "",
+           endComment = "*/" if commentMain else ""
            )
 
     def _cppExpandPrefix(self, *prefix):
