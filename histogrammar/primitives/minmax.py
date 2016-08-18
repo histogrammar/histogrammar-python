@@ -116,6 +116,33 @@ class Minimize(Factory, Container):
   }} {0};
 """.format(self._c99StructName())
 
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".min = CUDART_NAN_F;")
+
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        fillCode.append(" " * fillIndent + "if (isnan({min})  ||  {q} < {min}) {min} = {q};".format(
+            min = self._c99ExpandPrefix(*fillPrefix) + ".min",
+            q = normexpr))
+
+        combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
+        combineCode.append("""{indent}if (isnan({totalmin})  &&  isnan({itemmin}))
+{indent}  {totalmin} = CUDART_NAN_F;
+{indent}else if (isnan({totalmin})  ||  {totalmin} > {itemmin})
+{indent}  {totalmin} = {itemmin};""".format(indent = " " * combineIndent,
+            totalmin = self._c99ExpandPrefix(*totalPrefix) + ".min",
+            itemmin = self._c99ExpandPrefix(*itemPrefix) + ".min"))
+
+        jsonCode.append(" " * jsonIndent + '''fprintf(out, "{{\\"entries\\": %g, \\"min\\": %g}}", {0}.entries, {0}.min);'''.format(self._c99ExpandPrefix(*jsonPrefix)))
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    float min;
+  }} {0};
+""".format(self._c99StructName())
+
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)
         self.entries = self.entries + obj.entries
@@ -281,6 +308,33 @@ class Maximize(Factory, Container):
   typedef struct {{
     double entries;
     double max;
+  }} {0};
+""".format(self._c99StructName())
+
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".max = CUDART_NAN_F;")
+
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        fillCode.append(" " * fillIndent + "if (isnan({max})  ||  {q} < {max}) {max} = {q};".format(
+            max = self._c99ExpandPrefix(*fillPrefix) + ".max",
+            q = normexpr))
+
+        combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
+        combineCode.append("""{indent}if (isnan({totalmax})  &&  isnan({itemmax}))
+{indent}  {totalmax} = CUDART_NAN_F;
+{indent}else if (isnan({totalmax})  ||  {totalmax} < {itemmax})
+{indent}  {totalmax} = {itemmax};""".format(indent = " " * combineIndent,
+            totalmax = self._c99ExpandPrefix(*totalPrefix) + ".max",
+            itemmax = self._c99ExpandPrefix(*itemPrefix) + ".max"))
+
+        jsonCode.append(" " * jsonIndent + '''fprintf(out, "{{\\"entries\\": %g, \\"max\\": %g}}", {0}.entries, {0}.max);'''.format(self._c99ExpandPrefix(*jsonPrefix)))
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    float max;
   }} {0};
 """.format(self._c99StructName())
 

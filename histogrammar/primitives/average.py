@@ -164,6 +164,61 @@ class Average(Factory, Container):
   }} {0};
 """.format(self._c99StructName())
 
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".mean = 0.0f;")
+
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        
+        delta = "delta_" + str(len(tmpVarTypes))
+        tmpVarTypes[delta] = "float"
+        shift = "shift_" + str(len(tmpVarTypes))
+        tmpVarTypes[shift] = "float"
+
+        fillCode.append("""{indent}if (isnan({mean})  ||  isnan({q})) {{
+{indent}  {mean} = CUDART_NAN_F;
+{indent}}}
+{indent}else if (isinf({mean})  ||  isinf({q})) {{
+{indent}  if (isinf({mean})  &&  isinf({q})  &&  {mean} * {q} < 0.0f)
+{indent}    {mean} = CUDART_NAN_F;
+{indent}  else if (isinf({q}))
+{indent}    {mean} = {q};
+{indent}  else
+{indent}    {{ }}
+{indent}  if (isinf({entries})  ||  isnan({entries}))
+{indent}    {mean} = CUDART_NAN_F;
+{indent}}}
+{indent}else {{
+{indent}  {delta} = {q} - {mean};
+{indent}  {shift} = {delta} * {weight} / {entries};
+{indent}  {mean} += {shift};
+{indent}}}""".format(indent = " " * fillIndent,
+           entries = self._c99ExpandPrefix(*fillPrefix) + ".entries",
+           mean = self._c99ExpandPrefix(*fillPrefix) + ".mean",
+           q = normexpr,
+           delta = delta,
+           shift = shift,
+           weight = weightVarStack[-1]))
+
+        combineCode.append("""{indent}if ({total}.entries == 0.0f)
+{indent}  {total}.mean = {item}.mean;
+{indent}else if ({item}.entries != 0.0f)
+{indent}  {total}.mean = ({total}.entries*{total}.mean + {item}.entries*{item}.mean)/({total}.entries + {item}.entries);
+{indent}{total}.entries += {item}.entries;""".format(indent = " " * combineIndent,
+            total = self._c99ExpandPrefix(*totalPrefix),
+            item = self._c99ExpandPrefix(*itemPrefix),
+            ))
+
+        jsonCode.append(" " * jsonIndent + '''fprintf(out, "{{\\"entries\\": %g, \\"mean\\": %g}}", {0}.entries, {0}.mean);'''.format(self._c99ExpandPrefix(*jsonPrefix)))
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    float mean;
+  }} {0};
+""".format(self._c99StructName())
+
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)
 

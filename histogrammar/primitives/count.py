@@ -104,6 +104,19 @@ class Count(Factory, Container):
         else:
             fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + " += " + weightVarStack[-1] + ";")
 
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + " = 0.0f;")
+
+        if self.transform is not identity:
+            normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVarStack[-1])
+            fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + " += " + normexpr + ";")
+        else:
+            fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + " += " + weightVarStack[-1] + ";")
+
+        combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + " += " + self._c99ExpandPrefix(*itemPrefix) + ";")
+
+        jsonCode.append(" " * jsonIndent + '''fprintf(out, "%g", {0});'''.format(self._c99ExpandPrefix(*jsonPrefix)))
+
     def _clingUpdate(self, filler, *extractorPrefix):
         self.entries += self._clingExpandPrefix(filler, *extractorPrefix)
 
@@ -112,6 +125,9 @@ class Count(Factory, Container):
 
     def _c99StructName(self):
         return "Ct"
+
+    def _cudaStorageType(self):
+        return "float"
 
     def _numpy(self, data, weights, shape):
         import numpy

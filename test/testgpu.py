@@ -31,5 +31,21 @@ class TestGPU(unittest.TestCase):
     def runTest(self):
         pass
 
+    def testCount(self):
+        Count().cuda()
+        Count("weight**2").cuda()
+
     def testSum(self):
-        print Sum("x").cuda()
+        Sum("x").cuda()
+
+    def testAverage(self):
+        Average("x").cuda()
+
+    def testDeviate(self):
+        Deviate("x").cuda()
+
+    def testMinimize(self):
+        Minimize("x").cuda()
+
+    def testMaximize(self):
+        Maximize("x").cuda()

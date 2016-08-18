@@ -198,6 +198,79 @@ class Deviate(Factory, Container):
   }} {0};
 """.format(self._c99StructName())
 
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".mean = 0.0f;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".varianceTimesEntries = 0.0f;")
+
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        
+        delta = "delta_" + str(len(tmpVarTypes))
+        tmpVarTypes[delta] = "float"
+        shift = "shift_" + str(len(tmpVarTypes))
+        tmpVarTypes[shift] = "float"
+
+        fillCode.append("""{indent}if (isnan({mean})  ||  isnan({q})) {{
+{indent}  {mean} = CUDART_NAN_F;
+{indent}  {varianceTimesEntries} = CUDART_NAN_F;
+{indent}}}
+{indent}else if (isinf({mean})  ||  isinf({q})) {{
+{indent}  if (isinf({mean})  &&  isinf({q})  &&  {mean} * {q} < 0.0f)
+{indent}    {mean} = CUDART_NAN_F;
+{indent}  else if (isinf({q}))
+{indent}    {mean} = {q};
+{indent}  else
+{indent}    {{ }}
+{indent}  if (isinf({entries})  ||  isnan({entries}))
+{indent}    {mean} = CUDART_NAN_F;
+{indent}  {varianceTimesEntries} = CUDART_NAN_F;
+{indent}}}
+{indent}else {{
+{indent}  {delta} = {q} - {mean};
+{indent}  {shift} = {delta} * {weight} / {entries};
+{indent}  {mean} += {shift};
+{indent}  {varianceTimesEntries} += {weight} * {delta} * ({q} - {mean});
+{indent}}}""".format(indent = " " * fillIndent,
+           entries = self._c99ExpandPrefix(*fillPrefix) + ".entries",
+           mean = self._c99ExpandPrefix(*fillPrefix) + ".mean",
+           varianceTimesEntries = self._c99ExpandPrefix(*fillPrefix) + ".varianceTimesEntries",
+           q = normexpr,
+           delta = delta,
+           shift = shift,
+           weight = weightVarStack[-1]))
+
+        combineCode.append("""{indent}if ({total}.entries == 0.0f) {{
+{indent}  {total}.mean = {item}.mean;
+{indent}  {total}.varianceTimesEntries = {item}.varianceTimesEntries;
+{indent}}}
+{indent}else if ({item}.entries != 0.0f) {{
+{indent}  float ca = {total}.entries;
+{indent}  float ma = {total}.mean;
+{indent}  float Sa = {total}.varianceTimesEntries;
+{indent}  float cb = {item}.entries;
+{indent}  float mb = {item}.mean;
+{indent}  float Sb = {item}.varianceTimesEntries;
+{indent}  float cab = ca + cb;
+{indent}  float mab = (ca*ma + cb*mb)/(ca + cb);
+{indent}  {total}.mean = mab;
+{indent}  {total}.varianceTimesEntries = Sa + Sb + ca*ma*ma + cb*mb*mb - 2.0f*mab*(ca*ma + cb*mb) + mab*mab*cab;
+{indent}}}
+{indent}{total}.entries += {item}.entries;""".format(indent = " " * combineIndent,
+            total = self._c99ExpandPrefix(*totalPrefix),
+            item = self._c99ExpandPrefix(*itemPrefix),
+            ))
+
+        jsonCode.append(" " * jsonIndent + '''fprintf(out, "{{\\"entries\\": %g, \\"mean\\": %g, \\"varianceTimesEntries\\": %g}}", {0}.entries, {0}.mean, {0}.varianceTimesEntries);'''.format(self._c99ExpandPrefix(*jsonPrefix)))
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    float mean;
+    float varianceTimesEntries;
+  }} {0};
+""".format(self._c99StructName())
+
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)
 
