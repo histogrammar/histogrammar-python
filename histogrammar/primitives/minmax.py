@@ -134,7 +134,11 @@ class Minimize(Factory, Container):
             totalmin = self._c99ExpandPrefix(*totalPrefix) + ".min",
             itemmin = self._c99ExpandPrefix(*itemPrefix) + ".min"))
 
-        jsonCode.append(" " * jsonIndent + '''fprintf(out, "{{\\"entries\\": %g, \\"min\\": %g}}", {0}.entries, {0}.min);'''.format(self._c99ExpandPrefix(*jsonPrefix)))
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"min\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".min);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{
@@ -329,7 +333,11 @@ class Maximize(Factory, Container):
             totalmax = self._c99ExpandPrefix(*totalPrefix) + ".max",
             itemmax = self._c99ExpandPrefix(*itemPrefix) + ".max"))
 
-        jsonCode.append(" " * jsonIndent + '''fprintf(out, "{{\\"entries\\": %g, \\"max\\": %g}}", {0}.entries, {0}.max);'''.format(self._c99ExpandPrefix(*jsonPrefix)))
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"max\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".max);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{

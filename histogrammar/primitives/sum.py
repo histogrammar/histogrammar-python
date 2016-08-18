@@ -120,7 +120,11 @@ class Sum(Factory, Container):
         combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
         combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".sum += " + self._c99ExpandPrefix(*itemPrefix) + ".sum;")
 
-        jsonCode.append(" " * jsonIndent + '''fprintf(out, "{{\\"entries\\": %g, \\"sum\\": %g}}", {0}.entries, {0}.sum);'''.format(self._c99ExpandPrefix(*jsonPrefix)))
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"sum\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".sum);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{

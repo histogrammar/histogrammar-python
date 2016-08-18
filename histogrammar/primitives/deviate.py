@@ -261,7 +261,16 @@ class Deviate(Factory, Container):
             item = self._c99ExpandPrefix(*itemPrefix),
             ))
 
-        jsonCode.append(" " * jsonIndent + '''fprintf(out, "{{\\"entries\\": %g, \\"mean\\": %g, \\"varianceTimesEntries\\": %g}}", {0}.entries, {0}.mean, {0}.varianceTimesEntries);'''.format(self._c99ExpandPrefix(*jsonPrefix)))
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"mean\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".mean);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"variance\\\": \");")
+        jsonCode.append(" " * jsonIndent + "if (" + self._c99ExpandPrefix(*jsonPrefix) + ".entries == 0.0f)")
+        jsonCode.append(" " * jsonIndent + "  floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".varianceTimesEntries);")
+        jsonCode.append(" " * jsonIndent + "else")
+        jsonCode.append(" " * jsonIndent + "  floatToJson(" + self._c99ExpandPrefix(*jsonPrefix) + ".varianceTimesEntries / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{

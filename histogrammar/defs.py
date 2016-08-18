@@ -329,7 +329,7 @@ public:
         for name, expr in exprs.items():
             self._cudaAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
 
-        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 4, weightVars, weightVarStack, tmpVarTypes)
+        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 6, weightVars, weightVarStack, tmpVarTypes)
 
         if namespaceName is None:
             namespaceName = "HistogrammarCUDA_" + str(Container._cudaNamespaceNumber)
@@ -354,7 +354,7 @@ namespace {ns} {{
   }}
 
   // Specific logic of how to increment the aggregator with input values.
-  __host__ __device__ void increment(Aggregator* aggregator, {inputArgList}) {{
+  __host__ __device__ void increment(Aggregator* aggregator{comma}{inputArgList}) {{
     const int weight_0 = 1.0f;
 {quantities}
 {fillCode}
@@ -363,6 +363,17 @@ namespace {ns} {{
   // Specific logic of how to combine two aggregators.
   __host__ __device__ void combine(Aggregator* total, Aggregator* item) {{
 {combineCode}
+  }}
+
+  __host__ void floatToJson(FILE* out, float x) {{
+    if (isnan(x))
+      fprintf(out, "\\"nan\\"");
+    else if (isinf(x)  &&  x > 0.0f)
+      fprintf(out, "\\"inf\\"");
+    else if (isinf(x))
+      fprintf(out, "\\"-inf\\"");
+    else
+      fprintf(out, "%g", x);
   }}
 
   // Specific logic of how to print out the aggregator.
@@ -412,9 +423,9 @@ namespace {ns} {{
   //   input arguments: the input variables you used in the aggregator\'s fill rule.
   //   sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
-  __device__ void fill({inputArgList}, int sharedMemoryOffset = 0) {{
+  __device__ void fill({inputArgList}{comma}int sharedMemoryOffset = 0) {{
     Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + sharedMemoryOffset + threadId()*sizeof(Aggregator));
-    increment(threadLocal, {inputList});
+    increment(threadLocal{comma}{inputList});
   }}
 
   // User-level API for filling the aggregator with arrays of values (from CPU or GPU).
@@ -422,9 +433,9 @@ namespace {ns} {{
   //   input arguments: the input variables you used in the aggregator\'s fill rule.
   //   sharedMemoryOffset: aligned number of bytes above *your* application\'s shared memory; zero if you don\'t dynamically allocate shared memory.
   //
-  __global__ void fillAll({inputArgStarList}, int sharedMemoryOffset = 0) {{
+  __global__ void fillAll({inputArgStarList}{comma}int sharedMemoryOffset = 0) {{
     int id = threadId() + blockId() * blockSize();
-    fill({inputListId}, sharedMemoryOffset);
+    fill({inputListId}{comma}sharedMemoryOffset);
   }}
 
   // User-level API for combining all aggregators in a block (from CPU or GPU).
@@ -495,7 +506,7 @@ namespace {ns} {{
   //   numThreadsPerBlock: number of threads to run in each block.
   //   input arguments: the input variables you used in the aggregator\'s fill rule.
   //
-  void test(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, int numDataPoints, {inputArgStarList}) {{
+  void test(int sharedMemoryOffset, int numBlocks, int numThreadsPerBlock, int numDataPoints{comma}{inputArgStarList}) {{
     // Call initialize first.
     // Provide a memory allocation that includes *your* application\'s data (if any) and
     // enough memory for each thread to get one Aggregator (ignore blocks in this calculation).
@@ -507,7 +518,7 @@ namespace {ns} {{
     // Call fill next, using the same number of blocks, threads per block, and memory allocation.
     // fillAll is a __global__ function that takes arrays; fill is a __device__ function that
     // takes single entries. Use the latter if filling from your GPU application.
-    fillAll<<<numBlocks, numThreadsPerBlock, sharedMemoryOffset + numThreadsPerBlock * sizeof(Aggregator)>>>({gpuList}, sharedMemoryOffset);
+    fillAll<<<numBlocks, numThreadsPerBlock, sharedMemoryOffset + numThreadsPerBlock * sizeof(Aggregator)>>>({gpuList}{comma}sharedMemoryOffset);
     errorCheck(cudaPeekAtLastError());
     errorCheck(cudaDeviceSynchronize());
 
@@ -531,7 +542,7 @@ int main(int argc, char** argv) {{
 
   int numDataPoints = 10;
 {randomTestData}
-  {ns}::test(sharedMemoryOffset, numBlocks, numThreadsPerBlock, numDataPoints, {inputList});
+  {ns}::test(sharedMemoryOffset, numBlocks, numThreadsPerBlock, numDataPoints{comma}{inputList});
 }}
 */
 
@@ -547,6 +558,7 @@ int main(int argc, char** argv) {{
            fillCode = "\n".join(fillCode),
            combineCode = "\n".join(combineCode),
            jsonCode = "\n".join(jsonCode),
+           comma = ", " if len(inputFieldNames) > 0 else "",
            inputList = ", ".join(norm for norm, name in inputFieldNames.items()),
            gpuList = ", ".join("gpu_" + name for norm, name in inputFieldNames.items()),
            inputListId = ", ".join(norm + "[id]" for norm, name in inputFieldNames.items()),
@@ -823,6 +835,9 @@ int main(int argc, char** argv) {{
         return self._c99StorageType()
 
     def _c99StorageType(self):
+        return self._c99StructName()
+
+    def _cudaStorageType(self):
         return self._c99StructName()
 
     def numpy(self, data, weights=1.0):
