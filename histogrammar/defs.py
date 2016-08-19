@@ -758,7 +758,7 @@ extern "C" {{
         fillAll(*arguments, block=(numThreadsPerBlock,1,1), grid=(numBlocks, 1), shared=numThreadsPerBlock*aggregatorSize)
 
         sumOverBlock = numpy.zeros(aggregatorSize, dtype=numpy.uint8)
-        extractFromBlock(numpy.intc(numThreadsPerBlock), pycuda.driver.Out(sumOverBlock), block=(numThreadsPerBlock,1,1), grid=(1, 1), shared=numThreadsPerBlock*aggregatorSize)
+        extractFromBlock(numpy.intc(min(numThreadsPerBlock, length)), pycuda.driver.Out(sumOverBlock), block=(numThreadsPerBlock,1,1), grid=(1, 1), shared=numThreadsPerBlock*aggregatorSize)
 
         pycuda.driver.Context.synchronize()
         self._cudaUnpackAndFill(sumOverBlock.tostring(), False, 4)    # TODO: determine bigendian, alignment and use them!
