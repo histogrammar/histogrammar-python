@@ -187,6 +187,10 @@ class Container(object):
         """Used internally to convert the container to JSON without its ``"type"`` header."""
         raise NotImplementedError
 
+    def toImmutable(self):
+        """Return a copy of this container as though it was created by the ``ed`` function or from JSON (the \"immutable form\" in languages that support it, not Python)."""
+        return Factory.fromJson(self.toJson())
+
     _clingClassNameNumber = 0
     def cling(self, ttree, start=-1, end=-1, debug=False, debugOnError=True, **exprs):
         self._checkForCrossReferences()
@@ -329,7 +333,7 @@ public:
         for name, expr in exprs.items():
             self._cudaAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
 
-        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 6, weightVars, weightVarStack, tmpVarTypes)
+        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 6, weightVars, weightVarStack, tmpVarTypes, False)
 
         if namespaceName is None:
             namespaceName = "HistogrammarCUDA_" + str(Container._cudaNamespaceNumber)
@@ -593,6 +597,171 @@ int main(int argc, char** argv) {{
            startComment = "/*" if commentMain else "",
            endComment = "*/" if commentMain else ""
            )
+
+    def pycuda(self, **exprs):
+        import numpy
+        import pycuda.autoinit
+        import pycuda.driver
+        import pycuda.compiler
+        import pycuda.gpuarray
+
+        parser = C99SourceToAst()
+        generator = C99AstToSource()
+
+        inputFieldNames = collections.OrderedDict()
+        inputFieldTypes = {}
+        derivedFieldTypes = {}
+        derivedFieldExprs = collections.OrderedDict()
+        storageStructs = collections.OrderedDict()
+        initCode = []
+        fillCode = []
+        combineCode = []
+        jsonCode = []
+        weightVars = ["weight_0"]
+        weightVarStack = ("weight_0",)
+        tmpVarTypes = {}
+
+        inputArrays = {}
+        for name, expr in exprs.items():
+            if isinstance(expr, numpy.ndarray):
+                inputArrays[name] = expr.astype(numpy.float32)
+                if len(inputArrays[name].shape) != 1:
+                    raise ValueError("Numpy arrays must be one-dimensional")
+            elif not isinstance(expr, basestring) and hasattr(expr, "__iter__"):
+                inputArrays[name] = numpy.array(expr).astype(numpy.float32)
+            else:
+                self._cudaAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+
+        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 6, weightVars, weightVarStack, tmpVarTypes, False)
+
+        length = None
+        arguments = []
+        for name in inputFieldNames.values():
+            if name not in inputArrays:
+                raise ValueError("no input supplied for \"" + name + "\"")
+            if length is None or inputArrays[name].shape[0] < length:
+                length = inputArrays[name].shape[0]
+            arguments.append(pycuda.driver.In(inputArrays[name]))
+
+        if length is None:
+            raise ValueError("no input fields specified in aggregator")
+
+        module = pycuda.compiler.SourceModule('''#include <stdio.h>
+#include <math_constants.h>
+
+{typedefs}
+typedef {lastStructName} Aggregator;
+
+extern "C" {{
+  __global__ void write_size(size_t *output) {{
+    *output = sizeof(Aggregator);
+  }}
+
+  __device__ void zeroDevice(Aggregator* aggregator) {{
+{initCodeDevice}
+  }}
+
+  __device__ void incrementDevice(Aggregator* aggregator{comma}{inputArgList}) {{
+    const int weight_0 = 1.0f;
+{tmpVarDeclarations}{quantitiesDevice}
+{fillCodeDevice}
+  }}
+
+  __device__ void combineDevice(Aggregator* total, Aggregator* item) {{
+{combineCodeDevice}
+  }}
+
+  __device__ int blockId() {{
+    return blockIdx.x;
+  }}
+
+  __device__ int blockSize() {{
+    return blockDim.x;
+  }}
+
+  __device__ int threadId() {{
+    return threadIdx.x;
+  }}
+
+  extern __shared__ unsigned char sharedMemory[];
+
+  __global__ void initialize() {{
+    Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + threadId()*sizeof(Aggregator));
+    zeroDevice(threadLocal);
+  }}
+
+  __device__ void fill({inputArgList}) {{
+    Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + threadId()*sizeof(Aggregator));
+    incrementDevice(threadLocal{comma}{inputList});
+  }}
+
+  __global__ void fillAll({inputArgStarList}) {{
+    int id = threadId() + blockId() * blockSize();
+    if (id < {length})
+      fill({inputListId});
+  }}
+
+  __global__ void extractFromBlock(int numThreadsPerBlock, Aggregator* result) {{
+    int id = threadId();
+
+    int i = 1;
+    while (2*i < numThreadsPerBlock) i <<= 1;
+
+    while (i != 0) {{
+      if (id < i  &&  id + i < numThreadsPerBlock) {{
+        Aggregator* ours = (Aggregator*)((size_t)sharedMemory + id*sizeof(Aggregator));
+        Aggregator* theirs = (Aggregator*)((size_t)sharedMemory + (id + i)*sizeof(Aggregator));
+        combineDevice(ours, theirs);
+      }}
+
+      __syncthreads();
+      i >>= 1;
+    }}
+
+    if (id == 0) {{
+      Aggregator* singleAggregator = (Aggregator*)((size_t)sharedMemory);
+      Aggregator* blockLocal = &result[blockId()];
+      memcpy(blockLocal, singleAggregator, sizeof(Aggregator));
+    }}
+  }}
+}}
+'''.format(typedefs = "".join(storageStructs.values()),
+           lastStructName = "float" if self._c99StructName() == "Ct" else self._c99StructName(),
+           initCodeDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "\n".join(initCode))),
+           fillCodeDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "\n".join(fillCode))),
+           combineCodeDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "\n".join(combineCode))),
+           quantitiesDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "".join(derivedFieldExprs.values()))),
+           comma = ", " if len(inputFieldNames) > 0 else "",
+           inputList = ", ".join(norm for norm, name in inputFieldNames.items()),
+           inputListId = ", ".join(norm + "[id]" for norm, name in inputFieldNames.items()),
+           inputArgList = ", ".join(inputFieldTypes[name] + " " + norm for norm, name in inputFieldNames.items()),
+           inputArgStarList = ", ".join(inputFieldTypes[name] + "* " + norm for norm, name in inputFieldNames.items()),
+           tmpVarDeclarations = "".join("    " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
+           length = length
+           ))
+
+        numThreadsPerBlock = pycuda.driver.Context.get_device().get_attribute(pycuda.driver.device_attribute.MAX_THREADS_PER_BLOCK)
+        numBlocks = int(math.ceil(float(length) / float(numThreadsPerBlock)))
+
+        write_size = module.get_function("write_size")
+        initialize = module.get_function("initialize")
+        fillAll = module.get_function("fillAll")
+        extractFromBlock = module.get_function("extractFromBlock")
+
+        aggregatorSize = pycuda.gpuarray.empty((), dtype=numpy.uintp)
+        write_size(aggregatorSize, block=(1, 1, 1), grid=(1, 1))
+        pycuda.driver.Context.synchronize()
+        aggregatorSize = int(aggregatorSize.get())
+
+        initialize(block=(numThreadsPerBlock,1,1), grid=(1, 1), shared=numThreadsPerBlock*aggregatorSize)
+
+        fillAll(*arguments, block=(numThreadsPerBlock,1,1), grid=(numBlocks, 1), shared=numThreadsPerBlock*aggregatorSize)
+
+        sumOverBlock = numpy.zeros(aggregatorSize, dtype=numpy.uint8)
+        extractFromBlock(numpy.intc(numThreadsPerBlock), pycuda.driver.Out(sumOverBlock), block=(numThreadsPerBlock,1,1), grid=(1, 1), shared=numThreadsPerBlock*aggregatorSize)
+
+        pycuda.driver.Context.synchronize()
+        self._cudaUnpackAndFill(sumOverBlock.tostring(), False, 4)    # TODO: determine bigendian, alignment and use them!
 
     def _cppExpandPrefix(self, *prefix):
         return self._c99ExpandPrefix(*prefix)

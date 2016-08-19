@@ -21,6 +21,8 @@ import random
 import types
 import sys
 
+import histogrammar.pycparser.c_ast
+
 # Definitions for python 2/3 compatability 
 if sys.version_info[0] > 2:
     basestring = str

@@ -14,7 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import numbers
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -109,7 +111,7 @@ class Sum(Factory, Container):
   }} {0};
 """.format(self._c99StructName())
 
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes):
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum = 0.0f;")
 
@@ -124,7 +126,10 @@ class Sum(Factory, Container):
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"sum\\\": \");")
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".sum);")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+        if suppressName or self.quantity.name is None:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+        else:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{
@@ -132,6 +137,11 @@ class Sum(Factory, Container):
     float sum;
   }} {0};
 """.format(self._c99StructName())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        entries, sum = struct.unpack("<ff", data)
+        self.entries += entries
+        self.sum += sum
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)

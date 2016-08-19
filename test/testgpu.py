@@ -23,6 +23,8 @@ import time
 import unittest
 from distutils import spawn
 
+import numpy
+
 from histogrammar import *
 
 tolerance = 1e-6
@@ -39,27 +41,32 @@ class TestGPU(unittest.TestCase):
             if compilation.wait() == 0:
                 execution = subprocess.Popen(["./runme"], stdout=subprocess.PIPE)
                 if execution.wait() == 0:
-                    result = Factory.fromJson(execution.stdout.read())
-                    self.assertEqual(result, expected)
+                    result = execution.stdout.read()
+                    self.assertEqual(Factory.fromJson(result), Factory.fromJson(expected))
 
     def runTest(self):
         pass
 
     def testCount(self):
-        self.runStandalone(Count().cuda(commentMain=False, testData=range(10)), Count.ed(10.0))
-        self.runStandalone(Count("2*weight").cuda(commentMain=False, testData=range(10)), Count.ed(20.0))
+        self.runStandalone(Count().cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Count", "data": 10.0})
+        self.runStandalone(Count("2*weight").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Count", "data": 20.0})
 
     def testSum(self):
-        self.runStandalone(Sum("x").cuda(commentMain=False, testData=range(10)), Sum.ed(10, 45.0))
+        self.runStandalone(Sum("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Sum", "data": {"entries": 10.0, "sum": 45.0, "name": "x"}})
+
+    def testSumNumpy(self):
+        h = Sum("x")
+        h.pycuda(x = numpy.array(range(10)))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Sum", "data": {"entries": 10.0, "sum": 45.0, "name": "x"}}))
 
     def testAverage(self):
-        self.runStandalone(Average("x").cuda(commentMain=False, testData=range(10)), Average.ed(10, 4.5))
+        self.runStandalone(Average("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Average", "data": {"entries": 10.0, "mean": 4.5, "name": "x"}})
 
     def testDeviate(self):
-        self.runStandalone(Deviate("x").cuda(commentMain=False, testData=range(10)), Deviate.ed(10, 4.5, 8.25))
+        self.runStandalone(Deviate("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Deviate", "data": {"entries": 10.0, "mean": 4.5, "variance": 8.25, "name": "x"}})
 
     def testMinimize(self):
-        self.runStandalone(Minimize("x").cuda(commentMain=False, testData=range(10)), Minimize.ed(10, 0.0))
+        self.runStandalone(Minimize("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Minimize", "data": {"entries": 10.0, "min": 0.0, "name": "x"}})
 
     def testMaximize(self):
-        self.runStandalone(Maximize("x").cuda(commentMain=False, testData=range(10)), Maximize.ed(10, 9.0))
+        self.runStandalone(Maximize("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Maximize", "data": {"entries": 10.0, "max": 9.0, "name": "x"}})
