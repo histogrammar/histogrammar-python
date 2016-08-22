@@ -122,7 +122,7 @@ class Minimize(Factory, Container):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".min = CUDART_NAN_F;")
 
         old = "old_" + str(len(tmpVarTypes))
-        tmpVarTypes[old] = "float"
+        tmpVarTypes[old] = "int"
         assumed = "assumed_" + str(len(tmpVarTypes))
         tmpVarTypes[assumed] = "float"
         trial = "trial_" + str(len(tmpVarTypes))
@@ -130,15 +130,15 @@ class Minimize(Factory, Container):
 
         normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
         fillCode.append("""{indent}atomicAdd(&{prefix}.entries, {weight});
-{indent}{old} = {prefix}.min;
+{indent}{old} = *(int*)(&{prefix}.min);
 {indent}do {{
-{indent}  {assumed} = {old};
+{indent}  {assumed} = *(float*)(&{old});
 {indent}  if (isnan({assumed})  ||  {q} < {assumed})
 {indent}    {trial} = {q};
 {indent}  else
 {indent}    {trial} = {assumed};
 {indent}  {old} = atomicCAS((int*)(&{prefix}.min), *(int*)(&{assumed}), *(int*)(&{trial}));
-{indent}}} while ({assumed} != {old});
+{indent}}} while (*(int*)(&{assumed}) != {old});
 """.format(indent = " " * fillIndent,
         prefix = self._c99ExpandPrefix(*fillPrefix),
         weight = weightVarStack[-1],
@@ -148,9 +148,9 @@ class Minimize(Factory, Container):
         q = normexpr))
 
         combineCode.append("""{indent}atomicAdd(&{total}.entries, {item}.entries);
-{indent}{old} = {total}.min;
+{indent}{old} = *(int*)(&{total}.min);
 {indent}do {{
-{indent}  {assumed} = {old};
+{indent}  {assumed} = *(float*)(&{old});
 {indent}  if (isnan({assumed}))
 {indent}    {trial} = {item}.min;
 {indent}  else if (isnan({item}.min))
@@ -160,7 +160,7 @@ class Minimize(Factory, Container):
 {indent}  else
 {indent}    {trial} = {item}.min;
 {indent}  {old} = atomicCAS((int*)(&{total}.min), *(int*)(&{assumed}), *(int*)(&{trial}));
-{indent}}} while ({assumed} != {old});
+{indent}}} while (*(int*)(&{assumed}) != {old});
 """.format(indent = " " * combineIndent,
         total = self._c99ExpandPrefix(*totalPrefix),
         item = self._c99ExpandPrefix(*itemPrefix),
@@ -366,7 +366,7 @@ class Maximize(Factory, Container):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".max = CUDART_NAN_F;")
 
         old = "old_" + str(len(tmpVarTypes))
-        tmpVarTypes[old] = "float"
+        tmpVarTypes[old] = "int"
         assumed = "assumed_" + str(len(tmpVarTypes))
         tmpVarTypes[assumed] = "float"
         trial = "trial_" + str(len(tmpVarTypes))
@@ -374,15 +374,15 @@ class Maximize(Factory, Container):
 
         normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
         fillCode.append("""{indent}atomicAdd(&{prefix}.entries, {weight});
-{indent}{old} = {prefix}.max;
+{indent}{old} = *(int*)(&{prefix}.max);
 {indent}do {{
-{indent}  {assumed} = {old};
+{indent}  {assumed} = *(float*)(&{old});
 {indent}  if (isnan({assumed})  ||  {q} > {assumed})
 {indent}    {trial} = {q};
 {indent}  else
 {indent}    {trial} = {assumed};
 {indent}  {old} = atomicCAS((int*)(&{prefix}.max), *(int*)(&{assumed}), *(int*)(&{trial}));
-{indent}}} while ({assumed} != {old});
+{indent}}} while (*(int*)(&{assumed}) != {old});
 """.format(indent = " " * fillIndent,
         prefix = self._c99ExpandPrefix(*fillPrefix),
         weight = weightVarStack[-1],
@@ -392,9 +392,9 @@ class Maximize(Factory, Container):
         q = normexpr))
 
         combineCode.append("""{indent}atomicAdd(&{total}.entries, {item}.entries);
-{indent}{old} = {total}.max;
+{indent}{old} = *(int*)(&{total}.max);
 {indent}do {{
-{indent}  {assumed} = {old};
+{indent}  {assumed} = *(float*)(&{old});
 {indent}  if (isnan({assumed}))
 {indent}    {trial} = {item}.max;
 {indent}  else if (isnan({item}.max))
@@ -404,7 +404,7 @@ class Maximize(Factory, Container):
 {indent}  else
 {indent}    {trial} = {item}.max;
 {indent}  {old} = atomicCAS((int*)(&{total}.max), *(int*)(&{assumed}), *(int*)(&{trial}));
-{indent}}} while ({assumed} != {old});
+{indent}}} while (*(int*)(&{assumed}) != {old});
 """.format(indent = " " * combineIndent,
         total = self._c99ExpandPrefix(*totalPrefix),
         item = self._c99ExpandPrefix(*itemPrefix),

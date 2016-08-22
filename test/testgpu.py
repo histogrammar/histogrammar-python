@@ -47,26 +47,26 @@ class TestGPU(unittest.TestCase):
     def runTest(self):
         pass
 
-    # def testCount(self):
-    #     self.runStandalone(Count().cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Count", "data": 10.0})
-    #     self.runStandalone(Count("2*weight").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Count", "data": 20.0})
+    def testCount(self):
+        self.runStandalone(Count().cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Count", "data": 10.0})
+        self.runStandalone(Count("2*weight").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Count", "data": 20.0})
 
-    # def testSum(self):
-    #     self.runStandalone(Sum("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Sum", "data": {"entries": 10.0, "sum": 45.0, "name": "x"}})
+    def testSum(self):
+        self.runStandalone(Sum("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Sum", "data": {"entries": 10.0, "sum": 45.0, "name": "x"}})
 
-    # def testSumNumpy(self):
-    #     h = Sum("x")
-    #     h.pycuda(x = numpy.array(range(10)))
-    #     self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Sum", "data": {"entries": 10.0, "sum": 45.0, "name": "x"}}))
+    def testSumNumpy(self):
+        h = Sum("x")
+        h.pycuda(x = numpy.array(range(10)))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Sum", "data": {"entries": 10.0, "sum": 45.0, "name": "x"}}))
 
-    # def testAverage(self):
-    #     self.runStandalone(Average("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Average", "data": {"entries": 10.0, "mean": 4.5, "name": "x"}})
+    def testAverage(self):
+        self.runStandalone(Average("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Average", "data": {"entries": 10.0, "mean": 4.5, "name": "x"}})
 
-    # def testDeviate(self):
-    #     self.runStandalone(Deviate("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Deviate", "data": {"entries": 10.0, "mean": 4.5, "variance": 8.25, "name": "x"}})
+    def testDeviate(self):
+        self.runStandalone(Deviate("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Deviate", "data": {"entries": 10.0, "mean": 4.5, "variance": 8.25, "name": "x"}})
 
-    # def testMinimize(self):
-    #     self.runStandalone(Minimize("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Minimize", "data": {"entries": 10.0, "min": 0.0, "name": "x"}})
+    def testMinimize(self):
+        self.runStandalone(Minimize("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Minimize", "data": {"entries": 10.0, "min": 0.0, "name": "x"}})
 
     def testMaximize(self):
         self.runStandalone(Maximize("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Maximize", "data": {"entries": 10.0, "max": 9.0, "name": "x"}})
