@@ -109,11 +109,11 @@ class Count(Factory, Container):
 
         if self.transform is not identity:
             normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVarStack[-1])
-            fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + " += " + normexpr + ";")
+            fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ", " + normexpr + ");")
         else:
-            fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + " += " + weightVarStack[-1] + ";")
+            fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ", " + weightVarStack[-1] + ");")
 
-        combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + " += " + self._c99ExpandPrefix(*itemPrefix) + ";")
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ", " + self._c99ExpandPrefix(*itemPrefix) + ");")
 
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ");")
 
