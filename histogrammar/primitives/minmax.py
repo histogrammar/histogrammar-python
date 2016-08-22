@@ -119,7 +119,7 @@ class Minimize(Factory, Container):
 
     def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".min = UNIVERSAL_NAN;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".min = CUDART_NAN_F;")
 
         normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
         fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
@@ -129,7 +129,7 @@ class Minimize(Factory, Container):
 
         combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
         combineCode.append("""{indent}if (isnan({totalmin})  &&  isnan({itemmin}))
-{indent}  {totalmin} = UNIVERSAL_NAN;
+{indent}  {totalmin} = CUDART_NAN_F;
 {indent}else if (isnan({totalmin})  ||  {totalmin} > {itemmin})
 {indent}  {totalmin} = {itemmin};""".format(indent = " " * combineIndent,
             totalmin = self._c99ExpandPrefix(*totalPrefix) + ".min",
@@ -321,7 +321,7 @@ class Maximize(Factory, Container):
 
     def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".max = UNIVERSAL_NAN;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".max = CUDART_NAN_F;")
 
         normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
         fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
@@ -331,7 +331,7 @@ class Maximize(Factory, Container):
 
         combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
         combineCode.append("""{indent}if (isnan({totalmax})  &&  isnan({itemmax}))
-{indent}  {totalmax} = UNIVERSAL_NAN;
+{indent}  {totalmax} = CUDART_NAN_F;
 {indent}else if (isnan({totalmax})  ||  {totalmax} < {itemmax})
 {indent}  {totalmax} = {itemmax};""".format(indent = " " * combineIndent,
             totalmax = self._c99ExpandPrefix(*totalPrefix) + ".max",

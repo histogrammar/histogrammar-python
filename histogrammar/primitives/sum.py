@@ -116,11 +116,11 @@ class Sum(Factory, Container):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum = 0.0f;")
 
         normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".sum += " + normexpr + ";")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".sum, " + normexpr + ");")
 
-        combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
-        combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".sum += " + self._c99ExpandPrefix(*itemPrefix) + ".sum;")
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".sum, " + self._c99ExpandPrefix(*itemPrefix) + ".sum);")
 
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")

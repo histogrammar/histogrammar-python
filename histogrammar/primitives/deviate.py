@@ -213,19 +213,19 @@ class Deviate(Factory, Container):
         tmpVarTypes[shift] = "float"
 
         fillCode.append("""{indent}if (isnan({mean})  ||  isnan({q})) {{
-{indent}  {mean} = UNIVERSAL_NAN;
-{indent}  {varianceTimesEntries} = UNIVERSAL_NAN;
+{indent}  {mean} = CUDART_NAN_F;
+{indent}  {varianceTimesEntries} = CUDART_NAN_F;
 {indent}}}
 {indent}else if (isinf({mean})  ||  isinf({q})) {{
 {indent}  if (isinf({mean})  &&  isinf({q})  &&  {mean} * {q} < 0.0f)
-{indent}    {mean} = UNIVERSAL_NAN;
+{indent}    {mean} = CUDART_NAN_F;
 {indent}  else if (isinf({q}))
 {indent}    {mean} = {q};
 {indent}  else
 {indent}    {{ }}
 {indent}  if (isinf({entries})  ||  isnan({entries}))
-{indent}    {mean} = UNIVERSAL_NAN;
-{indent}  {varianceTimesEntries} = UNIVERSAL_NAN;
+{indent}    {mean} = CUDART_NAN_F;
+{indent}  {varianceTimesEntries} = CUDART_NAN_F;
 {indent}}}
 {indent}else {{
 {indent}  {delta} = {q} - {mean};
