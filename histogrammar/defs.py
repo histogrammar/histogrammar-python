@@ -313,7 +313,7 @@ public:
         self._clingUpdate(self._clingFiller, ("var", "storage"))
 
     _cudaNamespaceNumber = 0
-    def cuda(self, namespaceName=None, commentMain=True, testData=[round(random.gauss(0, 1), 2) for x in xrange(10)], numAggregators=1024, **exprs):
+    def cuda(self, namespace=True, namespaceName=None, writeSize=False, commentMain=True, testData=[round(random.gauss(0, 1), 2) for x in xrange(10)], **exprs):
         parser = C99SourceToAst()
         generator = C99AstToSource()
 
@@ -353,6 +353,7 @@ namespace {ns} {{
 {typedefs}
   typedef {lastStructName} Aggregator;
 
+{writeSize}
   // Specific logic of how to zero out the aggregator.
   __device__ void zero(Aggregator* aggregator) {{
 {initCode}
@@ -435,10 +436,12 @@ namespace {ns} {{
   //   aggregators: array of aggregators to fill in parallel.
   //   numAggregators: number of aggregators to fill.
   //   input_*: the input variables you used in the aggregator\'s fill rule.
+  //   numDataPoints: the number of values in each input_* array.
   //
-  __global__ void fillAll(Aggregator* aggregators, int numAggregators{comma}{inputArgStarList}) {{
+  __global__ void fillAll(Aggregator* aggregators, int numAggregators{comma}{inputArgStarList}, int numDataPoints) {{
     int id = threadId() + blockId() * blockSize();
-    fill(aggregators, numAggregators{comma}{inputListId});
+    if (id < numDataPoints)
+      fill(aggregators, numAggregators{comma}{inputListId});
   }}
 
   // User-level API for combining all aggregators in a block (from CPU or GPU).
@@ -500,7 +503,7 @@ namespace {ns} {{
     // Call fill next, using the same number of blocks, threads per block, and memory allocation.
     // fillAll is a __global__ function that takes arrays; fill is a __device__ function that
     // takes single entries. Use the latter if filling from your GPU application.
-    fillAll<<<numBlocks, numThreadsPerBlock>>>(aggregators, numAggregators{comma}{gpuList});
+    fillAll<<<numBlocks, numThreadsPerBlock>>>(aggregators, numAggregators{comma}{gpuList}, numDataPoints);
     errorCheck(cudaPeekAtLastError());
     errorCheck(cudaDeviceSynchronize());
 
@@ -540,8 +543,13 @@ int main(int argc, char** argv) {{
 
 #endif  // {NS}
 '''.format(timestamp = datetime.datetime.now(),
+           namespace = "namespace " + namespaceName if namespace else "extern \"C\"",
            ns = namespaceName,
            NS = namespaceName.upper(),
+           writeSize = """  __global__ void write_size(size_t *output) {{
+    *output = sizeof(Aggregator);
+  }}
+""" if writeSize else "",
            specVersion = histogrammar.version.specification,
            factoryName = self.name,
            typedefs = "".join(storageStructs.values()),
@@ -618,122 +626,33 @@ int main(int argc, char** argv) {{
         if length is None:
             raise ValueError("no input fields specified in aggregator")
 
-        module = pycuda.compiler.SourceModule('''#include <stdio.h>
-#include <math_constants.h>
+        module = pycuda.compiler.SourceModule(self.cuda(namespace=False, writeSize=True))
 
-{typedefs}
-typedef {lastStructName} Aggregator;
-
-extern "C" {{
-  __global__ void write_size(size_t *output) {{
-    *output = sizeof(Aggregator);
-  }}
-
-  __device__ void zeroDevice(Aggregator* aggregator) {{
-{initCodeDevice}
-  }}
-
-  __device__ void incrementDevice(Aggregator* aggregator{comma}{inputArgList}) {{
-    const int weight_0 = 1.0f;
-{tmpVarDeclarations}{quantitiesDevice}
-{fillCodeDevice}
-  }}
-
-  __device__ void combineDevice(Aggregator* total, Aggregator* item) {{
-{combineCodeDevice}
-  }}
-
-  __device__ int blockId() {{
-    return blockIdx.x;
-  }}
-
-  __device__ int blockSize() {{
-    return blockDim.x;
-  }}
-
-  __device__ int threadId() {{
-    return threadIdx.x;
-  }}
-
-  extern __shared__ unsigned char sharedMemory[];
-
-  __global__ void initialize() {{
-    Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + threadId()*sizeof(Aggregator));
-    zeroDevice(threadLocal);
-  }}
-
-  __device__ void fill({inputArgList}) {{
-    Aggregator* threadLocal = (Aggregator*)((size_t)sharedMemory + threadId()*sizeof(Aggregator));
-    incrementDevice(threadLocal{comma}{inputList});
-  }}
-
-  __global__ void fillAll({inputArgStarList}) {{
-    int id = threadId() + blockId() * blockSize();
-    if (id < {length})
-      fill({inputListId});
-  }}
-
-  __global__ void extractFromBlock(int numThreadsPerBlock, Aggregator* result) {{
-    int id = threadId();
-
-    int i = 1;
-    while (2*i < numThreadsPerBlock) i <<= 1;
-
-    while (i != 0) {{
-      if (id < i  &&  id + i < numThreadsPerBlock) {{
-        Aggregator* ours = (Aggregator*)((size_t)sharedMemory + id*sizeof(Aggregator));
-        Aggregator* theirs = (Aggregator*)((size_t)sharedMemory + (id + i)*sizeof(Aggregator));
-        combineDevice(ours, theirs);
-      }}
-
-      __syncthreads();
-      i >>= 1;
-    }}
-
-    if (id == 0) {{
-      Aggregator* singleAggregator = (Aggregator*)((size_t)sharedMemory);
-      Aggregator* blockLocal = &result[blockId()];
-      memcpy(blockLocal, singleAggregator, sizeof(Aggregator));
-    }}
-  }}
-}}
-'''.format(typedefs = "".join(storageStructs.values()),
-           lastStructName = "float" if self._c99StructName() == "Ct" else self._c99StructName(),
-           initCodeDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "\n".join(initCode))),
-           fillCodeDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "\n".join(fillCode))),
-           combineCodeDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "\n".join(combineCode))),
-           quantitiesDevice = re.sub(r"\bUNIVERSAL_INF\b", "CUDART_INF_F", re.sub(r"\bUNIVERSAL_NAN\b", "CUDART_NAN_F", "".join(derivedFieldExprs.values()))),
-           comma = ", " if len(inputFieldNames) > 0 else "",
-           inputList = ", ".join(norm for norm, name in inputFieldNames.items()),
-           inputListId = ", ".join(norm + "[id]" for norm, name in inputFieldNames.items()),
-           inputArgList = ", ".join(inputFieldTypes[name] + " " + norm for norm, name in inputFieldNames.items()),
-           inputArgStarList = ", ".join(inputFieldTypes[name] + "* " + norm for norm, name in inputFieldNames.items()),
-           tmpVarDeclarations = "".join("    " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
-           length = length
-           ))
-
-        numThreadsPerBlock = pycuda.driver.Context.get_device().get_attribute(pycuda.driver.device_attribute.MAX_THREADS_PER_BLOCK)
+        numThreadsPerBlock = min(pycuda.driver.Context.get_device().get_attribute(pycuda.driver.device_attribute.MAX_THREADS_PER_BLOCK), length)
         numBlocks = int(math.ceil(float(length) / float(numThreadsPerBlock)))
+        numAggregators = numThreadsPerBlock
 
         write_size = module.get_function("write_size")
         initialize = module.get_function("initialize")
         fillAll = module.get_function("fillAll")
-        extractFromBlock = module.get_function("extractFromBlock")
+        extract = module.get_function("extract")
 
         aggregatorSize = pycuda.gpuarray.empty((), dtype=numpy.uintp)
         write_size(aggregatorSize, block=(1, 1, 1), grid=(1, 1))
         pycuda.driver.Context.synchronize()
         aggregatorSize = int(aggregatorSize.get())
 
-        initialize(block=(numThreadsPerBlock,1,1), grid=(1, 1), shared=numThreadsPerBlock*aggregatorSize)
+        aggregators = pycuda.driver.InOut(numpy.zeros(numAggregators * aggregatorSize, dtype=numpy.uint8))
+        result = numpy.zeros(aggregatorSize, dtype=numpy.uint8)
 
-        fillAll(*arguments, block=(numThreadsPerBlock,1,1), grid=(numBlocks, 1), shared=numThreadsPerBlock*aggregatorSize)
+        initialize(aggregators, numpy.intc(numAggregators), block=(numThreadsPerBlock,1,1), grid=(1, 1))
 
-        sumOverBlock = numpy.zeros(aggregatorSize, dtype=numpy.uint8)
-        extractFromBlock(numpy.intc(min(numThreadsPerBlock, length)), pycuda.driver.Out(sumOverBlock), block=(numThreadsPerBlock,1,1), grid=(1, 1), shared=numThreadsPerBlock*aggregatorSize)
+        fillAll(aggregators, numpy.intc(numAggregators), *(arguments + [numpy.intc(length)]), block=(numThreadsPerBlock,1,1), grid=(numBlocks, 1))
+
+        extract(aggregators, numpy.intc(numAggregators), pycuda.driver.Out(result), block=(numThreadsPerBlock,1,1), grid=(1, 1))
 
         pycuda.driver.Context.synchronize()
-        self._cudaUnpackAndFill(sumOverBlock.tostring(), False, 4)    # TODO: determine bigendian, alignment and use them!
+        self._cudaUnpackAndFill(result.tostring(), False, 4)    # TODO: determine bigendian, alignment and use them!
 
     def _cppExpandPrefix(self, *prefix):
         return self._c99ExpandPrefix(*prefix)

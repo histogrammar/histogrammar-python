@@ -54,10 +54,10 @@ class TestGPU(unittest.TestCase):
     def testSum(self):
         self.runStandalone(Sum("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Sum", "data": {"entries": 10.0, "sum": 45.0, "name": "x"}})
 
-    # def testSumNumpy(self):
-    #     h = Sum("x")
-    #     h.pycuda(x = numpy.array(range(10)))
-    #     self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Sum", "data": {"entries": 10.0, "sum": 45.0, "name": "x"}}))
+    def testSumNumpy(self):
+        h = Sum("x")
+        h.pycuda(x = numpy.array(range(10)))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Sum", "data": {"entries": 10.0, "sum": 45.0, "name": "x"}}))
 
     # def testAverage(self):
     #     self.runStandalone(Average("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Average", "data": {"entries": 10.0, "mean": 4.5, "name": "x"}})
