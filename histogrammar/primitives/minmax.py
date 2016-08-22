@@ -121,19 +121,61 @@ class Minimize(Factory, Container):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".min = CUDART_NAN_F;")
 
-        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
-        fillCode.append(" " * fillIndent + "if (isnan({min})  ||  {q} < {min}) {min} = {q};".format(
-            min = self._c99ExpandPrefix(*fillPrefix) + ".min",
-            q = normexpr))
+        old = "old_" + str(len(tmpVarTypes))
+        tmpVarTypes[old] = "float"
+        assumed = "assumed_" + str(len(tmpVarTypes))
+        tmpVarTypes[assumed] = "float"
+        trial = "trial_" + str(len(tmpVarTypes))
+        tmpVarTypes[trial] = "float"
 
-        combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
-        combineCode.append("""{indent}if (isnan({totalmin})  &&  isnan({itemmin}))
-{indent}  {totalmin} = CUDART_NAN_F;
-{indent}else if (isnan({totalmin})  ||  {totalmin} > {itemmin})
-{indent}  {totalmin} = {itemmin};""".format(indent = " " * combineIndent,
-            totalmin = self._c99ExpandPrefix(*totalPrefix) + ".min",
-            itemmin = self._c99ExpandPrefix(*itemPrefix) + ".min"))
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append("""{indent}atomicAdd(&{prefix}.entries, {weight});
+{indent}{old} = {prefix}.min;
+{indent}do {{
+{indent}  {assumed} = {old};
+{indent}  if (isnan({assumed})  ||  {q} < {assumed})
+{indent}    {trial} = {q};
+{indent}  else
+{indent}    {trial} = {assumed};
+{indent}  {old} = atomicCAS((int*)(&{prefix}.min), *(int*)(&{assumed}), *(int*)(&{trial}));
+{indent}}} while ({assumed} != {old});
+""".format(indent = " " * fillIndent,
+        prefix = self._c99ExpandPrefix(*fillPrefix),
+        weight = weightVarStack[-1],
+        old = old,
+        assumed = assumed,
+        trial = trial,
+        q = normexpr))
+
+        combineCode.append("""{indent}atomicAdd(&{total}.entries, {item}.entries);
+{indent}{old} = {total}.min;
+{indent}do {{
+{indent}  {assumed} = {old};
+{indent}  if (isnan({assumed}))
+{indent}    {trial} = {item}.min;
+{indent}  else if (isnan({item}.min))
+{indent}    {trial} = {assumed};
+{indent}  else if ({assumed} < {item}.min)
+{indent}    {trial} = {assumed};
+{indent}  else
+{indent}    {trial} = {item}.min;
+{indent}  {old} = atomicCAS((int*)(&{total}.min), *(int*)(&{assumed}), *(int*)(&{trial}));
+{indent}}} while ({assumed} != {old});
+""".format(indent = " " * combineIndent,
+        total = self._c99ExpandPrefix(*totalPrefix),
+        item = self._c99ExpandPrefix(*itemPrefix),
+        weight = weightVarStack[-1],
+        old = old,
+        assumed = assumed,
+        trial = trial))
+
+#         combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
+#         combineCode.append("""{indent}if (isnan({totalmin})  &&  isnan({itemmin}))
+# {indent}  {totalmin} = CUDART_NAN_F;
+# {indent}else if (isnan({totalmin})  ||  {totalmin} > {itemmin})
+# {indent}  {totalmin} = {itemmin};""".format(indent = " " * combineIndent,
+#             totalmin = self._c99ExpandPrefix(*totalPrefix) + ".min",
+#             itemmin = self._c99ExpandPrefix(*itemPrefix) + ".min"))
 
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
@@ -323,19 +365,67 @@ class Maximize(Factory, Container):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".max = CUDART_NAN_F;")
 
-        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
-        fillCode.append(" " * fillIndent + "if (isnan({max})  ||  {q} < {max}) {max} = {q};".format(
-            max = self._c99ExpandPrefix(*fillPrefix) + ".max",
-            q = normexpr))
+        old = "old_" + str(len(tmpVarTypes))
+        tmpVarTypes[old] = "float"
+        assumed = "assumed_" + str(len(tmpVarTypes))
+        tmpVarTypes[assumed] = "float"
+        trial = "trial_" + str(len(tmpVarTypes))
+        tmpVarTypes[trial] = "float"
 
-        combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
-        combineCode.append("""{indent}if (isnan({totalmax})  &&  isnan({itemmax}))
-{indent}  {totalmax} = CUDART_NAN_F;
-{indent}else if (isnan({totalmax})  ||  {totalmax} < {itemmax})
-{indent}  {totalmax} = {itemmax};""".format(indent = " " * combineIndent,
-            totalmax = self._c99ExpandPrefix(*totalPrefix) + ".max",
-            itemmax = self._c99ExpandPrefix(*itemPrefix) + ".max"))
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append("""{indent}atomicAdd(&{prefix}.entries, {weight});
+{indent}{old} = {prefix}.max;
+{indent}do {{
+{indent}  {assumed} = {old};
+{indent}  if (isnan({assumed})  ||  {q} > {assumed})
+{indent}    {trial} = {q};
+{indent}  else
+{indent}    {trial} = {assumed};
+{indent}  {old} = atomicCAS((int*)(&{prefix}.max), *(int*)(&{assumed}), *(int*)(&{trial}));
+{indent}}} while ({assumed} != {old});
+""".format(indent = " " * fillIndent,
+        prefix = self._c99ExpandPrefix(*fillPrefix),
+        weight = weightVarStack[-1],
+        old = old,
+        assumed = assumed,
+        trial = trial,
+        q = normexpr))
+
+        combineCode.append("""{indent}atomicAdd(&{total}.entries, {item}.entries);
+{indent}{old} = {total}.max;
+{indent}do {{
+{indent}  {assumed} = {old};
+{indent}  if (isnan({assumed}))
+{indent}    {trial} = {item}.max;
+{indent}  else if (isnan({item}.max))
+{indent}    {trial} = {assumed};
+{indent}  else if ({assumed} > {item}.max)
+{indent}    {trial} = {assumed};
+{indent}  else
+{indent}    {trial} = {item}.max;
+{indent}  {old} = atomicCAS((int*)(&{total}.max), *(int*)(&{assumed}), *(int*)(&{trial}));
+{indent}}} while ({assumed} != {old});
+""".format(indent = " " * combineIndent,
+        total = self._c99ExpandPrefix(*totalPrefix),
+        item = self._c99ExpandPrefix(*itemPrefix),
+        weight = weightVarStack[-1],
+        old = old,
+        assumed = assumed,
+        trial = trial))
+
+#         normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+#         fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+#         fillCode.append(" " * fillIndent + "if (isnan({max})  ||  {q} < {max}) {max} = {q};".format(
+#             max = self._c99ExpandPrefix(*fillPrefix) + ".max",
+#             q = normexpr))
+
+#         combineCode.append(" " * combineIndent + self._c99ExpandPrefix(*totalPrefix) + ".entries += " + self._c99ExpandPrefix(*itemPrefix) + ".entries;")
+#         combineCode.append("""{indent}if (isnan({totalmax})  &&  isnan({itemmax}))
+# {indent}  {totalmax} = CUDART_NAN_F;
+# {indent}else if (isnan({totalmax})  ||  {totalmax} < {itemmax})
+# {indent}  {totalmax} = {itemmax};""".format(indent = " " * combineIndent,
+#             totalmax = self._c99ExpandPrefix(*totalPrefix) + ".max",
+#             itemmax = self._c99ExpandPrefix(*itemPrefix) + ".max"))
 
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")

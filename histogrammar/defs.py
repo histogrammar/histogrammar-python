@@ -368,7 +368,7 @@ namespace {ns} {{
 
   // Specific logic of how to combine two aggregators.
   __device__ void combine(Aggregator* total, Aggregator* item) {{
-{combineCode}
+{tmpVarDeclarations}{combineCode}
   }}
 
   __host__ void floatToJson(FILE* out, float x) {{
