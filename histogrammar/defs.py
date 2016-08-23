@@ -356,12 +356,12 @@ namespace {ns} {{
 {writeSize}
   // Specific logic of how to zero out the aggregator.
   __device__ void zero(Aggregator* aggregator) {{
-{initCode}
+{tmpVarDeclarations}{initCode}
   }}
 
   // Specific logic of how to increment the aggregator with input values.
   __device__ void increment(Aggregator* aggregator{comma}{inputArgList}) {{
-    const int weight_0 = 1.0f;
+    const float weight_0 = 1.0f;
 {tmpVarDeclarations}{quantities}
 {fillCode}
   }}
@@ -384,7 +384,7 @@ namespace {ns} {{
 
   // Specific logic of how to print out the aggregator.
   __host__ void toJson(Aggregator* aggregator, FILE* out) {{
-    fprintf(out, "{{\\"version\\": \\"{specVersion}\\", \\"type\\": \\"{factoryName}\\", \\"data\\": ");
+{tmpVarDeclarations}    fprintf(out, "{{\\"version\\": \\"{specVersion}\\", \\"type\\": \\"{factoryName}\\", \\"data\\": ");
 {jsonCode}
     fprintf(out, "}}\\n");
   }}

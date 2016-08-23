@@ -195,9 +195,11 @@ class Minimize(Factory, Container):
 """.format(self._c99StructName())
 
     def _cudaUnpackAndFill(self, data, bigendian, alignment):
-        objentries, objmin = struct.unpack("<ff", data)
+        format = "<ff"
+        objentries, objmin = struct.unpack(format, data[:struct.calcsize(format)])
         self.entries = self.entries + objentries
         self.min = minplus(self.min, objmin)
+        return data[struct.calcsize(format):]
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)
@@ -450,9 +452,11 @@ class Maximize(Factory, Container):
 """.format(self._c99StructName())
 
     def _cudaUnpackAndFill(self, data, bigendian, alignment):
-        objentries, objmax = struct.unpack("<ff", data)
+        format = "<ff"
+        objentries, objmax = struct.unpack(format, data[:struct.calcsize(format)])
         self.entries = self.entries + objentries
         self.max = maxplus(self.max, objmax)
+        return data[struct.calcsize(format):]
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)

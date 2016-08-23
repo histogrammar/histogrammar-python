@@ -119,8 +119,10 @@ class Count(Factory, Container):
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ");")
 
     def _cudaUnpackAndFill(self, data, bigendian, alignment):
-        entries, = struct.unpack("<f", data)
+        format = "<f"
+        entries, = struct.unpack(format, data[:struct.calcsize(format)])
         self.entries += entries
+        return data[struct.calcsize(format):]
 
     def _clingUpdate(self, filler, *extractorPrefix):
         self.entries += self._clingExpandPrefix(filler, *extractorPrefix)

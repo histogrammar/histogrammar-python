@@ -238,7 +238,8 @@ class Deviate(Factory, Container):
 """.format(self._c99StructName())
 
     def _cudaUnpackAndFill(self, data, bigendian, alignment):
-        objentries, objsum, objsum2 = struct.unpack("<fff", data)
+        format = "<fff"
+        objentries, objsum, objsum2 = struct.unpack("<fff", data[:struct.calcsize(format)])
 
         entries = self.entries + objentries
         if self.entries == 0.0:
@@ -260,6 +261,7 @@ class Deviate(Factory, Container):
         self.entries = entries
         self.mean = mean
         self.variance = variance
+        return data[struct.calcsize(format):]
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)

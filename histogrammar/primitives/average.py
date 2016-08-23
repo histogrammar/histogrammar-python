@@ -197,7 +197,8 @@ class Average(Factory, Container):
 """.format(self._c99StructName())
 
     def _cudaUnpackAndFill(self, data, bigendian, alignment):
-        objentries, objsum = struct.unpack("<ff", data)
+        format = "<ff"
+        objentries, objsum = struct.unpack(format, data[:struct.calcsize(format)])
 
         entries = self.entries + objentries
         if self.entries == 0.0:
@@ -212,6 +213,7 @@ class Average(Factory, Container):
 
         self.entries = entries
         self.mean = mean
+        return data[struct.calcsize(format):]
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)

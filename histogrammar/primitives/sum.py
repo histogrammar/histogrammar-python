@@ -139,9 +139,11 @@ class Sum(Factory, Container):
 """.format(self._c99StructName())
 
     def _cudaUnpackAndFill(self, data, bigendian, alignment):
-        entries, sum = struct.unpack("<ff", data)
+        format = "<ff"
+        entries, sum = struct.unpack(format, data[:struct.calcsize(format)])
         self.entries += entries
         self.sum += sum
+        return data[struct.calcsize(format):]
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)
