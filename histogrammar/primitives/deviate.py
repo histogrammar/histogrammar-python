@@ -17,6 +17,7 @@
 import json
 import math
 import numbers
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -235,6 +236,30 @@ class Deviate(Factory, Container):
     float sum2;
   }} {0};
 """.format(self._c99StructName())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        objentries, objsum, objsum2 = struct.unpack("<fff", data)
+
+        entries = self.entries + objentries
+        if self.entries == 0.0:
+            if objentries == 0.0:
+                mean = float("nan")
+                variance = float("nan")
+            else:
+                mean = objsum / objentries
+                variance = (objsum2 / objentries) - (mean * mean)
+        elif objentries == 0.0:
+            mean = self.mean
+            variance = self.variance
+        else:
+            objmean = objsum / objentries
+            objvariance = (objsum2 / objentries) - (mean * mean)
+            mean = (self.entries*self.mean + objsum)/(self.entries + objentries)
+            variance = self.varianceTimesEntries + (objvariance*objentries) + self.entries*self.mean*self.mean + objentries*objmean*objmean - 2.0*mean*(self.entries*self.mean + objentries*objmean) + mean*mean*entries
+
+        self.entries = entries
+        self.mean = mean
+        self.variance = variance
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)

@@ -16,6 +16,7 @@
 
 import numbers
 import re
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -116,6 +117,10 @@ class Count(Factory, Container):
         combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ", " + self._c99ExpandPrefix(*itemPrefix) + ");")
 
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ");")
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        entries, = struct.unpack("<f", data)
+        self.entries += entries
 
     def _clingUpdate(self, filler, *extractorPrefix):
         self.entries += self._clingExpandPrefix(filler, *extractorPrefix)

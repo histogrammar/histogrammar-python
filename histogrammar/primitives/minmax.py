@@ -17,6 +17,7 @@
 import json
 import math
 import numbers
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -192,6 +193,11 @@ class Minimize(Factory, Container):
     float min;
   }} {0};
 """.format(self._c99StructName())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        objentries, objmin = struct.unpack("<ff", data)
+        self.entries = self.entries + objentries
+        self.min = minplus(self.min, objmin)
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)
@@ -442,6 +448,11 @@ class Maximize(Factory, Container):
     float max;
   }} {0};
 """.format(self._c99StructName())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        objentries, objmax = struct.unpack("<ff", data)
+        self.entries = self.entries + objentries
+        self.max = maxplus(self.max, objmax)
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)

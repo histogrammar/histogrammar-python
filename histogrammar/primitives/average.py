@@ -17,6 +17,7 @@
 import json
 import math
 import numbers
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -194,6 +195,23 @@ class Average(Factory, Container):
     float sum;
   }} {0};
 """.format(self._c99StructName())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        objentries, objsum = struct.unpack("<ff", data)
+
+        entries = self.entries + objentries
+        if self.entries == 0.0:
+            if objentries == 0.0:
+                mean = float("nan")
+            else:
+                mean = objsum / objentries
+        elif objentries == 0.0:
+            mean = self.mean
+        else:
+            mean = (self.entries*self.mean + objsum)/(self.entries + objentries)
+
+        self.entries = entries
+        self.mean = mean
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)

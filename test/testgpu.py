@@ -62,11 +62,31 @@ class TestGPU(unittest.TestCase):
     def testAverage(self):
         self.runStandalone(Average("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Average", "data": {"entries": 10.0, "mean": 4.5, "name": "x"}})
 
+    def testAverageNumpy(self):
+        h = Average("x")
+        h.pycuda(x = numpy.array(range(10)))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Average", "data": {"entries": 10.0, "mean": 4.5, "name": "x"}}))
+        
     def testDeviate(self):
         self.runStandalone(Deviate("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Deviate", "data": {"entries": 10.0, "mean": 4.5, "variance": 8.25, "name": "x"}})
+
+    def testDeviateNumpy(self):
+        h = Deviate("x")
+        h.pycuda(x = numpy.array(range(10)))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Deviate", "data": {"entries": 10.0, "mean": 4.5, "variance": 8.25, "name": "x"}}))
 
     def testMinimize(self):
         self.runStandalone(Minimize("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Minimize", "data": {"entries": 10.0, "min": 0.0, "name": "x"}})
 
+    def testMinimizeNumpy(self):
+        h = Minimize("x")
+        h.pycuda(x = numpy.array(range(10)))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Minimize", "data": {"entries": 10.0, "min": 0.0, "name": "x"}}))
+
     def testMaximize(self):
         self.runStandalone(Maximize("x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Maximize", "data": {"entries": 10.0, "max": 9.0, "name": "x"}})
+
+    def testMaximizeNumpy(self):
+        h = Maximize("x")
+        h.pycuda(x = numpy.array(range(10)))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Maximize", "data": {"entries": 10.0, "max": 9.0, "name": "x"}}))
