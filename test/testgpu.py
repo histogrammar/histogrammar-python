@@ -92,4 +92,9 @@ class TestGPU(unittest.TestCase):
     #     self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Maximize", "data": {"entries": 10.0, "max": 9.0, "name": "x"}}))
 
     def testBin(self):
-        print Bin(10, -10, 10, "x").cuda(commentMain=False, testData=range(10))
+        self.runStandalone(Bin(10, -10, 10, "x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Bin", "data": {"low": -10, "high": 10, "entries": 10, "nanflow:type": "Count", "nanflow": 0, "underflow:type": "Count", "underflow": 0, "overflow:type": "Count", "overflow": 0, "values:type": "Count", "values": [0, 0, 0, 0, 0, 2, 2, 2, 2, 2], "name": "x"}})
+
+    def testBinNumpy(self):
+        h = Bin(10, -10, 10, "x")
+        h.pycuda(x = numpy.array(range(10)))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Bin", "data": {"low": -10, "high": 10, "entries": 10, "nanflow:type": "Count", "nanflow": 0, "underflow:type": "Count", "underflow": 0, "overflow:type": "Count", "overflow": 0, "values:type": "Count", "values": [0, 0, 0, 0, 0, 2, 2, 2, 2, 2], "name": "x"}}))

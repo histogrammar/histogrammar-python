@@ -281,7 +281,7 @@ class Bin(Factory, Container):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
         fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
         combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"low\\\": " + str(self.low) + ", \\\"high\\\": " + str(self.high) + ", \\\"entries\\\": \");")
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
 
         fillCode.append(" " * fillIndent + "if (isnan({0})) {{".format(normexpr))
