@@ -41,9 +41,9 @@ Primitive implementation is mature. CUDA implementation has begun.
 | Minimize          | done        | done  | done       | done       |
 | Maximize          | done        | done  | done       | done       |
 | Bag               | done        | done  | done       | impossible |
-| Bin               | done        | done  | done       |            |
+| Bin               | done        | done  | done       | done       |
 | SparselyBin       | done        | done  | done       | impossible |
-| CentrallyBin      | done        | done  | done       |            |
+| CentrallyBin      | done        | done  | done       | done       |
 | IrregularlyBin    | done        | done  | done       |            |
 | Categorize        | done        | done  | done       | impossible |
 | Fraction          | done        | done  | done       |            |

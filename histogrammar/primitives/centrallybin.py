@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import math
 import numbers
+import struct
 
 from histogrammar.defs import *
 from histogrammar.primitives.count import *
@@ -241,6 +243,86 @@ class CentrallyBin(Factory, Container):
 
     def _c99StructName(self):
         return "Cb" + str(len(self.bins)) + self.bins[0][1]._c99StructName() + self.nanflow._c99StructName()
+
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+
+        fillCode.append(" " * fillIndent + "if (isnan({0})) {{".format(normexpr))
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"nanflow:type\\\": \\\"" + self.nanflow.name + "\\\"\");")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"nanflow\\\": \");")
+        self.nanflow._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent + 2, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, combineCode, totalPrefix + (("var", "nanflow"),), itemPrefix + (("var", "nanflow"),), combineIndent, jsonCode, jsonPrefix + (("var", "nanflow"),), jsonIndent, weightVars, weightVarStack, tmpVarTypes, False)
+        fillCode.append(" " * fillIndent + "}")
+        fillCode.append(" " * fillIndent + "else {")
+
+        bin = "bin_" + str(len(tmpVarTypes))
+        tmpVarTypes[bin] = "int"
+
+        initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins)))
+
+        fillCode.append(" " * fillIndent + "  const float edges[{0}] = {{{1}}};".format(
+            len(self.values) - 1,
+            ", ".join(str((self.bins[index - 1][0] + self.bins[index][0])/2.0) for index in xrange(1, len(self.bins)))))
+        fillCode.append(" " * fillIndent + "  for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins) - 1))
+        fillCode.append(" " * fillIndent + "    if ({0} < edges[{1}])".format(normexpr, bin))
+        fillCode.append(" " * fillIndent + "      break;")
+        fillCode.append(" " * fillIndent + "  }")
+
+        combineCode.append(" " * combineIndent + "for ({0} = 0;  {0} < {1}; ++{0}) {{".format(bin, len(self.bins)))
+
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"bins:type\\\": \\\"" + self.bins[0][1].name + "\\\"\");")
+        if hasattr(self.bins[0][1], "quantity") and self.bins[0][1].quantity.name is not None:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"bins:name\\\": \\\"" + self.bins[0][1].quantity.name + "\\\"\");")
+        jsonCode.append(" " * jsonIndent + "{")
+        jsonCode.append(" " * jsonIndent + "  const float centers[{0}] = {{{1}}};".format(len(self.values), ", ".join(str(center) for center, value in self.bins)))
+        jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"bins\\\": [\");")
+        jsonCode.append(" " * jsonIndent + "  for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
+        jsonCode.append(" " * jsonIndent + "    fprintf(out, \"{\\\"center\\\": %g, \\\"value\\\": \", centers[" + bin + "]);")
+
+        self.bins[0][1]._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 2, combineCode, totalPrefix + (("var", "values"), ("index", bin)), itemPrefix + (("var", "values"), ("index", bin)), combineIndent + 2, jsonCode, jsonPrefix + (("var", "values"), ("index", bin)), jsonIndent + 4, weightVars, weightVarStack, tmpVarTypes, True)
+
+        initCode.append(" " * initIndent + "}")
+        fillCode.append(" " * fillIndent + "}")
+        combineCode.append(" " * combineIndent + "}")
+        jsonCode.append(" " * jsonIndent + "    fprintf(out, \"}\");")
+        jsonCode.append(" " * jsonIndent + "    if ({0} != {1})".format(bin, len(self.values) - 1))
+        jsonCode.append(" " * jsonIndent + "      fprintf(out, \", \");")
+        jsonCode.append(" " * jsonIndent + "  }")
+        jsonCode.append(" " * jsonIndent + "}")
+
+        if suppressName or self.quantity.name is None:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"]}\");")
+        else:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"], \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    {3} nanflow;
+    {1} values[{2}];
+  }} {0};
+""".format(self._c99StructName(),
+           self.bins[0][1]._cudaStorageType(),
+           len(self.values),
+           self.nanflow._cudaStorageType())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        format = "<f"
+        entries, = struct.unpack(format, data[:struct.calcsize(format)])
+        self.entries += entries
+        data = data[struct.calcsize(format):]
+
+        data = self.nanflow._cudaUnpackAndFill(data, bigendian, alignment)
+
+        for center, value in self.bins:
+            data = value._cudaUnpackAndFill(data, bigendian, alignment)
+
+        return data
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

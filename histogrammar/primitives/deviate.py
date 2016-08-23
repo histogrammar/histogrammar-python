@@ -200,6 +200,27 @@ class Deviate(Factory, Container):
   }} {0};
 """.format(self._c99StructName())
 
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
+
+        entries = self.entries + obj.entries
+        if self.entries == 0.0:
+            mean = obj.mean
+            varianceTimesEntries = obj.varianceTimesEntries
+        elif obj.entries == 0.0:
+            mean = self.mean
+            varianceTimesEntries = self.varianceTimesEntries
+        else:
+            mean = (self.entries*self.mean + obj.entries*obj.mean)/(self.entries + obj.entries)
+            varianceTimesEntries = self.varianceTimesEntries + obj.varianceTimesEntries + self.entries*self.mean*self.mean + obj.entries*obj.mean*obj.mean - 2.0*mean*(self.entries*self.mean + obj.entries*obj.mean) + mean*mean*entries
+
+        self.entries = entries
+        self.mean = mean
+        self.varianceTimesEntries = varianceTimesEntries
+
+    def _c99StructName(self):
+        return "Dv"
+
     def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum = 0.0f;")
@@ -262,27 +283,6 @@ class Deviate(Factory, Container):
         self.mean = mean
         self.variance = variance
         return data[struct.calcsize(format):]
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefix(filler, *extractorPrefix)
-
-        entries = self.entries + obj.entries
-        if self.entries == 0.0:
-            mean = obj.mean
-            varianceTimesEntries = obj.varianceTimesEntries
-        elif obj.entries == 0.0:
-            mean = self.mean
-            varianceTimesEntries = self.varianceTimesEntries
-        else:
-            mean = (self.entries*self.mean + obj.entries*obj.mean)/(self.entries + obj.entries)
-            varianceTimesEntries = self.varianceTimesEntries + obj.varianceTimesEntries + self.entries*self.mean*self.mean + obj.entries*obj.mean*obj.mean - 2.0*mean*(self.entries*self.mean + obj.entries*obj.mean) + mean*mean*entries
-
-        self.entries = entries
-        self.mean = mean
-        self.varianceTimesEntries = varianceTimesEntries
-
-    def _c99StructName(self):
-        return "Dv"
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

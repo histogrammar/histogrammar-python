@@ -111,6 +111,14 @@ class Sum(Factory, Container):
   }} {0};
 """.format(self._c99StructName())
 
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
+        self.entries += obj.entries
+        self.sum += obj.sum
+
+    def _c99StructName(self):
+        return "Sm"
+
     def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum = 0.0f;")
@@ -144,14 +152,6 @@ class Sum(Factory, Container):
         self.entries += entries
         self.sum += sum
         return data[struct.calcsize(format):]
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefix(filler, *extractorPrefix)
-        self.entries += obj.entries
-        self.sum += obj.sum
-
-    def _c99StructName(self):
-        return "Sm"
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

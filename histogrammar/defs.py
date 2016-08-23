@@ -333,7 +333,7 @@ public:
         for name, expr in exprs.items():
             self._cudaAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
 
-        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 6, weightVars, weightVarStack, tmpVarTypes, False)
+        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 4, weightVars, weightVarStack, tmpVarTypes, False)
 
         if namespaceName is None:
             namespaceName = "HistogrammarCUDA_" + str(Container._cudaNamespaceNumber)

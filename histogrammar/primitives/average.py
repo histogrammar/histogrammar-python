@@ -166,6 +166,23 @@ class Average(Factory, Container):
   }} {0};
 """.format(self._c99StructName())
 
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
+
+        entries = self.entries + obj.entries
+        if self.entries == 0.0:
+            mean = obj.mean
+        elif obj.entries == 0.0:
+            mean = self.mean
+        else:
+            mean = (self.entries*self.mean + obj.entries*obj.mean)/(self.entries + obj.entries)
+
+        self.entries = entries
+        self.mean = mean
+
+    def _c99StructName(self):
+        return "Av"
+
     def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum = 0.0f;")
@@ -214,23 +231,6 @@ class Average(Factory, Container):
         self.entries = entries
         self.mean = mean
         return data[struct.calcsize(format):]
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefix(filler, *extractorPrefix)
-
-        entries = self.entries + obj.entries
-        if self.entries == 0.0:
-            mean = obj.mean
-        elif obj.entries == 0.0:
-            mean = self.mean
-        else:
-            mean = (self.entries*self.mean + obj.entries*obj.mean)/(self.entries + obj.entries)
-
-        self.entries = entries
-        self.mean = mean
-
-    def _c99StructName(self):
-        return "Av"
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

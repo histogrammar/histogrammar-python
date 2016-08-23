@@ -275,6 +275,18 @@ class Bin(Factory, Container):
   }} {0};
 """.format(self._c99StructName(), self.values[0]._c99StorageType(), len(self.values), self.underflow._c99StorageType(), self.overflow._c99StorageType(), self.nanflow._c99StorageType())
 
+    def _clingUpdate(self, filler, *extractorPrefix):
+        obj = self._clingExpandPrefix(filler, *extractorPrefix)
+        self.entries += obj.entries
+        for i in xrange(len(self.values)):
+            self.values[i]._clingUpdate(obj, ("func", ["getValues", i]))
+        self.underflow._clingUpdate(obj, ("var", "underflow"))
+        self.overflow._clingUpdate(obj, ("var", "overflow"))
+        self.nanflow._clingUpdate(obj, ("var", "nanflow"))
+
+    def _c99StructName(self):
+        return "Bn" + str(len(self.values)) + self.values[0]._c99StructName() + self.underflow._c99StructName() + self.overflow._c99StructName() + self.nanflow._c99StructName()
+
     def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
 
@@ -287,35 +299,45 @@ class Bin(Factory, Container):
         fillCode.append(" " * fillIndent + "if (isnan({0})) {{".format(normexpr))
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"nanflow:type\\\": \\\"" + self.nanflow.name + "\\\"\");")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"nanflow\\\": \");")
-        self.nanflow._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent + 2, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, combineCode, totalPrefix + (("var", "nanflow"),), itemPrefix + (("var", "nanflow"),), combineIndent, jsonCode, jsonPrefix + (("var", "nanflow"),), jsonIndent + 2, weightVars, weightVarStack, tmpVarTypes, False)
+        self.nanflow._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent + 2, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, combineCode, totalPrefix + (("var", "nanflow"),), itemPrefix + (("var", "nanflow"),), combineIndent, jsonCode, jsonPrefix + (("var", "nanflow"),), jsonIndent, weightVars, weightVarStack, tmpVarTypes, False)
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else if ({0} < {1}) {{".format(normexpr, self.low))
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"underflow:type\\\": \\\"" + self.underflow.name + "\\\"\");")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"underflow\\\": \");")
-        self.underflow._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "underflow"),), initIndent + 2, fillCode, fillPrefix + (("var", "underflow"),), fillIndent + 2, combineCode, totalPrefix + (("var", "underflow"),), itemPrefix + (("var", "underflow"),), combineIndent, jsonCode, jsonPrefix + (("var", "underflow"),), jsonIndent + 2, weightVars, weightVarStack, tmpVarTypes, False)
+        self.underflow._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "underflow"),), initIndent + 2, fillCode, fillPrefix + (("var", "underflow"),), fillIndent + 2, combineCode, totalPrefix + (("var", "underflow"),), itemPrefix + (("var", "underflow"),), combineIndent, jsonCode, jsonPrefix + (("var", "underflow"),), jsonIndent, weightVars, weightVarStack, tmpVarTypes, False)
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else if ({0} >= {1}) {{".format(normexpr, self.high))
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"overflow:type\\\": \\\"" + self.overflow.name + "\\\"\");")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"overflow\\\": \");")
-        self.overflow._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "overflow"),), initIndent + 2, fillCode, fillPrefix + (("var", "overflow"),), fillIndent + 2, combineCode, totalPrefix + (("var", "overflow"),), itemPrefix + (("var", "overflow"),), combineIndent, jsonCode, jsonPrefix + (("var", "overflow"),), jsonIndent + 2, weightVars, weightVarStack, tmpVarTypes, False)
+        self.overflow._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "overflow"),), initIndent + 2, fillCode, fillPrefix + (("var", "overflow"),), fillIndent + 2, combineCode, totalPrefix + (("var", "overflow"),), itemPrefix + (("var", "overflow"),), combineIndent, jsonCode, jsonPrefix + (("var", "overflow"),), jsonIndent, weightVars, weightVarStack, tmpVarTypes, False)
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else {")
 
         bin = "bin_" + str(len(tmpVarTypes))
         tmpVarTypes[bin] = "int"
+
         initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
+
         fillCode.append(" " * (fillIndent + 2) + "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low, len(self.values)/(self.high - self.low)))
+
         combineCode.append(" " * combineIndent + "for ({0} = 0;  {0} < {1}; ++{0}) {{".format(bin, len(self.values)))
+
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"values:type\\\": \\\"" + self.values[0].name + "\\\"\");")
+        if hasattr(self.values[0], "quantity") and self.values[0].quantity.name is not None:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"values:name\\\": \\\"" + self.values[0].quantity.name + "\\\"\");")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"values\\\": [\");")
         jsonCode.append(" " * jsonIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
-        self.values[0]._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 2, combineCode, totalPrefix + (("var", "values"), ("index", bin)), itemPrefix + (("var", "values"), ("index", bin)), combineIndent + 2, jsonCode, jsonPrefix + (("var", "values"), ("index", bin)), jsonIndent + 4, weightVars, weightVarStack, tmpVarTypes, True)
+        self.values[0]._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 2, combineCode, totalPrefix + (("var", "values"), ("index", bin)), itemPrefix + (("var", "values"), ("index", bin)), combineIndent + 2, jsonCode, jsonPrefix + (("var", "values"), ("index", bin)), jsonIndent + 2, weightVars, weightVarStack, tmpVarTypes, True)
+
         initCode.append(" " * initIndent + "}")
+
         fillCode.append(" " * fillIndent + "}")
+
         combineCode.append(" " * combineIndent + "}")
+
         jsonCode.append(" " * jsonIndent + "  if ({0} != {1})".format(bin, len(self.values) - 1))
         jsonCode.append(" " * jsonIndent + "    fprintf(out, \", \");")
         jsonCode.append(" " * jsonIndent + "}")
@@ -349,18 +371,6 @@ class Bin(Factory, Container):
             data = value._cudaUnpackAndFill(data, bigendian, alignment)
 
         return data
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefix(filler, *extractorPrefix)
-        self.entries += obj.entries
-        for i in xrange(len(self.values)):
-            self.values[i]._clingUpdate(obj, ("func", ["getValues", i]))
-        self.underflow._clingUpdate(obj, ("var", "underflow"))
-        self.overflow._clingUpdate(obj, ("var", "overflow"))
-        self.nanflow._clingUpdate(obj, ("var", "nanflow"))
-
-    def _c99StructName(self):
-        return "Bn" + str(len(self.values)) + self.values[0]._c99StructName() + self.underflow._c99StructName() + self.overflow._c99StructName() + self.nanflow._c99StructName()
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

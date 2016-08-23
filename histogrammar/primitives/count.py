@@ -105,6 +105,15 @@ class Count(Factory, Container):
         else:
             fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + " += " + weightVarStack[-1] + ";")
 
+    def _clingUpdate(self, filler, *extractorPrefix):
+        self.entries += self._clingExpandPrefix(filler, *extractorPrefix)
+
+    def _c99StorageType(self):
+        return "double"
+
+    def _c99StructName(self):
+        return "Ct"
+
     def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + " = 0.0f;")
 
@@ -123,15 +132,6 @@ class Count(Factory, Container):
         entries, = struct.unpack(format, data[:struct.calcsize(format)])
         self.entries += entries
         return data[struct.calcsize(format):]
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        self.entries += self._clingExpandPrefix(filler, *extractorPrefix)
-
-    def _c99StorageType(self):
-        return "double"
-
-    def _c99StructName(self):
-        return "Ct"
 
     def _cudaStorageType(self):
         return "float"

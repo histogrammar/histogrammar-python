@@ -91,10 +91,18 @@ class TestGPU(unittest.TestCase):
     #     h.pycuda(x = numpy.array(range(10)))
     #     self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Maximize", "data": {"entries": 10.0, "max": 9.0, "name": "x"}}))
 
-    def testBin(self):
-        self.runStandalone(Bin(10, -10, 10, "x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Bin", "data": {"low": -10, "high": 10, "entries": 10, "nanflow:type": "Count", "nanflow": 0, "underflow:type": "Count", "underflow": 0, "overflow:type": "Count", "overflow": 0, "values:type": "Count", "values": [0, 0, 0, 0, 0, 2, 2, 2, 2, 2], "name": "x"}})
+    # def testBin(self):
+    #     self.runStandalone(Bin(10, -10, 10, "x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "Bin", "data": {"low": -10, "high": 10, "entries": 10, "nanflow:type": "Count", "nanflow": 0, "underflow:type": "Count", "underflow": 0, "overflow:type": "Count", "overflow": 0, "values:type": "Count", "values": [0, 0, 0, 0, 0, 2, 2, 2, 2, 2], "name": "x"}})
 
-    def testBinNumpy(self):
-        h = Bin(10, -10, 10, "x")
+    # def testBinNumpy(self):
+    #     h = Bin(10, -10, 10, "x")
+    #     h.pycuda(x = numpy.array(range(10)))
+    #     self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Bin", "data": {"low": -10, "high": 10, "entries": 10, "nanflow:type": "Count", "nanflow": 0, "underflow:type": "Count", "underflow": 0, "overflow:type": "Count", "overflow": 0, "values:type": "Count", "values": [0, 0, 0, 0, 0, 2, 2, 2, 2, 2], "name": "x"}}))
+
+    def testCentrallyBin(self):
+        self.runStandalone(CentrallyBin([1, 2, 3, 4, 5], "x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "CentrallyBin", "data": {"entries": 10, "nanflow:type": "Count", "nanflow": 0, "bins:type": "Count", "bins": [{"center": 1, "value": 2}, {"center": 2, "value": 1}, {"center": 3, "value": 1}, {"center": 4, "value": 1}, {"center": 5, "value": 5}], "name": "x"}})
+
+    def testCentrallyBinNumpy(self):
+        h = CentrallyBin([1, 2, 3, 4, 5], "x")
         h.pycuda(x = numpy.array(range(10)))
-        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Bin", "data": {"low": -10, "high": 10, "entries": 10, "nanflow:type": "Count", "nanflow": 0, "underflow:type": "Count", "underflow": 0, "overflow:type": "Count", "overflow": 0, "values:type": "Count", "values": [0, 0, 0, 0, 0, 2, 2, 2, 2, 2], "name": "x"}}))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "CentrallyBin", "data": {"entries": 10, "nanflow:type": "Count", "nanflow": 0, "bins:type": "Count", "bins": [{"center": 1, "value": 2}, {"center": 2, "value": 1}, {"center": 3, "value": 1}, {"center": 4, "value": 1}, {"center": 5, "value": 5}], "name": "x"}}))
