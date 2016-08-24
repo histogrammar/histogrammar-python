@@ -136,6 +136,16 @@ def floatToJson(x):
     else:
         return x
 
+def floatToC99(x):
+    if math.isnan(x):
+        return "NAN"
+    elif math.isinf(x) and x > 0.0:
+        return "INFINITY"
+    elif math.isinf(x):
+        return "-INFINITY"
+    else:
+        return str(x)
+
 def rangeToJson(x):
     """Custom rule for converting numbers, one-dimensional vectors of numbers, and strings to JSON, converting non-finite nmbers to ``"inf"``, ``"-inf"``, and ``"nan"``. This avoids Python's bad habit of putting literal ``Infinity``, ``-Infinity``, and ``NaN`` in the JSON (without quotes)."""
     if isinstance(x, basestring):

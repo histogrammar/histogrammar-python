@@ -100,9 +100,17 @@ class TestGPU(unittest.TestCase):
     #     self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "Bin", "data": {"low": -10, "high": 10, "entries": 10, "nanflow:type": "Count", "nanflow": 0, "underflow:type": "Count", "underflow": 0, "overflow:type": "Count", "overflow": 0, "values:type": "Count", "values": [0, 0, 0, 0, 0, 2, 2, 2, 2, 2], "name": "x"}}))
 
     def testCentrallyBin(self):
-        self.runStandalone(CentrallyBin([1, 2, 3, 4, 5], "x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "CentrallyBin", "data": {"entries": 10, "nanflow:type": "Count", "nanflow": 0, "bins:type": "Count", "bins": [{"center": 1, "value": 2}, {"center": 2, "value": 1}, {"center": 3, "value": 1}, {"center": 4, "value": 1}, {"center": 5, "value": 5}], "name": "x"}})
+        self.runStandalone(CentrallyBin([1, 2, 3, 4, 5], "x").cuda(commentMain=False, testData=range(10)), {"version": "0.9", "type": "CentrallyBin", "data": {"entries": 10, "nanflow:type": "Count", "nanflow": 0, "bins:type": "Count", "bins": [{"center": 1, "data": 2}, {"center": 2, "data": 1}, {"center": 3, "data": 1}, {"center": 4, "data": 1}, {"center": 5, "data": 5}], "name": "x"}})
 
     def testCentrallyBinNumpy(self):
         h = CentrallyBin([1, 2, 3, 4, 5], "x")
         h.pycuda(x = numpy.array(range(10)))
-        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "CentrallyBin", "data": {"entries": 10, "nanflow:type": "Count", "nanflow": 0, "bins:type": "Count", "bins": [{"center": 1, "value": 2}, {"center": 2, "value": 1}, {"center": 3, "value": 1}, {"center": 4, "value": 1}, {"center": 5, "value": 5}], "name": "x"}}))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"version": "0.9", "type": "CentrallyBin", "data": {"entries": 10, "nanflow:type": "Count", "nanflow": 0, "bins:type": "Count", "bins": [{"center": 1, "data": 2}, {"center": 2, "data": 1}, {"center": 3, "data": 1}, {"center": 4, "data": 1}, {"center": 5, "data": 5}], "name": "x"}}))
+
+    def testIrregularlyBin(self):
+        self.runStandalone(IrregularlyBin([1.5, 2.5, 3.5, 4.5, 5.5], "x").cuda(commentMain=False, testData=range(10)), {"data": {"nanflow:type": "Count", "name": "x", "nanflow": 0.0, "bins:type": "Count", "entries": 10.0, "bins": [{"data": 2.0, "atleast": "-inf"}, {"data": 1.0, "atleast": 1.5}, {"data": 1.0, "atleast": 2.5}, {"data": 1.0, "atleast": 3.5}, {"data": 1.0, "atleast": 4.5}, {"data": 4.0, "atleast": 5.5}]}, "version": "0.9", "type": "IrregularlyBin"})
+
+    def testIrregularlyBinNumpy(self):
+        h = IrregularlyBin([1.5, 2.5, 3.5, 4.5, 5.5], "x")
+        h.pycuda(x = numpy.array(range(10)))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"data": {"nanflow:type": "Count", "name": "x", "nanflow": 0.0, "bins:type": "Count", "entries": 10.0, "bins": [{"data": 2.0, "atleast": "-inf"}, {"data": 1.0, "atleast": 1.5}, {"data": 1.0, "atleast": 2.5}, {"data": 1.0, "atleast": 3.5}, {"data": 1.0, "atleast": 4.5}, {"data": 4.0, "atleast": 5.5}]}, "version": "0.9", "type": "IrregularlyBin"}))

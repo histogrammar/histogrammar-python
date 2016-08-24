@@ -210,7 +210,7 @@ class CentrallyBin(Factory, Container):
     
         fillCode.append(" " * fillIndent + "  const double edges[{0}] = {{{1}}};".format(
             len(self.values) - 1,
-            ", ".join(str((self.bins[index - 1][0] + self.bins[index][0])/2.0) for index in xrange(1, len(self.bins)))))
+            ", ".join(floatToC99((self.bins[index - 1][0] + self.bins[index][0])/2.0) for index in xrange(1, len(self.bins)))))
 
         fillCode.append(" " * fillIndent + "  for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins) - 1))
         fillCode.append(" " * fillIndent + "    if ({0} < edges[{1}])".format(normexpr, bin))
@@ -267,7 +267,7 @@ class CentrallyBin(Factory, Container):
 
         fillCode.append(" " * fillIndent + "  const float edges[{0}] = {{{1}}};".format(
             len(self.values) - 1,
-            ", ".join(str((self.bins[index - 1][0] + self.bins[index][0])/2.0) for index in xrange(1, len(self.bins)))))
+            ", ".join(floatToC99((self.bins[index - 1][0] + self.bins[index][0])/2.0) for index in xrange(1, len(self.bins)))))
         fillCode.append(" " * fillIndent + "  for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins) - 1))
         fillCode.append(" " * fillIndent + "    if ({0} < edges[{1}])".format(normexpr, bin))
         fillCode.append(" " * fillIndent + "      break;")
@@ -279,10 +279,12 @@ class CentrallyBin(Factory, Container):
         if hasattr(self.bins[0][1], "quantity") and self.bins[0][1].quantity.name is not None:
             jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"bins:name\\\": \\\"" + self.bins[0][1].quantity.name + "\\\"\");")
         jsonCode.append(" " * jsonIndent + "{")
-        jsonCode.append(" " * jsonIndent + "  const float centers[{0}] = {{{1}}};".format(len(self.values), ", ".join(str(center) for center, value in self.bins)))
+        jsonCode.append(" " * jsonIndent + "  const float centers[{0}] = {{{1}}};".format(len(self.values), ", ".join(floatToC99(center) for center, value in self.bins)))
         jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"bins\\\": [\");")
         jsonCode.append(" " * jsonIndent + "  for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
-        jsonCode.append(" " * jsonIndent + "    fprintf(out, \"{\\\"center\\\": %g, \\\"value\\\": \", centers[" + bin + "]);")
+        jsonCode.append(" " * jsonIndent + "    fprintf(out, \"{\\\"center\\\": \");")
+        jsonCode.append(" " * jsonIndent + "    floatToJson(out, centers[" + bin + "]);")
+        jsonCode.append(" " * jsonIndent + "    fprintf(out, \", \\\"data\\\": \");")
 
         self.bins[0][1]._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 2, combineCode, totalPrefix + (("var", "values"), ("index", bin)), itemPrefix + (("var", "values"), ("index", bin)), combineIndent + 2, jsonCode, jsonPrefix + (("var", "values"), ("index", bin)), jsonIndent + 4, weightVars, weightVarStack, tmpVarTypes, True)
 
@@ -397,7 +399,7 @@ class CentrallyBin(Factory, Container):
         return maybeAdd({
             "entries": floatToJson(self.entries),
             "bins:type": self.bins[0][1].name,
-            "bins": [{"center": floatToJson(c), "value": v.toJsonFragment(True)} for c, v in self.bins],
+            "bins": [{"center": floatToJson(c), "data": v.toJsonFragment(True)} for c, v in self.bins],
             "nanflow:type": self.nanflow.name,
             "nanflow": self.nanflow.toJsonFragment(False),
             }, **{"name": None if suppressName else self.quantity.name,
@@ -432,13 +434,13 @@ class CentrallyBin(Factory, Container):
             if isinstance(json["bins"], list):
                 bins = []
                 for i, binpair in enumerate(json["bins"]):
-                    if isinstance(binpair, dict) and hasKeys(binpair.keys(), ["center", "value"]):
+                    if isinstance(binpair, dict) and hasKeys(binpair.keys(), ["center", "data"]):
                         if binpair["center"] in ("nan", "inf", "-inf") or isinstance(binpair["center"], numbers.Real):
                             center = float(binpair["center"])
                         else:
                             JsonFormatException(binpair["center"], "CentrallyBin.bins {0} center".format(i))
                         
-                        bins.append((center, factory.fromJsonFragment(binpair["value"], binsName)))
+                        bins.append((center, factory.fromJsonFragment(binpair["data"], binsName)))
 
                     else:
                         raise JsonFormatException(binpair, "CentrallyBin.bins {0}".format(i))
