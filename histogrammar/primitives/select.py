@@ -18,6 +18,7 @@ import numbers
 
 from histogrammar.defs import *
 from histogrammar.util import *
+from histogrammar.primitives.count import *
 
 ################################################################ Select
 
