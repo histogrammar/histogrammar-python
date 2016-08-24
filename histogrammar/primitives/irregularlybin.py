@@ -53,7 +53,7 @@ class IrregularlyBin(Factory, Container):
         return out.specialize()
 
     @staticmethod
-    def ing(bins, quantity, value, nanflow=Count()):
+    def ing(bins, quantity, value=Count(), nanflow=Count()):
         """Synonym for ``__init__``."""
         return IrregularlyBin(bins, quantity, value, nanflow)
 

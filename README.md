@@ -44,10 +44,10 @@ Primitive implementation is mature. CUDA implementation has begun.
 | Bin               | done        | done  | done       | done       |
 | SparselyBin       | done        | done  | done       | impossible |
 | CentrallyBin      | done        | done  | done       | done       |
-| IrregularlyBin    | done        | done  | done       |            |
+| IrregularlyBin    | done        | done  | done       | done       |
 | Categorize        | done        | done  | done       | impossible |
 | Fraction          | done        | done  | done       |            |
-| Stack             | done        | done  | done       |            |
+| Stack             | done        | done  | done       | done       |
 | Select            | done        | done  | done       |            |
 | Limit             | done        | done  | done       |            |
 | Label             | done        | done  | done       |            |
