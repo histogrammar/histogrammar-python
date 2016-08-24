@@ -50,7 +50,7 @@ class Select(Factory, Container):
         return out.specialize()
 
     @staticmethod
-    def ing(quantity, cut):
+    def ing(quantity, cut=Count()):
         """Synonym for ``__init__``."""
         return Select(quantity, cut)
 
@@ -63,7 +63,7 @@ class Select(Factory, Container):
         else:
             return self.__dict__[attr]
 
-    def __init__(self, quantity, cut):
+    def __init__(self, quantity, cut=Count()):
         """Create a Select that is capable of being filled and added.
 
         Parameters:
@@ -170,14 +170,14 @@ class Select(Factory, Container):
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
-        "type": self.cut.name,
+        "sub:type": self.cut.name,
         "data": self.cut.toJsonFragment(False),
         }, name=(None if suppressName else self.quantity.name))
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"], ["name"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sub:type", "data"], ["name"]):
             if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
@@ -190,8 +190,8 @@ class Select(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Select.name")
 
-            if isinstance(json["type"], basestring):
-                factory = Factory.registered[json["type"]]
+            if isinstance(json["sub:type"], basestring):
+                factory = Factory.registered[json["sub:type"]]
             else:
                 raise JsonFormatException(json, "Select.type")
 

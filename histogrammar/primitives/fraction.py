@@ -53,11 +53,11 @@ class Fraction(Factory, Container):
         return out.specialize()
 
     @staticmethod
-    def ing(quantity, value):
+    def ing(quantity, value=Count()):
         """Synonym for ``__init__``."""
         return Fraction(quantity, value)
 
-    def __init__(self, quantity, value):
+    def __init__(self, quantity, value=Count()):
         """Create a Fraction that is capable of being filled and added.
 
         Parameters:
@@ -204,7 +204,7 @@ class Fraction(Factory, Container):
 
         return maybeAdd({
             "entries": floatToJson(self.entries),
-            "type": self.numerator.name,
+            "sub:type": self.numerator.name,
             "numerator": self.numerator.toJsonFragment(True),
             "denominator": self.denominator.toJsonFragment(True),
             }, **{"name": None if suppressName else self.quantity.name,
@@ -213,7 +213,7 @@ class Fraction(Factory, Container):
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "numerator", "denominator"], ["name", "sub:name"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sub:type", "numerator", "denominator"], ["name", "sub:name"]):
             if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
@@ -226,8 +226,8 @@ class Fraction(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Fraction.name")
 
-            if isinstance(json["type"], basestring):
-                factory = Factory.registered[json["type"]]
+            if isinstance(json["sub:type"], basestring):
+                factory = Factory.registered[json["sub:type"]]
             else:
                 raise JsonFormatException(json, "Fraction.type")
 
