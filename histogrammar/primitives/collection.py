@@ -14,7 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import numbers
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -64,9 +66,6 @@ class Collection(object):
         return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
     def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
-
         last = None
         n = 0
         i = 0
@@ -77,6 +76,9 @@ class Collection(object):
             v._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, weightVars, weightVarStack, tmpVarTypes)
             i += 1
             last = s
+
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
 
         storageStructs[self._c99StructName()] = self._c99Struct()
 
@@ -94,6 +96,83 @@ class Collection(object):
             i += 1
             last = s
 
+    def _cudaStruct(self):
+        out = ["""
+  typedef struct {
+    """]
+        last = None
+        n = 0
+        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
+            if s != last:
+                if last is not None:
+                    out.append("[{0}];\n    ".format(count))
+                out.append("{0} sub{1}".format(s, n))
+                n += 1
+                count = 0
+            count += 1
+            last = s
+        out.append("""[{0}];\n    float entries;\n  }} {1};""".format(count, self._c99StructName()))
+        return "".join(out)
+
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        if isinstance(self, (Label, Index)):
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"sub:type\\\": \\\"" + self.values[0].name + "\\\", \\\"data\\\": \");")
+        else:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"data\\\": \");")
+
+        if isinstance(self, (Label, UntypedLabel)):
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\");")
+        else:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"[\");")
+
+        last = None
+        n = 0
+        i = 0
+        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
+            if last is not None:
+                jsonCode.append(" " * jsonIndent + "fprintf(out, \", \");")
+            if isinstance(self, (Label, UntypedLabel)):
+                jsonCode.append(" " * jsonIndent + "fprintf(out, \"" + json.dumps(json.dumps(k))[1:-1] + ": \");")
+            if last is not None and s != last:
+                n += 1
+                i = 0
+            v._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, combineCode, totalPrefix + (("var", "sub" + str(n)), ("index", i)), itemPrefix + (("var", "sub" + str(n)), ("index", i)), combineIndent, jsonCode, jsonPrefix + (("var", "sub" + str(n)), ("index", i)), jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName)
+
+            i += 1
+            last = s
+
+        if isinstance(self, (Label, UntypedLabel)):
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+        else:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"]\");")
+
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+
+        storageStructs[self._c99StructName()] = self._cudaStruct()
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        last = None
+        n = 0
+        i = 0
+        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
+            if last is not None and s != last:
+                n += 1
+                i = 0
+            data = v._cudaUnpackAndFill(data, bigendian, alignment)
+            i += 1
+            last = s
+
+        format = "<f"
+        entries, = struct.unpack(format, data[:struct.calcsize(format)])
+        self.entries += entries
+        data = data[struct.calcsize(format):]
+        return data
+        
 ################################################################ Label
 
 class Label(Factory, Container, Collection):
