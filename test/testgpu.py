@@ -163,11 +163,20 @@ class TestGPU(unittest.TestCase):
     #         h.pycuda(x = self.numpy.array(range(10)))
     #         self.assertEqual(h.toImmutable(), Factory.fromJson({"data": {"sub:type": "Sum", "data": {"one": {"sum": 45.0, "name": "x", "entries": 10.0}, "three": {"sum": 135.0, "name": "3*x", "entries": 10.0}, "two": {"sum": 90.0, "name": "2*x", "entries": 10.0}}, "entries": 10.0}, "version": "0.9", "type": "Label"}))
 
-    def testUntypedLabel(self):
-        self.runStandalone(UntypedLabel(one=Sum("x"), two=Average("2*x"), three=Deviate("3*x")).cuda(commentMain=False, testData=range(10)), {"data": {"data": {"one": {"data": {"sum": 45.0, "name": "x", "entries": 10.0}, "type": "Sum"}, "three": {"data": {"variance": 74.25, "entries": 10.0, "name": "3*x", "mean": 13.5}, "type": "Deviate"}, "two": {"data": {"entries": 10.0, "name": "2*x", "mean": 9.0}, "type": "Average"}}, "entries": 10.0}, "version": "0.9", "type": "UntypedLabel"})
+    # def testUntypedLabel(self):
+    #     self.runStandalone(UntypedLabel(one=Sum("x"), two=Average("2*x"), three=Deviate("3*x")).cuda(commentMain=False, testData=range(10)), {"data": {"data": {"one": {"data": {"sum": 45.0, "name": "x", "entries": 10.0}, "type": "Sum"}, "three": {"data": {"variance": 74.25, "entries": 10.0, "name": "3*x", "mean": 13.5}, "type": "Deviate"}, "two": {"data": {"entries": 10.0, "name": "2*x", "mean": 9.0}, "type": "Average"}}, "entries": 10.0}, "version": "0.9", "type": "UntypedLabel"})
 
-    def testUntypedLabelNumpy(self):
-        h = UntypedLabel(one=Sum("x"), two=Average("2*x"), three=Deviate("3*x"))
+    # def testUntypedLabelNumpy(self):
+    #     h = UntypedLabel(one=Sum("x"), two=Average("2*x"), three=Deviate("3*x"))
+    #     if self.numpy is not None:
+    #         h.pycuda(x = self.numpy.array(range(10)))
+    #         self.assertEqual(h.toImmutable(), Factory.fromJson({"data": {"data": {"one": {"data": {"sum": 45.0, "name": "x", "entries": 10.0}, "type": "Sum"}, "three": {"data": {"variance": 74.25, "entries": 10.0, "name": "3*x", "mean": 13.5}, "type": "Deviate"}, "two": {"data": {"entries": 10.0, "name": "2*x", "mean": 9.0}, "type": "Average"}}, "entries": 10.0}, "version": "0.9", "type": "UntypedLabel"}))
+
+    def testIndex(self):
+        self.runStandalone(Index(Sum("x"), Sum("2*x"), Sum("3*x")).cuda(commentMain=False, testData=range(10)), {"data": {"sub:type": "Sum", "data": [{"sum": 45.0, "name": "x", "entries": 10.0}, {"sum": 90.0, "name": "2*x", "entries": 10.0}, {"sum": 135.0, "name": "3*x", "entries": 10.0}], "entries": 10.0}, "version": "0.9", "type": "Index"})
+
+    def testIndexNumpy(self):
+        h = Index(Sum("x"), Sum("2*x"), Sum("3*x"))
         if self.numpy is not None:
             h.pycuda(x = self.numpy.array(range(10)))
-            self.assertEqual(h.toImmutable(), Factory.fromJson({"data": {"data": {"one": {"data": {"sum": 45.0, "name": "x", "entries": 10.0}, "type": "Sum"}, "three": {"data": {"variance": 74.25, "entries": 10.0, "name": "3*x", "mean": 13.5}, "type": "Deviate"}, "two": {"data": {"entries": 10.0, "name": "2*x", "mean": 9.0}, "type": "Average"}}, "entries": 10.0}, "version": "0.9", "type": "UntypedLabel"}))
+            self.assertEqual(h.toImmutable(), Factory.fromJson({"data": {"sub:type": "Sum", "data": [{"sum": 45.0, "name": "x", "entries": 10.0}, {"sum": 90.0, "name": "2*x", "entries": 10.0}, {"sum": 135.0, "name": "3*x", "entries": 10.0}], "entries": 10.0}, "version": "0.9", "type": "Index"}))
