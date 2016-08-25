@@ -133,6 +133,9 @@ class Collection(object):
                 jsonCode.append(" " * jsonIndent + "fprintf(out, \", \");")
             if isinstance(self, (Label, UntypedLabel)):
                 jsonCode.append(" " * jsonIndent + "fprintf(out, \"" + json.dumps(json.dumps(k))[1:-1] + ": \");")
+            if isinstance(self, (UntypedLabel, Branch)):
+                jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"type\\\": \\\"" + v.name + "\\\", \\\"data\\\": \");")
+
             if last is not None and s != last:
                 n += 1
                 i = 0
@@ -140,6 +143,9 @@ class Collection(object):
 
             i += 1
             last = s
+
+            if isinstance(self, (UntypedLabel, Branch)):
+                jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
 
         if isinstance(self, (Label, UntypedLabel)):
             jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
