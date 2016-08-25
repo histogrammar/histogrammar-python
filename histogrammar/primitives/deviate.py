@@ -239,12 +239,12 @@ class Deviate(Factory, Container):
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
         jsonCode.append(" " * jsonIndent + "if (" + self._c99ExpandPrefix(*jsonPrefix) + ".entries == 0.0f)")
         jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"mean\\\": \\\"nan\\\", \\\"variance\\\": \\\"nan\\\"\");")
-        jsonCode.append(" " * jsonIndent + "else {{")
+        jsonCode.append(" " * jsonIndent + "else {")
         jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"mean\\\": \");")
         jsonCode.append(" " * jsonIndent + "  floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".sum / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
         jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"variance\\\": \");")
         jsonCode.append(" " * jsonIndent + "  floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".sum2 / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries - (" + self._c99ExpandPrefix(*jsonPrefix) + ".sum / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries)*(" + self._c99ExpandPrefix(*jsonPrefix) + ".sum / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries));")
-        jsonCode.append(" " * jsonIndent + "}}")
+        jsonCode.append(" " * jsonIndent + "}")
         if suppressName or self.quantity.name is None:
             jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
         else:

@@ -115,49 +115,67 @@ class Collection(object):
         return "".join(out)
 
     def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        tmpJsonCode = []
+
         if isinstance(self, (Label, Index)):
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"sub:type\\\": \\\"" + self.values[0].name + "\\\", \\\"data\\\": \");")
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"sub:type\\\": \\\"" + self.values[0].name + "\\\", \\\"data\\\": \");")
         else:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"data\\\": \");")
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"data\\\": \");")
 
         if isinstance(self, (Label, UntypedLabel)):
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\");")
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\");")
         else:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \"[\");")
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"[\");")
+
+        if isinstance(self, Branch):
+            rightOrder = {}
+            lastJsonCode = len(tmpJsonCode)
 
         last = None
         n = 0
         i = 0
         for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
-            if last is not None:
-                jsonCode.append(" " * jsonIndent + "fprintf(out, \", \");")
+            if not isinstance(self, Branch) and last is not None:
+                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \", \");")
             if isinstance(self, (Label, UntypedLabel)):
-                jsonCode.append(" " * jsonIndent + "fprintf(out, \"" + json.dumps(json.dumps(k))[1:-1] + ": \");")
+                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"" + json.dumps(json.dumps(k))[1:-1] + ": \");")
             if isinstance(self, (UntypedLabel, Branch)):
-                jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"type\\\": \\\"" + v.name + "\\\", \\\"data\\\": \");")
+                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"type\\\": \\\"" + v.name + "\\\", \\\"data\\\": \");")
 
             if last is not None and s != last:
                 n += 1
                 i = 0
-            v._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, combineCode, totalPrefix + (("var", "sub" + str(n)), ("index", i)), itemPrefix + (("var", "sub" + str(n)), ("index", i)), combineIndent, jsonCode, jsonPrefix + (("var", "sub" + str(n)), ("index", i)), jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName)
+            v._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, combineCode, totalPrefix + (("var", "sub" + str(n)), ("index", i)), itemPrefix + (("var", "sub" + str(n)), ("index", i)), combineIndent, tmpJsonCode, jsonPrefix + (("var", "sub" + str(n)), ("index", i)), jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName)
 
             i += 1
             last = s
 
             if isinstance(self, (UntypedLabel, Branch)):
-                jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+
+            if isinstance(self, Branch):
+                rightOrder[k] = tmpJsonCode[lastJsonCode:]
+                tmpJsonCode = tmpJsonCode[:lastJsonCode]
+
+        if isinstance(self, Branch):
+            for k in xrange(len(rightOrder)):
+                if k != 0:
+                    tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \", \");")
+                tmpJsonCode.extend(rightOrder[k])
 
         if isinstance(self, (Label, UntypedLabel)):
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
         else:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \"]\");")
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"]\");")
 
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
         fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
         combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"entries\\\": \");")
-        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+        tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"entries\\\": \");")
+        tmpJsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+
+        jsonCode.extend(tmpJsonCode)
 
         storageStructs[self._c99StructName()] = self._cudaStruct()
 

@@ -48,9 +48,8 @@ Primitive implementation is mature. CUDA implementation has begun.
 | Categorize        | done        | done  | done       | impossible |
 | Fraction          | done        | done  | done       | done       |
 | Stack             | done        | done  | done       | done       |
-| Select            | done        | done  | done       |            |
-| Limit             | done        | done  | done       |            |
-| Label             | done        | done  | done       |            |
-| UntypedLabel      | done        | done  | done       |            |
-| Index             | done        | done  | done       |            |
-| Branch            | done        | done  | done       |            |
+| Select            | done        | done  | done       | done       |
+| Label             | done        | done  | done       | done       |
+| UntypedLabel      | done        | done  | done       | done       |
+| Index             | done        | done  | done       | done       |
+| Branch            | done        | done  | done       | done       |
