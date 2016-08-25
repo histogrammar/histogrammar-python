@@ -188,7 +188,6 @@ class Fraction(Factory, Container):
 
         weightVars.append("weight_" + str(len(weightVars)))
         weightVarStack = weightVarStack + (weightVars[-1],)
-
         fillCode.append(" " * fillIndent + "{newweight} = (isnan({q})  ||  {q} <= 0.0) ? 0.0 : ({oldweight} * {q});".format(newweight=weightVarStack[-1], oldweight=weightVarStack[-2], q=normexpr))
 
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"numerator\\\": \");")
