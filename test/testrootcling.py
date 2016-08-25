@@ -81,22 +81,22 @@ class TestRootCling(unittest.TestCase):
             # print "Histogrammar JIT-compilation"
 
             startTime = time.time()
-            hg.cling(which, 0, 1, debug=False)
+            hg.fill.root(which, 0, 1, debug=False)
             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
             # print
             # print "Histogrammar running"
 
             startTime = time.time()
-            hg.cling(which)
+            hg.fill.root(which)
             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
-            hg.cling(which)
+            hg.fill.root(which)
             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
             startTime = time.time()
-            hg.cling(which)
+            hg.fill.root(which)
             # print time.time() - startTime, which.GetCurrentFile().GetBytesRead(), which.GetCurrentFile().GetReadCalls()
 
             controlTestCode = """class ControlTest {
@@ -227,22 +227,22 @@ public:
             # print "Numpy first"
 
             startTime = time.time()
-            hg.numpy(table)
+            hg.fill.numpy(table)
             # print time.time() - startTime
 
             # print
             # print "Numpy subsequent"
 
             startTime = time.time()
-            hg.numpy(table)
+            hg.fill.numpy(table)
             # print time.time() - startTime
 
             startTime = time.time()
-            hg.numpy(table)
+            hg.fill.numpy(table)
             # print time.time() - startTime
 
             startTime = time.time()
-            hg.numpy(table)
+            hg.fill.numpy(table)
             # print time.time() - startTime
 
             # print
@@ -284,34 +284,34 @@ public:
     def testAAACount(self):
         if TestRootCling.ttreeFlat is not None:
             hg = Count()
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "type": "Count", "data": 10000})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "type": "Count", "data": 20000})
 
             hg = Count("0.5 * weight")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "type": "Count", "data": 5000})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "type": "Count", "data": 10000})
 
             hg = Count("double twice = weight * 2; twice")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "type": "Count", "data": 20000})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "type": "Count", "data": 40000})
 
         if TestRootCling.ttreeEvent is not None:
             hg = Count()
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            hg.fill.root(TestRootCling.ttreeEvent, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "type": "Count", "data": 1000})
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            hg.fill.root(TestRootCling.ttreeEvent, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "type": "Count", "data": 2000})
 
             hg = Count("0.5 * weight")
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            hg.fill.root(TestRootCling.ttreeEvent, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "type": "Count", "data": 500})
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            hg.fill.root(TestRootCling.ttreeEvent, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "type": "Count", "data": 1000})
 
     ################################################################ OriginalSum
@@ -319,46 +319,46 @@ public:
     def testAAASum(self):
         if TestRootCling.ttreeFlat is not None:
             hg = Sum("positive")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 7970.933535083706, "name": "positive", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 2*7970.933535083706, "name": "positive", "entries": 20000}, "type": "Sum"})
 
             hg = Sum("""2 * t("positive")""")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 2*7970.933535083706, "name": """2 * t("positive")""", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 4*7970.933535083706, "name": """2 * t("positive")""", "entries": 20000}, "type": "Sum"})
 
             hg = Sum("2 * noholes")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 137.62044119255137, "name": "2 * noholes", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 2*137.62044119255137, "name": "2 * noholes", "entries": 20000}, "type": "Sum"})
 
             hg = Sum("double twice = 2 * noholes; twice;")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 137.62044119255137, "name": "double twice = 2 * noholes; twice;", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 2*137.62044119255137, "name": "double twice = 2 * noholes; twice;", "entries": 20000}, "type": "Sum"})
 
             hg = Sum("twice")
-            hg.cling(TestRootCling.ttreeFlat, debug=False, twice="2 * noholes")
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False, twice="2 * noholes")
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 137.62044119255137, "name": "twice", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False, twice="2 * noholes")
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False, twice="2 * noholes")
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 2*137.62044119255137, "name": "twice", "entries": 20000}, "type": "Sum"})
 
             hg = Sum("quadruple")
-            hg.cling(TestRootCling.ttreeFlat, debug=False, quadruple="double x = 2 * noholes; x*2")
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False, quadruple="double x = 2 * noholes; x*2")
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 2*137.62044119255137, "name": "quadruple", "entries": 10000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False, quadruple="double x = 2 * noholes; x*2")
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False, quadruple="double x = 2 * noholes; x*2")
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 4*137.62044119255137, "name": "quadruple", "entries": 20000}, "type": "Sum"})
 
         if TestRootCling.ttreeEvent is not None:
             hg = Sum("event.GetNtrack()")
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            hg.fill.root(TestRootCling.ttreeEvent, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 599640, "name": "event.GetNtrack()", "entries": 1000}, "type": "Sum"})
-            hg.cling(TestRootCling.ttreeEvent, debug=False)
+            hg.fill.root(TestRootCling.ttreeEvent, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {"sum": 2*599640, "name": "event.GetNtrack()", "entries": 2*1000}, "type": "Sum"})
 
     ################################################################ OriginalBin
@@ -366,7 +366,7 @@ public:
     def testAAABin(self):
         if TestRootCling.ttreeFlat is not None:
             hg = Bin(20, -10, 10, "withholes")
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
 
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
     "nanflow:type": "Count", 
@@ -383,7 +383,7 @@ public:
     "underflow:type": "Count"
   }, 
   "type": "Bin"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
     "nanflow:type": "Count", 
     "name": "withholes", 
@@ -401,7 +401,7 @@ public:
   "type": "Bin"})
 
             hg = Bin(20, -10, 10, "2 * withholes", Sum("positive"))
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
     "values:name": "positive",
     "nanflow:type": "Count",
@@ -439,7 +439,7 @@ public:
     "underflow:type": "Count"
   },
   "type": "Bin"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
     "values:name": "positive",
     "nanflow:type": "Count",
@@ -481,7 +481,7 @@ public:
     def testAAASelect(self):
         if TestRootCling.ttreeFlat is not None:
             hg = Select("boolean", Bin(20, -10, 10, "noholes"))
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
     "sub:type": "Bin", 
     "data": {
@@ -502,7 +502,7 @@ public:
     "entries": 10000.0
   }, 
   "type": "Select"}) 
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
     "sub:type": "Bin", 
     "data": {
@@ -525,7 +525,7 @@ public:
   "type": "Select"}) 
 
             hg = Select("withholes / 2", Bin(20, -10, 10, "noholes"))
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
     "sub:type": "Bin", 
     "data": {
@@ -546,7 +546,7 @@ public:
     "entries": 10000.0
   }, 
   "type": "Select"})
-            hg.cling(TestRootCling.ttreeFlat, debug=False)
+            hg.fill.root(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
     "sub:type": "Bin", 
     "data": {
@@ -576,7 +576,7 @@ public:
     def compare(self, name, hrc, hpy, pydata, debug=False):
         sys.stderr.write(name + "\n")
 
-        hrc.cling(TestRootCling.ttreeFlat, debug=debug)
+        hrc.fill.root(TestRootCling.ttreeFlat, debug=debug)
         for x in pydata:
             hpy.fill(x)
         
@@ -591,7 +591,7 @@ public:
                     sys.stderr.write("{0:50s} | {1}\n".format(leftline, rightline))
             self.assertEqual(Factory.fromJson(hrc.toJson()), Factory.fromJson(hpy.toJson()))
 
-        hrc.cling(TestRootCling.ttreeFlat, debug=debug)
+        hrc.fill.root(TestRootCling.ttreeFlat, debug=debug)
         for x in pydata:
             hpy.fill(x)
         

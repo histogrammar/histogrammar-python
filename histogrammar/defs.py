@@ -76,6 +76,7 @@ class Factory(object):
             histogrammar.specialized.addImplicitMethods(self)
         except (ImportError, AttributeError):
             pass
+        self.fill = FillMethod(self, self.fill)
         return self
 
     @staticmethod
@@ -117,7 +118,7 @@ class Factory(object):
 
         else:
             raise JsonFormatException(json, "Factory")
-        
+
 class Container(object):
     """Interface for classes that contain aggregated data, such as "Count" or "Bin".
     
@@ -192,7 +193,7 @@ class Container(object):
         return Factory.fromJson(self.toJson())
 
     _clingClassNameNumber = 0
-    def cling(self, ttree, start=-1, end=-1, debug=False, debugOnError=True, **exprs):
+    def fillroot(self, ttree, start=-1, end=-1, debug=False, debugOnError=True, **exprs):
         self._checkForCrossReferences()
 
         if not hasattr(self, "_clingFiller"):
@@ -579,7 +580,7 @@ int main(int argc, char** argv) {{
            endComment = "*/" if commentMain else ""
            )
 
-    def pycuda(self, **exprs):
+    def fillpycuda(self, **exprs):
         import numpy
         import pycuda.autoinit
         import pycuda.driver
@@ -920,27 +921,10 @@ int main(int argc, char** argv) {{
     def _cudaStorageType(self):
         return self._c99StructName()
 
-    def numpy(self, data, weights=1.0):
+    def fillnumpy(self, data):
         import numpy
         self._checkForCrossReferences()
-
-        if isinstance(weights, numpy.ndarray):
-            assert len(weights.shape) == 1
-
-            original = weights
-            weights = numpy.array(weights, dtype=numpy.float64)
-            weights[numpy.isnan(weights)] = 0.0
-            weights[weights < 0.0] = 0.0
-
-            shape = [weights.shape[0]]
-
-        elif math.isnan(weights) or weights <= 0.0:
-            return
-
-        else:
-            shape = [None]
-
-        self._numpy(data, weights, shape)
+        self._numpy(data, 1.0, [None])
 
     def _checkNPQuantity(self, q, shape):
         import numpy

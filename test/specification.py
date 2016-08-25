@@ -47,8 +47,6 @@ def fill(container, datum, weight):
         Stack_fill(container, datum, weight)
     elif isinstance(container, Select):
         Select_fill(container, datum, weight)
-    elif isinstance(container, Limit):
-        Limit_fill(container, datum, weight)
     elif isinstance(container, Label):
         Label_fill(container, datum, weight)
     elif isinstance(container, UntypedLabel):
@@ -91,8 +89,6 @@ def combine(one, two):
         return Stack_combine(one, two)
     elif isinstance(one, Select) and isinstance(two, Select):
         return Select_combine(one, two)
-    elif isinstance(one, Limit) and isinstance(two, Limit):
-        return Limit_combine(one, two)
     elif isinstance(one, Label) and isinstance(two, Label):
         return Label_combine(one, two)
     elif isinstance(one, UntypedLabel) and isinstance(two, UntypedLabel):
@@ -475,24 +471,6 @@ def Select_combine(one, two):
     entries = one.entries + two.entries
     cut = combine(one.cut, two.cut)
     return Select.ed(entries, cut)
-
-def Limit_fill(limiting, datum, weight):
-    if weight > 0.0:
-        if limiting.entries + weight > limiting.limit:
-            limiting.value = None
-        else:
-            fill(limiting.value, datum, weight)
-        limiting.entries += weight
-
-def Limit_combine(one, two):
-    if one.limit != two.limit or one.contentType != two.contentType:
-        raise Exception
-    entries = one.entries + two.entries
-    if entries > one.limit:
-        value = None
-    else:
-        value = combine(one.value, two.value)
-    return Limit.ed(entries, one.limit, one.contentType, value)
 
 def Label_fill(labeling, datum, weight):
     if weight > 0.0:

@@ -76,7 +76,7 @@ class TestGPU(unittest.TestCase):
         for x in xrange(10):
             duplicate.fill(x)
         if self.numpy is not None:
-            aggregator.pycuda(x = self.numpy.array(range(10)))
+            aggregator.fill.pycuda(x = self.numpy.array(range(10)))
             self.assertEqual(aggregator.toImmutable(), Factory.fromJson(expected))
             self.assertEqual(aggregator.toImmutable(), duplicate.toImmutable())
             self.assertEqual(aggregator, duplicate)
@@ -87,7 +87,7 @@ class TestGPU(unittest.TestCase):
     def compare(self, name, hgpu, hpy, pydata, debug=False):
         sys.stderr.write(name + "\n")
 
-        hgpu.pycuda(empty=self.empty, positive=self.positive, boolean=self.boolean, noholes=self.noholes, withholes=self.withholes)
+        hgpu.fill.pycuda(empty=self.empty, positive=self.positive, boolean=self.boolean, noholes=self.noholes, withholes=self.withholes)
         for x in pydata:
             hpy.fill(x)
         
@@ -102,7 +102,7 @@ class TestGPU(unittest.TestCase):
                     sys.stderr.write("{0:50s} | {1}\n".format(leftline, rightline))
             self.assertEqual(Factory.fromJson(hgpu.toJson()), Factory.fromJson(hpy.toJson()))
 
-        hgpu.pycuda(empty=self.empty, positive=self.positive, boolean=self.boolean, noholes=self.noholes, withholes=self.withholes)
+        hgpu.fill.pycuda(empty=self.empty, positive=self.positive, boolean=self.boolean, noholes=self.noholes, withholes=self.withholes)
         for x in pydata:
             hpy.fill(x)
         

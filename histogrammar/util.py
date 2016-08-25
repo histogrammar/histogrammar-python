@@ -36,6 +36,19 @@ def inheritdoc(cls):
         return fn
     return _fn
 
+
+################################################################ attach sub-methods to the fill method
+
+class FillMethod(object):
+    def __init__(self, container, fill):
+        self.container = container
+        self.fill = fill
+        self.root = container.fillroot
+        self.pycuda = container.fillpycuda
+        self.numpy = container.fillnumpy
+    def __call__(self, *args, **kwds):
+        return self.fill(*args, **kwds)
+
 ################################################################ handling key set comparisons with optional keys
 
 def hasKeys(test, required, optional=set()):
