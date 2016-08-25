@@ -752,14 +752,6 @@ public:
             self.compare("SelectBin noholes weights", Select("noholes", Bin(100, -3.0, 3.0, "noholes")), Select(named("noholes", lambda x: x), Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
             self.compare("SelectBin holes", Select("withholes", Bin(100, -3.0, 3.0, "withholes")), Select(named("withholes", lambda x: x), Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
 
-    def testLimitBin(self):
-        if TestRootCling.ttreeFlat is not None:
-            sys.stderr.write("\n")
-            self.compare("LimitBin SIZE - 1 noholes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-            self.compare("LimitBin SIZE - 1 holes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-            self.compare("LimitBin SIZE noholes", Limit(self.SIZE, Bin(100, -3.0, 3.0, "noholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("noholes", lambda x: x))), self.noholes)
-            self.compare("LimitBin SIZE holes", Limit(self.SIZE, Bin(100, -3.0, 3.0, "withholes")), Limit(self.SIZE, Bin(100, -3.0, 3.0, named("withholes", lambda x: x))), self.withholes)
-
     def testLabelBin(self):
         if TestRootCling.ttreeFlat is not None:
             sys.stderr.write("\n")

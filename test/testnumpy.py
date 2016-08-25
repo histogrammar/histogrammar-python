@@ -618,35 +618,6 @@ class TestNumpy(unittest.TestCase):
             self.compare("SelectBin holes with holes", Select(lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Select(lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
             self.compare("SelectBin holes with holes2", Select(lambda x: x["withholes"], Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Select(lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
 
-    def testLimitBin(self):
-        with Numpy() as numpy:
-            if numpy is None: return
-            sys.stderr.write("\n")
-            self.compare("LimitBin SIZE - 1 no data", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["empty"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.empty, 1.0)
-            self.compare("LimitBin SIZE - 1 noholes w/o weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 1.0)
-            self.compare("LimitBin SIZE - 1 noholes const weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 0.5)
-            self.compare("LimitBin SIZE - 1 noholes positive weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.positive)
-            self.compare("LimitBin SIZE - 1 noholes with weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.noholes)
-            self.compare("LimitBin SIZE - 1 noholes with holes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.withholes)
-            self.compare("LimitBin SIZE - 1 holes w/o weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 1.0)
-            self.compare("LimitBin SIZE - 1 holes const weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 0.5)
-            self.compare("LimitBin SIZE - 1 holes positive weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.positive)
-            self.compare("LimitBin SIZE - 1 holes with weights", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.noholes)
-            self.compare("LimitBin SIZE - 1 holes with holes", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
-            self.compare("LimitBin SIZE - 1 holes with holes2", Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE - 1, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
-            self.compare("LimitBin SIZE no data", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["empty"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.empty, 1.0)
-            self.compare("LimitBin SIZE noholes w/o weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 1.0)
-            self.compare("LimitBin SIZE noholes const weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, 0.5)
-            self.compare("LimitBin SIZE noholes positive weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.positive)
-            self.compare("LimitBin SIZE noholes with weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.noholes)
-            self.compare("LimitBin SIZE noholes with holes", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["noholes"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.noholes, self.withholes)
-            self.compare("LimitBin SIZE holes w/o weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 1.0)
-            self.compare("LimitBin SIZE holes const weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, 0.5)
-            self.compare("LimitBin SIZE holes positive weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.positive)
-            self.compare("LimitBin SIZE holes with weights", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.noholes)
-            self.compare("LimitBin SIZE holes with holes", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes)
-            self.compare("LimitBin SIZE holes with holes2", Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x["withholes"])), self.data, Limit(self.SIZE, Bin(100, -3.0, 3.0, lambda x: x)), self.withholes, self.withholes2)
-
     def testLabelBin(self):
         with Numpy() as numpy:
             if numpy is None: return
