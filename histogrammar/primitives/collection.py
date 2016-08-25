@@ -14,7 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import numbers
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -64,9 +66,6 @@ class Collection(object):
         return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
     def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
-
         last = None
         n = 0
         i = 0
@@ -77,6 +76,9 @@ class Collection(object):
             v._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, weightVars, weightVarStack, tmpVarTypes)
             i += 1
             last = s
+
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
 
         storageStructs[self._c99StructName()] = self._c99Struct()
 
@@ -94,6 +96,107 @@ class Collection(object):
             i += 1
             last = s
 
+    def _cudaStruct(self):
+        out = ["""
+  typedef struct {
+    """]
+        last = None
+        n = 0
+        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
+            if s != last:
+                if last is not None:
+                    out.append("[{0}];\n    ".format(count))
+                out.append("{0} sub{1}".format(s, n))
+                n += 1
+                count = 0
+            count += 1
+            last = s
+        out.append("""[{0}];\n    float entries;\n  }} {1};""".format(count, self._c99StructName()))
+        return "".join(out)
+
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        tmpJsonCode = []
+
+        if isinstance(self, (Label, Index)):
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"sub:type\\\": \\\"" + self.values[0].name + "\\\", \\\"data\\\": \");")
+        else:
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"data\\\": \");")
+
+        if isinstance(self, (Label, UntypedLabel)):
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\");")
+        else:
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"[\");")
+
+        if isinstance(self, Branch):
+            rightOrder = {}
+            lastJsonCode = len(tmpJsonCode)
+
+        last = None
+        n = 0
+        i = 0
+        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
+            if not isinstance(self, Branch) and last is not None:
+                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \", \");")
+            if isinstance(self, (Label, UntypedLabel)):
+                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"" + json.dumps(json.dumps(k))[1:-1] + ": \");")
+            if isinstance(self, (UntypedLabel, Branch)):
+                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"type\\\": \\\"" + v.name + "\\\", \\\"data\\\": \");")
+
+            if last is not None and s != last:
+                n += 1
+                i = 0
+            v._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, combineCode, totalPrefix + (("var", "sub" + str(n)), ("index", i)), itemPrefix + (("var", "sub" + str(n)), ("index", i)), combineIndent, tmpJsonCode, jsonPrefix + (("var", "sub" + str(n)), ("index", i)), jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName)
+
+            i += 1
+            last = s
+
+            if isinstance(self, (UntypedLabel, Branch)):
+                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+
+            if isinstance(self, Branch):
+                rightOrder[k] = tmpJsonCode[lastJsonCode:]
+                tmpJsonCode = tmpJsonCode[:lastJsonCode]
+
+        if isinstance(self, Branch):
+            for k in xrange(len(rightOrder)):
+                if k != 0:
+                    tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \", \");")
+                tmpJsonCode.extend(rightOrder[k])
+
+        if isinstance(self, (Label, UntypedLabel)):
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+        else:
+            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"]\");")
+
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
+        tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"entries\\\": \");")
+        tmpJsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+
+        jsonCode.extend(tmpJsonCode)
+
+        storageStructs[self._c99StructName()] = self._cudaStruct()
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        last = None
+        n = 0
+        i = 0
+        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
+            if last is not None and s != last:
+                n += 1
+                i = 0
+            data = v._cudaUnpackAndFill(data, bigendian, alignment)
+            i += 1
+            last = s
+
+        format = "<f"
+        entries, = struct.unpack(format, data[:struct.calcsize(format)])
+        self.entries += entries
+        data = data[struct.calcsize(format):]
+        return data
+        
 ################################################################ Label
 
 class Label(Factory, Container, Collection):
@@ -245,23 +348,23 @@ class Label(Factory, Container, Collection):
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
-        "type": self.values[0].name,
+        "sub:type": self.values[0].name,
         "data": dict((k, v.toJsonFragment(False)) for k, v in self.pairs.items()),
         }
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sub:type", "data"]):
             if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Label.entries")
 
-            if isinstance(json["type"], basestring):
-                factory = Factory.registered[json["type"]]
+            if isinstance(json["sub:type"], basestring):
+                factory = Factory.registered[json["sub:type"]]
             else:
-                raise JsonFormatException(json, "Label.type")
+                raise JsonFormatException(json, "Label.sub:type")
 
             if isinstance(json["data"], dict):
                 pairs = dict((k, factory.fromJsonFragment(v, None)) for k, v in json["data"].items())
@@ -615,23 +718,23 @@ class Index(Factory, Container, Collection):
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
-        "type": self.values[0].name,
+        "sub:type": self.values[0].name,
         "data": [x.toJsonFragment(False) for x in self.values],
         }
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sub:type", "data"]):
             if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Index.entries")
 
-            if isinstance(json["type"], basestring):
-                factory = Factory.registered[json["type"]]
+            if isinstance(json["sub:type"], basestring):
+                factory = Factory.registered[json["sub:type"]]
             else:
-                raise JsonFormatException(json, "Index.type")
+                raise JsonFormatException(json, "Index.sub:type")
 
             if isinstance(json["data"], list):
                 values = [factory.fromJsonFragment(x, None) for x in json["data"]]

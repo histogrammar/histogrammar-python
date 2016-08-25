@@ -15,10 +15,32 @@
 # limitations under the License.
 
 import base64
-import collections
+import datetime
 import json as jsonlib
 import math
+import random
 import re
+try:
+    from collections import OrderedDict
+except ImportError:
+    class OrderedDict(object):
+        def __init__(self):
+            self.pairs = {}
+            self.keys = []
+        def __setitem__(self, key, value):
+            self.pairs[key] = value
+            if key not in self.keys:
+                self.keys.append(key)
+        def __getitem__(self, key):
+            return self.pairs[key]
+        def values(self):
+            return [self.pairs[k] for k in self.keys]
+        def items(self):
+            return [(k, self.pairs[k]) for k in self.keys]
+        def __iter__(self):
+            return iter(self.keys)
+        def __len__(self):
+            return len(self.keys)
 
 from histogrammar.util import *
 from histogrammar.parsing import C99SourceToAst
@@ -74,6 +96,7 @@ class Factory(object):
             histogrammar.specialized.addImplicitMethods(self)
         except (ImportError, AttributeError):
             pass
+        self.fill = FillMethod(self, self.fill)
         return self
 
     @staticmethod
@@ -115,7 +138,7 @@ class Factory(object):
 
         else:
             raise JsonFormatException(json, "Factory")
-        
+
 class Container(object):
     """Interface for classes that contain aggregated data, such as "Count" or "Bin".
     
@@ -147,6 +170,11 @@ class Container(object):
         The container is changed in-place.
         """
         raise NotImplementedError
+
+    def __getstate__(self):
+        state = dict(self.__dict__)
+        del state["fill"]
+        return state
 
     def copy(self):
         """Copy this container, making a clone with no reference to the original. """
@@ -185,8 +213,12 @@ class Container(object):
         """Used internally to convert the container to JSON without its ``"type"`` header."""
         raise NotImplementedError
 
+    def toImmutable(self):
+        """Return a copy of this container as though it was created by the ``ed`` function or from JSON (the \"immutable form\" in languages that support it, not Python)."""
+        return Factory.fromJson(self.toJson())
+
     _clingClassNameNumber = 0
-    def cling(self, ttree, start=-1, end=-1, debug=False, debugOnError=True, **exprs):
+    def fillroot(self, ttree, start=-1, end=-1, debug=False, debugOnError=True, **exprs):
         self._checkForCrossReferences()
 
         if not hasattr(self, "_clingFiller"):
@@ -239,7 +271,7 @@ class Container(object):
             derivedFieldTypes = {}
             derivedFieldExprs = {}
 
-            storageStructs = collections.OrderedDict()
+            storageStructs = OrderedDict()
             initCode = []
             fillCode = []
             weightVars = ["weight_0"]
@@ -305,7 +337,350 @@ public:
         # we already have a _clingFiller; just fill
         self._clingFiller.fillall(ttree, start, end)
         self._clingUpdate(self._clingFiller, ("var", "storage"))
-                
+
+    _cudaNamespaceNumber = 0
+    def cuda(self, namespace=True, namespaceName=None, writeSize=False, commentMain=True, testData=[round(random.gauss(0, 1), 2) for x in xrange(10)], **exprs):
+        parser = C99SourceToAst()
+        generator = C99AstToSource()
+
+        inputFieldNames = OrderedDict()
+        inputFieldTypes = {}
+        derivedFieldTypes = {}
+        derivedFieldExprs = OrderedDict()
+        storageStructs = OrderedDict()
+        initCode = []
+        fillCode = []
+        combineCode = []
+        jsonCode = []
+        weightVars = ["weight_0"]
+        weightVarStack = ("weight_0",)
+        tmpVarTypes = {}
+
+        for name, expr in exprs.items():
+            self._cudaAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+
+        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 4, weightVars, weightVarStack, tmpVarTypes, False)
+
+        if namespaceName is None:
+            namespaceName = "HistogrammarCUDA_" + str(Container._cudaNamespaceNumber)
+            Container._cudaNamespaceNumber += 1
+
+        return '''// Auto-generated on {timestamp:%Y-%m-%d %H:%M:%S}
+// If you edit this file, it will be hard to swap it out for another auto-generated copy.
+
+#ifndef {NS}
+#define {NS}
+
+#include <stdio.h>
+#include <math_constants.h>
+
+namespace {ns} {{
+  // How the aggregator is laid out in memory (CPU main memory and GPU shared memory).
+{typedefs}
+  typedef {lastStructName} Aggregator;
+
+{writeSize}
+  // Specific logic of how to zero out the aggregator.
+  __device__ void zero(Aggregator* aggregator) {{
+{tmpVarDeclarations}{initCode}
+  }}
+
+  // Specific logic of how to increment the aggregator with input values.
+  __device__ void increment(Aggregator* aggregator{comma}{inputArgList}) {{
+    const float weight_0 = 1.0f;
+{weightVarDeclarations}{tmpVarDeclarations}{quantities}
+{fillCode}
+  }}
+
+  // Specific logic of how to combine two aggregators.
+  __device__ void combine(Aggregator* total, Aggregator* item) {{
+{tmpVarDeclarations}{combineCode}
+  }}
+
+  __host__ void floatToJson(FILE* out, float x) {{
+    if (isnan(x))
+      fprintf(out, "\\"nan\\"");
+    else if (isinf(x)  &&  x > 0.0f)
+      fprintf(out, "\\"inf\\"");
+    else if (isinf(x))
+      fprintf(out, "\\"-inf\\"");
+    else
+      fprintf(out, "%g", x);
+  }}
+
+  // Specific logic of how to print out the aggregator.
+  __host__ void toJson(Aggregator* aggregator, FILE* out) {{
+{tmpVarDeclarations}    fprintf(out, "{{\\"version\\": \\"{specVersion}\\", \\"type\\": \\"{factoryName}\\", \\"data\\": ");
+{jsonCode}
+    fprintf(out, "}}\\n");
+  }}
+
+  // Generic blockId calculation (3D is the most general).
+  __device__ int blockId() {{
+    return blockIdx.x + blockIdx.y * gridDim.x + blockIdx.z * gridDim.x * gridDim.y;
+  }}
+
+  // Generic blockSize calculation (3D is the most general).
+  __device__ int blockSize() {{
+    return blockDim.x * blockDim.y * blockDim.z;
+  }}
+
+  // Generic threadId calculation (3D is the most general).
+  __device__ int threadId() {{
+    return threadIdx.x + threadIdx.y * blockDim.x + threadIdx.z * blockDim.x * blockDim.y;
+  }}
+
+  // Wrapper for CUDA calls to report errors.
+  void errorCheck(cudaError_t code) {{
+    if (code != cudaSuccess) {{
+      fprintf(stderr, "CUDA error: %s\\n", cudaGetErrorString(code));
+      exit(code);
+    }}
+  }}
+
+  // User-level API for initializing the aggregator (from CPU or GPU).
+  //
+  //   aggregators: array of aggregators to fill in parallel.
+  //   numAggregators: number of aggregators to fill.
+  //
+  __global__ void initialize(Aggregator* aggregators, int numAggregators) {{
+    zero(&aggregators[(threadId() + blockId() * blockSize()) % numAggregators]);
+  }}
+
+  // User-level API for filling the aggregator with a single value (from GPU).
+  //
+  //   aggregators: array of aggregators to fill in parallel.
+  //   numAggregators: number of aggregators to fill.
+  //   input_*: the input variables you used in the aggregator\'s fill rule.
+  //
+  __device__ void fill(Aggregator* aggregators, int numAggregators{comma}{inputArgList}) {{
+    increment(&aggregators[(threadId() + blockId() * blockSize()) % numAggregators]{comma}{inputList});
+  }}
+
+  // User-level API for filling the aggregator with arrays of values (from CPU or GPU).
+  //
+  //   aggregators: array of aggregators to fill in parallel.
+  //   numAggregators: number of aggregators to fill.
+  //   input_*: the input variables you used in the aggregator\'s fill rule.
+  //   numDataPoints: the number of values in each input_* array.
+  //
+  __global__ void fillAll(Aggregator* aggregators, int numAggregators{comma}{inputArgStarList}, int numDataPoints) {{
+    int id = threadId() + blockId() * blockSize();
+    if (id < numDataPoints)
+      fill(aggregators, numAggregators{comma}{inputListId});
+  }}
+
+  // User-level API for combining all aggregators in a block (from CPU or GPU).
+  //
+  // Assumes that at least `numAggregators` threads are all running at the same time (can be mutually
+  // synchronized with `__syncthreads()`. Generally, this means that `extract` should be called on
+  // no more than one block, which suggests that `numAggregators` ought to be equal to the maximum
+  // number of threads per block.
+  //
+  //   aggregators: array of aggregators to fill in parallel.
+  //   numAggregators: number of aggregators to fill.
+  //   result: single output 
+  //
+  __global__ void extract(Aggregator* aggregators, int numAggregators, Aggregator* result) {{
+    // merge down in log(N) steps until the thread with id == 0 has the total for this block
+    int id = threadId();
+
+    // i should be the first power of 2 larger than numAggregators/2
+    int i = 1;
+    while (2*i < numAggregators) i <<= 1;
+
+    // iteratively split the sample and combine the upper half into the lower half
+    while (i != 0) {{
+      if (id < i  &&  id + i < numAggregators) {{
+        Aggregator* ours = &aggregators[id % numAggregators];
+        Aggregator* theirs = &aggregators[(id + i) % numAggregators];
+        combine(ours, theirs);
+      }}
+
+      // every iteration should be in lock-step across threads in this block
+      __syncthreads();
+      i >>= 1;
+    }}
+
+    // return the result, which is in thread 0\'s copy (aggregators[0])
+    if (id == 0) {{
+      Aggregator* blockLocal = &result[blockId()];
+      memcpy(blockLocal, aggregators, sizeof(Aggregator));
+    }}
+  }}
+
+  // Test function provides an example of how to use the API.
+  //
+  //   numAggregators: number of aggregators to fill.
+  //   numBlocks: number of independent blocks to run.
+  //   numThreadsPerBlock: number of threads to run in each block.
+  //   input_*: the input variables you used in the aggregator\'s fill rule.
+  //   numDataPoints: the number of values in each input_* array.
+  //
+  void test(int numAggregators, int numBlocks, int numThreadsPerBlock, {inputArgStarList}{comma}int numDataPoints) {{
+    // Create the aggregators and call initialize on them.
+    Aggregator* aggregators;
+    cudaMalloc((void**)&aggregators, numAggregators * sizeof(Aggregator));
+    initialize<<<1, numThreadsPerBlock>>>(aggregators, numAggregators);
+    errorCheck(cudaPeekAtLastError());
+    errorCheck(cudaDeviceSynchronize());
+
+{copyTestData}
+    // Call fill next, using the same number of blocks, threads per block, and memory allocation.
+    // fillAll is a __global__ function that takes arrays; fill is a __device__ function that
+    // takes single entries. Use the latter if filling from your GPU application.
+    fillAll<<<numBlocks, numThreadsPerBlock>>>(aggregators, numAggregators{comma}{gpuList}, numDataPoints);
+    errorCheck(cudaPeekAtLastError());
+    errorCheck(cudaDeviceSynchronize());
+
+{freeTestData}
+    // Call extract and give it an Aggregator to overwrite.
+    Aggregator* resultGPU;
+    cudaMalloc((void**)&resultGPU, sizeof(Aggregator));
+    extract<<<1, numThreadsPerBlock>>>(aggregators, numAggregators, resultGPU);
+
+    // Now you can free the collection of subaggregators from the GPU.
+    cudaFree(aggregators);
+
+    Aggregator resultCPU;
+    cudaMemcpy(&resultCPU, resultGPU, sizeof(Aggregator), cudaMemcpyDeviceToHost);
+
+    // Now you can free the total aggregator from the GPU.
+    cudaFree(resultGPU);
+
+    // This Aggregator can be written to stdout as JSON for other Histogrammar programs to interpret
+    // (and plot).
+    toJson(&resultCPU, stdout);
+  }}
+}}
+
+// Optional main runs a tiny test.
+{startComment}
+int main(int argc, char** argv) {{
+  int numAggregators = 5;
+  int numBlocks = 2;
+  int numThreadsPerBlock = 5;
+
+  int numDataPoints = 10;
+{initTestData}
+  {ns}::test(numAggregators, numBlocks, numThreadsPerBlock, {inputList}{comma}numDataPoints);
+}}
+{endComment}
+
+#endif  // {NS}
+'''.format(timestamp = datetime.datetime.now(),
+           namespace = "namespace " + namespaceName if namespace else "extern \"C\"",
+           ns = namespaceName,
+           NS = namespaceName.upper(),
+           writeSize = """  __global__ void write_size(size_t *output) {{
+    *output = sizeof(Aggregator);
+  }}
+""" if writeSize else "",
+           specVersion = histogrammar.version.specification,
+           factoryName = self.name,
+           typedefs = "".join(storageStructs.values()),
+           lastStructName = "float" if self._c99StructName() == "Ct" else self._c99StructName(),
+           initCode = "\n".join(initCode),
+           fillCode = "\n".join(fillCode),
+           combineCode = "\n".join(combineCode),
+           quantities = "".join(derivedFieldExprs.values()),
+           jsonCode = "\n".join(jsonCode),
+           comma = ", " if len(inputFieldNames) > 0 else "",
+           inputList = ", ".join(norm for norm, name in inputFieldNames.items()),
+           gpuList = ", ".join("gpu_" + name for norm, name in inputFieldNames.items()),
+           inputListId = ", ".join(norm + "[id]" for norm, name in inputFieldNames.items()),
+           inputArgList = ", ".join(inputFieldTypes[name] + " " + norm for norm, name in inputFieldNames.items()),
+           inputArgStarList = ", ".join(inputFieldTypes[name] + "* " + norm for norm, name in inputFieldNames.items()),
+           weightVarDeclarations = "".join("  float " + n + ";\n" for n in weightVars if n != "weight_0"),
+           tmpVarDeclarations = "".join("    " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
+           copyTestData = "".join('''    float* gpu_{1};
+    errorCheck(cudaMalloc((void**)&gpu_{1}, numDataPoints * sizeof(float)));
+    errorCheck(cudaMemcpy(gpu_{1}, {0}, numDataPoints * sizeof(float), cudaMemcpyHostToDevice));
+'''.format(norm, name) for norm, name in inputFieldNames.items()),
+           freeTestData = "".join('''    errorCheck(cudaFree(gpu_{0}));
+'''.format(name) for name in inputFieldNames.values()),
+           initTestData = "".join('''  float {0}[10] = {{{1}}};
+'''.format(norm, ", ".join(str(float(x)) + "f" for x in (testData[name] if isinstance(testData, dict) else testData))) for norm, name in inputFieldNames.items()),
+           startComment = "/*" if commentMain else "",
+           endComment = "*/" if commentMain else ""
+           )
+
+    def fillpycuda(self, **exprs):
+        import numpy
+        import pycuda.autoinit
+        import pycuda.driver
+        import pycuda.compiler
+        import pycuda.gpuarray
+
+        parser = C99SourceToAst()
+        generator = C99AstToSource()
+
+        inputFieldNames = OrderedDict()
+        inputFieldTypes = {}
+        derivedFieldTypes = {}
+        derivedFieldExprs = OrderedDict()
+        storageStructs = OrderedDict()
+        initCode = []
+        fillCode = []
+        combineCode = []
+        jsonCode = []
+        weightVars = ["weight_0"]
+        weightVarStack = ("weight_0",)
+        tmpVarTypes = {}
+
+        inputArrays = {}
+        for name, expr in exprs.items():
+            if isinstance(expr, numpy.ndarray):
+                inputArrays[name] = expr.astype(numpy.float32)
+                if len(inputArrays[name].shape) != 1:
+                    raise ValueError("Numpy arrays must be one-dimensional")
+            elif not isinstance(expr, basestring) and hasattr(expr, "__iter__"):
+                inputArrays[name] = numpy.array(expr).astype(numpy.float32)
+            else:
+                self._cudaAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+
+        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 6, weightVars, weightVarStack, tmpVarTypes, False)
+
+        length = None
+        arguments = []
+        for name in inputFieldNames.values():
+            if name not in inputArrays:
+                raise ValueError("no input supplied for \"" + name + "\"")
+            if length is None or inputArrays[name].shape[0] < length:
+                length = inputArrays[name].shape[0]
+            arguments.append(pycuda.driver.In(inputArrays[name]))
+
+        if length is None:
+            raise ValueError("no input fields specified in aggregator")
+
+        module = pycuda.compiler.SourceModule(self.cuda(namespace=False, writeSize=True))
+
+        numThreadsPerBlock = min(pycuda.driver.Context.get_device().get_attribute(pycuda.driver.device_attribute.MAX_THREADS_PER_BLOCK), length)
+        numBlocks = int(math.ceil(float(length) / float(numThreadsPerBlock)))
+        numAggregators = numThreadsPerBlock
+
+        write_size = module.get_function("write_size")
+        initialize = module.get_function("initialize")
+        fillAll = module.get_function("fillAll")
+        extract = module.get_function("extract")
+
+        aggregatorSize = pycuda.gpuarray.empty((), dtype=numpy.uintp)
+        write_size(aggregatorSize, block=(1, 1, 1), grid=(1, 1))
+        pycuda.driver.Context.synchronize()
+        aggregatorSize = int(aggregatorSize.get())
+
+        aggregators = pycuda.driver.InOut(numpy.zeros(numAggregators * aggregatorSize, dtype=numpy.uint8))
+        result = numpy.zeros(aggregatorSize, dtype=numpy.uint8)
+
+        initialize(aggregators, numpy.intc(numAggregators), block=(numThreadsPerBlock,1,1), grid=(1, 1))
+
+        fillAll(aggregators, numpy.intc(numAggregators), *(arguments + [numpy.intc(length)]), block=(numThreadsPerBlock,1,1), grid=(numBlocks, 1))
+
+        extract(aggregators, numpy.intc(numAggregators), pycuda.driver.Out(result), block=(numThreadsPerBlock,1,1), grid=(1, 1))
+
+        pycuda.driver.Context.synchronize()
+        self._cudaUnpackAndFill(result.tostring(), False, 4)    # TODO: determine bigendian, alignment and use them!
+
     def _cppExpandPrefix(self, *prefix):
         return self._c99ExpandPrefix(*prefix)
 
@@ -391,6 +766,50 @@ public:
 
         return ast
 
+    def _cudaNormalizeExpr(self, ast, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates):
+        if isinstance(ast, c_ast.ID):
+            if weightVar is not None and ast.name == "weight":
+                ast.name = weightVar
+            elif ast.name in derivedFieldExprs:
+                norm = "quantity_" + ast.name
+                ast.name = norm
+            elif ast.name not in intermediates:
+                norm = "input_" + ast.name
+                inputFieldNames[norm] = ast.name
+                inputFieldTypes[ast.name] = "float"
+                ast.name = norm
+
+        elif isinstance(ast, c_ast.Decl):
+            intermediates.add(ast.name)
+            self._cudaNormalizeExpr(ast.init, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+
+        elif isinstance(ast, c_ast.FuncCall):
+            # ordinary function: don't translate the name (let function names live in a different namespace from variables)
+            if isinstance(ast.name, c_ast.ID):
+                if ast.args is not None:
+                    ast.args = self._cudaNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+            # weird function: calling the result of an evaluation, probably an overloaded operator() in C++
+            else:
+                ast.name = self._cudaNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+                if ast.args is not None:
+                    ast.args = self._cudaNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+
+        # only the top (x) of a dotted expression (x.y.z) should be interpreted as a field name
+        elif isinstance(ast, c_ast.StructRef):
+            self._cudaNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+
+        # anything else
+        else:
+            for fieldName, fieldValue in ast.children():
+                m = re.match("([^[]+)\[([0-9]+)\]", fieldName)
+                if m is not None:
+                    tmp = getattr(ast, m.group(1))
+                    tmp.__setitem__(int(m.group(2)), self._cudaNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates))
+                else:
+                    setattr(ast, fieldName, self._cudaNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates))
+
+        return ast
+
     def _cppQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
         return self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar)
 
@@ -444,6 +863,47 @@ public:
 
             return derivedFieldName
 
+    def _cudaQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
+        if weightVar is not None:
+            if not isinstance(self.transform.expr, basestring):
+                raise ContainerException("Count.transform must be provided as a C99 string when used with CUDA")
+            try:
+                ast = parser(self.transform.expr)
+            except Exception as err:
+                raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.transform.expr, str(err)))
+        else:
+            if not isinstance(self.quantity.expr, basestring):
+                raise ContainerException(self.name + ".quantity must be provided as a C99 string when used with CUDA")
+            try:
+                ast = parser(self.quantity.expr)
+            except Exception as err:
+                raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.quantity.expr, str(err)))
+
+        intermediates = set()
+        ast = [self._cudaNormalizeExpr(x, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates) for x in ast]
+            
+        if len(ast) == 1 and isinstance(ast[0], c_ast.ID):
+            return generator(ast)
+
+        else:
+            normexpr = generator(ast)
+            derivedFieldName = None
+            for name, expr in derivedFieldExprs.items():
+                if expr == normexpr:
+                    derivedFieldName = name
+                    break
+
+            if derivedFieldName is None:
+                derivedFieldName = "quantity_" + str(len(derivedFieldExprs))
+                if len(ast) > 1:
+                    derivedFieldExprs[derivedFieldName] = "    float " + derivedFieldName + ";\n    {\n      " + ";\n      ".join(generator(x) for x in ast[:-1]) + ";\n      " + derivedFieldName + " = " + generator(ast[-1]) + ";\n    }\n"
+                else:
+                    derivedFieldExprs[derivedFieldName] = "    float " + derivedFieldName + " = " + normexpr + ";\n"
+
+                derivedFieldTypes[derivedFieldName] = "float"
+
+            return derivedFieldName
+
     def _clingAddExpr(self, parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
         if not isinstance(expr, basestring):
             raise ContainerException("expressions like {0} must be provided as a C99 string".format(name))
@@ -454,12 +914,28 @@ public:
 
         ast = [self._cppNormalizeExpr(x, inputFieldNames, inputFieldTypes, None) for x in ast]
 
-        normexpr = generator(ast)
         if len(ast) > 1:
             derivedFieldExprs[name] = "      auto " + name + " = [this]{\n        " + ";\n        ".join(generator(x) for x in ast[:-1]) + ";\n        return " + generator(ast[-1]) + ";\n      }();\n"
         else:
-            derivedFieldExprs[name] = "      auto " + name + " = " + normexpr + ";\n"
+            derivedFieldExprs[name] = "      auto " + name + " = " + generator(ast[0]) + ";\n"
         derivedFieldTypes[name] = "auto"
+
+    def _cudaAddExpr(self, parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
+        if not isinstance(expr, basestring):
+            raise ContainerException("expressions like {0} must be provided as a C99 string".format(name))
+        try:
+            ast = parser(expr)
+        except Exception as err:
+            raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(expr, str(err)))
+
+        intermediates = set()
+        ast = [self._cudaNormalizeExpr(x, inputFieldNames, inputFieldTypes, None, derivedFieldExprs, intermediates) for x in ast]
+
+        if len(ast) > 1:
+            derivedFieldExprs[name] = "    float quantity_" + name + ";\n    {\n      " + ";\n      ".join(generator(x) for x in ast[:-1]) + ";\n      quantity_" + name + " = " + generator(ast[-1]) + ";\n    }\n"
+        else:
+            derivedFieldExprs[name] = "    float quantity_" + name + " = " + generator(ast[0]) + ";\n"
+        derivedFieldTypes[name] = "float"
 
     def _cppStorageType(self):
         return self._c99StorageType()
@@ -467,27 +943,13 @@ public:
     def _c99StorageType(self):
         return self._c99StructName()
 
-    def numpy(self, data, weights=1.0):
+    def _cudaStorageType(self):
+        return self._c99StructName()
+
+    def fillnumpy(self, data):
         import numpy
         self._checkForCrossReferences()
-
-        if isinstance(weights, numpy.ndarray):
-            assert len(weights.shape) == 1
-
-            original = weights
-            weights = numpy.array(weights, dtype=numpy.float64)
-            weights[numpy.isnan(weights)] = 0.0
-            weights[weights < 0.0] = 0.0
-
-            shape = [weights.shape[0]]
-
-        elif math.isnan(weights) or weights <= 0.0:
-            return
-
-        else:
-            shape = [None]
-
-        self._numpy(data, weights, shape)
+        self._numpy(data, 1.0, [None])
 
     def _checkNPQuantity(self, q, shape):
         import numpy

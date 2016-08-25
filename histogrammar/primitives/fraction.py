@@ -14,7 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import numbers
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -53,11 +55,11 @@ class Fraction(Factory, Container):
         return out.specialize()
 
     @staticmethod
-    def ing(quantity, value):
+    def ing(quantity, value=Count()):
         """Synonym for ``__init__``."""
         return Fraction(quantity, value)
 
-    def __init__(self, quantity, value):
+    def __init__(self, quantity, value=Count()):
         """Create a Fraction that is capable of being filled and added.
 
         Parameters:
@@ -171,6 +173,49 @@ class Fraction(Factory, Container):
     def _c99StructName(self):
         return "Fr" + self.denominator._c99StructName()
 
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"sub:type\\\": \\\"" + self.denominator.name + "\\\"\");")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"denominator\\\": \");")
+        self.denominator._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "denominator"),), initIndent, fillCode, fillPrefix + (("var", "denominator"),), fillIndent, combineCode, totalPrefix + (("var", "denominator"),), itemPrefix + (("var", "denominator"),), combineIndent, jsonCode, jsonPrefix + (("var", "denominator"),), jsonIndent, weightVars, weightVarStack, tmpVarTypes, False)
+
+        weightVars.append("weight_" + str(len(weightVars)))
+        weightVarStack = weightVarStack + (weightVars[-1],)
+        fillCode.append(" " * fillIndent + "{newweight} = (isnan({q})  ||  {q} <= 0.0) ? 0.0 : ({oldweight} * {q});".format(newweight=weightVarStack[-1], oldweight=weightVarStack[-2], q=normexpr))
+
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"numerator\\\": \");")
+        self.numerator._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "numerator"),), initIndent, fillCode, fillPrefix + (("var", "numerator"),), fillIndent, combineCode, totalPrefix + (("var", "numerator"),), itemPrefix + (("var", "numerator"),), combineIndent, jsonCode, jsonPrefix + (("var", "numerator"),), jsonIndent, weightVars, weightVarStack, tmpVarTypes, False)
+
+        if suppressName or self.quantity.name is None:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+        else:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    {1} denominator;
+    {1} numerator;
+  }} {0};
+""".format(self._c99StructName(), self.denominator._cudaStorageType())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        format = "<f"
+        entries, = struct.unpack(format, data[:struct.calcsize(format)])
+        self.entries += entries
+        data = data[struct.calcsize(format):]
+
+        data = self.denominator._cudaUnpackAndFill(data, bigendian, alignment)
+        data = self.numerator._cudaUnpackAndFill(data, bigendian, alignment)
+        return data
+
     def _numpy(self, data, weights, shape):
         w = self.quantity(data)
         self._checkNPQuantity(w, shape)
@@ -204,7 +249,7 @@ class Fraction(Factory, Container):
 
         return maybeAdd({
             "entries": floatToJson(self.entries),
-            "type": self.numerator.name,
+            "sub:type": self.numerator.name,
             "numerator": self.numerator.toJsonFragment(True),
             "denominator": self.denominator.toJsonFragment(True),
             }, **{"name": None if suppressName else self.quantity.name,
@@ -213,7 +258,7 @@ class Fraction(Factory, Container):
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "numerator", "denominator"], ["name", "sub:name"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sub:type", "numerator", "denominator"], ["name", "sub:name"]):
             if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
@@ -226,8 +271,8 @@ class Fraction(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Fraction.name")
 
-            if isinstance(json["type"], basestring):
-                factory = Factory.registered[json["type"]]
+            if isinstance(json["sub:type"], basestring):
+                factory = Factory.registered[json["sub:type"]]
             else:
                 raise JsonFormatException(json, "Fraction.type")
 

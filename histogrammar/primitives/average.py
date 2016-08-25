@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import math
 import numbers
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -180,6 +182,55 @@ class Average(Factory, Container):
 
     def _c99StructName(self):
         return "Av"
+
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum = 0.0f;")
+
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".sum, " + weightVarStack[-1] + " * " + normexpr + ");")
+
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".sum, " + self._c99ExpandPrefix(*itemPrefix) + ".sum);")
+
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"mean\\\": \");")
+        jsonCode.append(" " * jsonIndent + "if (" + self._c99ExpandPrefix(*jsonPrefix) + ".entries == 0.0f)")
+        jsonCode.append(" " * jsonIndent + "  fprintf(out, \"\\\"nan\\\"\");")
+        jsonCode.append(" " * jsonIndent + "else")
+        jsonCode.append(" " * jsonIndent + "  floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".sum / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        if suppressName or self.quantity.name is None:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+        else:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    float sum;
+  }} {0};
+""".format(self._c99StructName())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        format = "<ff"
+        objentries, objsum = struct.unpack(format, data[:struct.calcsize(format)])
+
+        entries = self.entries + objentries
+        if self.entries == 0.0:
+            if objentries == 0.0:
+                mean = float("nan")
+            else:
+                mean = objsum / objentries
+        elif objentries == 0.0:
+            mean = self.mean
+        else:
+            mean = (self.entries*self.mean + objsum)/(self.entries + objentries)
+
+        self.entries = entries
+        self.mean = mean
+        return data[struct.calcsize(format):]
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

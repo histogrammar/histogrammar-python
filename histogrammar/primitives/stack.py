@@ -14,7 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import numbers
+import struct
 import types
 
 from histogrammar.defs import *
@@ -55,11 +57,11 @@ class Stack(Factory, Container):
         return out.specialize()
 
     @staticmethod
-    def ing(bins, quantity, value, nanflow=Count()):
+    def ing(bins, quantity, value=Count(), nanflow=Count()):
         """Synonym for ``__init__``."""
         return Stack(bins, quantity, value, nanflow)
 
-    def __init__(self, bins, quantity, value, nanflow=Count()):
+    def __init__(self, bins, quantity, value=Count(), nanflow=Count()):
         """Create a Stack that is capable of being filled and added.
 
         Parameters:
@@ -171,7 +173,7 @@ class Stack(Factory, Container):
     
         fillCode.append(" " * fillIndent + "  const double edges[{0}] = {{{1}}};".format(
             len(self.values) - 1,
-            ", ".join(str(low) for low, v in self.bins[1:])))
+            ", ".join(floatToC99(low) for low, v in self.bins[1:])))
 
         fillCode.append(" " * fillIndent + "  for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins)))
         fillCode.append(" " * fillIndent + "    if ({1} == 0  ||  {0} >= edges[{1} - 1]) {{".format(normexpr, bin))
@@ -203,6 +205,90 @@ class Stack(Factory, Container):
 
     def _c99StructName(self):
         return "Sk" + str(len(self.bins)) + self.bins[0][1]._c99StructName() + self.nanflow._c99StructName()
+
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+
+        fillCode.append(" " * fillIndent + "if (isnan({0})) {{".format(normexpr))
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"nanflow:type\\\": \\\"" + self.nanflow.name + "\\\"\");")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"nanflow\\\": \");")
+        self.nanflow._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent + 2, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, combineCode, totalPrefix + (("var", "nanflow"),), itemPrefix + (("var", "nanflow"),), combineIndent, jsonCode, jsonPrefix + (("var", "nanflow"),), jsonIndent, weightVars, weightVarStack, tmpVarTypes, False)
+        fillCode.append(" " * fillIndent + "}")
+        fillCode.append(" " * fillIndent + "else {")
+
+        bin = "bin_" + str(len(tmpVarTypes))
+        tmpVarTypes[bin] = "int"
+
+        initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins)))
+
+        fillCode.append(" " * fillIndent + "  const float edges[{0}] = {{{1}}};".format(
+            len(self.values) - 1,
+            ", ".join(floatToC99(low) for low, v in self.bins[1:])))
+        fillCode.append(" " * fillIndent + "  for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.bins)))
+        fillCode.append(" " * fillIndent + "    if ({1} == 0  ||  {0} >= edges[{1} - 1]) {{".format(normexpr, bin))
+
+        combineCode.append(" " * combineIndent + "for ({0} = 0;  {0} < {1}; ++{0}) {{".format(bin, len(self.bins)))
+
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"bins:type\\\": \\\"" + self.bins[0][1].name + "\\\"\");")
+        if hasattr(self.bins[0][1], "quantity") and self.bins[0][1].quantity.name is not None:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"bins:name\\\": \\\"" + self.bins[0][1].quantity.name + "\\\"\");")
+        jsonCode.append(" " * jsonIndent + "{")
+        jsonCode.append(" " * jsonIndent + "  const float edges[{0}] = {{{1}}};".format(
+            len(self.values),
+            ", ".join(floatToC99(low) for low, v in self.bins)))
+        jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"bins\\\": [\");")
+        jsonCode.append(" " * jsonIndent + "  for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
+        jsonCode.append(" " * jsonIndent + "    fprintf(out, \"{\\\"atleast\\\": \");")
+        jsonCode.append(" " * jsonIndent + "    floatToJson(out, edges[" + bin + "]);")
+        jsonCode.append(" " * jsonIndent + "    fprintf(out, \", \\\"data\\\": \");")
+
+        self.bins[0][1]._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 6, combineCode, totalPrefix + (("var", "values"), ("index", bin)), itemPrefix + (("var", "values"), ("index", bin)), combineIndent + 2, jsonCode, jsonPrefix + (("var", "values"), ("index", bin)), jsonIndent + 4, weightVars, weightVarStack, tmpVarTypes, True)
+
+        initCode.append(" " * initIndent + "}")
+        fillCode.append(" " * fillIndent + "    }")
+        fillCode.append(" " * fillIndent + "  }")
+        fillCode.append(" " * fillIndent + "}")
+        combineCode.append(" " * combineIndent + "}")
+        jsonCode.append(" " * jsonIndent + "    fprintf(out, \"}\");")
+        jsonCode.append(" " * jsonIndent + "    if ({0} != {1})".format(bin, len(self.values) - 1))
+        jsonCode.append(" " * jsonIndent + "      fprintf(out, \", \");")
+        jsonCode.append(" " * jsonIndent + "  }")
+        jsonCode.append(" " * jsonIndent + "}")
+
+        if suppressName or self.quantity.name is None:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"]}\");")
+        else:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"], \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    {3} nanflow;
+    {1} values[{2}];
+  }} {0};
+""".format(self._c99StructName(),
+           self.bins[0][1]._cudaStorageType(),
+           len(self.values),
+           self.nanflow._cudaStorageType())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        format = "<f"
+        entries, = struct.unpack(format, data[:struct.calcsize(format)])
+        self.entries += entries
+        data = data[struct.calcsize(format):]
+
+        data = self.nanflow._cudaUnpackAndFill(data, bigendian, alignment)
+
+        for atleast, value in self.bins:
+            data = value._cudaUnpackAndFill(data, bigendian, alignment)
+
+        return data
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
@@ -253,17 +339,17 @@ class Stack(Factory, Container):
 
         return maybeAdd({
             "entries": floatToJson(self.entries),
-            "type": self.bins[0][1].name,
-            "data": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment(True)} for atleast, sub in self.bins],
+            "bins:type": self.bins[0][1].name,
+            "bins": [{"atleast": floatToJson(atleast), "data": sub.toJsonFragment(True)} for atleast, sub in self.bins],
             "nanflow:type": self.nanflow.name,
             "nanflow": self.nanflow.toJsonFragment(False),
             }, **{"name": None if suppressName else self.quantity.name,
-                  "data:name": binsName})
+                  "bins:name": binsName})
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data", "nanflow:type", "nanflow"], ["name", "data:name"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "bins:type", "bins", "nanflow:type", "nanflow"], ["name", "bins:name"]):
             if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
@@ -276,17 +362,17 @@ class Stack(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Stack.name")
 
-            if isinstance(json["type"], basestring):
-                factory = Factory.registered[json["type"]]
+            if isinstance(json["bins:type"], basestring):
+                factory = Factory.registered[json["bins:type"]]
             else:
-                raise JsonFormatException(json, "Stack.type")
+                raise JsonFormatException(json, "Stack.bins:type")
 
-            if isinstance(json.get("data:name", None), basestring):
-                dataName = json["data:name"]
-            elif json.get("data:name", None) is None:
+            if isinstance(json.get("bins:name", None), basestring):
+                dataName = json["bins:name"]
+            elif json.get("bins:name", None) is None:
                 dataName = None
             else:
-                raise JsonFormatException(json["data:name"], "Stack.data:name")
+                raise JsonFormatException(json["bins:name"], "Stack.bins:name")
 
             if isinstance(json["nanflow:type"], basestring):
                 nanflowFactory = Factory.registered[json["nanflow:type"]]
@@ -294,24 +380,24 @@ class Stack(Factory, Container):
                 raise JsonFormatException(json, "Stack.nanflow:type")
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
 
-            if isinstance(json["data"], list):
+            if isinstance(json["bins"], list):
                 bins = []
-                for i, elementPair in enumerate(json["data"]):
+                for i, elementPair in enumerate(json["bins"]):
                     if isinstance(elementPair, dict) and hasKeys(elementPair.keys(), ["atleast", "data"]):
                         if elementPair["atleast"] not in ("nan", "inf", "-inf") and not isinstance(elementPair["atleast"], numbers.Real):
-                            raise JsonFormatException(json, "Stack.data {0} atleast".format(i))
+                            raise JsonFormatException(json, "Stack.bins {0} atleast".format(i))
 
                         bins.append((float(elementPair["atleast"]), factory.fromJsonFragment(elementPair["data"], dataName)))
 
                     else:
-                        raise JsonFormatException(json, "Stack.data {0}".format(i))
+                        raise JsonFormatException(json, "Stack.bins {0}".format(i))
 
                 out = Stack.ed(entries, bins, nanflow)
                 out.quantity.name = nameFromParent if name is None else name
                 return out.specialize()
 
             else:
-                raise JsonFormatException(json, "Stack.data")
+                raise JsonFormatException(json, "Stack.bins")
 
         else:
             raise JsonFormatException(json, "Stack")

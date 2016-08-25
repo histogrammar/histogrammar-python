@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import math
 import numbers
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -123,6 +125,84 @@ class Minimize(Factory, Container):
 
     def _c99StructName(self):
         return "Mn"
+
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        old = "old_" + str(len(tmpVarTypes))
+        tmpVarTypes[old] = "int"
+        assumed = "assumed_" + str(len(tmpVarTypes))
+        tmpVarTypes[assumed] = "float"
+        trial = "trial_" + str(len(tmpVarTypes))
+        tmpVarTypes[trial] = "float"
+
+        initCode.append(" " * initIndent + "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(old=old, assumed=assumed, trial=trial))
+        jsonCode.append(" " * jsonIndent + "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(old=old, assumed=assumed, trial=trial))
+
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".min = CUDART_NAN_F;")
+
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append("""{indent}atomicAdd(&{prefix}.entries, {weight});
+{indent}{old} = *(int*)(&{prefix}.min);
+{indent}do {{
+{indent}  {assumed} = *(float*)(&{old});
+{indent}  if (isnan({assumed})  ||  {q} < {assumed})
+{indent}    {trial} = {q};
+{indent}  else
+{indent}    {trial} = {assumed};
+{indent}  {old} = atomicCAS((int*)(&{prefix}.min), *(int*)(&{assumed}), *(int*)(&{trial}));
+{indent}}} while (*(int*)(&{assumed}) != {old});
+""".format(indent = " " * fillIndent,
+        prefix = self._c99ExpandPrefix(*fillPrefix),
+        weight = weightVarStack[-1],
+        old = old,
+        assumed = assumed,
+        trial = trial,
+        q = normexpr))
+
+        combineCode.append("""{indent}atomicAdd(&{total}.entries, {item}.entries);
+{indent}{old} = *(int*)(&{total}.min);
+{indent}do {{
+{indent}  {assumed} = *(float*)(&{old});
+{indent}  if (isnan({assumed}))
+{indent}    {trial} = {item}.min;
+{indent}  else if (isnan({item}.min))
+{indent}    {trial} = {assumed};
+{indent}  else if ({assumed} < {item}.min)
+{indent}    {trial} = {assumed};
+{indent}  else
+{indent}    {trial} = {item}.min;
+{indent}  {old} = atomicCAS((int*)(&{total}.min), *(int*)(&{assumed}), *(int*)(&{trial}));
+{indent}}} while (*(int*)(&{assumed}) != {old});
+""".format(indent = " " * combineIndent,
+        total = self._c99ExpandPrefix(*totalPrefix),
+        item = self._c99ExpandPrefix(*itemPrefix),
+        weight = weightVarStack[-1],
+        old = old,
+        assumed = assumed,
+        trial = trial))
+
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"min\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".min);")
+        if suppressName or self.quantity.name is None:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+        else:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    float min;
+  }} {0};
+""".format(self._c99StructName())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        format = "<ff"
+        objentries, objmin = struct.unpack(format, data[:struct.calcsize(format)])
+        self.entries = self.entries + objentries
+        self.min = minplus(self.min, objmin)
+        return data[struct.calcsize(format):]
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
@@ -291,6 +371,84 @@ class Maximize(Factory, Container):
 
     def _c99StructName(self):
         return "Mx"
+
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        old = "old_" + str(len(tmpVarTypes))
+        tmpVarTypes[old] = "int"
+        assumed = "assumed_" + str(len(tmpVarTypes))
+        tmpVarTypes[assumed] = "float"
+        trial = "trial_" + str(len(tmpVarTypes))
+        tmpVarTypes[trial] = "float"
+
+        initCode.append(" " * initIndent + "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(old=old, assumed=assumed, trial=trial))
+        jsonCode.append(" " * jsonIndent + "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(old=old, assumed=assumed, trial=trial))
+
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".max = CUDART_NAN_F;")
+
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append("""{indent}atomicAdd(&{prefix}.entries, {weight});
+{indent}{old} = *(int*)(&{prefix}.max);
+{indent}do {{
+{indent}  {assumed} = *(float*)(&{old});
+{indent}  if (isnan({assumed})  ||  {q} > {assumed})
+{indent}    {trial} = {q};
+{indent}  else
+{indent}    {trial} = {assumed};
+{indent}  {old} = atomicCAS((int*)(&{prefix}.max), *(int*)(&{assumed}), *(int*)(&{trial}));
+{indent}}} while (*(int*)(&{assumed}) != {old});
+""".format(indent = " " * fillIndent,
+        prefix = self._c99ExpandPrefix(*fillPrefix),
+        weight = weightVarStack[-1],
+        old = old,
+        assumed = assumed,
+        trial = trial,
+        q = normexpr))
+
+        combineCode.append("""{indent}atomicAdd(&{total}.entries, {item}.entries);
+{indent}{old} = *(int*)(&{total}.max);
+{indent}do {{
+{indent}  {assumed} = *(float*)(&{old});
+{indent}  if (isnan({assumed}))
+{indent}    {trial} = {item}.max;
+{indent}  else if (isnan({item}.max))
+{indent}    {trial} = {assumed};
+{indent}  else if ({assumed} > {item}.max)
+{indent}    {trial} = {assumed};
+{indent}  else
+{indent}    {trial} = {item}.max;
+{indent}  {old} = atomicCAS((int*)(&{total}.max), *(int*)(&{assumed}), *(int*)(&{trial}));
+{indent}}} while (*(int*)(&{assumed}) != {old});
+""".format(indent = " " * combineIndent,
+        total = self._c99ExpandPrefix(*totalPrefix),
+        item = self._c99ExpandPrefix(*itemPrefix),
+        weight = weightVarStack[-1],
+        old = old,
+        assumed = assumed,
+        trial = trial))
+
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"max\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".max);")
+        if suppressName or self.quantity.name is None:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+        else:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    float max;
+  }} {0};
+""".format(self._c99StructName())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        format = "<ff"
+        objentries, objmax = struct.unpack(format, data[:struct.calcsize(format)])
+        self.entries = self.entries + objentries
+        self.max = maxplus(self.max, objmax)
+        return data[struct.calcsize(format):]
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

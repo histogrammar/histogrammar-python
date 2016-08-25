@@ -16,6 +16,7 @@
 
 import numbers
 import re
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -112,6 +113,28 @@ class Count(Factory, Container):
 
     def _c99StructName(self):
         return "Ct"
+
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + " = 0.0f;")
+
+        if self.transform is not identity:
+            normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVarStack[-1])
+            fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ", " + normexpr + ");")
+        else:
+            fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ", " + weightVarStack[-1] + ");")
+
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ", " + self._c99ExpandPrefix(*itemPrefix) + ");")
+
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ");")
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        format = "<f"
+        entries, = struct.unpack(format, data[:struct.calcsize(format)])
+        self.entries += entries
+        return data[struct.calcsize(format):]
+
+    def _cudaStorageType(self):
+        return "float"
 
     def _numpy(self, data, weights, shape):
         import numpy

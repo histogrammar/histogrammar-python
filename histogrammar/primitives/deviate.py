@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import math
 import numbers
+import struct
 
 from histogrammar.defs import *
 from histogrammar.util import *
@@ -218,6 +220,70 @@ class Deviate(Factory, Container):
 
     def _c99StructName(self):
         return "Dv"
+
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum = 0.0f;")
+        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum2 = 0.0f;")
+
+        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".sum, " + weightVarStack[-1] + " * " + normexpr + ");")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".sum2, " + weightVarStack[-1] + " * " + normexpr + " * " + normexpr + ");")
+
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".sum, " + self._c99ExpandPrefix(*itemPrefix) + ".sum);")
+        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".sum2, " + self._c99ExpandPrefix(*itemPrefix) + ".sum2);")
+
+        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
+        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "if (" + self._c99ExpandPrefix(*jsonPrefix) + ".entries == 0.0f)")
+        jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"mean\\\": \\\"nan\\\", \\\"variance\\\": \\\"nan\\\"\");")
+        jsonCode.append(" " * jsonIndent + "else {")
+        jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"mean\\\": \");")
+        jsonCode.append(" " * jsonIndent + "  floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".sum / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"variance\\\": \");")
+        jsonCode.append(" " * jsonIndent + "  floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".sum2 / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries - (" + self._c99ExpandPrefix(*jsonPrefix) + ".sum / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries)*(" + self._c99ExpandPrefix(*jsonPrefix) + ".sum / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries));")
+        jsonCode.append(" " * jsonIndent + "}")
+        if suppressName or self.quantity.name is None:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
+        else:
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+
+        storageStructs[self._c99StructName()] = """
+  typedef struct {{
+    float entries;
+    float sum;
+    float sum2;
+  }} {0};
+""".format(self._c99StructName())
+
+    def _cudaUnpackAndFill(self, data, bigendian, alignment):
+        format = "<fff"
+        objentries, objsum, objsum2 = struct.unpack("<fff", data[:struct.calcsize(format)])
+
+        entries = self.entries + objentries
+        if self.entries == 0.0:
+            if objentries == 0.0:
+                mean = float("nan")
+                variance = float("nan")
+            else:
+                mean = objsum / objentries
+                variance = (objsum2 / objentries) - (mean * mean)
+        elif objentries == 0.0:
+            mean = self.mean
+            variance = self.variance
+        else:
+            objmean = objsum / objentries
+            objvariance = (objsum2 / objentries) - (objmean * objmean)
+            mean = (self.entries*self.mean + objsum)/(self.entries + objentries)
+            varianceTimesEntries = self.varianceTimesEntries + (objvariance*objentries) + self.entries*self.mean*self.mean + objentries*objmean*objmean - 2.0*mean*(self.entries*self.mean + objentries*objmean) + mean*mean*entries
+            variance = varianceTimesEntries / entries
+
+        self.entries = entries
+        self.mean = mean
+        self.variance = variance
+        return data[struct.calcsize(format):]
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)

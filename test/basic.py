@@ -544,22 +544,6 @@ class TestOriginal(unittest.TestCase):
         self.checkName(two)
         self.checkName(three)
 
-    def testBagWithLimit(self):
-        one = Limit(20, Bag(lambda x: x.string, "S"))
-        for _ in self.struct: one.fill(_)
-        self.assertEqual(one.get.values, {"one": 1.0, "two": 1.0, "three": 1.0, "four": 1.0, "five": 1.0, "six": 1.0, "seven": 1.0, "eight": 1.0, "nine": 1.0, "ten": 1.0})
-
-        two = Limit(9, Bag(lambda x: x.string, "S"))
-        for _ in self.struct: two.fill(_)
-        self.assertTrue(two.saturated)
-
-        self.checkJson(one)
-        self.checkJson(two)
-        self.checkPickle(one)
-        self.checkPickle(two)
-        self.checkName(one)
-        self.checkName(two)
-
     ################################################################ Bin
 
     def testBin(self):

@@ -21,6 +21,8 @@ import random
 import types
 import sys
 
+import histogrammar.pycparser.c_ast
+
 # Definitions for python 2/3 compatability 
 if sys.version_info[0] > 2:
     basestring = str
@@ -33,6 +35,19 @@ def inheritdoc(cls):
             fn.__doc__ = cls.__dict__[fn.__name__].__doc__
         return fn
     return _fn
+
+
+################################################################ attach sub-methods to the fill method
+
+class FillMethod(object):
+    def __init__(self, container, fill):
+        self.container = container
+        self.fill = fill
+        self.root = container.fillroot
+        self.pycuda = container.fillpycuda
+        self.numpy = container.fillnumpy
+    def __call__(self, *args, **kwds):
+        return self.fill(*args, **kwds)
 
 ################################################################ handling key set comparisons with optional keys
 
@@ -133,6 +148,16 @@ def floatToJson(x):
         return "-inf"
     else:
         return x
+
+def floatToC99(x):
+    if math.isnan(x):
+        return "NAN"
+    elif math.isinf(x) and x > 0.0:
+        return "INFINITY"
+    elif math.isinf(x):
+        return "-INFINITY"
+    else:
+        return str(x)
 
 def rangeToJson(x):
     """Custom rule for converting numbers, one-dimensional vectors of numbers, and strings to JSON, converting non-finite nmbers to ``"inf"``, ``"-inf"``, and ``"nan"``. This avoids Python's bad habit of putting literal ``Infinity``, ``-Infinity``, and ``NaN`` in the JSON (without quotes)."""
