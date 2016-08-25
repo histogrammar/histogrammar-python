@@ -362,7 +362,7 @@ namespace {ns} {{
   // Specific logic of how to increment the aggregator with input values.
   __device__ void increment(Aggregator* aggregator{comma}{inputArgList}) {{
     const float weight_0 = 1.0f;
-{tmpVarDeclarations}{quantities}
+{weightVarDeclarations}{tmpVarDeclarations}{quantities}
 {fillCode}
   }}
 
@@ -565,6 +565,7 @@ int main(int argc, char** argv) {{
            inputListId = ", ".join(norm + "[id]" for norm, name in inputFieldNames.items()),
            inputArgList = ", ".join(inputFieldTypes[name] + " " + norm for norm, name in inputFieldNames.items()),
            inputArgStarList = ", ".join(inputFieldTypes[name] + "* " + norm for norm, name in inputFieldNames.items()),
+           weightVarDeclarations = "".join("  float " + n + ";\n" for n in weightVars if n != "weight_0"),
            tmpVarDeclarations = "".join("    " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
            copyTestData = "".join('''    float* gpu_{1};
     errorCheck(cudaMalloc((void**)&gpu_{1}, numDataPoints * sizeof(float)));

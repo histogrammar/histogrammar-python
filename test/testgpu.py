@@ -122,3 +122,11 @@ class TestGPU(unittest.TestCase):
         h = Stack([1.5, 2.5, 3.5, 4.5, 5.5], "x")
         h.pycuda(x = numpy.array(range(10)))
         self.assertEqual(h.toImmutable(), Factory.fromJson({"data": {"nanflow:type": "Count", "name": "x", "nanflow": 0.0, "bins:type": "Count", "entries": 10.0, "bins": [{"data": 10.0, "atleast": "-inf"}, {"data": 8.0, "atleast": 1.5}, {"data": 7.0, "atleast": 2.5}, {"data": 6.0, "atleast": 3.5}, {"data": 5.0, "atleast": 4.5}, {"data": 4.0, "atleast": 5.5}]}, "version": "0.9", "type": "Stack"}))
+
+    def testFraction(self):
+        self.runStandalone(Fraction("x > 5").cuda(commentMain=False, testData=range(10)), {"data": {"sub:type": "Count", "denominator": 10.0, "numerator": 4.0, "name": "x > 5", "entries": 10.0}, "version": "0.9", "type": "Fraction"})
+
+    def testFractionNumpy(self):
+        h = Fraction("x > 5")
+        h.pycuda(x = numpy.array(range(10)))
+        self.assertEqual(h.toImmutable(), Factory.fromJson({"data": {"sub:type": "Count", "denominator": 10.0, "numerator": 4.0, "name": "x > 5", "entries": 10.0}, "version": "0.9", "type": "Fraction"}))

@@ -46,7 +46,7 @@ Primitive implementation is mature. CUDA implementation has begun.
 | CentrallyBin      | done        | done  | done       | done       |
 | IrregularlyBin    | done        | done  | done       | done       |
 | Categorize        | done        | done  | done       | impossible |
-| Fraction          | done        | done  | done       |            |
+| Fraction          | done        | done  | done       | done       |
 | Stack             | done        | done  | done       | done       |
 | Select            | done        | done  | done       |            |
 | Limit             | done        | done  | done       |            |
