@@ -275,9 +275,10 @@ class Deviate(Factory, Container):
             variance = self.variance
         else:
             objmean = objsum / objentries
-            objvariance = (objsum2 / objentries) - (mean * mean)
+            objvariance = (objsum2 / objentries) - (objmean * objmean)
             mean = (self.entries*self.mean + objsum)/(self.entries + objentries)
-            variance = self.varianceTimesEntries + (objvariance*objentries) + self.entries*self.mean*self.mean + objentries*objmean*objmean - 2.0*mean*(self.entries*self.mean + objentries*objmean) + mean*mean*entries
+            varianceTimesEntries = self.varianceTimesEntries + (objvariance*objentries) + self.entries*self.mean*self.mean + objentries*objmean*objmean - 2.0*mean*(self.entries*self.mean + objentries*objmean) + mean*mean*entries
+            variance = varianceTimesEntries / entries
 
         self.entries = entries
         self.mean = mean
