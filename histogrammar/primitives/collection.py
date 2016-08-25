@@ -245,23 +245,23 @@ class Label(Factory, Container, Collection):
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
-        "type": self.values[0].name,
+        "sub:type": self.values[0].name,
         "data": dict((k, v.toJsonFragment(False)) for k, v in self.pairs.items()),
         }
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sub:type", "data"]):
             if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Label.entries")
 
-            if isinstance(json["type"], basestring):
-                factory = Factory.registered[json["type"]]
+            if isinstance(json["sub:type"], basestring):
+                factory = Factory.registered[json["sub:type"]]
             else:
-                raise JsonFormatException(json, "Label.type")
+                raise JsonFormatException(json, "Label.sub:type")
 
             if isinstance(json["data"], dict):
                 pairs = dict((k, factory.fromJsonFragment(v, None)) for k, v in json["data"].items())
@@ -615,23 +615,23 @@ class Index(Factory, Container, Collection):
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return {
         "entries": floatToJson(self.entries),
-        "type": self.values[0].name,
+        "sub:type": self.values[0].name,
         "data": [x.toJsonFragment(False) for x in self.values],
         }
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "type", "data"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sub:type", "data"]):
             if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Index.entries")
 
-            if isinstance(json["type"], basestring):
-                factory = Factory.registered[json["type"]]
+            if isinstance(json["sub:type"], basestring):
+                factory = Factory.registered[json["sub:type"]]
             else:
-                raise JsonFormatException(json, "Index.type")
+                raise JsonFormatException(json, "Index.sub:type")
 
             if isinstance(json["data"], list):
                 values = [factory.fromJsonFragment(x, None) for x in json["data"]]
