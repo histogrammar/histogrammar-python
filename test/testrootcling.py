@@ -483,7 +483,7 @@ public:
             hg = Select("boolean", Bin(20, -10, 10, "noholes"))
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
-    "type": "Bin", 
+    "sub:type": "Bin", 
     "data": {
       "nanflow:type": "Count", 
       "name": "noholes", 
@@ -504,7 +504,7 @@ public:
   "type": "Select"}) 
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
-    "type": "Bin", 
+    "sub:type": "Bin", 
     "data": {
       "nanflow:type": "Count", 
       "name": "noholes", 
@@ -527,7 +527,7 @@ public:
             hg = Select("withholes / 2", Bin(20, -10, 10, "noholes"))
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
-    "type": "Bin", 
+    "sub:type": "Bin", 
     "data": {
       "nanflow:type": "Count", 
       "name": "noholes", 
@@ -548,7 +548,7 @@ public:
   "type": "Select"})
             hg.cling(TestRootCling.ttreeFlat, debug=False)
             self.assertEqual(hg.toJson(), {"version": histogrammar.version.specification, "data": {
-    "type": "Bin", 
+    "sub:type": "Bin", 
     "data": {
       "nanflow:type": "Count", 
       "name": "noholes", 
