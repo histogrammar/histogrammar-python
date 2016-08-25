@@ -15,12 +15,32 @@
 # limitations under the License.
 
 import base64
-import collections
 import datetime
 import json as jsonlib
 import math
 import random
 import re
+try:
+    from collections import OrderedDict
+except ImportError:
+    class OrderedDict(object):
+        def __init__(self):
+            self.pairs = {}
+            self.keys = []
+        def __setitem__(self, key, value):
+            self.pairs[key] = value
+            if key not in self.keys:
+                self.keys.append(key)
+        def __getitem__(self, key):
+            return self.pairs[key]
+        def values(self):
+            return [self.pairs[k] for k in self.keys]
+        def items(self):
+            return [(k, self.pairs[k]) for k in self.keys]
+        def __iter__(self):
+            return iter(self.keys)
+        def __len__(self):
+            return len(self.keys)
 
 from histogrammar.util import *
 from histogrammar.parsing import C99SourceToAst
@@ -251,7 +271,7 @@ class Container(object):
             derivedFieldTypes = {}
             derivedFieldExprs = {}
 
-            storageStructs = collections.OrderedDict()
+            storageStructs = OrderedDict()
             initCode = []
             fillCode = []
             weightVars = ["weight_0"]
@@ -323,11 +343,11 @@ public:
         parser = C99SourceToAst()
         generator = C99AstToSource()
 
-        inputFieldNames = collections.OrderedDict()
+        inputFieldNames = OrderedDict()
         inputFieldTypes = {}
         derivedFieldTypes = {}
-        derivedFieldExprs = collections.OrderedDict()
-        storageStructs = collections.OrderedDict()
+        derivedFieldExprs = OrderedDict()
+        storageStructs = OrderedDict()
         initCode = []
         fillCode = []
         combineCode = []
@@ -595,11 +615,11 @@ int main(int argc, char** argv) {{
         parser = C99SourceToAst()
         generator = C99AstToSource()
 
-        inputFieldNames = collections.OrderedDict()
+        inputFieldNames = OrderedDict()
         inputFieldTypes = {}
         derivedFieldTypes = {}
-        derivedFieldExprs = collections.OrderedDict()
-        storageStructs = collections.OrderedDict()
+        derivedFieldExprs = OrderedDict()
+        storageStructs = OrderedDict()
         initCode = []
         fillCode = []
         combineCode = []
