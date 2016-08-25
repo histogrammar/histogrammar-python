@@ -27,9 +27,9 @@ class TestCommand(Command):
     def run(self):
         import sys, subprocess
         if sys.version_info[0] == 2 and sys.version_info[1] == 6:
-            args = ["-c", "import unittest; from test.basic import *; from test.testnumpy import *; from test.testrootcling import *; from test.testgpu import *; unittest.main()"]
+            args = ["-c", "import unittest; from test.testbasic import *; from test.testnumpy import *; from test.testrootcling import *; from test.testgpu import *; unittest.main()"]
         else:
-            args = ["-m", "unittest", "-v", "test.basic", "test.testnumpy", "test.testrootcling", "test.testgpu"]
+            args = ["-m", "unittest", "-v", "test.testbasic", "test.testnumpy", "test.testrootcling", "test.testgpu"]
         raise SystemExit(subprocess.call([sys.executable] + args))
 
 setup(name="Histogrammar",

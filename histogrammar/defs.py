@@ -176,6 +176,10 @@ class Container(object):
         del state["fill"]
         return state
 
+    def __setstate__(self, dict):
+        self.__dict__ = dict
+        self.fill = FillMethod(self, self.fill)
+
     def copy(self):
         """Copy this container, making a clone with no reference to the original. """
         return self + self.zero()
