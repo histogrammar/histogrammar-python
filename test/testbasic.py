@@ -803,7 +803,7 @@ class TestOriginal(unittest.TestCase):
         categorizing = Categorize(named("something", lambda x: x.string[0]))
         for _ in self.struct: categorizing.fill(_)
 
-        self.assertEqual(dict((k, v.entries) for k, v in categorizing.pairsMap.items()), {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
+        self.assertEqual(dict((k, v.entries) for k, v in categorizing.binsMap.items()), {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
 
         self.checkJson(categorizing)
         self.checkPickle(categorizing)

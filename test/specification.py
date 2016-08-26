@@ -405,9 +405,9 @@ def IrregularlyBin_combine(one, two):
 def Categorize_fill(categorizing, datum, weight):
     if weight > 0.0:
         q = categorizing.quantity(datum)
-        if q not in categorizing.pairs:
-            categorizing.pairs[q] = categorizing.value.copy()
-        fill(categorizing.pairs[q], datum, weight)
+        if q not in categorizing.bins:
+            categorizing.bins[q] = categorizing.value.copy()
+        fill(categorizing.bins[q], datum, weight)
         categorizing.entries += weight
 
 def Categorize_combine(one, two):
@@ -415,15 +415,15 @@ def Categorize_combine(one, two):
         raise Exception
     entries = one.entries + two.entries
     contentType = one.contentType
-    pairs = {}
-    for key in set(one.pairs.keys()).union(set(two.pairs.keys())):
-        if key in one.pairs and key in two.pairs:
-            pairs[key] = combine(one.pairs[key], two.pairs[key])
-        elif key in one.pairs:
-            pairs[key] = one.pairs[key].copy()
-        elif key in two.pairs:
-            pairs[key] = two.pairs[key].copy()
-    return Categorize.ed(entries, contentType, pairs)
+    bins = {}
+    for key in set(one.bins.keys()).union(set(two.bins.keys())):
+        if key in one.bins and key in two.bins:
+            bins[key] = combine(one.bins[key], two.bins[key])
+        elif key in one.bins:
+            bins[key] = one.bins[key].copy()
+        elif key in two.bins:
+            bins[key] = two.bins[key].copy()
+    return Categorize.ed(entries, contentType, bins)
 
 def Fraction_fill(fractioning, datum, weight):
     if weight > 0.0:
