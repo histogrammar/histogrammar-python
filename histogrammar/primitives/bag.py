@@ -318,6 +318,9 @@ class Bag(Factory, Container):
                     if isinstance(v1i, numbers.Real) and isinstance(v2i, numbers.Real):
                         if not numeq(v1i, v2i):
                             return False
+                    elif isinstance(v1i, basestring) and isinstance(v2i, basestring):
+                        if v1i != v2i:
+                            return False
                     else:
                         return False
             else:
