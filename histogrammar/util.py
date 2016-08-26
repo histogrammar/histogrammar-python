@@ -247,13 +247,18 @@ class UserFcn(object):
                         except AttributeError:
                             v, = varname                       # otherwise, use the one and only variable
                             if v is None:                      # as the object (only discover it once)
-                                try:
-                                    v, = set(c.co_names) - set(context.keys())
-                                except ValueError:
+                                v = set(c.co_names) - set(context.keys())
+                                if len(v) > 1:
                                     raise NameError("more than one unrecognized variable names in single-argument function: {0}".format(set(c.co_names) - set(context.keys())))
+                                elif len(v) == 0:
+                                    v = None
+                                else:
+                                    v = list(v)[0]
+
                                 varname[0] = v
 
-                            context.update({v: datum})
+                            if v is not None:
+                                context.update({v: datum})
 
                     return eval(c, context)
 

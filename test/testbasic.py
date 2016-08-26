@@ -21,7 +21,7 @@ import unittest
 
 from histogrammar import *
 
-class TestOriginal(unittest.TestCase):
+class TestBasic(unittest.TestCase):
     simple = [3.4, 2.2, -1.8, 0.0, 7.3, -4.7, 1.6, 0.0, -3.0, -1.7]
 
     class Struct(object):
