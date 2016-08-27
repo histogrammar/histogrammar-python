@@ -32,7 +32,6 @@ modules = [
     "histogrammar.primitives.deviate",
     "histogrammar.primitives.fraction",
     "histogrammar.primitives.irregularlybin",
-    "histogrammar.primitives.limit",
     "histogrammar.primitives.minmax",
     "histogrammar.primitives.select",
     "histogrammar.primitives.sparselybin",

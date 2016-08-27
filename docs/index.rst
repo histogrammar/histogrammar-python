@@ -61,9 +61,6 @@ Second kind: pass to different sub-aggregators based on values seen in data
 :doc:`Select <histogrammar.primitives.select.Select>`: apply a cut
     Filter or weight data according to a given selection.
 
-:doc:`Limit <histogrammar.primitives.limit.Limit>`: keep detail until entries is large
-    Accumulate an aggregator until its number of entries reaches a predefined limit.
-
 Third kind: broadcast to every sub-aggregator, independent of data
 ------------------------------------------------------------------
 
