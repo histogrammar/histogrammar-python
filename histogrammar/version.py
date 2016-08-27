@@ -16,7 +16,7 @@
 
 import re
 
-__version__ = "0.9-prerelease"
+__version__ = "1.0.0"
 
 version = __version__
 

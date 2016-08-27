@@ -140,7 +140,9 @@ def floatOrNan(x):
 
 def floatToJson(x):
     """Custom rule for converting non-finite numbers to JSON as quoted strings: ``"inf"``, ``"-inf"``, and ``"nan"``. This avoids Python's bad habit of putting literal ``Infinity``, ``-Infinity``, and ``NaN`` in the JSON (without quotes)."""
-    if math.isnan(x):
+    if x in ("nan", "inf", "-inf"):
+        return x
+    elif math.isnan(x):
         return "nan"
     elif math.isinf(x) and x > 0.0:
         return "inf"
@@ -222,9 +224,10 @@ class UserFcn(object):
                     # fill the namespace with math.* functions
                     context.update(math.__dict__)
 
-                    # if you have Numpy, override the namespace with numpy.* functions
+                    # if you have Numpy, include numpy.* functions
                     if numpy is not None:
-                        context.update(numpy.__dict__)
+                        context["numpy"] = numpy
+                        context["np"] = numpy
 
                     # if the datum is a dict, override the namespace with its dict keys
                     if isinstance(datum, dict):                # if it's a dict
@@ -244,13 +247,18 @@ class UserFcn(object):
                         except AttributeError:
                             v, = varname                       # otherwise, use the one and only variable
                             if v is None:                      # as the object (only discover it once)
-                                try:
-                                    v, = set(c.co_names) - set(context.keys())
-                                except ValueError:
+                                v = set(c.co_names) - set(context.keys())
+                                if len(v) > 1:
                                     raise NameError("more than one unrecognized variable names in single-argument function: {0}".format(set(c.co_names) - set(context.keys())))
+                                elif len(v) == 0:
+                                    v = None
+                                else:
+                                    v = list(v)[0]
+
                                 varname[0] = v
 
-                            context.update({v: datum})
+                            if v is not None:
+                                context.update({v: datum})
 
                     return eval(c, context)
 

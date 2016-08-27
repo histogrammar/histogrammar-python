@@ -26,7 +26,7 @@ class Bag(Factory, Container):
 
     A bag is the appropriate data type for scatter plots: a container that collects raw values, maintaining multiplicity but not order. (A "bag" is also known as a "multiset.") Conceptually, it is a mapping from distinct raw values to the number of observations: when two instances of the same raw value are observed, one key is stored and their weights add.
 
-    Although the user-defined function may return scalar numbers, fixed-dimension vectors of numbers, or categorical strings, it may not mix types. Different Bag primitives in an analysis tree may collect different types.
+    Although the user-defined function may return scalar numbers, fixed-dimension vectors of numbers, or categorical strings, it may not mix range types. For the purposes of Label and Index (which can only collect aggregators of a single type), bags with different ranges are different types.
     """
 
     @staticmethod
@@ -317,6 +317,9 @@ class Bag(Factory, Container):
                 for v1i, v2i in zip(v1, v2):
                     if isinstance(v1i, numbers.Real) and isinstance(v2i, numbers.Real):
                         if not numeq(v1i, v2i):
+                            return False
+                    elif isinstance(v1i, basestring) and isinstance(v2i, basestring):
+                        if v1i != v2i:
                             return False
                     else:
                         return False
