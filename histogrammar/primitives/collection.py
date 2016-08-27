@@ -256,6 +256,10 @@ class Label(Factory, Container, Collection):
         contentType = list(pairs.values())[0].name
         if any(x.name != contentType for x in pairs.values()):
             raise ContainerException("all Label values must have the same type")
+        if contentType == "Bag":
+            rangeType = list(pairs.values())[0].range
+            if any(x.range != rangeType for x in pairs.values()):
+                raise ContainerException("all Label values must have the same type")
 
         self.entries = 0.0
         self.pairs = pairs
@@ -631,6 +635,10 @@ class Index(Factory, Container, Collection):
         contentType = values[0].name
         if any(x.name != contentType for x in values):
             raise ValueError("all Index values must have the same type")
+        if contentType == "Bag":
+            rangeType = values[0].range
+            if any(x.range != rangeType for x in values):
+                raise ValueError("all Index values must have the same type")
 
         self.entries = 0.0
         self.values = values
