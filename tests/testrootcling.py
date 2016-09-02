@@ -40,13 +40,13 @@ class TestRootCling(unittest.TestCase):
 
     try:
         import ROOT
-        ROOT.gInterpreter.AddIncludePath("test/Event.h")
-        ROOT.gInterpreter.ProcessLine(".L test/Event.cxx")
-        tfileFlat = ROOT.TFile("test/flat.root")
+        ROOT.gInterpreter.AddIncludePath("tests/Event.h")
+        ROOT.gInterpreter.ProcessLine(".L tests/Event.cxx")
+        tfileFlat = ROOT.TFile("tests/flat.root")
         ttreeFlat = tfileFlat.Get("simple")
-        tfileBig = ROOT.TFile("test/big.root")
+        tfileBig = ROOT.TFile("tests/big.root")
         ttreeBig = tfileBig.Get("big")
-        # tfileEvent = ROOT.TFile("test/Event.root")
+        # tfileEvent = ROOT.TFile("tests/Event.root")
         # ttreeEvent = tfileEvent.Get("T")
 
         for row in ttreeFlat:
@@ -58,6 +58,41 @@ class TestRootCling(unittest.TestCase):
 
     except ImportError:
         pass
+
+    def runTest(self):
+        self.testTiming()
+        self.testAAACount()
+        self.testAAASum()
+        self.testAAABin()
+        self.testAAASelect()
+        self.testSum()
+        self.testAverage()
+        self.testDeviate()
+        self.testMinimize()
+        self.testMaximize()
+        self.testBin()
+        self.testBinTrans()
+        self.testBinAverage()
+        self.testBinDeviate()
+        self.testSparselyBin()
+        self.testSparselyBinTrans()
+        self.testSparselyBinAverage()
+        self.testSparselyBinDeviate()
+        self.testCentrallyBin()
+        self.testCentrallyBinTrans()
+        self.testCentrallyBinAverage()
+        self.testCentrallyBinDeviate()
+        self.testCategorize()
+        self.testCategorizeTrans()
+        self.testFractionBin()
+        self.testStackBin()
+        self.testIrregularlyBinBin()
+        self.testSelectBin()
+        self.testLabelBin()
+        self.testUntypedLabelBin()
+        self.testIndexBin()
+        self.testBranchBin()
+        self.testBag()
 
     ################################################################ Timing
 
