@@ -44,7 +44,22 @@ class TestGPU(unittest.TestCase):
     nvcc = spawn.find_executable("nvcc")
 
     def runTest(self):
-        pass
+        self.testCount()
+        self.testSum()
+        self.testAverage()
+        self.testDeviate()
+        self.testMinimize()
+        self.testMaximize()
+        self.testBin()
+        self.testCentrallyBin()
+        self.testIrregularlyBin()
+        self.testStack()
+        self.testFraction()
+        self.testSelect()
+        self.testLabel()
+        self.testUntypedLabel()
+        self.testIndex()
+        self.testBranch()
 
     SIZE = 10000
     HOLES = 100

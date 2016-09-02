@@ -13,6 +13,7 @@ addons:
     packages:
       - python-numpy
       - python3-numpy
+      - python-setuptools
 
 install:
   - pip install --upgrade pip

@@ -15,30 +15,28 @@
 # limitations under the License.
 
 import sys
-from distutils.core import setup
-from distutils.cmd import Command
+from setuptools import setup, find_packages
 
 import histogrammar.version
 
-class TestCommand(Command):
-    user_options = []
-    def initialize_options(self): pass
-    def finalize_options(self): pass
-    def run(self):
-        import sys, subprocess
-        if sys.version_info[0] == 2 and sys.version_info[1] == 6:
-            args = ["-c", "import unittest; from test.testbasic import *; from test.testnumpy import *; from test.testrootcling import *; from test.testgpu import *; unittest.main()"]
-        else:
-            args = ["-m", "unittest", "-v", "test.testbasic", "test.testnumpy", "test.testrootcling", "test.testgpu"]
-        raise SystemExit(subprocess.call([sys.executable] + args))
-
-setup(name="Histogrammar",
-      version=histogrammar.version.__version__,
-      scripts=["scripts/hgwatch"],
-      description="Composable histogram primitives for distributed data reduction.",
-      author="Jim Pivarski (DIANA-HEP)",
-      author_email="pivarski@fnal.gov",
-      url="https://github.com/diana-hep/histogrammar",
-      cmdclass={"test": TestCommand},
-      packages=["histogrammar", "histogrammar.primitives", "histogrammar.plot", "histogrammar.pycparser", "histogrammar.pycparser.ply"],
+setup(name = "Histogrammar",
+      version = histogrammar.version.__version__,
+      packages = find_packages(),
+      scripts = ["scripts/hgwatch"],
+      description = "Composable histogram primitives for distributed data reduction.",
+      author = "Jim Pivarski (DIANA-HEP)",
+      author_email = "pivarski@fnal.gov",
+      url = "http://histogrammar.org",
+      license = "Apache Software License v2",
+      test_suite = "test",
+      install_requires = [],
+      tests_require = [],
+      classifiers = ["Development Status :: 5 - Production/Stable",
+                     "Environment :: Console",
+                     "Intended Audience :: Science/Research",
+                     "License :: OSI Approved :: Apache Software License",
+                     "Topic :: Scientific/Engineering :: Information Analysis",
+                     "Topic :: Scientific/Engineering :: Mathematics",
+                     "Topic :: Scientific/Engineering :: Physics",
+                     ],
       )

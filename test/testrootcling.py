@@ -59,6 +59,41 @@ class TestRootCling(unittest.TestCase):
     except ImportError:
         pass
 
+    def runTest(self):
+        self.testTiming()
+        self.testAAACount()
+        self.testAAASum()
+        self.testAAABin()
+        self.testAAASelect()
+        self.testSum()
+        self.testAverage()
+        self.testDeviate()
+        self.testMinimize()
+        self.testMaximize()
+        self.testBin()
+        self.testBinTrans()
+        self.testBinAverage()
+        self.testBinDeviate()
+        self.testSparselyBin()
+        self.testSparselyBinTrans()
+        self.testSparselyBinAverage()
+        self.testSparselyBinDeviate()
+        self.testCentrallyBin()
+        self.testCentrallyBinTrans()
+        self.testCentrallyBinAverage()
+        self.testCentrallyBinDeviate()
+        self.testCategorize()
+        self.testCategorizeTrans()
+        self.testFractionBin()
+        self.testStackBin()
+        self.testIrregularlyBinBin()
+        self.testSelectBin()
+        self.testLabelBin()
+        self.testUntypedLabelBin()
+        self.testIndexBin()
+        self.testBranchBin()
+        self.testBag()
+
     ################################################################ Timing
 
     def testTiming(self):
