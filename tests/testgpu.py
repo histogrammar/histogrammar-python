@@ -24,7 +24,7 @@ import unittest
 from distutils import spawn
 
 from histogrammar import *
-from test.testnumpy import makeSamples
+from tests.testnumpy import makeSamples
 
 tolerance = 1e-5
 util.relativeTolerance = tolerance
