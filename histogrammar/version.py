@@ -16,7 +16,7 @@
 
 import re
 
-__version__ = "1.0.0"
+__version__ = "1.0.2"
 
 version = __version__
 
