@@ -1,0 +1,17 @@
+======================================================================
+ERROR: testTiming (tests.testrootcling.TestRootCling)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/pivarski/diana/histogrammar-python/tests/testrootcling.py", line 265, in testTiming
+    hg.fill.numpy(table)
+  File "/home/pivarski/diana/histogrammar-python/histogrammar/defs.py", line 956, in fillnumpy
+    self._numpy(data, 1.0, [None])
+  File "/home/pivarski/diana/histogrammar-python/histogrammar/primitives/select.py", line 190, in _numpy
+    w = self.quantity(data)
+  File "/home/pivarski/diana/histogrammar-python/histogrammar/util.py", line 273, in __call__
+    return self.fcn(*args, **kwds)
+  File "/home/pivarski/diana/histogrammar-python/histogrammar/util.py", line 263, in function
+    return eval(c, context)
+  File "<string>", line 1, in <module>
+NameError: name 'logical_not' is not defined
+
