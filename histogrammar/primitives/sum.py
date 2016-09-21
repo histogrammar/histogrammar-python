@@ -15,8 +15,8 @@
 # limitations under the License.
 
 import json
-import numbers
 import math
+import numbers
 import struct
 
 from histogrammar.defs import *

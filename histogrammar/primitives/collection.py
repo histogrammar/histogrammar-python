@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import json
+import math
 import numbers
 import struct
 
@@ -727,10 +728,8 @@ class Index(Factory, Container, Collection):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
         else:
-            out = self.zero()
+            out = Index(*[x * factor for x in self.values])
             out.entries = factor * self.entries
-            for i, v in enumerate(self.values):
-                out.pairs[i] = v * factor
             return out.specialize()
 
     @inheritdoc(Container)
@@ -940,10 +939,8 @@ class Branch(Factory, Container, Collection):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
         else:
-            out = self.zero()
+            out = Branch(*[x * factor for x in self.values])
             out.entries = factor * self.entries
-            for i, v in enumerate(self.values):
-                out.pairs[i] = v * factor
             return out.specialize()
 
     @inheritdoc(Container)

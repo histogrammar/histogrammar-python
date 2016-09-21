@@ -159,15 +159,15 @@ class Container(object):
         raise NotImplementedError
 
     def __add__(self, other):
-        """Add two containers of the same type. The originals are unaffected. """
+        """Add two containers of the same type. The originals are unaffected."""
         raise NotImplementedError
 
     def __mul__(self, factor):
-        """Reweight the contents in all nested aggregators by a scalar factor, as though they had been filled with a different weight. The original is unaffected. """
+        """Reweight the contents in all nested aggregators by a scalar factor, as though they had been filled with a different weight. The original is unaffected."""
         raise NotImplementedError
 
     def __rmul__(self, factor):
-        """Reweight the contents in all nested aggregators by a scalar factor, as though they had been filled with a different weight. The original is unaffected. """
+        """Reweight the contents in all nested aggregators by a scalar factor, as though they had been filled with a different weight. The original is unaffected."""
         raise NotImplementedError
 
     def fill(self, datum, weight=1.0):

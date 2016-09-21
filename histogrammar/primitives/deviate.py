@@ -116,6 +116,8 @@ class Deviate(Factory, Container):
         else:
             out = self.zero()
             out.entries = factor * self.entries
+            out.mean = self.mean
+            out.varianceTimesEntries = factor * self.varianceTimesEntries
             return out.specialize()
 
     @inheritdoc(Container)

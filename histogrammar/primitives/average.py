@@ -94,6 +94,7 @@ class Average(Factory, Container):
         else:
             out = self.zero()
             out.entries = factor * self.entries
+            out.mean = self.mean
             return out.specialize()
 
     @inheritdoc(Container)

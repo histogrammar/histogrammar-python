@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import json
+import math
 import numbers
 import struct
 

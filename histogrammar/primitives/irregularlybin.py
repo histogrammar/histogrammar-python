@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import json
+import math
 import numbers
 import struct
 
@@ -121,8 +122,7 @@ class IrregularlyBin(Factory, Container):
         else:
             out = self.zero()
             out.entries = factor * self.entries
-            for i, (c, v) in enumerate(self.bins):
-                out.bins[i][1] = v * factor
+            out.bins = [(c, v * factor) for (c, v) in self.bins]
             out.nanflow = self.nanflow * factor
             return out.specialize()
 

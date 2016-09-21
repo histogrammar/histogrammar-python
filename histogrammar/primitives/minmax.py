@@ -85,6 +85,7 @@ class Minimize(Factory, Container):
         else:
             out = self.zero()
             out.entries = factor * self.entries
+            out.min = self.min
             return out.specialize()
 
     @inheritdoc(Container)
@@ -349,6 +350,7 @@ class Maximize(Factory, Container):
         else:
             out = self.zero()
             out.entries = factor * self.entries
+            out.max = self.max
             return out.specialize()
 
     @inheritdoc(Container)
