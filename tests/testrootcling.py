@@ -256,7 +256,7 @@ public:
                 table["boolean"][i] = row.boolean
                 table["noholes"][i] = row.noholes
 
-            hg = Select("logical_not(boolean)", Bin(100, -10, 10, "2 * noholes"))
+            hg = Select("np.logical_not(boolean)", Bin(100, -10, 10, "2 * noholes"))
 
             # print
             # print "Numpy first"

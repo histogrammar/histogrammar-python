@@ -162,6 +162,14 @@ class Container(object):
         """Add two containers of the same type. The originals are unaffected. """
         raise NotImplementedError
 
+    def __mul__(self, factor):
+        """Reweight the contents in all nested aggregators by a scalar factor, as though they had been filled with a different weight. The original is unaffected. """
+        raise NotImplementedError
+
+    def __rmul__(self, factor):
+        """Reweight the contents in all nested aggregators by a scalar factor, as though they had been filled with a different weight. The original is unaffected. """
+        raise NotImplementedError
+
     def fill(self, datum, weight=1.0):
         """Increment the aggregator by providing one ``datum`` to the fill rule with a given ``weight``.
       

@@ -83,6 +83,24 @@ class Count(Factory, Container):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __mul__(self, factor):
+        if self.transform != identity or \
+           not callable(self.transform.expr) or \
+           (hasattr(self.transform.expr, "func_code") and self.transform.expr.func_code.co_code != identity.expr.func_code.co_code) or \
+           (hasattr(self.transform.expr, "__code__") and self.transform.expr.__code__.co_code != identity.expr.__code__.co_code):
+            raise ContainerException("Cannot scalar-multiply Count with a non-identity transform.")
+        elif math.isnan(factor) or factor <= 0.0:
+            return self.zero()
+        else:
+            out = self.zero()
+            out.entries = factor * self.entries
+            return out.specialize()
+
+    @inheritdoc(Container)
+    def __rmul__(self, factor):
+        return self.__mul__(factor)
+
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
 
