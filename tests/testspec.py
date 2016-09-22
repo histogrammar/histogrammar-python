@@ -73,8 +73,9 @@ class TestSpec(unittest.TestCase):
                 stripNames(xi)
 
         for testresult in testresults:
-            testresult["expr"] = testresult["expr"].replace('"round(withholes)"', 'named("round(withholes)", lambda x: round(x["withholes"]) if math.isfinite(x["withholes"]) else x["withholes"])')
-            testresult["expr"] = testresult["expr"].replace('"[round(withholes), 2*round(withholes), 3*round(withholes)]"', 'named("[round(withholes), 2*round(withholes), 3*round(withholes)]", lambda x: [round(x["withholes"]), 2*round(x["withholes"]), 3*round(x["withholes"])] if math.isfinite(x["withholes"]) else [x["withholes"], x["withholes"], x["withholes"]])')
+            if hasattr(math, "isfinite"):
+                testresult["expr"] = testresult["expr"].replace('"round(withholes)"', 'named("round(withholes)", lambda x: round(x["withholes"]) if math.isfinite(x["withholes"]) else x["withholes"])')
+                testresult["expr"] = testresult["expr"].replace('"[round(withholes), 2*round(withholes), 3*round(withholes)]"', 'named("[round(withholes), 2*round(withholes), 3*round(withholes)]", lambda x: [round(x["withholes"]), 2*round(x["withholes"]), 3*round(x["withholes"])] if math.isfinite(x["withholes"]) else [x["withholes"], x["withholes"], x["withholes"]])')
 
             sys.stderr.write(testresult["expr"] + "\n")
 
