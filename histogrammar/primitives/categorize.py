@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
 import numbers
 
 from histogrammar.defs import *
@@ -140,6 +141,21 @@ class Categorize(Factory, Container):
 
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
+    def __mul__(self, factor):
+        if math.isnan(factor) or factor <= 0.0:
+            return self.zero()
+        else:
+            out = self.zero()
+            out.entries = factor * self.entries
+            for k, v in self.bins.items():
+                out.bins[k] = v * factor
+            return out.specialize()
+
+    @inheritdoc(Container)
+    def __rmul__(self, factor):
+        return self.__mul__(factor)
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):

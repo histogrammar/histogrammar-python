@@ -78,6 +78,20 @@ class Minimize(Factory, Container):
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
+    @inheritdoc(Container)
+    def __mul__(self, factor):
+        if math.isnan(factor) or factor <= 0.0:
+            return self.zero()
+        else:
+            out = self.zero()
+            out.entries = factor * self.entries
+            out.min = self.min
+            return out.specialize()
+
+    @inheritdoc(Container)
+    def __rmul__(self, factor):
+        return self.__mul__(factor)
+
     @property
     def children(self):
         """List of sub-aggregators, to make it possible to walk the tree."""
@@ -328,6 +342,20 @@ class Maximize(Factory, Container):
             return out.specialize()
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
+    def __mul__(self, factor):
+        if math.isnan(factor) or factor <= 0.0:
+            return self.zero()
+        else:
+            out = self.zero()
+            out.entries = factor * self.entries
+            out.max = self.max
+            return out.specialize()
+
+    @inheritdoc(Container)
+    def __rmul__(self, factor):
+        return self.__mul__(factor)
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):

@@ -159,7 +159,15 @@ class Container(object):
         raise NotImplementedError
 
     def __add__(self, other):
-        """Add two containers of the same type. The originals are unaffected. """
+        """Add two containers of the same type. The originals are unaffected."""
+        raise NotImplementedError
+
+    def __mul__(self, factor):
+        """Reweight the contents in all nested aggregators by a scalar factor, as though they had been filled with a different weight. The original is unaffected."""
+        raise NotImplementedError
+
+    def __rmul__(self, factor):
+        """Reweight the contents in all nested aggregators by a scalar factor, as though they had been filled with a different weight. The original is unaffected."""
         raise NotImplementedError
 
     def fill(self, datum, weight=1.0):
@@ -301,6 +309,8 @@ public:
   }}
 
   void fillall(TTree* ttree, Long64_t start, Long64_t end) {{
+    ttree->SetBranchStatus("*", 0);
+{11}
     init();
 {8}
     if (start < 0) start = 0;
@@ -323,7 +333,8 @@ public:
            "\n".join(initCode),
            "".join("    ttree->SetBranchAddress(" + jsonlib.dumps(key) + ", &" + n + ");\n" for n, key in inputFieldNames.items()),
            "".join(x for x in derivedFieldExprs.values()),
-           "\n".join(fillCode))
+           "\n".join(fillCode),
+           "".join("    ttree->SetBranchStatus(\"" + key + "\", 1);\n" for key in inputFieldNames.values()))
 
             if debug:
                 print("line |")

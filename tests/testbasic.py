@@ -21,6 +21,10 @@ import unittest
 
 from histogrammar import *
 
+tolerance = 1e-12
+util.relativeTolerance = tolerance
+util.absoluteTolerance = tolerance
+
 class TestBasic(unittest.TestCase):
     simple = [3.4, 2.2, -1.8, 0.0, 7.3, -4.7, 1.6, 0.0, -3.0, -1.7]
 
@@ -94,6 +98,21 @@ class TestBasic(unittest.TestCase):
         else:
             return sum(abs(xi) * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ > 0.0 for _ in w)
 
+    def checkScaling(self, x):
+        self.assertEqual(x * 0, x.zero())
+        self.assertEqual(x * 0.0, x.zero())
+        self.assertEqual(x * 1, x)
+        self.assertEqual(x * 1.0, x)
+        self.assertEqual(x * 2, x + x)
+        self.assertEqual(x * 2.0, x + x)
+
+        self.assertEqual(0 * x, x.zero())
+        self.assertEqual(0.0 * x, x.zero())
+        self.assertEqual(1 * x, x)
+        self.assertEqual(1.0 * x, x)
+        self.assertEqual(2 * x, x + x)
+        self.assertEqual(2.0 * x, x + x)
+
     def checkJson(self, x):
         self.assertEqual(x.toJson(), Factory.fromJson(x.toJson()).toJson())
 
@@ -166,6 +185,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertEqual(finalResult.entries, len(self.simple))
 
+            self.checkScaling(leftCounting)
+            self.checkScaling(leftCounting.toImmutable())
             self.checkJson(leftCounting)
             self.checkPickle(leftCounting)
             self.checkName(leftCounting)
@@ -187,8 +208,11 @@ class TestBasic(unittest.TestCase):
 
             self.assertEqual(finalResult.cut.entries, len(list(filter(lambda x: x > 0.0, self.simple))))
 
+            self.checkScaling(leftCounting)
+            self.checkScaling(leftCounting.toImmutable())
             self.checkJson(leftCounting)
-            self.checkJson(leftCounting)
+            self.checkPickle(leftCounting)
+            self.checkName(leftCounting)
 
     ################################################################ Sum
 
@@ -209,6 +233,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.sum, sum(self.simple))
 
+            self.checkScaling(leftSumming)
+            self.checkScaling(leftSumming.toImmutable())
             self.checkJson(leftSumming)
             self.checkPickle(leftSumming)
             self.checkName(leftSumming)
@@ -230,8 +256,11 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.cut.sum, sum(_.double for _ in self.struct if _.bool))
 
+            self.checkScaling(leftSumming)
+            self.checkScaling(leftSumming.toImmutable())
             self.checkJson(leftSumming)
-            self.checkJson(leftSumming)
+            self.checkPickle(leftSumming)
+            self.checkName(leftSumming)
 
     def testSumWithWeightingFactor(self):
         for i in xrange(11):
@@ -250,6 +279,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.cut.sum, sum(_.double * _.int for _ in self.struct if _.int > 0))
 
+            self.checkScaling(leftSumming)
+            self.checkScaling(leftSumming.toImmutable())
             self.checkJson(leftSumming)
             self.checkPickle(leftSumming)
             self.checkName(leftSumming)
@@ -271,6 +302,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.sum, sum(self.simple) + len(self.simple))
 
+            self.checkScaling(leftSumming)
+            self.checkScaling(leftSumming.toImmutable())
             self.checkJson(leftSumming)
             self.checkPickle(leftSumming)
             self.checkName(leftSumming)
@@ -292,6 +325,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.cut.sum, sum(_.double + 1 for _ in self.struct if not _.bool))
 
+            self.checkScaling(leftSumming)
+            self.checkScaling(leftSumming.toImmutable())
             self.checkJson(leftSumming)
             self.checkPickle(leftSumming)
             self.checkName(leftSumming)
@@ -313,6 +348,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.cut.sum, sum(_.double * 2 * _.int for _ in self.struct if _.int > 0))
 
+            self.checkScaling(leftSumming)
+            self.checkScaling(leftSumming.toImmutable())
             self.checkJson(leftSumming)
             self.checkPickle(leftSumming)
             self.checkName(leftSumming)
@@ -343,6 +380,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.mean, self.mean(self.simple))
 
+            self.checkScaling(leftAveraging)
+            self.checkScaling(leftAveraging.toImmutable())
             self.checkJson(leftAveraging)
             self.checkPickle(leftAveraging)
             self.checkName(leftAveraging)
@@ -370,6 +409,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.cut.mean, self.mean([_.double for _ in self.struct if _.bool]))
 
+            self.checkScaling(leftAveraging)
+            self.checkScaling(leftAveraging.toImmutable())
             self.checkJson(leftAveraging)
             self.checkPickle(leftAveraging)
             self.checkName(leftAveraging)
@@ -398,6 +439,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.cut.mean, self.meanWeighted(list(map(lambda _: _.double, self.struct)), list(map(lambda _: _.int, self.struct))))
 
+            self.checkScaling(leftAveraging)
+            self.checkScaling(leftAveraging.toImmutable())
             self.checkJson(leftAveraging)
             self.checkPickle(leftAveraging)
             self.checkName(leftAveraging)
@@ -432,6 +475,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.variance, self.variance(self.simple))
 
+            self.checkScaling(leftDeviating)
+            self.checkScaling(leftDeviating.toImmutable())
             self.checkJson(leftDeviating)
             self.checkPickle(leftDeviating)
             self.checkName(leftDeviating)
@@ -464,6 +509,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.cut.variance, self.variance([_.double for _ in self.struct if _.bool]))
 
+            self.checkScaling(leftDeviating)
+            self.checkScaling(leftDeviating.toImmutable())
             self.checkJson(leftDeviating)
             self.checkPickle(leftDeviating)
             self.checkName(leftDeviating)
@@ -496,6 +543,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.cut.variance, self.varianceWeighted(list(map(lambda _: _.double, self.struct)), list(map(lambda _: _.int, self.struct))))
 
+            self.checkScaling(leftDeviating)
+            self.checkScaling(leftDeviating.toImmutable())
             self.checkJson(leftDeviating)
             self.checkPickle(leftDeviating)
             self.checkName(leftDeviating)
@@ -526,6 +575,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.min, min(self.simple))
 
+            self.checkScaling(leftMinimizing)
+            self.checkScaling(leftMinimizing.toImmutable())
             self.checkJson(leftMinimizing)
             self.checkPickle(leftMinimizing)
             self.checkName(leftMinimizing)
@@ -556,6 +607,8 @@ class TestBasic(unittest.TestCase):
 
             self.assertAlmostEqual(finalResult.max, max(self.simple))
 
+            self.checkScaling(leftMaximizing)
+            self.checkScaling(leftMaximizing.toImmutable())
             self.checkJson(leftMaximizing)
             self.checkPickle(leftMaximizing)
             self.checkName(leftMaximizing)
@@ -575,14 +628,20 @@ class TestBasic(unittest.TestCase):
         for _ in self.struct: three.fill(_)
         self.assertEqual(three.values, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
 
+        self.checkScaling(one)
+        self.checkScaling(one.toImmutable())
         self.checkJson(one)
-        self.checkJson(two)
-        self.checkJson(three)
         self.checkPickle(one)
-        self.checkPickle(two)
-        self.checkPickle(three)
         self.checkName(one)
+        self.checkScaling(two)
+        self.checkScaling(two.toImmutable())
+        self.checkJson(two)
+        self.checkPickle(two)
         self.checkName(two)
+        self.checkScaling(three)
+        self.checkScaling(three.toImmutable())
+        self.checkJson(three)
+        self.checkPickle(three)
         self.checkName(three)
 
     ################################################################ Bin
@@ -603,11 +662,15 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(two.cut.overflow.entries, 0.0)
         self.assertEqual(two.cut.nanflow.entries, 0.0)
 
+        self.checkScaling(one)
+        self.checkScaling(one.toImmutable())
         self.checkJson(one)
-        self.checkJson(two)
         self.checkPickle(one)
-        self.checkPickle(two)
         self.checkName(one)
+        self.checkScaling(two)
+        self.checkScaling(two.toImmutable())
+        self.checkJson(two)
+        self.checkPickle(two)
         self.checkName(two)
 
     def testBinWithSum(self):
@@ -626,11 +689,15 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(two.cut.overflow.sum, 0.0)
         self.assertEqual(two.cut.nanflow.sum, 0.0)
 
+        self.checkScaling(one)
+        self.checkScaling(one.toImmutable())
         self.checkJson(one)
-        self.checkJson(two)
         self.checkPickle(one)
-        self.checkPickle(two)
         self.checkName(one)
+        self.checkScaling(two)
+        self.checkScaling(two.toImmutable())
+        self.checkJson(two)
+        self.checkPickle(two)
         self.checkName(two)
 
     def testHistogram(self):
@@ -649,11 +716,15 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(two.numericalOverflow, 0.0)
         self.assertEqual(two.numericalNanflow, 0.0)
 
+        self.checkScaling(one)
+        self.checkScaling(one.toImmutable())
         self.checkJson(one)
-        self.checkJson(two)
         self.checkPickle(one)
-        self.checkPickle(two)
         self.checkName(one)
+        self.checkScaling(two)
+        self.checkScaling(two.toImmutable())
+        self.checkJson(two)
+        self.checkPickle(two)
         self.checkName(two)
 
     def testPlotHistogram(self):
@@ -721,6 +792,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(one.low, -5.0)
         self.assertEqual(one.high, 8.0)
 
+        self.checkScaling(one)
+        self.checkScaling(one.toImmutable())
         self.checkJson(one)
         self.checkPickle(one)
         self.checkName(one)
@@ -728,6 +801,8 @@ class TestBasic(unittest.TestCase):
         two = SparselyBin(1.0, named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
         for _ in self.simple: two.fill(_)
 
+        self.checkScaling(two)
+        self.checkScaling(two.toImmutable())
         self.checkJson(two)
         self.checkPickle(two)
         self.checkName(two)
@@ -748,12 +823,16 @@ class TestBasic(unittest.TestCase):
 
         self.assertEqual([(c, v.entries) for c, v in one.bins], [(-3.0,2.0), (-1.0,2.0), (0.0,2.0), (1.0,1.0), (3.0,2.0), (10.0,1.0)])
 
+        self.checkScaling(one)
+        self.checkScaling(one.toImmutable())
         self.checkJson(one)
         self.checkPickle(one)
         self.checkName(one)
 
         two = CentrallyBin([-3.0, -1.0, 0.0, 1.0, 3.0, 10.0], named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
 
+        self.checkScaling(two)
+        self.checkScaling(two.toImmutable())
         self.checkJson(two)
         self.checkPickle(two)
         self.checkName(two)
@@ -767,6 +846,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(fracking.numerator.entries, 4.0)
         self.assertEqual(fracking.denominator.entries, 10.0)
 
+        self.checkScaling(fracking)
+        self.checkScaling(fracking.toImmutable())
         self.checkJson(fracking)
         self.checkPickle(fracking)
         self.checkName(fracking)
@@ -778,6 +859,8 @@ class TestBasic(unittest.TestCase):
         self.assertAlmostEqual(fracking.numerator.sum, 14.5)
         self.assertAlmostEqual(fracking.denominator.sum, 3.3)
 
+        self.checkScaling(fracking)
+        self.checkScaling(fracking.toImmutable())
         self.checkJson(fracking)
         self.checkPickle(fracking)
         self.checkName(fracking)
@@ -789,6 +872,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(fracking.numerator.numericalValues, [0.0, 0.0, 2.0, 1.0, 0.0])
         self.assertEqual(fracking.denominator.numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0])
 
+        self.checkScaling(fracking)
+        self.checkScaling(fracking.toImmutable())
         self.checkJson(fracking)
         self.checkPickle(fracking)
         self.checkName(fracking)
@@ -801,6 +886,8 @@ class TestBasic(unittest.TestCase):
 
         self.assertEqual([(k, v.entries) for k, v in stacking.bins], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
 
+        self.checkScaling(stacking)
+        self.checkScaling(stacking.toImmutable())
         self.checkJson(stacking)
         self.checkPickle(stacking)
         self.checkName(stacking)
@@ -811,6 +898,8 @@ class TestBasic(unittest.TestCase):
 
         self.assertEqual([(k, v.entries) for k, v in stacking.bins], [(float("-inf"), 10.0), (0.0, 6.0), (2.0, 3.0), (4.0, 1.0), (6.0, 1.0), (8.0, 0.0)])
 
+        self.checkScaling(stacking)
+        self.checkScaling(stacking.toImmutable())
         self.checkJson(stacking)
         self.checkPickle(stacking)
         self.checkName(stacking)
@@ -823,6 +912,8 @@ class TestBasic(unittest.TestCase):
 
         self.assertEqual([(k, v.entries) for k, v in partitioning.bins], [(float("-inf"), 4.0), (0.0, 3.0), (2.0, 2.0), (4.0, 0.0), (6.0, 1.0), (8.0, 0.0)])
 
+        self.checkScaling(partitioning)
+        self.checkScaling(partitioning.toImmutable())
         self.checkJson(partitioning)
         self.checkPickle(partitioning)
         self.checkName(partitioning)
@@ -834,6 +925,8 @@ class TestBasic(unittest.TestCase):
         self.assertAlmostEqual(partitioning.bins[0][1].sum, -11.2)
         self.assertAlmostEqual(partitioning.bins[1][1].sum, 1.6)
 
+        self.checkScaling(partitioning)
+        self.checkScaling(partitioning.toImmutable())
         self.checkJson(partitioning)
         self.checkPickle(partitioning)
         self.checkName(partitioning)
@@ -846,6 +939,8 @@ class TestBasic(unittest.TestCase):
 
         self.assertEqual(dict((k, v.entries) for k, v in categorizing.binsMap.items()), {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
 
+        self.checkScaling(categorizing)
+        self.checkScaling(categorizing.toImmutable())
         self.checkJson(categorizing)
         self.checkPickle(categorizing)
         self.checkName(categorizing)
@@ -853,6 +948,8 @@ class TestBasic(unittest.TestCase):
         categorizing2 = Categorize(named("something", lambda x: x.string[0]), Sum(named("elsie", lambda x: x.double)))
         for _ in self.struct: categorizing2.fill(_)
 
+        self.checkScaling(categorizing2)
+        self.checkScaling(categorizing2.toImmutable())
         self.checkJson(categorizing2)
         self.checkPickle(categorizing2)
         self.checkName(categorizing2)
@@ -872,6 +969,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(labeling("two").numericalValues, [2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0])
         self.assertEqual(labeling("three").numericalValues, [0.0, 2.0, 0.0, 2.0, 1.0])
 
+        self.checkScaling(labeling)
+        self.checkScaling(labeling.toImmutable())
         self.checkJson(labeling)
         self.checkPickle(labeling)
         self.checkName(labeling)
@@ -889,6 +988,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(labeling("two").numericalValues, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0])
         self.assertEqual(labeling("three").numericalValues, [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 0.0, 0.0, 0.0])
 
+        self.checkScaling(labeling)
+        self.checkScaling(labeling.toImmutable())
         self.checkJson(labeling)
         self.checkPickle(labeling)
         self.checkName(labeling)
@@ -908,6 +1009,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(labeling("two").numericalValues, [2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0])
         self.assertEqual(labeling("three").numericalValues, [0.0, 2.0, 0.0, 2.0, 1.0])
 
+        self.checkScaling(labeling)
+        self.checkScaling(labeling.toImmutable())
         self.checkJson(labeling)
         self.checkPickle(labeling)
         self.checkName(labeling)
@@ -925,6 +1028,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(labeling("two").numericalValues, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0])
         self.assertEqual(labeling("three").numericalValues, [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 0.0, 0.0, 0.0])
 
+        self.checkScaling(labeling)
+        self.checkScaling(labeling.toImmutable())
         self.checkJson(labeling)
         self.checkPickle(labeling)
         self.checkName(labeling)
@@ -944,6 +1049,8 @@ class TestBasic(unittest.TestCase):
         self.assertAlmostEqual(mapping("three").mean, 100.33)
         self.assertAlmostEqual(mapping("three").variance, 10.8381)
 
+        self.checkScaling(mapping)
+        self.checkScaling(mapping.toImmutable())
         self.checkJson(mapping)
         self.checkPickle(mapping)
         self.checkName(mapping)
@@ -963,6 +1070,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(indexing(1).numericalValues, [2.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0])
         self.assertEqual(indexing(2).numericalValues, [0.0, 2.0, 0.0, 2.0, 1.0])
 
+        self.checkScaling(indexing)
+        self.checkScaling(indexing.toImmutable())
         self.checkJson(indexing)
         self.checkPickle(indexing)
         self.checkName(indexing)
@@ -980,6 +1089,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(indexing(1).numericalValues, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0])
         self.assertEqual(indexing(2).numericalValues, [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 0.0, 0.0, 0.0])
 
+        self.checkScaling(indexing)
+        self.checkScaling(indexing.toImmutable())
         self.checkJson(indexing)
         self.checkPickle(indexing)
         self.checkName(indexing)
@@ -1006,6 +1117,8 @@ class TestBasic(unittest.TestCase):
         self.assertAlmostEqual(branching.i2.mean, 100.33)
         self.assertAlmostEqual(branching.i2.variance, 10.8381)
 
+        self.checkScaling(branching)
+        self.checkScaling(branching.toImmutable())
         self.checkJson(branching)
         self.checkPickle(branching)
         self.checkName(branching)

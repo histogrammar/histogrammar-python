@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import json
+import math
 import numbers
 import struct
 
@@ -319,6 +320,21 @@ class Label(Factory, Container, Collection):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __mul__(self, factor):
+        if math.isnan(factor) or factor <= 0.0:
+            return self.zero()
+        else:
+            out = self.zero()
+            out.entries = factor * self.entries
+            for k, v in self.pairs.items():
+                out.pairs[k] = v * factor
+            return out.specialize()
+
+    @inheritdoc(Container)
+    def __rmul__(self, factor):
+        return self.__mul__(factor)
+
+    @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
         self._checkForCrossReferences()
 
@@ -500,6 +516,21 @@ class UntypedLabel(Factory, Container, Collection):
 
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
+    def __mul__(self, factor):
+        if math.isnan(factor) or factor <= 0.0:
+            return self.zero()
+        else:
+            out = self.zero()
+            out.entries = factor * self.entries
+            for k, v in self.pairs.items():
+                out.pairs[k] = v * factor
+            return out.specialize()
+
+    @inheritdoc(Container)
+    def __rmul__(self, factor):
+        return self.__mul__(factor)
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -691,6 +722,19 @@ class Index(Factory, Container, Collection):
 
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
+    def __mul__(self, factor):
+        if math.isnan(factor) or factor <= 0.0:
+            return self.zero()
+        else:
+            out = Index(*[x * factor for x in self.values])
+            out.entries = factor * self.entries
+            return out.specialize()
+
+    @inheritdoc(Container)
+    def __rmul__(self, factor):
+        return self.__mul__(factor)
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -889,6 +933,19 @@ class Branch(Factory, Container, Collection):
 
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
+    def __mul__(self, factor):
+        if math.isnan(factor) or factor <= 0.0:
+            return self.zero()
+        else:
+            out = Branch(*[x * factor for x in self.values])
+            out.entries = factor * self.entries
+            return out.specialize()
+
+    @inheritdoc(Container)
+    def __rmul__(self, factor):
+        return self.__mul__(factor)
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
