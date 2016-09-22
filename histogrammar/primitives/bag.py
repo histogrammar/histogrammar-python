@@ -239,9 +239,31 @@ class Bag(Factory, Container):
 
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
-        aslist = sorted(x for x in self.values.items() if x[0] != "nan")
-        if "nan" in self.values:
-            aslist.append(("nan", self.values["nan"]))
+        if self.range == "N":
+            aslist = sorted(x for x in self.values.items() if x[0] != "nan")
+            if "nan" in self.values:
+                aslist.append(("nan", self.values["nan"]))
+
+        elif self.range[0] == "N":
+            class Sorter(object):
+                def __init__(self, x):
+                    self.x = x
+                def __lt__(self, other):
+                    for xi, yi in zip(self.x, other.x):
+                        if isinstance(xi, str) and isinstance(yi, float):
+                            return False
+                        elif isinstance(xi, float) and isinstance(yi, str):
+                            return True
+                        elif xi < yi:
+                            return True
+                        elif xi > yi:
+                            return False
+                    return False
+            aslist = sorted((x for x in self.values.items()), key=lambda y: tuple(Sorter(z) for z in y))
+
+        else:
+            aslist = sorted(x for x in self.values.items())
+
         return maybeAdd({
             "entries": floatToJson(self.entries),
             "values": [{"w": floatToJson(n), "v": rangeToJson(v)} for v, n in aslist],
@@ -318,8 +340,34 @@ class Bag(Factory, Container):
         if len(self.values) != len(other.values):
             return False
 
-        one = sorted(x for x in self.values.items() if x[0] != "nan") + [("nan", self.values.get("nan"))]
-        two = sorted(x for x in other.values.items() if x[0] != "nan") + [("nan", other.values.get("nan"))]
+        if self.range != other.range:
+            return False
+
+        if self.range == "N":
+            one = sorted(x for x in self.values.items() if x[0] != "nan") + [("nan", self.values.get("nan"))]
+            two = sorted(x for x in other.values.items() if x[0] != "nan") + [("nan", other.values.get("nan"))]
+
+        elif self.range[0] == "N":
+            class Sorter(object):
+                def __init__(self, x):
+                    self.x = x
+                def __lt__(self, other):
+                    for xi, yi in zip(self.x, other.x):
+                        if isinstance(xi, str) and isinstance(yi, float):
+                            return False
+                        elif isinstance(xi, float) and isinstance(yi, str):
+                            return True
+                        elif xi < yi:
+                            return True
+                        elif xi > yi:
+                            return False
+                    return False
+            one = sorted((x for x in self.values.items()), key=lambda y: tuple(Sorter(z) for z in y))
+            two = sorted((x for x in other.values.items()), key=lambda y: tuple(Sorter(z) for z in y))
+
+        else:
+            one = sorted(x for x in self.values.items())
+            two = sorted(x for x in other.values.items())
 
         for (v1, w1), (v2, w2) in zip(one, two):
             if isinstance(v1, basestring) and isinstance(v2, basestring):
@@ -349,7 +397,7 @@ class Bag(Factory, Container):
             else:
                 return False
 
-        return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.range == other.range
+        return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries)
 
     def __ne__(self, other): return not self == other
 
