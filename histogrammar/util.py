@@ -37,7 +37,7 @@ def inheritdoc(cls):
     return _fn
 
 
-################################################################ attach sub-methods to the fill method
+################################################################ attach sub-methods to the fill and plot methods
 
 class FillMethod(object):
     def __init__(self, container, fill):
@@ -48,6 +48,19 @@ class FillMethod(object):
         self.numpy = container.fillnumpy
     def __call__(self, *args, **kwds):
         return self.fill(*args, **kwds)
+
+class PlotMethod(object):
+    def __init__(self, container, plot):
+        self.container = container
+        self.plot = plot
+        if hasattr(container, "plotroot"):
+            self.root = container.plotroot
+        if hasattr(container, "plotbokeh"):
+            self.bokeh = container.plotbokeh
+        if hasattr(container, "plotmatplotlib"):
+            self.matplotlib = container.plotmatplotlib
+    def __call__(self, *args, **kwds):
+        return self.plot(*args, **kwds)
 
 ################################################################ handling key set comparisons with optional keys
 

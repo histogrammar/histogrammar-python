@@ -738,8 +738,8 @@ class TestBasic(unittest.TestCase):
             if sys.version_info[0] == 2 and sys.version_info[1] == 6:
                 raise ImportError   # Bokeh is not compatible with Python 2.6
             from histogrammar.plot.bokeh import plot,save,view
-            glyph1 = one.bokeh("histogram")
-            glyph2 = two.bokeh()
+            glyph1 = one.plot.bokeh("histogram")
+            glyph2 = two.plot.bokeh()
             c = plot(glyph1,glyph2)
             save(c,"plot_histogram.html")
             #self.checkHtml("example.html")
@@ -754,7 +754,7 @@ class TestBasic(unittest.TestCase):
             if sys.version_info[0] == 2 and sys.version_info[1] == 6:
                 raise ImportError   # Bokeh is not compatible with Python 2.6
             from histogrammar.plot.bokeh import plot,save,view
-            glyph = one.bokeh("errors")
+            glyph = one.plot.bokeh("errors")
             c = plot(glyph)
             save(c,"plot_errors.html")
             #self.checkHtml("example.html")
@@ -773,7 +773,7 @@ class TestBasic(unittest.TestCase):
                 raise ImportError   # Bokeh is not compatible with Python 2.6
             from histogrammar.plot.bokeh import plot,save,view
             s = Stack.build(one,two)
-            glyph = s.bokeh()
+            glyph = s.plot.bokeh()
             c = plot(glyph)
             save(c,"plot_stack.html")
             #self.checkHtml("example.html")

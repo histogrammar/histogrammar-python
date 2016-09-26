@@ -41,7 +41,7 @@ def set2Dsparse(sparse, yminBin, ymaxBin, grid):
     return grid
 
 class HistogramMethods(object):
-    def matplotlib(self, name=None, **kwargs):
+    def plotmatplotlib(self, name=None, **kwargs):
         """
             name : title of the plot.
             kwargs :  `matplotlib.patches.Rectangle` properties.
@@ -68,7 +68,7 @@ class HistogramMethods(object):
         return ax
 
 class SparselyHistogramMethods(object):
-    def matplotlib(self, name=None, **kwargs):
+    def plotmatplotlib(self, name=None, **kwargs):
         """
             name : title of the plot.
             kwargs :  `matplotlib.patches.Rectangle` properties.
@@ -95,7 +95,7 @@ class SparselyHistogramMethods(object):
         return ax
 
 class ProfileMethods(object):
-    def matplotlib(self, name=None, **kwargs):
+    def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for Bin of Average
               name : title of the plot.
               kwargs : matplotlib.collections.LineCollection properties.
@@ -120,7 +120,7 @@ class ProfileMethods(object):
         return ax
 
 class SparselyProfileMethods(object):
-    def matplotlib(self, name=None, **kwargs):
+    def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for SparselyBin of Average
               name : title of the plot.
               kwargs : matplotlib.collections.LineCollection properties.
@@ -150,7 +150,7 @@ class SparselyProfileMethods(object):
         return ax
 
 class ProfileErrMethods(object):
-    def matplotlib(self, name=None, aspect=True, **kwargs):
+    def plotmatplotlib(self, name=None, aspect=True, **kwargs):
         """ Plotting method for Bin of Deviate
               name : title of the plot.
               aspect :
@@ -189,7 +189,7 @@ class ProfileErrMethods(object):
         return ax
 
 class SparselyProfileErrMethods(object):
-    def matplotlib(self, name=None, aspect=True, **kwargs):
+    def plotmatplotlib(self, name=None, aspect=True, **kwargs):
         """ Plotting method for
         """
         import matplotlib.pyplot as plt
@@ -235,7 +235,7 @@ class SparselyProfileErrMethods(object):
         return ax
 
 class StackedHistogramMethods(object):
-    def matplotlib(self, name=None, **kwargs):
+    def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for
         """
         import matplotlib.pyplot as plt
@@ -247,7 +247,7 @@ class StackedHistogramMethods(object):
 
         for i, hist in enumerate(self.values):
             color = color_cycle[i]
-            hist.matplotlib(color=color, label=hist.name, **kwargs)
+            hist.plotmatplotlib(color=color, label=hist.name, **kwargs)
             color_cycle.append(color)
 
         if name is not None:
@@ -257,7 +257,7 @@ class StackedHistogramMethods(object):
         return ax
 
 class PartitionedHistogramMethods(object):
-    def matplotlib(self, name=None, **kwargs):
+    def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for
         """
         import matplotlib.pyplot as plt
@@ -269,7 +269,7 @@ class PartitionedHistogramMethods(object):
 
         for i, hist in enumerate(self.values):
             color = color_cycle[i]
-            hist.matplotlib(color=color, label=hist.name, **kwargs)
+            hist.plotmatplotlib(color=color, label=hist.name, **kwargs)
             color_cycle.append(color)
 
         if name is not None:
@@ -279,7 +279,7 @@ class PartitionedHistogramMethods(object):
         return ax
 
 class FractionedHistogramMethods(object):
-    def matplotlib(self, name=None, **kwargs):
+    def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for
         """
         import matplotlib.pyplot as plt
@@ -319,7 +319,7 @@ class FractionedHistogramMethods(object):
         return ax
 
 class TwoDimensionallyHistogramMethods(object):
-    def matplotlib(self, name=None, **kwargs):
+    def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for Bin of Bin of Count
               name : title of the plot.
               kwargs: matplotlib.collections.QuadMesh properties.
@@ -350,7 +350,7 @@ class TwoDimensionallyHistogramMethods(object):
 
 
 class SparselyTwoDimensionallyHistogramMethods(object):
-    def matplotlib(self, name=None, **kwargs):
+    def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for SparselyBin of SparselyBin of Count
               name : title of the plot.
               kwargs: matplotlib.collections.QuadMesh properties.
