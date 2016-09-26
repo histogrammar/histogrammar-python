@@ -97,6 +97,7 @@ class Factory(object):
         except (ImportError, AttributeError):
             pass
         self.fill = FillMethod(self, self.fill)
+        self.plot = PlotMethod(self, self.plot)
         return self
 
     @staticmethod
@@ -179,14 +180,20 @@ class Container(object):
         """
         raise NotImplementedError
 
+    def plot(self, httpServer=None, **parameters):
+        """Generate a VEGA visualization and serve it via HTTP."""
+        raise NotImplementedError
+
     def __getstate__(self):
         state = dict(self.__dict__)
         del state["fill"]
+        del state["plot"]
         return state
 
     def __setstate__(self, dict):
         self.__dict__ = dict
         self.fill = FillMethod(self, self.fill)
+        self.plot = PlotMethod(self, self.plot)
 
     def copy(self):
         """Copy this container, making a clone with no reference to the original. """

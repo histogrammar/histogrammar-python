@@ -67,7 +67,7 @@ def setTH2sparse(sparse, yminBin, ymaxBin, th2):
 # "Public" methods; what we want to attach to the Histogram as a mix-in.
 
 class HistogramMethods(object):
-    def root(self, name, title="", binType="D"):
+    def plotroot(self, name, title="", binType="D"):
         import ROOT
         constructor = getattr(ROOT, "TH1" + binType)
         th1 = constructor(name, title, len(self.values), self.low, self.high)
@@ -75,7 +75,7 @@ class HistogramMethods(object):
         return th1
 
 class SparselyHistogramMethods(object):
-    def root(self, name, title="", binType="D"):
+    def plotroot(self, name, title="", binType="D"):
         import ROOT
         constructor = getattr(ROOT, "TH1" + binType)
         if self.minBin is None or self.maxBin is None:
@@ -87,7 +87,7 @@ class SparselyHistogramMethods(object):
         return th1
 
 class ProfileMethods(object):
-    def root(self, name, title=""):
+    def plotroot(self, name, title=""):
         import ROOT
         tprofile = ROOT.TProfile(name, title, len(self.values), self.low, self.high)
         tprofile.SetBinContent(0, self.underflow.entries*self.underflow.entries)
@@ -103,7 +103,7 @@ class ProfileMethods(object):
         return tprofile
 
 class SparselyProfileMethods(object):
-    def root(self, name, title=""):
+    def plotroot(self, name, title=""):
         import ROOT
         if self.minBin is None or self.maxBin is None:
             tprofile = ROOT.TProfile(name, title, 1, self.origin, self.origin + 1.0)
@@ -124,7 +124,7 @@ class SparselyProfileMethods(object):
         return tprofile
 
 class ProfileErrMethods(object):
-    def root(self, name, title=""):
+    def plotroot(self, name, title=""):
         import ROOT
         tprofile = ROOT.TProfile(name, title, len(self.values), self.low, self.high)
         tprofile.SetBinContent(0, self.underflow.entries*self.underflow.entries)
@@ -140,7 +140,7 @@ class ProfileErrMethods(object):
         return tprofile
 
 class SparselyProfileErrMethods(object):
-    def root(self, name, title=""):
+    def plotroot(self, name, title=""):
         import ROOT
         if self.minBin is None or self.maxBin is None:
             tprofile = ROOT.TProfile(name, title, 1, self.origin, self.origin + 1.0)
@@ -161,7 +161,7 @@ class SparselyProfileErrMethods(object):
         return tprofile
 
 class StackedHistogramMethods(object):
-    def root(self, *names):
+    def plotroot(self, *names):
         import ROOT
         out = OrderedDict()
         for n, (c, v) in zip(names, self.cuts):
@@ -169,7 +169,7 @@ class StackedHistogramMethods(object):
                 name, title = n
             else:
                 name, title = n, ""
-            out[c] = v.root(name, title)
+            out[c] = v.plotroot(name, title)
 
         def Draw(self, options=""):
             first = True
@@ -183,7 +183,7 @@ class StackedHistogramMethods(object):
         return out
 
 class PartitionedHistogramMethods(object):
-    def root(self, *names):
+    def plotroot(self, *names):
         import ROOT
         out = OrderedDict()
         for n, (c, v) in zip(names, self.cuts):
@@ -191,7 +191,7 @@ class PartitionedHistogramMethods(object):
                 name, title = n
             else:
                 name, title = n, ""
-            out[c] = v.root(name, title)
+            out[c] = v.plotroot(name, title)
 
         def Draw(self, options=""):
             first = True
@@ -205,9 +205,9 @@ class PartitionedHistogramMethods(object):
         return out
 
 class FractionedHistogramMethods(object):
-    def root(self, numeratorName, denominatorName):
+    def plotroot(self, numeratorName, denominatorName):
         import ROOT
-        denominator = self.denominator.root(denominatorName)
+        denominator = self.denominator.plotroot(denominatorName)
         num = denominator.GetNbinsX()
         low = denominator.GetBinLowEdge(1)
         high = denominator.GetBinLowEdge(num) + denominator.GetBinWidth(num)
@@ -225,7 +225,7 @@ class FractionedHistogramMethods(object):
         return ROOT.TEfficiency(numerator, denominator)
 
 class TwoDimensionallyHistogramMethods(object):
-    def root(self, name, title="", binType="D"):
+    def plotroot(self, name, title="", binType="D"):
         import ROOT
         constructor = getattr(ROOT, "TH2" + binType)
         sample = self.values[0]
@@ -236,7 +236,7 @@ class TwoDimensionallyHistogramMethods(object):
         return th2
 
 class SparselyTwoDimensionallyHistogramMethods(object):
-    def root(self, name, title="", binType="D"):
+    def plotroot(self, name, title="", binType="D"):
         import ROOT
         constructor = getattr(ROOT, "TH2" + binType)
         yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)

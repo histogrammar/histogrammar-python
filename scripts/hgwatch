@@ -37,14 +37,15 @@ commandSets = {
     # for --root
     "root": """
 import ROOT
+roothist = None
 
-# Must give hg.root the right number of "name" strings.
+# Must give hg.plot.root the right number of "name" strings.
 if isinstance(hg, Fraction):
-    roothist = hg.root(newName(), newName())
+    roothist = hg.plot.root(newName(), newName())
 elif isinstance(hg, (Stack, IrregularlyBin)):
-    roothist = hg.root(*[newName() for i in xrange(hg.cuts)])
+    roothist = hg.plot.root(*[newName() for i in xrange(hg.cuts)])
 else:
-    roothist = hg.root(newName())
+    roothist = hg.plot.root(newName())
 
 if isinstance(roothist, ROOT.TH2):
     roothist.Draw("colz")    # Preferred visualization.

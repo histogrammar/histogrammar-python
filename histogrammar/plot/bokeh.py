@@ -20,7 +20,7 @@ from __future__ import absolute_import
 import math
 
 class HistogramMethods(object):
-    def bokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
+    def plotbokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
 
         #glyphs
         from bokeh.models.glyphs import Rect, Segment, Line, Patches, Arc
@@ -66,7 +66,7 @@ class HistogramMethods(object):
         return GlyphRenderer(glyph=glyph,data_source=source)
 
 class SparselyHistogramMethods(object):
-    def bokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
+    def plotbokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
 
         #glyphs
         from bokeh.models.glyphs import Rect, Segment, Line, Patches, Arc
@@ -114,7 +114,7 @@ class SparselyHistogramMethods(object):
 
 
 class ProfileMethods(object):
-    def bokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
+    def plotbokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
 
         #glyphs
         from bokeh.models.glyphs import Rect, Segment, Line, Patches, Arc
@@ -166,7 +166,7 @@ class SparselyProfileMethods(object):
     pass
 
 class ProfileErrMethods(object):
-    def bokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
+    def plotbokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
 
         #glyphs
         from bokeh.models.glyphs import Rect, Segment, Line, Patches, Arc
@@ -231,7 +231,7 @@ class StackedHistogramMethods(object):
     fillAlphaDefaults = [0.1]*nMaxStacked
     lineDashDefaults = ["solid"]*nMaxStacked
 
-    def bokeh(self,glyphTypes=glyphTypeDefaults,glyphSizes=glyphSizeDefaults,fillColors=fillColorDefaults,lineColors=lineColorDefaults,lineAlphas=lineAlphaDefaults,fillAlphas=fillAlphaDefaults,lineDashes = lineDashDefaults):
+    def plotbokeh(self,glyphTypes=glyphTypeDefaults,glyphSizes=glyphSizeDefaults,fillColors=fillColorDefaults,lineColors=lineColorDefaults,lineAlphas=lineAlphaDefaults,fillAlphas=fillAlphaDefaults,lineDashes = lineDashDefaults):
         nChildren = len(self.children)-1
         
         assert len(glyphSizes) >= nChildren
@@ -245,7 +245,7 @@ class StackedHistogramMethods(object):
         stackedGlyphs = list()
         #for ichild, p in enumerate(self.children,start=1):
         for ichild in range(nChildren):
-            stackedGlyphs.append(self.children[ichild+1].bokeh(glyphTypes[ichild],glyphSizes[ichild],fillColors[ichild],lineColors[ichild],lineAlphas[ichild],fillAlphas[ichild],lineDashes[ichild]))
+            stackedGlyphs.append(self.children[ichild+1].plotbokeh(glyphTypes[ichild],glyphSizes[ichild],fillColors[ichild],lineColors[ichild],lineAlphas[ichild],fillAlphas[ichild],lineDashes[ichild]))
 
         return stackedGlyphs
 
