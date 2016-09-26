@@ -28,7 +28,7 @@ from histogrammar.util import serializable
 
 import histogrammar.plot.root
 import histogrammar.plot.bokeh
-import histogrammar.plot.mpl
+import histogrammar.plot.matplotlib
 
 def Histogram(num, low, high, quantity, selection=unweighted):
     """Convenience function for creating a conventional histogram."""
@@ -85,7 +85,7 @@ def TwoDimensionallySparselyHistogram(xbinWidth, xquantity,
 class HistogramMethods(Bin,
         histogrammar.plot.root.HistogramMethods,
         histogrammar.plot.bokeh.HistogramMethods,
-        histogrammar.plot.mpl.HistogramMethods):
+        histogrammar.plot.matplotlib.HistogramMethods):
     """Methods that are implicitly added to container combinations that look like histograms."""
 
     @property
@@ -123,7 +123,7 @@ class HistogramMethods(Bin,
 class SparselyHistogramMethods(SparselyBin,
         histogrammar.plot.root.SparselyHistogramMethods,
         histogrammar.plot.bokeh.SparselyHistogramMethods,
-        histogrammar.plot.mpl.SparselyHistogramMethods):
+        histogrammar.plot.matplotlib.SparselyHistogramMethods):
 
     """Methods that are implicitly added to container combinations that look like sparsely binned histograms."""
 
@@ -142,7 +142,7 @@ class SparselyHistogramMethods(SparselyBin,
 class ProfileMethods(Bin,
         histogrammar.plot.root.ProfileMethods,
         histogrammar.plot.bokeh.ProfileMethods,
-        histogrammar.plot.mpl.ProfileMethods):
+        histogrammar.plot.matplotlib.ProfileMethods):
     '''Methods that are implicitly added to container combinations that look like a physicist's "profile plot."'''
 
     @property
@@ -176,7 +176,7 @@ class ProfileMethods(Bin,
 class SparselyProfileMethods(SparselyBin,
         histogrammar.plot.root.SparselyProfileMethods,
         histogrammar.plot.bokeh.SparselyProfileMethods,
-        histogrammar.plot.mpl.SparselyProfileMethods):
+        histogrammar.plot.matplotlib.SparselyProfileMethods):
     '''Methods that are implicitly added to container combinations that look like a sparsely binned physicist's "profile plot."'''
 
     @property
@@ -190,7 +190,7 @@ class SparselyProfileMethods(SparselyBin,
 class ProfileErrMethods(Bin,
         histogrammar.plot.root.ProfileErrMethods,
         histogrammar.plot.bokeh.ProfileErrMethods,
-        histogrammar.plot.mpl.ProfileErrMethods):
+        histogrammar.plot.matplotlib.ProfileErrMethods):
 
     '''Methods that are implicitly added to container combinations that look like a physicist's "profile plot."'''
 
@@ -230,7 +230,7 @@ class ProfileErrMethods(Bin,
 class SparselyProfileErrMethods(SparselyBin,
         histogrammar.plot.root.SparselyProfileErrMethods,
         histogrammar.plot.bokeh.SparselyProfileErrMethods,
-        histogrammar.plot.mpl.SparselyProfileErrMethods):
+        histogrammar.plot.matplotlib.SparselyProfileErrMethods):
 
     '''Methods that are implicitly added to container combinations that look like a sparsely binned physicist's "profile plot."'''
 
@@ -245,7 +245,7 @@ class SparselyProfileErrMethods(SparselyBin,
 class StackedHistogramMethods(Stack,
         histogrammar.plot.root.StackedHistogramMethods,
         histogrammar.plot.bokeh.StackedHistogramMethods,
-        histogrammar.plot.mpl.StackedHistogramMethods):
+        histogrammar.plot.matplotlib.StackedHistogramMethods):
     """Methods that are implicitly added to container combinations that look like stacked histograms."""
 
     @property
@@ -259,7 +259,7 @@ class StackedHistogramMethods(Stack,
 class PartitionedHistogramMethods(IrregularlyBin,
         histogrammar.plot.root.PartitionedHistogramMethods,
         histogrammar.plot.bokeh.PartitionedHistogramMethods,
-        histogrammar.plot.mpl.PartitionedHistogramMethods):
+        histogrammar.plot.matplotlib.PartitionedHistogramMethods):
     """Methods that are implicitly added to container combinations that look like partitioned histograms."""
 
     @property
@@ -273,7 +273,7 @@ class PartitionedHistogramMethods(IrregularlyBin,
 class FractionedHistogramMethods(Fraction,
         histogrammar.plot.root.FractionedHistogramMethods,
         histogrammar.plot.bokeh.FractionedHistogramMethods,
-        histogrammar.plot.mpl.FractionedHistogramMethods):
+        histogrammar.plot.matplotlib.FractionedHistogramMethods):
     """Methods that are implicitly added to container combinations that look like fractioned histograms."""
 
     @property
@@ -287,7 +287,7 @@ class FractionedHistogramMethods(Fraction,
 class TwoDimensionallyHistogramMethods(Bin,
         histogrammar.plot.root.TwoDimensionallyHistogramMethods,
         histogrammar.plot.bokeh.TwoDimensionallyHistogramMethods,
-        histogrammar.plot.mpl.TwoDimensionallyHistogramMethods):
+        histogrammar.plot.matplotlib.TwoDimensionallyHistogramMethods):
     """Convenience function for creating a conventional, two-dimensional histogram."""
 
     @property
@@ -301,7 +301,7 @@ class TwoDimensionallyHistogramMethods(Bin,
 class SparselyTwoDimensionallyHistogramMethods(SparselyBin,
         histogrammar.plot.root.SparselyTwoDimensionallyHistogramMethods,
         histogrammar.plot.bokeh.SparselyTwoDimensionallyHistogramMethods,
-        histogrammar.plot.mpl.SparselyTwoDimensionallyHistogramMethods):
+        histogrammar.plot.matplotlib.SparselyTwoDimensionallyHistogramMethods):
     """Convenience function for creating a sparsely binned, two-dimensional histogram."""
 
     @property
