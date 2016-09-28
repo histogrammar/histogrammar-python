@@ -34,11 +34,14 @@ class JsonObject(dict):
         if len(kwarg) > 0:
             self._pairs = self._pairs + tuple(kwarg.items())
 
+        if any(not isinstance(kv, tuple) or len(kv) != 2 for kv in self._pairs):
+            raise TypeError("JsonObject pairs must all be two-element tuples")
+
         if any(not isinstance(k, basestring) or not (v is None or isinstance(v, (basestring, bool, int, long, float, JsonObject, JsonArray))) for k, v in self._pairs):
             raise TypeError("JsonObject keys must be strings and values must be (string, bool, int, float, JsonObject, JsonArray)")
 
     def toJsonString(self, prefix="", indent=2):
-        out = [prefix, "{\n", prefix, " "]
+        out = ["{\n", prefix, " "]
         first = True
         for k, v in self._pairs:
             if first:
@@ -67,15 +70,53 @@ class JsonObject(dict):
                 return i
         return -1
 
-    def to(self, key, value):
-        index = self._index(key)
-        if index == -1:
-            return JsonObject(*(self._pairs + ((key, value),)))
-        else:
-            return JsonObject(*[(key, value) if k == key else (k, v) for k, v in self._pairs])
+    def set(self, *path, **kwds):
+        if "to" not in kwds:
+            raise TypeError("missing keyword argument 'to' in set(path, to=value)")
+        elif len(kwds) != 1:
+            raise TypeError("unrecognized keyword arguments in set(path, to=value)")
+        value = kwds["to"]
 
-    def without(self, *keys):
-        return JsonObject(*[(k, v) for k, v in self._pairs if k not in keys])
+        if len(path) < 1:
+            raise TypeError("missing path in set(path, to=value)")
+        key = path[0]
+        index = self._index(key)
+        if len(path) == 1:
+            if index == -1:
+                return JsonObject(*(self._pairs + ((key, value),)))
+            else:
+                return JsonObject(*[(key, value) if k == key else (k, v) for k, v in self._pairs])
+        else:
+            if index == -1:
+                raise ValueError("JsonObject field {0} does not contain path ({1})".format(repr(key), ", ".join(map(repr, path[1:]))))
+            elif not isinstance(self._pairs[index][1], (JsonObject, JsonArray)):
+                raise ValueError("JsonObject field {0} does not contain path ({1})".format(repr(key), ", ".join(map(repr, path[1:]))))
+            else:
+                return JsonObject(*[(k, v.set(*path[1:], **kwds)) if k == key else (k, v) for k, v in self._pairs])
+
+    def without(self, *path):
+        if len(path) < 1:
+            raise TypeError("missing path in without(path)")
+        key = path[0]
+        index = self._index(key)
+        if len(path) == 1:
+            if index == -1:
+                return self
+            else:
+                return JsonObject(*[(k, v) for k, v in self._pairs if k != key])
+        else:
+            if index == -1:
+                raise ValueError("JsonObject field {0} does not contain path ({1})".format(repr(key), ", ".join(map(repr, path[1:]))))
+            elif not isinstance(self._pairs[index][1], (JsonObject, JsonArray)):
+                raise ValueError("JsonObject field {0} does not contain path ({1})".format(repr(key), ", ".join(map(repr, path[1:]))))
+            else:
+                return JsonObject(*[(k, v.without(*path[1:])) if k == key else (k, v) for k, v in self._pairs])
+        
+    def overlay(self, other):
+        out = self
+        for k, v in other.items():
+            out = out.set(k, to=v)
+        return out
 
     ### override built-in dict methods
 
@@ -113,14 +154,12 @@ class JsonObject(dict):
     def __len__(self):
         return len(self._pairs)
 
-    ### HERE
-
     def __reduce__(self):
         return self.__reduce_ex__(0)
 
     def __reduce_ex__(self, protocol):
-        return self._pairs
-
+        return (self.__class__, self._pairs)
+               
     def __repr__(self):
         out = "{"
         first = True
@@ -141,10 +180,10 @@ class JsonObject(dict):
         return out + "}"
     
     def __setitem__(self, key, value):
-        raise TypeError("JsonObject cannot be changed in-place; use .to(key, value)")
+        raise TypeError("JsonObject cannot be changed in-place; use .set(path, to=value)")
 
     def __sizeof__(self):
-        return sys.getsizeof(self)
+        return super(JsonObject, self).__sizeof__()
 
     def __str__(self):
         out = ["{"]
@@ -165,7 +204,7 @@ class JsonObject(dict):
         return "".join(out)
 
     def clear(self):
-        raise TypeError("JsonObject cannot be changed in-place; use JsonObject()")
+        raise TypeError("JsonObject cannot be changed in-place; use JsonObject() constructor to make a new one")
 
     def copy(self):
         return self   # because we're immutable
@@ -173,7 +212,7 @@ class JsonObject(dict):
     def __copy__(self):
         return self   # because we're immutable
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memo):
         return self   # because we're immutable
 
     def get(self, key, default=None):
@@ -213,7 +252,7 @@ class JsonObject(dict):
         raise TypeError("JsonObject cannot be changed in-place; no immutable equivalent")
 
     def update(self, other):
-        raise TypeError("JsonObject cannot be changed in-place; use .updated(other)")
+        raise TypeError("JsonObject cannot be changed in-place; use .overlay(other)")
 
     def values(self):
         for k, v in self._pairs:
@@ -233,37 +272,6 @@ class JsonArray(tuple):
         self._values = values
         if any(not (v is None or isinstance(v, (basestring, bool, int, long, float, JsonObject, JsonArray))) for v in self._values):
             raise TypeError("JsonArray values must be (string, bool, int, float, JsonObject, JsonArray)")
-
-    def __repr__(self):
-        out = "["
-        first = True
-        for v in self._values:
-            if first:
-                first = False
-            else:
-                out += ", "
-            if len(out) > MAX_REPR - 1:
-                break
-            out += repr(v)
-        if len(out) > MAX_REPR - 1:
-            out = out[:(MAX_REPR - 4)] + "..."
-        return out + "]"
-        
-    def __str__(self):
-        out = ["["]
-        first = False
-        for v in self._values:
-            if first:
-                first = False
-            else:
-                out.append(",")
-            if isinstance(v, (basestring, bool, int, long, float)):
-                v = json.dumps(v)
-            else:
-                v = str(v)
-            out.append(v)
-        out.append("]")
-        return "".join(out)
 
     def toJsonString(self, prefix="", indent=2):
         out = [prefix, "[\n", prefix, " "]
@@ -288,34 +296,53 @@ class JsonArray(tuple):
         return "".join(out)
     
 # __add__
-# __class__
 # __contains__
 # __delattr__
-# __doc__
 # __eq__
 # __format__
-# __ge__
-# __getattribute__
 # __getitem__
 # __getnewargs__
 # __getslice__
-# __gt__
 # __hash__
-# __init__
 # __iter__
-# __le__
 # __len__
-# __lt__
 # __mul__
-# __ne__
-# __new__
 # __reduce__
 # __reduce_ex__
-# __repr__
+
+    def __repr__(self):
+        out = "["
+        first = True
+        for v in self._values:
+            if first:
+                first = False
+            else:
+                out += ", "
+            if len(out) > MAX_REPR - 1:
+                break
+            out += repr(v)
+        if len(out) > MAX_REPR - 1:
+            out = out[:(MAX_REPR - 4)] + "..."
+        return out + "]"
+
 # __rmul__
-# __setattr__
 # __sizeof__
-# __str__
-# __subclasshook__
+        
+    def __str__(self):
+        out = ["["]
+        first = False
+        for v in self._values:
+            if first:
+                first = False
+            else:
+                out.append(",")
+            if isinstance(v, (basestring, bool, int, long, float)):
+                v = json.dumps(v)
+            else:
+                v = str(v)
+            out.append(v)
+        out.append("]")
+        return "".join(out)
+
 # count
 # index
