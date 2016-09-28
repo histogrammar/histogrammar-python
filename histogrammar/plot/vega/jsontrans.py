@@ -183,7 +183,7 @@ class JsonObject(dict):
         raise TypeError("JsonObject cannot be changed in-place; use .set(path, to=value)")
 
     def __sizeof__(self):
-        return super(JsonObject, self).__sizeof__()
+        return super(dict, self).__sizeof__()
 
     def __str__(self):
         out = ["{"]
@@ -294,10 +294,14 @@ class JsonArray(tuple):
         out.append(prefix)
         out.append("]")
         return "".join(out)
-    
+
+    ### override built-in tuple methods
+
 # __add__
+# __cmp__
 # __contains__
 # __delattr__
+# __delitem__
 # __eq__
 # __format__
 # __getitem__
