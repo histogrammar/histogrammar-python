@@ -627,7 +627,7 @@ int main(int argc, char** argv) {{
            endComment = "*/" if commentMain else ""
            )
 
-    def fillpycuda(self, **exprs):
+    def fillpycuda(self, length=None, **exprs):
         import numpy
         import pycuda.autoinit
         import pycuda.driver
@@ -652,7 +652,9 @@ int main(int argc, char** argv) {{
 
         inputArrays = {}
         for name, expr in exprs.items():
-            if isinstance(expr, numpy.ndarray):
+            if isinstance(expr, pycuda.driver.DeviceAllocation):
+                inputArrays[name] = expr
+            elif isinstance(expr, numpy.ndarray):
                 inputArrays[name] = expr.astype(numpy.float32)
                 if len(inputArrays[name].shape) != 1:
                     raise ValueError("Numpy arrays must be one-dimensional")
@@ -663,17 +665,19 @@ int main(int argc, char** argv) {{
 
         self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 6, weightVars, weightVarStack, tmpVarTypes, False)
 
-        length = None
         arguments = []
         for name in inputFieldNames.values():
             if name not in inputArrays:
                 raise ValueError("no input supplied for \"" + name + "\"")
-            if length is None or inputArrays[name].shape[0] < length:
-                length = inputArrays[name].shape[0]
-            arguments.append(pycuda.driver.In(inputArrays[name]))
+            if isinstance(inputArrays[name], numpy.ndarray):
+                if length is None or inputArrays[name].shape[0] < length:
+                    length = inputArrays[name].shape[0]
+                arguments.append(pycuda.driver.In(inputArrays[name]))
+            else:
+                arguments.append(inputArrays[name])
 
         if length is None:
-            raise ValueError("no input fields specified in aggregator")
+            raise ValueError("no arrays specified as input fields in the aggregator to get length from (and length not specified explicitly)")
 
         module = pycuda.compiler.SourceModule(self.cuda(namespace=False, writeSize=True))
 
