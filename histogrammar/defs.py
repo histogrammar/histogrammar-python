@@ -712,7 +712,7 @@ int main(int argc, char** argv) {{
             splitIndex = out.find("/////////////////////////////////////////////////////////////////// implementations")
             endifIndex = out.find("#endif")
             doth = out[:splitIndex] + out[endifIndex:]
-            dotcu = out[:ifndefIndex] + "#include \"" + namespaceName + "\"\n\n" + out[splitIndex:endifIndex]
+            dotcu = out[:ifndefIndex] + "#include \"" + namespaceName + ".h\"\n\n" + out[splitIndex:endifIndex]
             return doth, dotcu
 
         else:
