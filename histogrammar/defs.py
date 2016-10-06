@@ -361,7 +361,7 @@ public:
         self._clingUpdate(self._clingFiller, ("var", "storage"))
 
     _cudaNamespaceNumber = 0
-    def cuda(self, namespace=True, namespaceName=None, writeSize=False, commentMain=True, testData=[round(random.gauss(0, 1), 2) for x in xrange(10)], **exprs):
+    def cuda(self, namespace=True, namespaceName=None, writeSize=False, commentMain=True, split=False, testData=[round(random.gauss(0, 1), 2) for x in xrange(10)], **exprs):
         parser = C99SourceToAst()
         generator = C99AstToSource()
 
@@ -387,7 +387,7 @@ public:
             namespaceName = "HistogrammarCUDA_" + str(Container._cudaNamespaceNumber)
             Container._cudaNamespaceNumber += 1
 
-        return '''// Auto-generated on {timestamp:%Y-%m-%d %H:%M:%S}
+        out = '''// Auto-generated on {timestamp:%Y-%m-%d %H:%M:%S}
 // If you edit this file, it will be hard to swap it out for another auto-generated copy.
 
 #ifndef {NS}
@@ -396,12 +396,91 @@ public:
 #include <stdio.h>
 #include <math_constants.h>
 
+/////////////////////////////////////////////////////////////////// declarations
+
 namespace {ns} {{
-  // How the aggregator is laid out in memory (CPU main memory and GPU shared memory).
-{typedefs}
+  // How the aggregator is laid out in memory (CPU main memory and GPU shared memory).{typedefs}
+  // Convenient name for the whole aggregator.
   typedef {lastStructName} Aggregator;
 
-{writeSize}
+  // Specific logic of how to zero out the aggregator.
+  __device__ void zero(Aggregator* aggregator);
+
+  // Specific logic of how to increment the aggregator with input values.
+  __device__ void increment(Aggregator* aggregator{comma}{inputArgList});
+
+  // Specific logic of how to combine two aggregators.
+  __device__ void combine(Aggregator* total, Aggregator* item);
+
+  // Used by toJson.
+  __host__ void floatToJson(FILE* out, float x);
+
+  // Specific logic of how to print out the aggregator.
+  __host__ void toJson(Aggregator* aggregator, FILE* out);
+
+  // Generic blockId calculation (3D is the most general).
+  __device__ int blockId();
+
+  // Generic blockSize calculation (3D is the most general).
+  __device__ int blockSize();
+
+  // Generic threadId calculation (3D is the most general).
+  __device__ int threadId();
+
+  // Wrapper for CUDA calls to report errors.
+  void errorCheck(cudaError_t code);
+
+  // User-level API for initializing the aggregator (from CPU or GPU).
+  //
+  //   aggregators: array of aggregators to fill in parallel.
+  //   numAggregators: number of aggregators to fill.
+  //
+  __global__ void initialize(Aggregator* aggregators, int numAggregators);
+
+  // User-level API for filling the aggregator with a single value (from GPU).
+  //
+  //   aggregators: array of aggregators to fill in parallel.
+  //   numAggregators: number of aggregators to fill.
+  //   input_*: the input variables you used in the aggregator\'s fill rule.
+  //
+  __device__ void fill(Aggregator* aggregators, int numAggregators{comma}{inputArgList});
+
+  // User-level API for filling the aggregator with arrays of values (from CPU or GPU).
+  //
+  //   aggregators: array of aggregators to fill in parallel.
+  //   numAggregators: number of aggregators to fill.
+  //   input_*: the input variables you used in the aggregator\'s fill rule.
+  //   numDataPoints: the number of values in each input_* array.
+  //
+  __global__ void fillAll(Aggregator* aggregators, int numAggregators{comma}{inputArgStarList}, int numDataPoints);
+
+  // User-level API for combining all aggregators in a block (from CPU or GPU).
+  //
+  // Assumes that at least `numAggregators` threads are all running at the same time (can be mutually
+  // synchronized with `__syncthreads()`. Generally, this means that `extract` should be called on
+  // no more than one block, which suggests that `numAggregators` ought to be equal to the maximum
+  // number of threads per block.
+  //
+  //   aggregators: array of aggregators to fill in parallel.
+  //   numAggregators: number of aggregators to fill.
+  //   result: single output 
+  //
+  __global__ void extract(Aggregator* aggregators, int numAggregators, Aggregator* result);
+
+  // Test function provides an example of how to use the API.
+  //
+  //   numAggregators: number of aggregators to fill.
+  //   numBlocks: number of independent blocks to run.
+  //   numThreadsPerBlock: number of threads to run in each block.
+  //   input_*: the input variables you used in the aggregator\'s fill rule.
+  //   numDataPoints: the number of values in each input_* array.
+  //
+  void test(int numAggregators, int numBlocks, int numThreadsPerBlock, {inputArgStarList}{comma}int numDataPoints);
+}}
+
+/////////////////////////////////////////////////////////////////// implementations
+
+namespace {ns} {{{writeSize}
   // Specific logic of how to zero out the aggregator.
   __device__ void zero(Aggregator* aggregator) {{
 {tmpVarDeclarations}{initCode}
@@ -419,6 +498,7 @@ namespace {ns} {{
 {tmpVarDeclarations}{combineCode}
   }}
 
+  // Used by toJson.
   __host__ void floatToJson(FILE* out, float x) {{
     if (isnan(x))
       fprintf(out, "\\"nan\\"");
@@ -626,6 +706,17 @@ int main(int argc, char** argv) {{
            startComment = "/*" if commentMain else "",
            endComment = "*/" if commentMain else ""
            )
+
+        if split:
+            ifndefIndex = out.find("#ifndef")
+            splitIndex = out.find("/////////////////////////////////////////////////////////////////// implementations")
+            endifIndex = out.find("#endif")
+            doth = out[:splitIndex] + out[endifIndex:]
+            dotcu = out[:ifndefIndex] + "#include \"" + namespaceName + "\"\n\n" + out[splitIndex:endifIndex]
+            return doth, dotcu
+
+        else:
+            return out
 
     def fillpycuda(self, length=None, **exprs):
         import numpy
