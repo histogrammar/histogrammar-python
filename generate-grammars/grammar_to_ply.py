@@ -56,6 +56,7 @@ literal_to_name = importlib.import_module(inputLex, histogrammar).literal_to_nam
 grammarActionsDict = {}
 exec open(grammarActions).read() in grammarActionsDict
 actions = grammarActionsDict["actions"]
+asts = grammarActionsDict["asts"]
 
 duplicates = {
     "varargslist_star2": "varargslist_star",
@@ -299,10 +300,13 @@ import inspect
 
 from histogrammar.pycparser.ply import yacc''' % (datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%dT%H:%M:%S'), " ".join(sys.argv[1:])))
 
-W('''from %s import PythonLexer, tokens''' % inputLex)
+W('''from %s import PythonLexer, tokens
+''' % inputLex)
 
-W('''
-def inherit_lineno(p0, px, alt=True):
+for x in asts:
+    W(x)
+
+W('''def inherit_lineno(p0, px, alt=True):
     if isinstance(px, dict):
         p0.lineno = px["lineno"]
         p0.col_offset = px["col_offset"]

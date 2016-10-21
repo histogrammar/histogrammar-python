@@ -455,6 +455,12 @@ def t_TILDE(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+def t_DOLLARNUMBER(t):
+    r"\$[1-9][0-9]*"
+    t.value = (t.value, t.lexer.kwds(t.lexpos))
+    return t
+tokens = tokens + ("DOLLARNUMBER",)
+
 # In the following I use 'long' to make the actual type match the
 # results from the compiler module.  Otherwise there's no need for it.
 

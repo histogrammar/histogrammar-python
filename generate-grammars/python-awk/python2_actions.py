@@ -1,7 +1,18 @@
 #!/usr/bin/env python
 
-# Python
 actions = {}
+asts = []
+
+# hgawk
+asts.append('''class DollarNumber(ast.expr):
+    _fields = ("n",)
+    def __init__(self, n, **kwds):
+        self.n = n
+        self.__dict__.update(kwds)
+''')
+actions['''atom : DOLLARNUMBER'''] = '''    p[0] = DollarNumber(int(p[1][0][1:]), **p[1][1])'''
+
+# Python
 actions['''file_input : ENDMARKER'''] = '''    p[0] = ast.Module([], rule=inspect.currentframe().f_code.co_name, lineno=0, col_offset=0)'''
 actions['''file_input : file_input_star ENDMARKER'''] = '''    p[0] = ast.Module(p[1], rule=inspect.currentframe().f_code.co_name)
     inherit_lineno(p[0], p[1][0])'''
