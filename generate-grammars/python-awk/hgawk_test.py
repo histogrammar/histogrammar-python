@@ -132,6 +132,18 @@ def functionalize(node):
                     out.args.args[0].ctx.lineno, out.args.args[0].ctx.col_offset = x.lineno, x.col_offset
                     node.args[i] = out
 
+        for keyword in node.keywords:
+            if (node.func.id, keyword.arg) in expectFunction:
+                x = keyword.value
+                numargs = highestDollar(x)
+                if numargs > 0:
+                    out = ast.Lambda(ast.arguments([ast.Name("$args", ast.Param())], None, None, []), dollarToArg(x))
+                    out.lineno,                  out.col_offset                  = x.lineno, x.col_offset
+                    out.args.lineno,             out.args.col_offset             = x.lineno, x.col_offset
+                    out.args.args[0].lineno,     out.args.args[0].col_offset     = x.lineno, x.col_offset
+                    out.args.args[0].ctx.lineno, out.args.args[0].ctx.col_offset = x.lineno, x.col_offset
+                    keyword.value = out
+                    
     for field in node._fields:
         subnode = getattr(node, field)
         if isinstance(subnode, ast.AST):
@@ -173,9 +185,18 @@ if __name__ == "__main__":
     h = executeWithDollars('''
 def addEmUp(x, y):
     return x + y
-
 Bin(10, -5.0, 5.0, addEmUp($1, $2))
 ''')
+    h.fill((1.0, 2.0))
+    h.fill((-2.0, -1.0))
+    print(h.toJsonString())
+
+    h = executeWithDollars("Bin(quantity=$1 + $2, num=10, low=-5.0, high=5.0)")
+    h.fill((1.0, 2.0))
+    h.fill((-2.0, -1.0))
+    print(h.toJsonString())
+
+    h = executeWithDollars("Bin(10, -5.0, 5.0, lambda xs: xs[0] + xs[1])")
     h.fill((1.0, 2.0))
     h.fill((-2.0, -1.0))
     print(h.toJsonString())
