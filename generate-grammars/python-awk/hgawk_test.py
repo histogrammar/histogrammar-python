@@ -111,7 +111,7 @@ def dollarToArg(node):
             setattr(node, field, dollarToArg(getattr(node, field)))
         return node
     elif isinstance(node, list):
-        for i, x in node:
+        for i, x in enumerate(node):
             node[i] = dollarToArg(x)
         return node
     else:
@@ -168,4 +168,14 @@ if __name__ == "__main__":
     h = executeWithDollars("Bin(10, -5.0, 5.0, $1 + $2)")
     h.fill((1.0, 2.0))
     h.fill((-2.0, -1.0))
-    print h.toJsonString()
+    print(h.toJsonString())
+
+    h = executeWithDollars('''
+def addEmUp(x, y):
+    return x + y
+
+Bin(10, -5.0, 5.0, addEmUp($1, $2))
+''')
+    h.fill((1.0, 2.0))
+    h.fill((-2.0, -1.0))
+    print(h.toJsonString())
