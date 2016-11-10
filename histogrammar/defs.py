@@ -1090,6 +1090,9 @@ int main(int argc, char** argv) {{
         else:
             return weights * numpy.ones(shape, dtype=numpy.float64)
 
+    def fillsparksql(self, data):
+        pass
+
 # useful functions
 
 unweighted = named("unweighted", lambda datum: 1.0)

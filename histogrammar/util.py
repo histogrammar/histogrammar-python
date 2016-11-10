@@ -46,6 +46,7 @@ class FillMethod(object):
         self.root = container.fillroot
         self.pycuda = container.fillpycuda
         self.numpy = container.fillnumpy
+        self.sparksql = container.fillsparksql
     def __call__(self, *args, **kwds):
         return self.fill(*args, **kwds)
 
@@ -212,8 +213,26 @@ class UserFcn(object):
             self.name = expr.__name__
         else:
             self.name = name
-        if expr is not None and not isinstance(expr, (basestring, types.FunctionType)):
-            raise TypeError("quantity ({0}) must be a string or function".format(expr))
+        
+        if expr is None:
+            ok = True
+        elif isinstance(expr, basestring):
+            ok = True
+        elif isinstance(expr, types.FunctionType):
+            ok = True
+        else:
+            try:
+                from pyspark.sql.column import Column
+            except ImportError:
+                ok = False
+            else:
+                if isinstance(expr, Column):
+                    if self.name is None:
+                        self.name = str(expr)[7:-1]
+                ok = True
+        if not ok:
+            raise TypeError("quantity ({0}) must be a string, function, or SparkSQL Column".format(expr))
+
         if name is not None and not isinstance(name, basestring):
             raise TypeError("function name must be a string, not {0} (perhaps your arguments are reversed)".format(name))
         
@@ -287,6 +306,13 @@ class UserFcn(object):
                 raise TypeError("immutable container (created from JSON or .ed) cannot be filled")
 
             else:
+                try:
+                    from pyspark.sql.column import Column
+                except ImportError:
+                    pass
+                else:
+                    if isinstance(self.expr, Column):
+                        raise TypeError("cannot use SparkSQL Column with the normal fill method; use fill.sparksql")
                 raise TypeError("unrecognized type for function: {0}".format(type(self.expr)))
 
         return self.fcn(*args, **kwds)
