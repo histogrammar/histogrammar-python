@@ -173,6 +173,16 @@ class CentrallyBin(Factory, Container):
         return out.specialize()
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        if self.centers != other.centers:
+            raise ContainerException("cannot add CentrallyBin because centers are different:\n    {0}\nvs\n    {1}".format(self.centers, other.centers))
+        self.entries += other.entries
+        for (c1, v1), (_, v2) in zip(self.bins, other.bins):
+            v1 += v2
+        self.nanflow += other.nanflow
+        return self
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -396,6 +406,9 @@ class CentrallyBin(Factory, Container):
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(newentries)
+
+    def _sparksql(self, jvm, converter):
+        return converter.CentrallyBin([c for c, v in self.bins], self.quantity.asSparkSQL(), self.bins[0][1]._sparksql(jvm, converter), self.nanflow._sparksql(jvm, converter))
 
     @property
     def children(self):

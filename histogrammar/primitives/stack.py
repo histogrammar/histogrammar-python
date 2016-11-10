@@ -135,6 +135,19 @@ class Stack(Factory, Container):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        if isinstance(other, Stack):
+            if self.thresholds != other.thresholds:
+                raise ContainerException("cannot add Stack because cut thresholds differ")
+            self.entries += other.entries
+            for ((k1, v1), (k2, v2)) in zip(self.bins, other.bins):
+                v1 += v2
+            self.nanflow += other.nanflow
+            return self
+        else:
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -338,6 +351,9 @@ class Stack(Factory, Container):
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(newentries)
+
+    def _sparksql(self, jvm, converter):
+        return converter.Stack([e for e, v in self.bins[1:]], quantity.asSparkSQL(), self.bins[0][1]._sparksql(jvm, converter), self.nanflow._sparksql(jvm, converter))
 
     @property
     def children(self):

@@ -143,6 +143,19 @@ class Categorize(Factory, Container):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        if isinstance(other, Categorize):
+            self.entries += other.entries
+            for k in self.keySet.union(other.keySet):
+                if k in self.bins and k in other.bins:
+                    bins[k] += other.bins[k]
+                elif k not in self.bins and k in other.bins:
+                    bins[k] = self.bins[k].copy()
+            return self
+        else:
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -234,6 +247,9 @@ class Categorize(Factory, Container):
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(weights.sum())
+
+    def _sparksql(self, jvm, converter):
+        return converter.Categorize(self.quantity.asSparkSQL(), self.value._sparksql(jvm, converter))
 
     @property
     def children(self):

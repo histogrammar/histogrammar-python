@@ -103,6 +103,13 @@ class Bag(Factory, Container):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        both = self + other
+        self.entries = other.entries
+        self.values = other.values
+        return self
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -231,6 +238,9 @@ class Bag(Factory, Container):
                 if isinstance(x, numpy.ndarray):
                     x = x.tolist()
                 self._update(x, float(w))
+
+    def _sparksql(self, jvm, converter):
+        return converter.Bag(self.quantity.asSparkSQL(), range)
         
     @property
     def children(self):

@@ -146,6 +146,23 @@ class SparselyBin(Factory, Container):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        if isinstance(other, SparselyBin):
+            if self.binWidth != other.binWidth:
+                raise ContainerException("cannot add SparselyBins because binWidth differs ({0} vs {1})".format(self.binWidth, other.binWidth))
+            if self.origin != other.origin:
+                raise ContainerException("cannot add SparselyBins because origin differs ({0} vs {1})".format(self.origin, other.origin))
+            self.entries += other.entries
+            for i, v in other.bins.items():
+                if i in self.bins:
+                    self.bins[i] += v
+                else:
+                    self.bins[i] = v.copy()
+            return self
+        else:
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -374,6 +391,9 @@ class SparselyBin(Factory, Container):
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(newentries)
+
+    def _sparksql(self, jvm, converter):
+        return converter.SparselyBin(self.binWidth, quantity.asSparkSQL(), self.value._sparksql(jvm, converter), self.nanflow._sparksql(jvm, converter), self.origin)
 
     @property
     def children(self):

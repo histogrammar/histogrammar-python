@@ -84,6 +84,14 @@ class Count(Factory, Container):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        if isinstance(other, Count):
+            self.entries += other.entries
+            return self
+        else:
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if self.transform != identity or \
            not callable(self.transform.expr) or \
@@ -182,6 +190,9 @@ class Count(Factory, Container):
 
         else:
             raise ValueError("cannot use Numpy to fill an isolated Count (unless the weights are given as an array)")
+
+    def _sparksql(self, jvm, converter):
+        return converter.Count()   # TODO: handle transform
 
     @property
     def children(self):

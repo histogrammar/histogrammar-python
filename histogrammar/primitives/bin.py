@@ -174,6 +174,27 @@ class Bin(Factory, Container):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        if isinstance(other, Bin):
+            if self.low != other.low:
+                raise ContainerException("cannot add Bins because low differs ({0} vs {1})".format(self.low, other.low))
+            if self.high != other.high:
+                raise ContainerException("cannot add Bins because high differs ({0} vs {1})".format(self.high, other.high))
+            if len(self.values) != len(other.values):
+                raise ContainerException("cannot add Bins because nubmer of values differs ({0} vs {1})".format(len(self.values), len(other.values)))
+            if len(self.values) == 0:
+                raise ContainerException("cannot add Bins because number of values is zero")
+            self.entries += other.entries
+            for x, y in zip(self.values, other.values):
+                x += y
+            self.underflow += other.underflow
+            self.overflow += other.overflow
+            self.nanflow += other.nanflow
+            return self
+        else:
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -447,6 +468,9 @@ class Bin(Factory, Container):
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(newentries)
+
+    def _sparksql(self, jvm, converter):
+        return converter.Bin(len(self.values), self.low, self.high, self.quantity.asSparkSQL(), self.values[0]._sparksql(jvm, converter), self.underflow._sparksql(jvm, converter), self.overflow._sparksql(jvm, converter), self.nanflow._sparksql(jvm, converter))
 
     @property
     def children(self):

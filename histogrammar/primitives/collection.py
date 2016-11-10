@@ -320,6 +320,19 @@ class Label(Factory, Container, Collection):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        if isinstance(other, Label):
+            if self.keySet != other.keySet:
+                raise ContainerException("cannot add Labels because keys differ:\n    {0}\n    {1}".format(", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))))
+            self.entries += other.entries
+            for k in self.keys:
+                v = self(k)
+                v += other(k)
+            return self
+        else:
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -359,6 +372,9 @@ class Label(Factory, Container, Collection):
             self.entries += float(weights.sum())
         else:
             self.entries += float(weights * shape[0])
+
+    def _sparksql(self, jvm, converter):
+        return converter.Label([jvm.scala.Tuple2(k, v._sparksql(jvm, converter)) for k, v in self.pairs.items()])
 
     @property
     def children(self):
@@ -518,6 +534,19 @@ class UntypedLabel(Factory, Container, Collection):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        if isinstance(other, UntypedLabel):
+            if self.keySet != other.keySet:
+                raise ContainerException("cannot add UntypedLabels because keys differ:\n    {0}\n    {1}".format(", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))))
+            self.entries += other.entries
+            for k in self.keys:
+                v = self(k)
+                v += other(k)
+            return self
+        else:
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -557,6 +586,9 @@ class UntypedLabel(Factory, Container, Collection):
             self.entries += float(weights.sum())
         else:
             self.entries += float(weights * shape[0])
+
+    def _sparksql(self, jvm, converter):
+        return converter.UntypedLabel([jvm.scala.Tuple2(k, v._sparksql(jvm, converter)) for k, v in self.pairs.items()])
 
     @property
     def children(self):
@@ -724,6 +756,18 @@ class Index(Factory, Container, Collection):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        if isinstance(other, Index):
+            if self.size != other.size:
+                raise ContainerException("cannot add Indexes because they have different sizes: ({0} vs {1})".format(self.size, other.size))
+            self.entries += other.entries
+            for x, y in zip(self.values, other.values):
+                x += y
+            return self
+        else:
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -761,6 +805,9 @@ class Index(Factory, Container, Collection):
             self.entries += float(weights.sum())
         else:
             self.entries += float(weights * shape[0])
+
+    def _sparksql(self, jvm, converter):
+        return converter.Index([v._sparksql(jvm, converter) for v in self.values])
 
     @property
     def children(self):
@@ -935,6 +982,18 @@ class Branch(Factory, Container, Collection):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        if isinstance(other, Branch):
+            if self.size != other.size:
+                raise ContainerException("cannot add Branches because they have different sizes: ({0} vs {1})".format(self.size, other.size))
+            self.entries += other.entries
+            for x, y in zip(self.values, other.values):
+                x += y
+            return self
+        else:
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -972,6 +1031,9 @@ class Branch(Factory, Container, Collection):
             self.entries += float(weights.sum())
         else:
             self.entries += float(weights * shape[0])
+
+    def _sparksql(self, jvm, converter):
+        return converter.Branch(*[v._sparksql(jvm, converter) for v in self.values])
 
     @property
     def children(self):

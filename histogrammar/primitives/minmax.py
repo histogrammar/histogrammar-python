@@ -79,6 +79,13 @@ class Minimize(Factory, Container):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        both = self + other
+        self.entries = both.entries
+        self.min = both.min
+        return self
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -240,6 +247,9 @@ class Minimize(Factory, Container):
             if q.shape[0] > 0:
                 self.min = min(self.min, float(q.min()))
 
+    def _sparksql(self, jvm, converter):
+        return converter.Minimize(quantity.asSparkSQL())
+
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName): return maybeAdd({
         "entries": floatToJson(self.entries),
@@ -342,6 +352,13 @@ class Maximize(Factory, Container):
             return out.specialize()
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
+    def __iadd__(self, other):
+        both = self + other
+        self.entries = both.entries
+        self.max = both.max
+        return self
 
     @inheritdoc(Container)
     def __mul__(self, factor):
@@ -499,6 +516,9 @@ class Maximize(Factory, Container):
         else:
             if q.shape[0] > 0:
                 self.max = max(self.max, float(q.max()))
+
+    def _sparksql(self, jvm, converter):
+        return converter.Maximize(quantity.asSparkSQL())
 
     @property
     def children(self):

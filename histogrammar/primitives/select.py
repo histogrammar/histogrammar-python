@@ -103,6 +103,15 @@ class Select(Factory, Container):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        if isinstance(other, Select):
+            self.entries += other.entries
+            self.cut += other.cut
+            return self
+        else:
+            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -216,6 +225,9 @@ class Select(Factory, Container):
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(weights.sum())
+
+    def _sparksql(self, jvm, converter):
+        return converter.Select(quantity.asSparkSQL(), self.cut._sparksql(jvm, converter))
 
     @property
     def children(self):
