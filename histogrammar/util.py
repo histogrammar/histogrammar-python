@@ -235,7 +235,14 @@ class UserFcn(object):
 
         if name is not None and not isinstance(name, basestring):
             raise TypeError("function name must be a string, not {0} (perhaps your arguments are reversed)".format(name))
-        
+
+    def asSparkSQL(self):
+        from pyspark.sql.column import Column
+        if isinstance(self.expr, Column):
+            return self.expr._jc
+        else:
+            raise TypeError("UserFcn is not a SparkSQL Column: " + repr(self))
+
     def __call__(self, *args, **kwds):
         if not hasattr(self, "fcn"):
             if isinstance(self.expr, types.FunctionType):

@@ -110,6 +110,14 @@ class Deviate(Factory, Container):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        both = self + other
+        self.entries = both.entries
+        self.mean = both.mean
+        self.varianceTimesEntries = both.varianceTimesEntries
+        return self
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -330,6 +338,9 @@ class Deviate(Factory, Container):
             sb = cb*numpy.average((q - mb)*(q - mb), weights=weights)
             self.mean = float((ca*ma + (ca_plus_cb - ca)*mb) / ca_plus_cb)
             self.varianceTimesEntries = float(sa + sb + ca*ma*ma + cb*mb*mb - 2.0*self.mean*(ca*ma + cb*mb) + self.mean*self.mean*ca_plus_cb)
+
+    def _sparksql(self, jvm, converter):
+        return converter.Deviate(quantity.asSparkSQL())
 
     @property
     def children(self):

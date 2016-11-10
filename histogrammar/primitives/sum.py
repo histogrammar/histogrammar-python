@@ -82,6 +82,12 @@ class Sum(Factory, Container):
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
     @inheritdoc(Container)
+    def __iadd__(self, other):
+        self.entries += other.entries
+        self.sum += other.sum
+        return self
+
+    @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
@@ -186,6 +192,9 @@ class Sum(Factory, Container):
         q *= weights
 
         self.sum += float(q.sum())
+
+    def _sparksql(self, jvm, converter):
+        return converter.Sum(self.quantity.asSparkSQL())
 
     @property
     def children(self):

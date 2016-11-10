@@ -163,6 +163,10 @@ class Container(object):
         """Add two containers of the same type. The originals are unaffected."""
         raise NotImplementedError
 
+    def __iadd__(self, other):
+        """Add other to self; other is unaffected, but self is changed in place."""
+        raise NotImplementedError
+
     def __mul__(self, factor):
         """Reweight the contents in all nested aggregators by a scalar factor, as though they had been filled with a different weight. The original is unaffected."""
         raise NotImplementedError
@@ -1090,8 +1094,12 @@ int main(int argc, char** argv) {{
         else:
             return weights * numpy.ones(shape, dtype=numpy.float64)
 
-    def fillsparksql(self, data):
-        pass
+    def fillsparksql(self, df):
+        converter = df._sc._jvm.org.dianahep.histogrammar.sparksql.pyspark.AggregatorConverter()
+        agg = self._sparksql(df._sc._jvm, converter)
+        result = converter.histogrammar(df._jdf, agg)
+        delta = Factory.fromJson(jsonlib.loads(result.toJsonString()))
+        self += delta
 
 # useful functions
 
