@@ -237,16 +237,27 @@ class Categorize(Factory, Container):
         self._checkNPQuantity(q, shape)
         self._checkNPWeights(weights, shape)
         weights = self._makeNPWeights(weights, shape)
+        newentries = weights.sum()
+        
+        subweights = weights.copy()
+        subweights[weights < 0.0] = 0.0
+
+        import numpy
+        selection = numpy.empty(q.shape, dtype=numpy.bool)
+
+        uniques, inverse = numpy.unique(q, return_inverse=True)
 
         # no possibility of exception from here on out (for rollback)
-        for x, w in zip(q, weights):
-            if w > 0.0:
-                if x not in self.bins:
-                    self.bins[x] = self.value.zero()
-                self.bins[x].fill(x, w)
+        for i, x in enumerate(uniques):
+            if x not in self.bins:
+                self.bins[x] = self.value.zero()
+            
+            numpy.not_equal(inverse, i, selection)
+            subweights[:] = weights
+            subweights[selection] = 0.0
+            self.bins[x]._numpy(data, subweights, shape)
 
-        # no possibility of exception from here on out (for rollback)
-        self.entries += float(weights.sum())
+        self.entries += float(newentries)
 
     def _sparksql(self, jvm, converter):
         return converter.Categorize(self.quantity.asSparkSQL(), self.value._sparksql(jvm, converter))
