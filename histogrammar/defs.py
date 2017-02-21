@@ -107,7 +107,7 @@ class Factory(object):
 
     @staticmethod
     def fromJsonFile(fileName):
-        return Factory.fromJson(jsonlib.load(open(fileName), json))
+        return Factory.fromJson(jsonlib.load(open(fileName)))
 
     @staticmethod
     def fromJsonString(json):
