@@ -17,6 +17,8 @@
 from __future__ import absolute_import
 import types
 
+# python 2/3 compatibility fixes
+from histogrammar.util import *
 
 def prepare2Dsparse(sparse):
     yminBins = [v.minBin for v in sparse.bins.values() if v.minBin is not None]
@@ -25,10 +27,10 @@ def prepare2Dsparse(sparse):
         yminBin = min(yminBins)
         ymaxBin = max(ymaxBins)
     else:
-        yminBin = 0.0
-        ymaxBin = 0.0
+        yminBin = 0
+        ymaxBin = 0
     sample = list(sparse.bins.values())[0]
-    ynum = 1.0 + ymaxBin - yminBin
+    ynum = 1 + ymaxBin - yminBin
     ylow = yminBin * sample.binWidth + sample.origin
     yhigh = (ymaxBin + 1.0) * sample.binWidth + sample.origin
     return yminBin, ymaxBin, ynum, ylow, yhigh
@@ -52,13 +54,11 @@ class HistogramMethods(object):
         import numpy as np
         ax = plt.gca()
 
-        entries = [x.entries for x in self.values]
+        edges = self.bin_edges()
+        entries = self.bin_entries()
+        width = self.bin_width()
 
-        num_bins = len(self.values)
-        width = (self.high - self.low)/num_bins
-        edges = np.linspace(self.low, self.high, num_bins + 1)[:-1]
-
-        ax.bar(edges, entries, width=width, **kwargs)
+        ax.bar(edges[:-1], entries, width=width, **kwargs)
 
         if name is not None:
             ax.set_title(name)
@@ -66,6 +66,42 @@ class HistogramMethods(object):
             ax.set_title(self.name)
 
         return ax
+
+    def num_bins(self):
+        """
+        Returns number of bins
+        """
+        return len(self.values)
+    
+    def bin_width(self):
+        """
+        Returns bin width
+        """
+        return (self.high - self.low) / self.num_bins()
+    
+    def bin_entries(self):
+        """
+        Returns bin values
+        """
+        import numpy as np
+        return np.array([x.entries for x in self.values])
+
+    def bin_edges(self):
+        """
+        Returns bin edges
+        """
+        import numpy as np
+        num_bins = self.num_bins()
+        edges = np.linspace(self.low, self.high, num_bins + 1)
+        return edges
+
+    def bin_centers(self):
+        """
+        Returns bin centers
+        """
+        import numpy as np
+        return np.array([sum(self.range(i))/2.0 for i in self.indexes])
+
 
 class SparselyHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
@@ -79,14 +115,13 @@ class SparselyHistogramMethods(object):
         import numpy as np
         ax = plt.gca()
 
-        if self.minBin is None or self.maxBin is None:
-            ax.bar([self.origin, self.origin + 1], self.bins[0].entries, width=self.binWidth, **kwargs)
-        else:
-            size = 1 + self.maxBin - self.minBin
-            entries = [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(self.minBin, self.maxBin + 1)]
-            edges = np.linspace(self.minBin, self.maxBin, len(entries) + 1)[:-1]
-            ax.bar(edges, entries, width=self.binWidth, **kwargs)
+        edges = self.bin_edges()
+        entries = self.bin_entries()
+        width = self.bin_width()
 
+        ax.bar(edges[:-1], entries, width=width, **kwargs)
+        ax.set_xlim(self.low,self.high)
+        
         if name is not None:
             ax.set_title(name)
         else:
@@ -94,6 +129,58 @@ class SparselyHistogramMethods(object):
 
         return ax
 
+    def num_bins(self):
+        """
+        Returns number of bins
+        """
+        if self.minBin is None or self.maxBin is None:
+            return 0
+        nbins = self.maxBin - self.minBin + 1
+        return nbins
+    
+    def bin_width(self):
+        """
+        Returns bin width
+        """
+        return self.binWidth
+
+    def bin_edges(self):
+        """
+        Returns bin_edges
+        """
+        import numpy as np
+
+        if self.minBin is None or self.maxBin is None:
+            edges = np.array([self.origin, self.origin + 1])
+        else:
+            num_bins = self.maxBin - self.minBin + 1
+            edges = np.linspace(self.low, self.high, num_bins + 1)
+        return edges
+    
+    def bin_entries(self):
+        """
+        Returns bin values
+        """
+        import numpy as np
+
+        if self.minBin is None or self.maxBin is None:
+            entries = [self.bins[0].entries]
+        else:
+            entries = [self.bins[i].entries if i in self.bins else 0.0 \
+                       for i in range(self.minBin, self.maxBin + 1)]
+        return np.array(entries)
+
+    def bin_centers(self):
+        """
+        Returns bin centers
+        """
+        import numpy as np
+
+        bin_edges = self.bin_edges()
+        centers = [(bin_edges[i]+bin_edges[i+1])/2. for i in range(len(bin_edges)-1)]
+        return np.array(centers)
+        
+    
 class ProfileMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for Bin of Average
@@ -242,7 +329,7 @@ class StackedHistogramMethods(object):
         import numpy as np
         ax = plt.gca()
         color_cycle = plt.rcParams['axes.color_cycle']
-        if kwargs.has_key("color"):
+        if "color" in kwargs:
             kwargs.pop("color")
 
         for i, hist in enumerate(self.values):
@@ -264,7 +351,7 @@ class PartitionedHistogramMethods(object):
         import numpy as np
         ax = plt.gca()
         color_cycle = plt.rcParams['axes.color_cycle']
-        if kwargs.has_key("color"):
+        if "color" in kwargs:
             kwargs.pop("color")
 
         for i, hist in enumerate(self.values):
@@ -330,15 +417,9 @@ class TwoDimensionallyHistogramMethods(object):
         import numpy as np
         ax = plt.gca()
 
-        samp = self.values[0]
-        x_ranges = np.unique(np.array([self.range(i) for i in self.indexes]).flatten())
-        y_ranges = np.unique(np.array([samp.range(i) for i in samp.indexes]).flatten())
-
-        grid = np.zeros((samp.num, self.num))
-
-        for j in xrange(self.num):
-            for i in xrange(samp.num):
-                grid[i,j] = self.values[j].values[i].entries
+        x_ranges, y_ranges, grid = self.xy_ranges_grid()
+        ax.set_ylim(self.y_lim())
+        ax.set_xlim(self.x_lim())
 
         ax.pcolormesh(x_ranges, y_ranges, grid, **kwargs)
 
@@ -348,6 +429,34 @@ class TwoDimensionallyHistogramMethods(object):
             ax.set_title(self.name)
         return ax
 
+    def xy_ranges_grid(self):
+        """ Return x and y ranges and x,y grid
+        """
+        import numpy as np
+
+        samp = self.values[0]
+        x_ranges = np.unique(np.array([self.range(i) for i in self.indexes]).flatten())
+        y_ranges = np.unique(np.array([samp.range(i) for i in samp.indexes]).flatten())
+
+        grid = np.zeros((samp.num, self.num))
+
+        for j in range(self.num):
+            for i in range(samp.num):
+                grid[i,j] = self.values[j].values[i].entries
+
+        return x_ranges, y_ranges, grid
+
+    def x_lim(self):
+        """ return x low high tuble
+        """
+        return (self.low,self.high)
+    
+    def y_lim(self):
+        """ return y low high tuble
+        """
+        samp = self.values[0]
+        return (samp.low,samp.high)
+        
 
 class SparselyTwoDimensionallyHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
@@ -360,6 +469,24 @@ class SparselyTwoDimensionallyHistogramMethods(object):
         import matplotlib.pyplot as plt
         import numpy as np
         ax = plt.gca()
+
+        x_ranges, y_ranges, grid = self.xy_ranges_grid()
+        
+        ax.pcolormesh(x_ranges, y_ranges, grid, **kwargs)
+        ax.set_ylim(self.y_lim())
+        ax.set_xlim(self.x_lim())
+
+        if name is not None:
+            ax.set_title(name)
+        else:
+            ax.set_title(self.name)
+
+        return ax
+
+    def xy_ranges_grid(self):
+        """ Return x and y ranges and x,y grid
+        """
+        import numpy as np
 
         yminBin, ymaxBin, ynum, ylow, yhigh = prepare2Dsparse(self)
 
@@ -377,17 +504,20 @@ class SparselyTwoDimensionallyHistogramMethods(object):
         x_ranges = np.arange(xlow, xhigh + xbinWidth, xbinWidth)
         y_ranges = np.arange(ylow, yhigh + ybinWidth, ybinWidth)
 
-        ax.pcolormesh(x_ranges, y_ranges, grid, **kwargs)
-        ax.set_ylim((ylow, yhigh))
-        ax.set_xlim((xlow, xhigh))
+        return x_ranges, y_ranges, grid
 
-        if name is not None:
-            ax.set_title(name)
-        else:
-            ax.set_title(self.name)
-
-        return ax
-
-
-
-
+    def x_lim(self):
+        """ return x low high tuble
+        """
+        xmaxBin = max(self.bins.keys())
+        xminBin = min(self.bins.keys())
+        xlow = xminBin * self.binWidth + self.origin
+        xhigh = (xmaxBin + 1) * self.binWidth + self.origin
+        return (xlow,xhigh)
+    
+    def y_lim(self):
+        """ return y low high tuble
+        """
+        yminBin, ymaxBin, ynum, ylow, yhigh = prepare2Dsparse(self)
+        return (ylow,yhigh)
+        
