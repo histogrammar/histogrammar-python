@@ -222,7 +222,7 @@ class SparselyBin(Factory, Container):
         else:
             return (self.maxBin + 1) * self.binWidth + self.origin
 
-    def at(index):
+    def at(self, index):
         """Extract the container at a given index, if it exists."""
         return self.bins.get(index, None)
 
@@ -231,7 +231,7 @@ class SparselyBin(Factory, Container):
         """Get a sequence of filled indexes."""
         return sorted(self.keys)
 
-    def range(index):
+    def range(self, index):
         """Get the low and high edge of a bin (given by index number)."""
         return (index * self.binWidth + self.origin, (index + 1) * self.binWidth + self.origin)
     

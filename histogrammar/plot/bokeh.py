@@ -19,6 +19,9 @@ from __future__ import absolute_import
 
 import math
 
+# python 2/3 compatibility fixes
+from histogrammar.util import *
+
 class HistogramMethods(object):
     def plotbokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
 

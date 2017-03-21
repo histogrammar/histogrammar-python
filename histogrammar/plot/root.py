@@ -19,6 +19,9 @@
 import math
 import types
 
+# python 2/3 compatibility fixes
+from histogrammar.util import *
+
 try:
     from collections import OrderedDict
 except ImportError:
@@ -229,7 +232,8 @@ class TwoDimensionallyHistogramMethods(object):
         import ROOT
         constructor = getattr(ROOT, "TH2" + binType)
         sample = self.values[0]
-        th2 = constructor(name, title, self.num, self.low, self.high, sample.num, sample.low, sample.high)
+        th2 = constructor(name, title, int(self.num), float(self.low), float(self.high), \
+                          int(sample.num), float(sample.low), float(sample.high))
         for i in xrange(self.num):
             for j in xrange(sample.num):
                 th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
@@ -240,6 +244,7 @@ class SparselyTwoDimensionallyHistogramMethods(object):
         import ROOT
         constructor = getattr(ROOT, "TH2" + binType)
         yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
-        th2 = constructor(name, title, self.num, self.low, self.high, ynum, ylow, yhigh)
+        th2 = constructor(name, title, int(self.num), float(self.low), float(self.high), \
+                          int(ynum), float(ylow), float(yhigh))
         setTH2sparse(self, yminBin, ymaxBin, th2)
         return th2
