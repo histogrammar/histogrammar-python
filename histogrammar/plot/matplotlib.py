@@ -179,6 +179,70 @@ class SparselyHistogramMethods(object):
         bin_edges = self.bin_edges()
         centers = [(bin_edges[i]+bin_edges[i+1])/2. for i in range(len(bin_edges)-1)]
         return np.array(centers)
+        
+
+class CategorizeHistogramMethods(object):
+    def plotmatplotlib(self, name=None, **kwargs):
+        """
+            name : title of the plot.
+            kwargs :  `matplotlib.patches.Rectangle` properties.
+
+            Returns a matplotlib.axes instance
+        """
+        import matplotlib.pyplot as plt
+        import numpy as np
+        ax = plt.gca()
+
+        width = kwargs.pop('width',0.8)
+
+        labels = self.bin_labels()
+        values = self.bin_entries()
+        assert len(labels)==len(values), \
+            'labels and values have different array lengths: %d vs %d.' % \
+            (len(labels),len(values))
+
+        # plot histogram
+        tick_pos = np.arange(len(labels)) + 0.5
+        ax.bar(tick_pos - 0.4, values, width=width, **kwargs)
+
+        # set x-axis properties
+        def xtick(lab):
+            lab = str(lab)
+            if len(lab) > 20:
+                lab = lab[:17] + '...'
+            return lab
+        ax.set_xlim((0., float(len(labels))))
+        ax.set_xticks(tick_pos)
+        ax.set_xticklabels([xtick(lab) for lab in labels], fontsize=12, rotation=90)
+
+        # set title
+        if name is not None:
+            ax.set_title(name)
+        else:
+            ax.set_title(self.name)
+
+        return ax
+
+    def bin_entries(self):
+        """
+        Returns bin values
+        """
+        import numpy as np
+        return np.array([self.bins[i].entries for i in self.bins])
+
+    def bin_labels(self):
+        """
+        Returns bin labels
+        """
+        import numpy as np
+        labels = []
+        for i,key in enumerate(self.bins.keys()):
+            try:
+                label = str(key)
+            except:
+                label = 'bin_%d' % i
+            labels.append(label)
+        return np.asarray(labels)
 
 
 class ProfileMethods(object):

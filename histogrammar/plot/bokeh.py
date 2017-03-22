@@ -116,6 +116,10 @@ class SparselyHistogramMethods(object):
         return GlyphRenderer(glyph=glyph,data_source=source)
 
 
+class CategorizeHistogramMethods(object):
+    pass
+
+
 class ProfileMethods(object):
     def plotbokeh(self,glyphType="line",glyphSize=1,fillColor="red",lineColor="black",lineAlpha=1,fillAlpha=0.1,lineDash='solid'):
 
