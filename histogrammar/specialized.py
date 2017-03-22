@@ -23,6 +23,7 @@ from histogrammar.primitives.fraction import Fraction
 from histogrammar.primitives.irregularlybin import IrregularlyBin
 from histogrammar.primitives.select import Select
 from histogrammar.primitives.sparselybin import SparselyBin
+from histogrammar.primitives.categorize import Categorize
 from histogrammar.primitives.stack import Stack
 from histogrammar.util import serializable
 
@@ -36,9 +37,13 @@ def Histogram(num, low, high, quantity, selection=unweighted):
         Count.ing(), Count.ing(), Count.ing(), Count.ing()))
 
 def SparselyHistogram(binWidth, quantity, selection=unweighted, origin=0.0):
-    "Convenience function for creating a sparsely binned histogram."
+    """Convenience function for creating a sparsely binned histogram."""
     return Select.ing(selection,
         SparselyBin.ing(binWidth, quantity, Count.ing(), Count.ing(), origin))
+
+def CategorizeHistogram(quantity, selection=unweighted):
+    """Convenience function for creating a categorize histogram."""
+    return Select.ing(selection, Categorize.ing(quantity, Count.ing()))
 
 def Profile(num, low, high, binnedQuantity, averagedQuantity, selection=unweighted):
     """Convenience function for creating binwise averages."""
@@ -138,6 +143,21 @@ class SparselyHistogramMethods(SparselyBin,
     def confidenceIntervalValues(self,absz=1.0):
         from math import sqrt
         return map(lambda v: absz*sqrt(v), [v.entries for _, v in sorted(self.bins.items())])
+
+class CategorizeHistogramMethods(Categorize,
+                                 histogrammar.plot.root.CategorizeHistogramMethods,
+                                 histogrammar.plot.bokeh.CategorizeHistogramMethods,
+                                 histogrammar.plot.matplotlib.CategorizeHistogramMethods):
+
+    """Methods that are implicitly added to container combinations that look like categorical histograms."""
+
+    @property
+    def name(self):
+        return "Categorize"
+
+    @property
+    def factory(self):
+        return Categorize
 
 class ProfileMethods(Bin,
         histogrammar.plot.root.ProfileMethods,
@@ -325,6 +345,9 @@ def addImplicitMethods(container):
 
     elif isinstance(container, SparselyBin) and container.contentType == "Count" and all(isinstance(v, Count) for v in container.bins.values()):
         container.__class__ = SparselyHistogramMethods
+
+    elif isinstance(container, Categorize) and container.contentType == "Count" and all(isinstance(v, Count) for v in container.bins.values()):
+        container.__class__ = CategorizeHistogramMethods
 
     elif isinstance(container, Bin) and all(isinstance(v, Average) for v in container.values):
         container.__class__ = ProfileMethods

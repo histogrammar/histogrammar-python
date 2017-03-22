@@ -80,7 +80,7 @@ class Categorize(Factory, Container):
         self.value = value
         self.bins = {}
         if value is not None:
-            self.contentType = str(value.factory.name)
+            self.contentType = value.name
         super(Categorize, self).__init__()
         self.specialize()
 
