@@ -363,7 +363,12 @@ class SparselyBin(Factory, Container):
         subweights[selection] = 0.0
         self.nanflow._numpy(data, subweights, shape)
 
-        q = q.copy()
+        # switch to float here like in bin.py else numpy throws
+        # TypeError on trivial integer cases such as:
+        # >>> q = numpy.array([1,2,3,4])
+        # >>> np.divide(q,1,q)
+        # >>> np.floor(q,q)
+        q = numpy.array(q, dtype=numpy.float64)
         neginfs = numpy.isneginf(q)
         posinfs = numpy.isposinf(q)
 
