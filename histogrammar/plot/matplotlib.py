@@ -179,8 +179,8 @@ class SparselyHistogramMethods(object):
         bin_edges = self.bin_edges()
         centers = [(bin_edges[i]+bin_edges[i+1])/2. for i in range(len(bin_edges)-1)]
         return np.array(centers)
-        
-    
+
+
 class ProfileMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for Bin of Average
@@ -418,10 +418,10 @@ class TwoDimensionallyHistogramMethods(object):
         ax = plt.gca()
 
         x_ranges, y_ranges, grid = self.xy_ranges_grid()
-        ax.set_ylim(self.y_lim())
-        ax.set_xlim(self.x_lim())
 
         ax.pcolormesh(x_ranges, y_ranges, grid, **kwargs)
+        ax.set_ylim(self.y_lim())
+        ax.set_xlim(self.x_lim())
 
         if name is not None:
             ax.set_title(name)
@@ -456,7 +456,39 @@ class TwoDimensionallyHistogramMethods(object):
         """
         samp = self.values[0]
         return (samp.low,samp.high)
+
+    def project_on_x(self):
+        """ project 2d histogram onto x-axis
+
+        :returns: on x-axis projected histogram (1d)
+        :rtype: histogrammar.Bin
+        """
+        from histogrammar import Bin, Count
+
+        h_x = Bin(num = self.num, low = self.low, high = self.high, \
+                  quantity = self.quantity, value = Count())
+        # loop over all counters and integrate over y (=j)
+        for i,bi in enumerate(self.values):
+            h_x.values[i].entries += sum(bj.entries for bj in bi.values) 
+        return h_x
+
+    def project_on_y(self):
+        """ project 2d histogram onto y-axis
+
+        :returns: on y-axis projected histogram (1d)
+        :rtype: histogrammar.Bin
+        """
+        from histogrammar import Bin, Count
         
+        ybin = self.values[0]
+        h_y = Bin(num = ybin.num, low = ybin.low, high = ybin.high, \
+                  quantity = ybin.quantity, value = Count())
+        # loop over all counters and integrate over x (=i)
+        for bi in self.values:
+            for j,bj in enumerate(bi.values):
+                h_y.values[j].entries += bj.entries
+        return h_y
+    
 
 class SparselyTwoDimensionallyHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
@@ -491,7 +523,11 @@ class SparselyTwoDimensionallyHistogramMethods(object):
         yminBin, ymaxBin, ynum, ylow, yhigh = prepare2Dsparse(self)
 
         xbinWidth = self.binWidth
-        ybinWidth = self.bins[0].binWidth
+        try:
+            ykey = list(self.bins.keys())[0]
+        except:
+            raise KeyError('SparselyBin 2d hist is not filled.')
+        ybinWidth = self.bins[ykey].binWidth
 
         xmaxBin = max(self.bins.keys())
         xminBin = min(self.bins.keys())
@@ -521,3 +557,42 @@ class SparselyTwoDimensionallyHistogramMethods(object):
         yminBin, ymaxBin, ynum, ylow, yhigh = prepare2Dsparse(self)
         return (ylow,yhigh)
         
+    def project_on_x(self):
+        """ project 2d sparselybin histogram onto x-axis
+
+        :returns: on x-axis projected histogram (1d)
+        :rtype: histogrammar.SparselyBin
+        """
+        from histogrammar import SparselyBin, Count
+
+        h_x = SparselyBin(binWidth = self.binWidth, origin = self.origin, \
+                          quantity = self.quantity, value = Count())
+        # loop over all counters and integrate over y (=j)
+        for i in self.bins:
+            bi = self.bins[i]
+            h_x.bins[i] = Count.ed( sum(bi.bins[j].entries for j in bi.bins) ) 
+        return h_x
+
+    def project_on_y(self):
+        """ project 2d sparselybin histogram onto y-axis
+
+        :returns: on y-axis projected histogram (1d)
+        :rtype: histogrammar.SparselyBin
+        """
+        from histogrammar import SparselyBin, Count
+
+        try:
+            ykey = list(self.bins.keys())[0]
+        except:
+            raise KeyError('SparselyBin 2d hist is not filled. Cannot project on y-axis.')
+        ybin = self.bins[ykey]
+        h_y = SparselyBin(binWidth = ybin.binWidth, origin = ybin.origin, \
+                          quantity = ybin.quantity, value = Count())
+        # loop over all counters and integrate over x (=i)
+        for i in self.bins:
+            bi = self.bins[i]
+            for j in bi.bins:
+                if not j in h_y.bins:
+                    h_y.bins[j] = Count()
+                h_y.bins[j].entries += bi.bins[j].entries
+        return h_y
