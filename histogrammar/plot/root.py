@@ -89,6 +89,28 @@ class SparselyHistogramMethods(object):
             setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(self.minBin, self.maxBin + 1)], 0.0, 0.0, th1)
         return th1
 
+class CategorizeHistogramMethods(object):
+    def plotroot(self, name, title="", binType="C"):
+        """ Construct a ROOT histogram
+            
+        :param str name: name of the histogram 
+        :param str title: title of the histogram (optional)
+        :param str binType: histogram bin type. Default is "C" (char).
+        :returns: ROOT histgram
+        """
+        import ROOT
+        constructor = getattr(ROOT, "TH1" + binType)
+        th1 = constructor(name, title, len(self.bins), 0, 1)
+        th1.SetMinimum(0)
+        for i,key in enumerate(self.bins.keys()):
+            b = self.bins[key]
+            try:
+                label = str(key)
+            except:
+                label = 'bin_%d' % i
+            th1.Fill(label,b.entries)
+        return th1
+
 class ProfileMethods(object):
     def plotroot(self, name, title=""):
         import ROOT
