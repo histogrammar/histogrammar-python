@@ -161,16 +161,19 @@ class Bin(Factory, Container):
             i += 1
         
         # Map values to number of dots representing them (maximum is 63)
-        # and get range of values corresponding to each bin
         range = max - min
         prop = 63 / range
 
         dots = [None] * length
+        i = 0
+        while i < length:
+            dots[i] = int((values[i] - min)*prop)
+            i += 1
         
+        # Get range of values corresponding to each bin
         ranges = ["underflow"] + [None] * (length - 3) + ["overflow", "nanflow"]
         i = 1
         while i < (length - 2):
-            dots[i] = int((values[i] - min)*prop)
             ranges[i] = "[" + str(self.range(i))[1:]
             i += 1
      
@@ -632,3 +635,4 @@ class Bin(Factory, Container):
         return hash((self.low, self.high, self.quantity, self.entries, tuple(self.values), self.underflow, self.overflow, self.nanflow))
 
 Factory.register(Bin)
+
