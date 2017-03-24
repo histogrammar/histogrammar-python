@@ -142,6 +142,51 @@ class Bin(Factory, Container):
         super(Bin, self).__init__()
         self.specialize()
 
+    def ascii(self):
+        """Prints ascii histogram, for debuging on headless machines"""
+        underflow = self.underflow.toInt()
+        overflow = self.overflow.toInt()
+        nanflow = self.nanflow.toInt()
+        values = [underflow] + self._toArray() + [overflow, nanflow]
+        min = values[0]
+        max = values[0]
+
+        length = len(values)
+        i = 1
+        while i < length:
+            if values[i] > max:
+                max = values[i]
+            elif values[i] < min:
+                min = values[i]
+            i += 1
+        
+        # Map values to number of dots representing them (maximum is 63)
+        range = max - min
+        prop = 63 / range
+
+        dots = [None] * length
+        i = 0
+        while i < length:
+            dots[i] = int((values[i] - min)*prop)
+            i += 1
+        
+        # Get range of values corresponding to each bin
+        ranges = ["underflow"] + [None] * (length - 3) + ["overflow", "nanflow"]
+        i = 1
+        while i < (length - 2):
+            ranges[i] = "[" + str(self.range(i))[1:]
+            i += 1
+     
+        print("{:>19}{:>65}".format(min, max))
+        print(" " * 18 + "+" + "-" * 63 + "+")
+
+        i = 0
+        while i < length:
+            print("{:<14}{:<4}{:<65}".format(ranges[i], int(values[i]), "|" + "*" * dots[i] + " " * (63 - dots[i]) + "|"))
+            i += 1
+
+        print(" " * 18 + "+" + "-" * 63 + "+")
+
     def histogram(self):
         """Return a plain histogram by converting all sub-aggregator values into :doc:`Counts <histogrammar.primitives.count.Count>`."""
         out = Bin(len(self.values), self.low, self.high, self.quantity, None, self.underflow.copy(), self.overflow.copy(), self.nanflow.copy())
