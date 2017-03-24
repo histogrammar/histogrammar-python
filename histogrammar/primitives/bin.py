@@ -472,11 +472,11 @@ class Bin(Factory, Container):
     def _sparksql(self, jvm, converter):
         return converter.Bin(len(self.values), self.low, self.high, self.quantity.asSparkSQL(), self.values[0]._sparksql(jvm, converter), self.underflow._sparksql(jvm, converter), self.overflow._sparksql(jvm, converter), self.nanflow._sparksql(jvm, converter))
 
-    def _toArray(Bin):
+    def _toArray(self):
         """Converts Bin to array of frequencies"""
-        values = [None] * int(len(Bin.values))
+        values = [None] * int(len(self.values))
         i = 0
-        for value in Bin.values:
+        for value in self.values:
             value = str(value)
             end = len(value) - 1
             values[i] = float(value[7:end])
