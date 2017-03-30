@@ -194,6 +194,13 @@ class Count(Factory, Container):
     def _sparksql(self, jvm, converter):
         return converter.Count()   # TODO: handle transform
 
+    def toInt(self):
+        """Return intiger value of count"""
+        value = str(self)
+        end = len(value) - 1
+        value = float(value[7:end])
+        return int(value)
+
     @property
     def children(self):
         """List of sub-aggregators, to make it possible to walk the tree."""
