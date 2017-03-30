@@ -172,7 +172,7 @@ class Bin(Factory, Container):
             ranges[i] = "[" + str(self.range(i))[1:]
             i += 1
      
-        printedValues = ["{0:<.2g}".format(v) for v in values]
+        printedValues = ["{0:<.4g}".format(v) for v in values]
         printedValuesWidth = max(len(x) for x in printedValues)
         formatter = "{0:<14} {1:<%s} {2:<65}" % printedValuesWidth
 
