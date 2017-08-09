@@ -148,9 +148,9 @@ class Categorize(Factory, Container):
             self.entries += other.entries
             for k in self.keySet.union(other.keySet):
                 if k in self.bins and k in other.bins:
-                    bins[k] += other.bins[k]
+                    self.bins[k] += other.bins[k]
                 elif k not in self.bins and k in other.bins:
-                    bins[k] = self.bins[k].copy()
+                    self.bins[k] = other.bins[k].copy()
             return self
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
