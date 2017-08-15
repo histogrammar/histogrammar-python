@@ -398,7 +398,7 @@ class SparselyBin(Factory, Container):
         self.entries += float(newentries)
 
     def _sparksql(self, jvm, converter):
-        return converter.SparselyBin(self.binWidth, quantity.asSparkSQL(), self.value._sparksql(jvm, converter), self.nanflow._sparksql(jvm, converter), self.origin)
+        return converter.SparselyBin(self.binWidth, self.quantity.asSparkSQL(), self.value._sparksql(jvm, converter), self.nanflow._sparksql(jvm, converter), self.origin)
 
     @property
     def children(self):
