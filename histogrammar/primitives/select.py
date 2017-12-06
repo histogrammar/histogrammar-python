@@ -227,7 +227,7 @@ class Select(Factory, Container):
         self.entries += float(weights.sum())
 
     def _sparksql(self, jvm, converter):
-        return converter.Select(quantity.asSparkSQL(), self.cut._sparksql(jvm, converter))
+        return converter.Select(self.quantity.asSparkSQL(), self.cut._sparksql(jvm, converter))
 
     @property
     def children(self):
