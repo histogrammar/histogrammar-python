@@ -67,42 +67,6 @@ class HistogramMethods(object):
 
         return ax
 
-    def num_bins(self):
-        """
-        Returns number of bins
-        """
-        return len(self.values)
-    
-    def bin_width(self):
-        """
-        Returns bin width
-        """
-        return (self.high - self.low) / self.num_bins()
-    
-    def bin_entries(self):
-        """
-        Returns bin values
-        """
-        import numpy as np
-        return np.array([x.entries for x in self.values])
-
-    def bin_edges(self):
-        """
-        Returns bin edges
-        """
-        import numpy as np
-        num_bins = self.num_bins()
-        edges = np.linspace(self.low, self.high, num_bins + 1)
-        return edges
-
-    def bin_centers(self):
-        """
-        Returns bin centers
-        """
-        import numpy as np
-        return np.array([sum(self.range(i))/2.0 for i in self.indexes])
-
-
 class SparselyHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
         """
@@ -128,58 +92,6 @@ class SparselyHistogramMethods(object):
             ax.set_title(self.name)
 
         return ax
-
-    def num_bins(self):
-        """
-        Returns number of bins
-        """
-        if self.minBin is None or self.maxBin is None:
-            return 0
-        nbins = self.maxBin - self.minBin + 1
-        return nbins
-    
-    def bin_width(self):
-        """
-        Returns bin width
-        """
-        return self.binWidth
-
-    def bin_edges(self):
-        """
-        Returns bin_edges
-        """
-        import numpy as np
-
-        if self.minBin is None or self.maxBin is None:
-            edges = np.array([self.origin, self.origin + 1])
-        else:
-            num_bins = self.maxBin - self.minBin + 1
-            edges = np.linspace(self.low, self.high, num_bins + 1)
-        return edges
-    
-    def bin_entries(self):
-        """
-        Returns bin values
-        """
-        import numpy as np
-
-        if self.minBin is None or self.maxBin is None:
-            entries = [self.bins[0].entries]
-        else:
-            entries = [self.bins[i].entries if i in self.bins else 0.0 \
-                       for i in range(self.minBin, self.maxBin + 1)]
-        return np.array(entries)
-
-    def bin_centers(self):
-        """
-        Returns bin centers
-        """
-        import numpy as np
-
-        bin_edges = self.bin_edges()
-        centers = [(bin_edges[i]+bin_edges[i+1])/2. for i in range(len(bin_edges)-1)]
-        return np.array(centers)
-        
 
 class CategorizeHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
@@ -222,28 +134,6 @@ class CategorizeHistogramMethods(object):
             ax.set_title(self.name)
 
         return ax
-
-    def bin_entries(self):
-        """
-        Returns bin values
-        """
-        import numpy as np
-        return np.array([self.bins[i].entries for i in self.bins])
-
-    def bin_labels(self):
-        """
-        Returns bin labels
-        """
-        import numpy as np
-        labels = []
-        for i,key in enumerate(self.bins.keys()):
-            try:
-                label = str(key)
-            except:
-                label = 'bin_%d' % i
-            labels.append(label)
-        return np.asarray(labels)
-
 
 class ProfileMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):

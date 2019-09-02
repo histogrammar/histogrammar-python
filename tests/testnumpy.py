@@ -44,6 +44,18 @@ class Numpy(object):
         except ImportError:
             pass
 
+class Pandas(object):
+    def __enter__(self):
+        try:
+            import pandas
+        except ImportError:
+            return None
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            import pandas
+        except ImportError:
+            pass
+
 def makeSamples(SIZE, HOLES):
     with Numpy() as numpy:
         if numpy is None:
@@ -78,6 +90,65 @@ def makeSamples(SIZE, HOLES):
                 withholes2[rand.randint(0, SIZE)] = float("-inf")
 
         return {"empty": empty, "positive": positive, "boolean": boolean, "noholes": noholes, "withholes": withholes, "withholes2": withholes2}
+
+def to_ns(x):
+    """convert timestamp to nanosec since 1970-1-1"""
+    import pandas as pd
+    return pd.to_datetime(x).value
+
+def unit(x):
+    """unit return function"""
+    return x
+
+def get_test_histograms1():
+    """ Get set 1 of test histograms
+    """
+    # dummy dataset with mixed types
+    # convert timestamp (col D) to nanosec since 1970-1-1
+    import pandas as pd
+    import histogrammar as hg
+
+    df = pd.util.testing.makeMixedDataFrame()
+    df['date'] = df['D'].apply(to_ns)
+    df['boolT'] = True
+    df['boolF'] = False
+
+    # building 1d-, 2d-, and 3d-histogram (iteratively)
+    hist1 = hg.Categorize(unit('C'))
+    hist2 = hg.Bin(5, 0, 5, unit('A'), value=hist1)
+    hist3 = hg.SparselyBin(origin=pd.Timestamp('2009-01-01').value, binWidth=pd.Timedelta(days=1).value,
+                           quantity=unit('date'), value=hist2)
+    # fill them
+    hist1.fill.numpy(df)
+    hist2.fill.numpy(df)
+    hist3.fill.numpy(df)
+
+    return df, hist1, hist2, hist3
+
+def get_test_histograms2():
+    """ Get set 2 of test histograms
+    """
+    # dummy dataset with mixed types
+    # convert timestamp (col D) to nanosec since 1970-1-1
+    import pandas as pd
+    import histogrammar as hg
+
+    df = pd.util.testing.makeMixedDataFrame()
+
+    # building 1d-, 2d-histogram (iteratively)
+    hist1 = hg.Categorize(unit('C'))
+    hist2 = hg.Bin(5, 0, 5, unit('A'), value=hist1)
+    hist3 = hg.Bin(5, 0, 5, unit('A'))
+    hist4 = hg.Categorize(unit('C'), value=hist3)
+
+    # fill them
+    hist1.fill.numpy(df)
+    hist2.fill.numpy(df)
+    hist3.fill.numpy(df)
+    hist4.fill.numpy(df)
+
+    return df, hist1, hist2, hist3, hist4
+
 
 class TestNumpy(unittest.TestCase):
     def runTest(self):
@@ -426,3 +497,289 @@ class TestNumpy(unittest.TestCase):
             self.compare("Bag no data", Bag(lambda x: x["empty"], "N"), self.data, Bag(lambda x: x, "N"), self.empty)
             self.compare("Bag noholes", Bag(lambda x: x["noholes"], "N"), self.data, Bag(lambda x: x, "N"), self.noholes)
             self.compare("Bag holes", Bag(lambda x: x["withholes"], "N"), self.data, Bag(lambda x: x, "N"), self.withholes)
+
+
+class TestPandas(unittest.TestCase):
+    def runTest(self):
+        self.test_n_dim()
+        self.test_n_bins()
+        self.test_num_bins()
+        self.test_most_probable_value()
+        self.test_bin_labels()
+        self.test_bin_centers()
+        self.test_bin_entries()
+        self.test_bin_edges()
+        self.test_bin_width()
+
+    def test_n_dim(self):
+        """ Test dimension assigned to a histogram
+        """
+        with Pandas() as pd:
+            if pd is None: return
+            with Numpy() as np:
+                if numpy is None: return
+                sys.stderr.write("\n")
+
+                df, hist1, hist2, hist3 = get_test_histograms1()
+                hist0 = hg.Count()
+
+                assert hist0.n_dim == 0
+                assert hist1.n_dim == 1
+                assert hist2.n_dim == 2
+                assert hist3.n_dim == 3
+
+    def test_n_bins(self):
+        """ Test getting the number of allocated bins
+        """
+        with Pandas() as pd:
+            if pd is None: return
+            with Numpy() as np:
+                if numpy is None: return
+                sys.stderr.write("\n")
+
+                df, hist1, hist2, hist3 = get_test_histograms1()
+
+                assert hist1.n_bins == 5
+                assert hist2.n_bins == 5
+                assert hist3.n_bins == 7
+
+    def test_num_bins(self):
+        """ Test getting the number of bins from lowest to highest bin
+        """
+        with Pandas() as pd:
+            if pd is None: return
+            with Numpy() as np:
+                if numpy is None: return
+                sys.stderr.write("\n")
+
+                df1 = pd.DataFrame({'A': [0, 2, 4, 5, 7, 9, 11, 13, 13, 15]})
+                df2 = pd.DataFrame({'A': [2, 4, 4, 6, 8, 7, 10, 14, 17, 19]})
+
+                # building 1d-, 2d-, and 3d-histogram (iteratively)
+                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+                hist4 = hg.Bin(num=20, low=0.0, high=20., quantity=unit('A'))
+                hist5 = hg.Bin(num=20, low=0.0, high=20., quantity=unit('A'))
+
+                # fill them
+                hist2.fill.numpy(df1)
+                hist3.fill.numpy(df2)
+                hist4.fill.numpy(df1)
+                hist5.fill.numpy(df2)
+
+                assert hist2.num_bins() == 16
+                assert hist3.num_bins() == 18
+                assert hist4.num_bins() == 20
+                assert hist5.num_bins() == 20
+
+                assert hist2.num_bins(low=10, high=25) == 15
+                assert hist3.num_bins(low=10, high=25) == 15
+                assert hist4.num_bins(low=10, high=25) == 10
+                assert hist5.num_bins(low=10, high=25) == 10
+
+                assert hist2.num_bins(low=-10, high=28) == 38
+                assert hist3.num_bins(low=-10, high=28) == 38
+                assert hist4.num_bins(low=-10, high=28) == 20
+                assert hist5.num_bins(low=-10, high=28) == 20
+
+    def test_most_probable_value(self):
+        """ Test getting most probable value or label from histogram
+        """
+        with Pandas() as pd:
+            if pd is None: return
+            with Numpy() as np:
+                if numpy is None: return
+                sys.stderr.write("\n")
+
+                df1 = pd.DataFrame(
+                    {'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1], 'C': ['f1', 'f3', 'f4', 'f3', 'f4', 'f2', 'f2', 'f1', 'f3', 'f4']})
+                df2 = pd.DataFrame(
+                    {'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8], 'C': ['f7', 'f3', 'f5', 'f8', 'f9', 'f2', 'f3', 'f6', 'f7', 'f7']})
+
+                # building 1d-, 2d-, and 3d-histogram (iteratively)
+                hist0 = hg.Categorize(unit('C'))
+                hist1 = hg.Categorize(unit('C'))
+                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+
+                # fill them
+                hist0.fill.numpy(df1)
+                hist1.fill.numpy(df2)
+                hist2.fill.numpy(df1)
+                hist3.fill.numpy(df2)
+
+                assert hist0.mpv == 'f3'
+                assert hist1.mpv == 'f7'
+                assert hist2.mpv == 1.5
+                assert hist3.mpv == 4.5
+
+    def test_bin_labels(self):
+        """ Test getting correct bin-labels from Categorize histograms
+        """
+        with Pandas() as pd:
+            if pd is None: return
+            with Numpy() as np:
+                if numpy is None: return
+                sys.stderr.write("\n")
+
+                df, hist1, hist2, hist3 = get_test_histograms1()
+
+                import numpy as np
+                np.testing.assert_array_equal(hist1.bin_labels(), ['foo1', 'foo2', 'foo3', 'foo4', 'foo5'])
+
+    def test_bin_centers(self):
+        """ Test getting assigned bin-centers for Bin and SparselyBin histograms
+        """
+        with Pandas() as pd:
+            if pd is None: return
+            with Numpy() as np:
+                if numpy is None: return
+                sys.stderr.write("\n")
+
+                df1 = pd.DataFrame(
+                    {'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1]})
+                df2 = pd.DataFrame(
+                    {'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8]})
+
+                # histograms
+                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+                hist4 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+                hist5 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+
+                # fill them
+                hist2.fill.numpy(df1)
+                hist3.fill.numpy(df2)
+                hist4.fill.numpy(df1)
+                hist5.fill.numpy(df2)
+
+                import numpy as np
+                np.testing.assert_array_equal(hist2.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5])
+                np.testing.assert_array_equal(hist3.bin_centers(), [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5])
+                np.testing.assert_array_equal(hist2.bin_centers(low=5, high=15),
+                                              [5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5])
+                np.testing.assert_array_equal(hist3.bin_centers(), [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5])
+                np.testing.assert_array_equal(hist3.bin_centers(low=2.1, high=5.6), [2.5, 3.5, 4.5, 5.5])
+
+                np.testing.assert_array_equal(hist4.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5])
+                np.testing.assert_array_equal(hist5.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5])
+                np.testing.assert_array_equal(hist4.bin_centers(low=5, high=15), [5.5, 6.5, 7.5, 8.5, 9.5])
+                np.testing.assert_array_equal(hist5.bin_centers(low=2.1, high=9.1), [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5])
+
+    def test_bin_entries(self):
+        """ Test getting the number of bins for all assigned bins
+        """
+        with Pandas() as pd:
+            if pd is None: return
+            with Numpy() as np:
+                if numpy is None: return
+                sys.stderr.write("\n")
+
+                df1 = pd.DataFrame(
+                    {'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1], 'C': ['f1', 'f3', 'f4', 'f3', 'f4', 'f2', 'f2', 'f1', 'f3', 'f4']})
+                df2 = pd.DataFrame(
+                    {'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8], 'C': ['f7', 'f3', 'f5', 'f8', 'f9', 'f2', 'f3', 'f6', 'f7', 'f7']})
+
+                # building 1d-, 2d-, and 3d-histogram (iteratively)
+                hist0 = hg.Categorize(unit('C'))
+                hist1 = hg.Categorize(unit('C'))
+                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+                hist4 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+                hist5 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+
+                # fill them
+                hist0.fill.numpy(df1)
+                hist1.fill.numpy(df2)
+                hist2.fill.numpy(df1)
+                hist3.fill.numpy(df2)
+                hist4.fill.numpy(df1)
+                hist5.fill.numpy(df2)
+
+                labels0 = hist0.bin_labels()
+                labels1 = hist1.bin_labels()
+                centers2 = hist2.bin_centers()
+                centers3 = hist3.bin_centers()
+                centers = hist4.bin_centers()
+
+                import numpy as np
+                np.testing.assert_array_equal(hist0.bin_entries(), [2., 2., 3., 3.])
+                np.testing.assert_array_equal(hist1.bin_entries(), [1., 2., 1., 1., 3., 1., 1.])
+                np.testing.assert_array_equal(hist0.bin_entries(labels=labels1), [2., 3., 0., 0., 0., 0., 0.])
+                np.testing.assert_array_equal(hist1.bin_entries(labels=labels0), [0., 1., 2., 0.])
+
+                np.testing.assert_array_equal(hist2.bin_entries(), [1., 4., 2., 2., 1.])
+                np.testing.assert_array_equal(hist3.bin_entries(), [1., 1., 2., 2., 1., 2., 1.])
+                np.testing.assert_array_equal(hist4.bin_entries(), [1., 4., 2., 2., 1., 0., 0., 0., 0., 0.])
+                np.testing.assert_array_equal(hist5.bin_entries(), [0., 0., 1., 1., 2., 2., 1., 2., 1., 0.])
+
+                np.testing.assert_array_equal(hist2.bin_entries(xvalues=centers3), [2., 2., 1., 0., 0., 0., 0.])
+                np.testing.assert_array_equal(hist3.bin_entries(xvalues=centers2), [0., 0., 1., 1., 2.])
+                np.testing.assert_array_equal(hist2.bin_entries(xvalues=centers), [1., 4., 2., 2., 1., 0., 0., 0., 0., 0.])
+                np.testing.assert_array_equal(hist3.bin_entries(xvalues=centers), [0., 0., 1., 1., 2., 2., 1., 2., 1., 0.])
+
+                np.testing.assert_array_equal(hist2.bin_entries(low=2.1, high=11.9), [2., 2., 1., 0., 0., 0., 0., 0., 0., 0.])
+                np.testing.assert_array_equal(hist3.bin_entries(low=1.1, high=5.4), [0., 1., 1., 2., 2.])
+                np.testing.assert_array_equal(hist4.bin_entries(low=2.1, high=11.9), [2., 2., 1., 0., 0., 0., 0., 0.])
+                np.testing.assert_array_equal(hist5.bin_entries(low=1.1, high=5.4), [0., 1., 1., 2., 2.])
+
+    def test_bin_edges(self):
+        """ Test getting the bin edges for requested ranges
+        """
+        with Pandas() as pd:
+            if pd is None: return
+            with Numpy() as np:
+                if numpy is None: return
+                sys.stderr.write("\n")
+
+                df1 = pd.DataFrame({'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1]})
+                df2 = pd.DataFrame({'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8]})
+
+                # building test histograms
+                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+                hist4 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+                hist5 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+
+                # fill them
+                hist2.fill.numpy(df1)
+                hist3.fill.numpy(df2)
+                hist4.fill.numpy(df1)
+                hist5.fill.numpy(df2)
+
+                import numpy as np
+                np.testing.assert_array_equal(hist2.bin_edges(), [0., 1., 2., 3., 4., 5.])
+                np.testing.assert_array_equal(hist3.bin_edges(), [2., 3., 4., 5., 6., 7., 8., 9.])
+                np.testing.assert_array_equal(hist4.bin_edges(), [0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.])
+                np.testing.assert_array_equal(hist5.bin_edges(), [0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.])
+
+                np.testing.assert_array_equal(hist2.bin_edges(low=2.1, high=11.9), [2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.])
+                np.testing.assert_array_equal(hist3.bin_edges(low=1.1, high=6), [1., 2., 3., 4., 5., 6.])
+                np.testing.assert_array_equal(hist4.bin_edges(low=2.1, high=11.9), [2., 3., 4., 5., 6., 7., 8., 9., 10.])
+                np.testing.assert_array_equal(hist5.bin_edges(low=1.1, high=5.4), [1., 2., 3., 4., 5., 6.])
+
+    def test_bin_width(self):
+        """ Test getting the bin width of bin and sparselybin histograms
+        """
+        with Pandas() as pd:
+            if pd is None: return
+            with Numpy() as np:
+                if numpy is None: return
+                sys.stderr.write("\n")
+
+                df1 = pd.DataFrame({'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1]})
+
+                # building test histograms
+                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+                hist4 = hg.Bin(num=20, low=0.0, high=10., quantity=unit('A'))
+                hist5 = hg.Bin(num=20, low=0.0, high=10., quantity=unit('A'))
+
+                # fill them
+                hist2.fill.numpy(df1)
+                hist4.fill.numpy(df1)
+
+                assert hist2.bin_width() == 1.0
+                assert hist3.bin_width() == 1.0
+                assert hist4.bin_width() == 0.5
+                assert hist5.bin_width() == 0.5
