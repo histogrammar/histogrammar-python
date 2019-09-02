@@ -499,10 +499,14 @@ class SparselyBin(Factory, Container):
     def __repr__(self):
         if self.bins is None:
             contentType = self.contentType
-        elif len(self.bins) == 0:
+        elif len(self.bins) == 0 and self.value is not None:
             contentType = self.value.name
-        else:
-            contentType = repr(min(self.bins.items())[1])
+        elif len(self.bins) > 0:
+            contentType = (min(self.bins.items())[1]).name
+        elif hasattr(self, 'contentType'):
+            contentType = self.contentType
+        else:  # revert to default
+            contentType = 'Count'
         return "<SparselyBin binWidth={0} bins={1} nanflow={2}>".format(self.binWidth, self.value.name if self.value is not None else self.contentType, self.nanflow.name)
 
     def __eq__(self, other):
@@ -512,5 +516,175 @@ class SparselyBin(Factory, Container):
 
     def __hash__(self):
         return hash((self.binWidth, self.quantity, self.entries, tuple(sorted(self.bins.items())), self.nanflow, self.origin))
+
+    @property
+    def n_bins(self):
+        """Get number of bins, consistent with SparselyBin and Categorize """
+        return self.size
+
+    @property
+    def n_dim(self):
+        """Histogram dimension
+
+        :returns: dimension of the histogram
+        :rtype: int
+        """
+        return get_n_dim(self)
+
+    def num_bins(self, low=None, high=None):
+        """
+        Returns number of bins
+
+        Possible to set range with low and high params
+
+        :param low: lower edge of range, default is None
+        :param high: higher edge of range, default is None
+        :returns: number of bins in range
+        :rtype: int
+        """
+        import numpy as np
+        # sparse hist not filled
+        if self.minBin is None or self.maxBin is None:
+            return 0
+        # trivial case
+        if low is None and high is None:
+            return (self.maxBin - self.minBin + 1)
+        # catch weird cases
+        elif low is not None and high is not None:
+            if low > high:
+                raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
+        # lowest edge
+        if low is None:
+            minBin = self.minBin
+        else:
+            minBin = self.bin(low)
+        # highest case
+        if high is None:
+            maxBin = self.maxBin
+        else:
+            maxBin = self.bin(high)
+            if np.isclose(high, self.origin + self.bin_width() * maxBin):
+                maxBin -= 1
+        nbins = maxBin - minBin + 1
+        return nbins
+
+    def bin_width(self):
+        """
+        Returns bin width
+        """
+        return self.binWidth
+
+    def bin_edges(self, low=None, high=None):
+        """
+        Returns bin_edges
+
+        Possible to set range with low and high params
+
+        :param low: lower edge of range, default is None
+        :param high: higher edge of range, default is None
+        :returns: numpy array with bin edges for selected range
+        :rtype: numpy.array
+        """
+        import numpy as np
+        # sparse hist not filled
+        if self.minBin is None or self.maxBin is None:
+            return np.array([self.origin, self.origin + 1])
+        # trivial cases first
+        if low is None and high is None:
+            num_bins = self.maxBin - self.minBin + 1
+            return np.linspace(self.low, self.high, num_bins + 1)
+        # catch weird cases
+        elif low is not None and high is not None:
+            if low > high:
+                raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
+        # number of bins, before low/high adjustments
+        num_bins = self.num_bins(low, high)
+        # lowest edge
+        if low is None:
+            low = self.low
+        else:
+            minBin = self.bin(low)
+            low = self.origin + self.bin_width() * minBin
+        # highest edge
+        if high is None:
+            high = self.high
+        else:
+            maxBin = self.bin(high)
+            if np.isclose(high, self.origin + self.bin_width() * maxBin):
+                maxBin -= 1
+            high = self.origin + self.bin_width() * (maxBin + 1)
+        edges = np.linspace(low, high, num_bins + 1)
+        return edges
+
+    def bin_entries(self, low=None, high=None, xvalues=[]):
+        """
+        Returns bin values
+
+        Possible to set range with low and high params or dedicated x-values
+
+        :param low: lower edge of range, default is None
+        :param high: higher edge of range, default is None
+        :param xvalues: list of x-values to get entries of, alternative to low and high
+        :returns: numpy array with numbers of entries for selected bins
+        :rtype: numpy.array
+        """
+        import numpy as np
+        # sparse hist not filled
+        if self.minBin is None or self.maxBin is None:
+            return np.array([])
+        # trivial cases first
+        if low is None and high is None and len(xvalues) == 0:
+            entries = [self.bins[i].entries if i in self.bins else 0.0 for i in range(self.minBin, self.maxBin + 1)]
+            return np.array(entries)
+        # catch weird cases
+        elif low is not None and high is not None and len(xvalues) == 0:
+            if low > high:
+                raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
+        # entries at request list of x-values
+        elif len(xvalues) > 0:
+            entries = [self.bins[self.bin(x)].entries if self.bin(x) in self.bins else 0.0 for x in xvalues]
+            return np.array(entries)
+        # lowest edge
+        if low is None:
+            minBin = self.minBin
+        else:
+            minBin = self.bin(low)
+        # highest case
+        if high is None:
+            maxBin = self.maxBin
+        else:
+            maxBin = self.bin(high)
+            if np.isclose(high, self.origin + self.bin_width() * maxBin):
+                maxBin -= 1
+        entries = [self.bins[i].entries if i in self.bins else 0.0 for i in range(minBin, maxBin + 1)]
+        return np.array(entries)
+
+    def bin_centers(self, low=None, high=None):
+        """
+        Returns bin centers
+
+        Possible to set range with low and high params
+
+        :param low: lower edge of range, default is None
+        :param high: higher edge of range, default is None
+        :returns: numpy array with bin centers for selected range
+        :rtype: numpy.array
+        """
+        import numpy as np
+        bin_edges = self.bin_edges(low, high)
+        centers = [(bin_edges[i] + bin_edges[i + 1]) / 2. for i in range(len(bin_edges) - 1)]
+        return np.array(centers)
+
+    @property
+    def mpv(self):
+        """Return bin-center of most probable value
+        """
+        bin_entries = self.bin_entries()
+        bin_centers = self.bin_centers()
+
+        # if two max elements are equal, this will return the element with the lowest index.
+        max_idx = max(enumerate(bin_entries), key=lambda x: x[1])[0]
+        bc = bin_centers[max_idx]
+        return bc
 
 Factory.register(SparselyBin)
