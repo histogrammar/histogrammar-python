@@ -189,7 +189,7 @@ class StackedHistogramMethods(object):
     def plotroot(self, *names):
         import ROOT
         out = OrderedDict()
-        for n, (c, v) in zip(names, self.cuts):
+        for n, (c, v) in zip(names, self.thresholds):
             if isinstance(n, (list, tuple)) and len(n) == 2:
                 name, title = n
             else:
@@ -211,7 +211,7 @@ class PartitionedHistogramMethods(object):
     def plotroot(self, *names):
         import ROOT
         out = OrderedDict()
-        for n, (c, v) in zip(names, self.cuts):
+        for n, (c, v) in zip(names, self.thresholds):
             if isinstance(n, (list, tuple)) and len(n) == 2:
                 name, title = n
             else:
