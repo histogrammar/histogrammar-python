@@ -499,10 +499,14 @@ class SparselyBin(Factory, Container):
     def __repr__(self):
         if self.bins is None:
             contentType = self.contentType
-        elif len(self.bins) == 0:
+        elif len(self.bins) == 0 and self.value is not None:
             contentType = self.value.name
-        else:
-            contentType = repr(min(self.bins.items())[1])
+        elif len(self.bins) > 0:
+            contentType = (min(self.bins.items())[1]).name
+        elif hasattr(self, 'contentType'):
+            contentType = self.contentType
+        else:  # revert to default
+            contentType = 'Count'
         return "<SparselyBin binWidth={0} bins={1} nanflow={2}>".format(self.binWidth, self.value.name if self.value is not None else self.contentType, self.nanflow.name)
 
     def __eq__(self, other):
