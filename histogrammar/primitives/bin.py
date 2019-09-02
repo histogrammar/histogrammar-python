@@ -142,6 +142,50 @@ class Bin(Factory, Container):
         super(Bin, self).__init__()
         self.specialize()
 
+    def ascii(self):
+        """Prints ascii histogram, for debuging on headless machines"""
+        underflow = self.underflow.entries
+        overflow = self.overflow.entries
+        nanflow = self.nanflow.entries
+        values = [underflow] + [x.entries for x in self.values] + [overflow, nanflow]
+        minimum = min(values)
+        maximum = max(values)
+
+        # Map values to number of dots representing them (maximum is 63)
+        mintomax = maximum - minimum
+        if mintomax == 0.0:
+            mintomax = 1.0
+
+        prop = 62.0 / mintomax
+
+        length = len(self.values)
+        dots = [None] * length
+        i = 0
+        while i < length:
+            dots[i] = int(round((values[i] - minimum)*prop))
+            i += 1
+        
+        # Get range of values corresponding to each bin
+        ranges = ["underflow"] + [None] * (length - 3) + ["overflow", "nanflow"]
+        i = 1
+        while i < (length - 2):
+            ranges[i] = "[" + str(self.range(i))[1:]
+            i += 1
+     
+        printedValues = ["{0:<.4g}".format(v) for v in values]
+        printedValuesWidth = max(len(x) for x in printedValues)
+        formatter = "{0:<14} {1:<%s} {2:<65}" % printedValuesWidth
+
+        print(" " * printedValuesWidth + "{0:>16}{1:>65}".format(minimum, maximum))
+        print(" " * (16 + printedValuesWidth) + "+" + "-" * 62 + "+")
+
+        i = 0
+        while i < length:
+            print(formatter.format(ranges[i], printedValues[i], "|" + "*" * dots[i] + " " * (62 - dots[i]) + "|"))
+            i += 1
+
+        print(" " * (16 + printedValuesWidth) + "+" + "-" * 62 + "+")
+
     def histogram(self):
         """Return a plain histogram by converting all sub-aggregator values into :doc:`Counts <histogrammar.primitives.count.Count>`."""
         out = Bin(len(self.values), self.low, self.high, self.quantity, None, self.underflow.copy(), self.overflow.copy(), self.nanflow.copy())
@@ -579,3 +623,4 @@ class Bin(Factory, Container):
         return hash((self.low, self.high, self.quantity, self.entries, tuple(self.values), self.underflow, self.overflow, self.nanflow))
 
 Factory.register(Bin)
+
