@@ -84,6 +84,7 @@ class Bin(Factory, Container):
         out = Bin(len(values), float(low), float(high), None, None, underflow, overflow, nanflow)
         out.entries = float(entries)
         out.values = values
+        out.contentType = values[0].name
         return out.specialize()
 
     @staticmethod
@@ -134,8 +135,10 @@ class Bin(Factory, Container):
         self.quantity = serializable(quantity)
         if value is None:
             self.values = [None] * num
+            self.contentType = "Count"
         else:
             self.values = [value.zero() for i in xrange(num)]
+            self.contentType = value.name
         self.underflow = underflow.copy()
         self.overflow = overflow.copy()
         self.nanflow = nanflow.copy()
