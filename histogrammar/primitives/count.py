@@ -221,4 +221,13 @@ class Count(Factory, Container):
     def __hash__(self):
         return hash((self.entries, self.transform))
 
+    @property
+    def n_dim(self):
+        """Histogram dimension
+
+        :returns: dimension of the histogram
+        :rtype: int
+        """
+        return 0
+
 Factory.register(Count)

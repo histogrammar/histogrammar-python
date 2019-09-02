@@ -455,3 +455,20 @@ def named(name, fcn):
         return UserFcn(fcn.expr, name)
     else:
         return UserFcn(fcn, name)
+
+def get_n_dim(cls):
+    """Histogram dimension
+
+    :returns: dimension of the histogram
+    :rtype: int
+    """
+    if isinstance(cls, histogrammar.Count):
+        return 0
+    # histogram may have a subhistogram. Extract it and recurse
+    if hasattr(cls, 'values'):
+        hist = cls.values[0] if cls.values else histogrammar.Count()
+    elif hasattr(cls, 'bins'):
+        hist = list(cls.bins.values())[0] if cls.bins else histogrammar.Count()
+    else:
+        hist = histogrammar.Count()
+    return 1 + get_n_dim(hist)

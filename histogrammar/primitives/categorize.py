@@ -347,4 +347,65 @@ class Categorize(Factory, Container):
     def __hash__(self):
         return hash((self.entries, self.quantity, tuple(sorted(self.bins.items()))))
 
+    @property
+    def n_bins(self):
+        """Get number of bins, consistent with SparselyBin and Categorize """
+        return self.size
+
+    @property
+    def n_dim(self):
+        """Histogram dimension
+
+        :returns: dimension of the histogram
+        :rtype: int
+        """
+        return get_n_dim(self)
+
+    def bin_entries(self, labels=[]):
+        """
+        Returns bin values
+
+        :param list labels: get entries for list of selected labels. When empty return for all labels found.
+        :returns: array of bin-entries
+        :rtype: numpy.array
+        """
+        import numpy as np
+        if len(labels) == 0:
+            return np.array([self.bins[i].entries for i in self.bins])
+        entries = [self.bins[l].entries if l in self.bins else 0.0 for l in labels]
+        return np.array(entries)
+
+    def bin_labels(self, max_length=-1):
+        """
+        Returns bin labels
+
+        :param int max_length: maximum length of a label. Default if full length.
+        :returns: array of labels
+        :rtype: numpy.array
+        """
+        import numpy as np
+        labels = []
+
+        for i, key in enumerate(self.bins.keys()):
+            try:
+                label = str(key)
+                if max_length > 0:
+                    label = label[:max_length]
+            except BaseException:
+                label = 'bin_%d' % i
+            labels.append(label)
+        return np.asarray(labels)
+
+    @property
+    def mpv(self):
+        """Return bin-label of most probable value
+        """
+        bin_entries = self.bin_entries()
+        bin_labels = self.bin_labels()
+
+        # if two max elements are equal, this will return the element with the lowest index.
+        max_idx = max(enumerate(bin_entries), key=lambda x: x[1])[0]
+        bl = bin_labels[max_idx]
+        return bl
+
 Factory.register(Categorize)
