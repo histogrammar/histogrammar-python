@@ -287,9 +287,11 @@ class Categorize(Factory, Container):
             binsName = None
 
         return maybeAdd({
+            # for json serialization all keys need to be strings, else json libs throws TypeError
+            # e.g. boolean keys get converted to strings here
             "entries": floatToJson(self.entries),
             "bins:type": self.value.name if self.value is not None else self.contentType,
-            "bins": dict((k, v.toJsonFragment(True)) for k, v in self.bins.items()),
+            "bins": dict((str(k), v.toJsonFragment(True)) for k, v in self.bins.items()),
             }, **{"name": None if suppressName else self.quantity.name,
                   "bins:name": binsName})
 
