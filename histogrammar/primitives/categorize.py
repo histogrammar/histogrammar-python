@@ -81,6 +81,8 @@ class Categorize(Factory, Container):
         self.bins = {}
         if value is not None:
             self.contentType = value.name
+        else:
+            self.contentType = "Count"
         super(Categorize, self).__init__()
         self.specialize()
 
@@ -286,11 +288,18 @@ class Categorize(Factory, Container):
         else:
             binsName = None
 
+        if len(self.bins) > 0:
+            bins_type = list(self.bins.values())[0].name
+        elif self.value is not None:
+            bins_type = self.value.name
+        else:
+            bins_type = self.contentType
+
         return maybeAdd({
             # for json serialization all keys need to be strings, else json libs throws TypeError
             # e.g. boolean keys get converted to strings here
             "entries": floatToJson(self.entries),
-            "bins:type": self.value.name if self.value is not None else self.contentType,
+            "bins:type": bins_type,
             "bins": dict((str(k), v.toJsonFragment(True)) for k, v in self.bins.items()),
             }, **{"name": None if suppressName else self.quantity.name,
                   "bins:name": binsName})
