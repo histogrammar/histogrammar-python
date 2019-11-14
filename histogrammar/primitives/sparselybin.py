@@ -106,6 +106,8 @@ class SparselyBin(Factory, Container):
         self.value = value
         if value is not None:
             self.contentType = value.name
+        else:
+            self.contentType = "Count"
         self.bins = {}
         self.nanflow = nanflow.copy()
         self.origin = origin
@@ -424,10 +426,17 @@ class SparselyBin(Factory, Container):
         else:
             binsName = None
 
+        if len(self.bins) > 0:
+            bins_type = list(self.bins.values())[0].name
+        elif self.value is not None:
+            bins_type = self.value.name
+        else:
+            bins_type = self.contentType
+
         return maybeAdd({
             "binWidth": floatToJson(self.binWidth),
             "entries": floatToJson(self.entries),
-            "bins:type": self.value.name if self.value is not None else self.contentType,
+            "bins:type": bins_type,
             "bins": dict((str(i), v.toJsonFragment(True)) for i, v in self.bins.items()),
             "nanflow:type": self.nanflow.name,
             "nanflow": self.nanflow.toJsonFragment(False),

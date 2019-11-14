@@ -7,7 +7,7 @@ See [histogrammar.org](http://histogrammar.org) for a complete introduction to H
 
 This is a pure Python implementation for Python versions 2.7, and 3.4, 3.5, 3.6, 3.7
 
-Latest Python release: v1.0.10 (Sep 2019).
+Latest Python release: v1.0.11 (Nov 2019).
 
 Support of Histogrammar is provided on a best-effort basis only.
 
