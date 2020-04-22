@@ -134,7 +134,7 @@ class SparselyBin(Factory, Container):
             if self.origin != other.origin:
                 raise ContainerException("cannot add SparselyBins because origin differs ({0} vs {1})".format(self.origin, other.origin))
 
-            out = SparselyBin(self.binWidth, self.quantity, self.value.copy() if self.value is not None else None, self.nanflow + other.nanflow)
+            out = SparselyBin(self.binWidth, self.quantity, self.value.copy() if self.value is not None else None, self.nanflow + other.nanflow, self.origin)
             out.entries = self.entries + other.entries
             out.bins = self.bins.copy()
             for i, v in other.bins.items():
