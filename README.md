@@ -3,11 +3,11 @@ Python implementation of Histogrammar
 
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.61418.svg)](http://dx.doi.org/10.5281/zenodo.61418)
 
-See [histogrammar.org](http://histogrammar.org) for a complete introduction to Histogrammar.
+See [https://histogrammar.github.io/histogrammar-docs](https://histogrammar.github.io/histogrammar-docs/) for a complete introduction to Histogrammar.
 
-This is a pure Python implementation for Python versions 2.7, and 3.4, 3.5, 3.6, 3.7
+This is a pure Python implementation for Python versions 2.7, and 3.4+.
 
-Latest Python release: v1.0.11 (Nov 2019).
+Latest Python release: v1.0.12 (Apr 2020).
 
 Support of Histogrammar is provided on a best-effort basis only.
 
