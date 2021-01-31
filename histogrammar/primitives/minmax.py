@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 # Copyright 2016 DIANA-HEP
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,8 +19,10 @@ import math
 import numbers
 import struct
 
-from histogrammar.defs import *
-from histogrammar.util import *
+from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
+from histogrammar.util import n_dim, datatype, serializable, inheritdoc, maybeAdd, floatToJson, hasKeys, numeq, \
+    basestring, minplus, maxplus
+
 
 class Minimize(Factory, Container):
     """Find the minimum value of a given quantity. If no data are observed, the result is NaN."""
@@ -49,24 +51,25 @@ class Minimize(Factory, Container):
         """Synonym for ``__init__``."""
         return Minimize(quantity)
 
-    def __init__(self, quantity):
+    def __init__(self, quantity=identity):
         """Create a Minimize that is capable of being filled and added.
 
         Parameters:
             quantity (function returning float): computes the quantity of interest from the data.
 
         Other parameters:
-            entries (float): the number of entries, initially 0.0. # 
+            entries (float): the number of entries, initially 0.0. #
             min (float): the lowest value of the quantity observed, initially NaN.
         """
-        self.quantity = serializable(quantity)
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.entries = 0.0
         self.min = float("nan")
         super(Minimize, self).__init__()
         self.specialize()
 
     @inheritdoc(Container)
-    def zero(self): return Minimize(self.quantity)
+    def zero(self):
+        return Minimize(self.quantity)
 
     @inheritdoc(Container)
     def __add__(self, other):
@@ -118,19 +121,33 @@ class Minimize(Factory, Container):
             if math.isnan(self.min) or q < self.min:
                 self.min = q
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                                     derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode,
+                                     fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".min = NAN;")
 
-        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        normexpr = self._c99QuantityExpr(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
+                        ".entries += " + weightVarStack[-1] + ";")
 
         fillCode.append(" " * fillIndent + "if (std::isnan({min})  ||  {q} < {min}) {min} = {q};".format(
-            min = self._c99ExpandPrefix(*fillPrefix) + ".min",
-            q = normexpr))
+            min=self._c99ExpandPrefix(*fillPrefix) + ".min",
+            q=normexpr))
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{
@@ -147,7 +164,10 @@ class Minimize(Factory, Container):
     def _c99StructName(self):
         return "Mn"
 
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                          derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                          fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix,
+                          jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         old = "old_" + str(len(tmpVarTypes))
         tmpVarTypes[old] = "int"
         assumed = "assumed_" + str(len(tmpVarTypes))
@@ -155,13 +175,32 @@ class Minimize(Factory, Container):
         trial = "trial_" + str(len(tmpVarTypes))
         tmpVarTypes[trial] = "float"
 
-        initCode.append(" " * initIndent + "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(old=old, assumed=assumed, trial=trial))
-        jsonCode.append(" " * jsonIndent + "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(old=old, assumed=assumed, trial=trial))
+        initCode.append(
+            " " *
+            initIndent +
+            "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(
+                old=old,
+                assumed=assumed,
+                trial=trial))
+        jsonCode.append(
+            " " *
+            jsonIndent +
+            "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(
+                old=old,
+                assumed=assumed,
+                trial=trial))
 
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".min = CUDART_NAN_F;")
 
-        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        normexpr = self._cudaQuantityExpr(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            None)
         fillCode.append("""{indent}atomicAdd(&{prefix}.entries, {weight});
 {indent}{old} = *(int*)(&{prefix}.min);
 {indent}do {{
@@ -172,13 +211,13 @@ class Minimize(Factory, Container):
 {indent}    {trial} = {assumed};
 {indent}  {old} = atomicCAS((int*)(&{prefix}.min), *(int*)(&{assumed}), *(int*)(&{trial}));
 {indent}}} while (*(int*)(&{assumed}) != {old});
-""".format(indent = " " * fillIndent,
-        prefix = self._c99ExpandPrefix(*fillPrefix),
-        weight = weightVarStack[-1],
-        old = old,
-        assumed = assumed,
-        trial = trial,
-        q = normexpr))
+""".format(indent=" " * fillIndent,
+           prefix=self._c99ExpandPrefix(*fillPrefix),
+           weight=weightVarStack[-1],
+           old=old,
+           assumed=assumed,
+           trial=trial,
+           q=normexpr))
 
         combineCode.append("""{indent}atomicAdd(&{total}.entries, {item}.entries);
 {indent}{old} = *(int*)(&{total}.min);
@@ -194,13 +233,12 @@ class Minimize(Factory, Container):
 {indent}    {trial} = {item}.min;
 {indent}  {old} = atomicCAS((int*)(&{total}.min), *(int*)(&{assumed}), *(int*)(&{trial}));
 {indent}}} while (*(int*)(&{assumed}) != {old});
-""".format(indent = " " * combineIndent,
-        total = self._c99ExpandPrefix(*totalPrefix),
-        item = self._c99ExpandPrefix(*itemPrefix),
-        weight = weightVarStack[-1],
-        old = old,
-        assumed = assumed,
-        trial = trial))
+""".format(indent=" " * combineIndent,
+           total=self._c99ExpandPrefix(*totalPrefix),
+           item=self._c99ExpandPrefix(*itemPrefix),
+           old=old,
+           assumed=assumed,
+           trial=trial))
 
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
@@ -209,7 +247,8 @@ class Minimize(Factory, Container):
         if suppressName or self.quantity.name is None:
             jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
         else:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " +
+                            json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{
@@ -248,13 +287,13 @@ class Minimize(Factory, Container):
                 self.min = min(self.min, float(q.min()))
 
     def _sparksql(self, jvm, converter):
-        return converter.Minimize(quantity.asSparkSQL())
+        return converter.Minimize(self.quantity.asSparkSQL())
 
     @inheritdoc(Container)
-    def toJsonFragment(self, suppressName): return maybeAdd({
-        "entries": floatToJson(self.entries),
-        "min": floatToJson(self.min),
-        }, name=(None if suppressName else self.quantity.name))
+    def toJsonFragment(self, suppressName):
+        return maybeAdd({"entries": floatToJson(self.entries),
+                         "min": floatToJson(self.min)},
+                        name=(None if suppressName else self.quantity.name))
 
     @staticmethod
     @inheritdoc(Factory)
@@ -283,19 +322,27 @@ class Minimize(Factory, Container):
 
         else:
             raise JsonFormatException(json, "Minimize")
-        
+
     def __repr__(self):
         return "<Minimize min={0}>".format(self.min)
 
     def __eq__(self, other):
-        return isinstance(other, Minimize) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.min, other.min)
+        return isinstance(other, Minimize) and self.quantity == other.quantity and numeq(
+            self.entries, other.entries) and numeq(self.min, other.min)
 
-    def __ne__(self, other): return not self == other
+    def __ne__(self, other):
+        return not self == other
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.min))
 
+
+# extra properties: number of dimensions and datatypes of sub-hists
+Minimize.n_dim = n_dim
+Minimize.datatype = datatype
+
 Factory.register(Minimize)
+
 
 class Maximize(Factory, Container):
     """Find the maximum value of a given quantity. If no data are observed, the result is NaN."""
@@ -324,7 +371,7 @@ class Maximize(Factory, Container):
         """Synonym for ``__init__``."""
         return Maximize(quantity)
 
-    def __init__(self, quantity):
+    def __init__(self, quantity=identity):
         """Create a Maximize that is capable of being filled and added.
 
         Parameters:
@@ -334,14 +381,15 @@ class Maximize(Factory, Container):
             entries (float): the number of entries, initially 0.0.
             max (float): the highest value of the quantity observed, initially NaN.
         """
-        self.quantity = serializable(quantity)
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.entries = 0.0
         self.max = float("nan")
         super(Maximize, self).__init__()
         self.specialize()
 
     @inheritdoc(Container)
-    def zero(self): return Maximize(self.quantity)
+    def zero(self):
+        return Maximize(self.quantity)
 
     @inheritdoc(Container)
     def __add__(self, other):
@@ -388,19 +436,33 @@ class Maximize(Factory, Container):
             if math.isnan(self.max) or q > self.max:
                 self.max = q
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                                     derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode,
+                                     fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".max = NAN;")
 
-        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        normexpr = self._c99QuantityExpr(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
+                        ".entries += " + weightVarStack[-1] + ";")
 
         fillCode.append(" " * fillIndent + "if (std::isnan({max})  ||  {q} > {max}) {max} = {q};".format(
-            max = self._c99ExpandPrefix(*fillPrefix) + ".max",
-            q = normexpr))
+            max=self._c99ExpandPrefix(*fillPrefix) + ".max",
+            q=normexpr))
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{
@@ -417,7 +479,10 @@ class Maximize(Factory, Container):
     def _c99StructName(self):
         return "Mx"
 
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                          derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                          fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix,
+                          jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         old = "old_" + str(len(tmpVarTypes))
         tmpVarTypes[old] = "int"
         assumed = "assumed_" + str(len(tmpVarTypes))
@@ -425,13 +490,32 @@ class Maximize(Factory, Container):
         trial = "trial_" + str(len(tmpVarTypes))
         tmpVarTypes[trial] = "float"
 
-        initCode.append(" " * initIndent + "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(old=old, assumed=assumed, trial=trial))
-        jsonCode.append(" " * jsonIndent + "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(old=old, assumed=assumed, trial=trial))
+        initCode.append(
+            " " *
+            initIndent +
+            "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(
+                old=old,
+                assumed=assumed,
+                trial=trial))
+        jsonCode.append(
+            " " *
+            jsonIndent +
+            "(void){old}; (void){assumed}; (void){trial};  // not used; ignore warnings".format(
+                old=old,
+                assumed=assumed,
+                trial=trial))
 
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".max = CUDART_NAN_F;")
 
-        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        normexpr = self._cudaQuantityExpr(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            None)
         fillCode.append("""{indent}atomicAdd(&{prefix}.entries, {weight});
 {indent}{old} = *(int*)(&{prefix}.max);
 {indent}do {{
@@ -442,13 +526,13 @@ class Maximize(Factory, Container):
 {indent}    {trial} = {assumed};
 {indent}  {old} = atomicCAS((int*)(&{prefix}.max), *(int*)(&{assumed}), *(int*)(&{trial}));
 {indent}}} while (*(int*)(&{assumed}) != {old});
-""".format(indent = " " * fillIndent,
-        prefix = self._c99ExpandPrefix(*fillPrefix),
-        weight = weightVarStack[-1],
-        old = old,
-        assumed = assumed,
-        trial = trial,
-        q = normexpr))
+""".format(indent=" " * fillIndent,
+           prefix=self._c99ExpandPrefix(*fillPrefix),
+           weight=weightVarStack[-1],
+           old=old,
+           assumed=assumed,
+           trial=trial,
+           q=normexpr))
 
         combineCode.append("""{indent}atomicAdd(&{total}.entries, {item}.entries);
 {indent}{old} = *(int*)(&{total}.max);
@@ -464,13 +548,12 @@ class Maximize(Factory, Container):
 {indent}    {trial} = {item}.max;
 {indent}  {old} = atomicCAS((int*)(&{total}.max), *(int*)(&{assumed}), *(int*)(&{trial}));
 {indent}}} while (*(int*)(&{assumed}) != {old});
-""".format(indent = " " * combineIndent,
-        total = self._c99ExpandPrefix(*totalPrefix),
-        item = self._c99ExpandPrefix(*itemPrefix),
-        weight = weightVarStack[-1],
-        old = old,
-        assumed = assumed,
-        trial = trial))
+""".format(indent=" " * combineIndent,
+           total=self._c99ExpandPrefix(*totalPrefix),
+           item=self._c99ExpandPrefix(*itemPrefix),
+           old=old,
+           assumed=assumed,
+           trial=trial))
 
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
@@ -479,7 +562,8 @@ class Maximize(Factory, Container):
         if suppressName or self.quantity.name is None:
             jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
         else:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " +
+                            json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{
@@ -518,7 +602,7 @@ class Maximize(Factory, Container):
                 self.max = max(self.max, float(q.max()))
 
     def _sparksql(self, jvm, converter):
-        return converter.Maximize(quantity.asSparkSQL())
+        return converter.Maximize(self.quantity.asSparkSQL())
 
     @property
     def children(self):
@@ -526,10 +610,10 @@ class Maximize(Factory, Container):
         return []
 
     @inheritdoc(Container)
-    def toJsonFragment(self, suppressName): return maybeAdd({
-        "entries": floatToJson(self.entries),
-        "max": floatToJson(self.max),
-        }, name=(None if suppressName else self.quantity.name))
+    def toJsonFragment(self, suppressName):
+        return maybeAdd({"entries": floatToJson(self.entries),
+                         "max": floatToJson(self.max)},
+                        name=(None if suppressName else self.quantity.name))
 
     @staticmethod
     @inheritdoc(Factory)
@@ -558,16 +642,24 @@ class Maximize(Factory, Container):
 
         else:
             raise JsonFormatException(json, "Maximize")
-        
+
     def __repr__(self):
         return "<Maximize max={0}>".format(self.max)
 
     def __eq__(self, other):
-        return isinstance(other, Maximize) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.max, other.max)
+        return isinstance(other, Maximize) and self.quantity == other.quantity and numeq(
+            self.entries, other.entries) and numeq(self.max, other.max)
 
-    def __ne__(self, other): return not self == other
+    def __ne__(self, other):
+        return not self == other
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.max))
 
+
+# extra properties: number of dimensions and datatypes of sub-hists
+Maximize.n_dim = n_dim
+Maximize.datatype = datatype
+
+# register extra methods
 Factory.register(Maximize)

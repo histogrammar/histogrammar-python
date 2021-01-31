@@ -1,16 +1,18 @@
+# flake8: noqa
+
 #!/usr/bin/env python
 
 # Written by Andrew Dalke
 # Copyright (c) 2008 by Dalke Scientific, AB
 # Modified by Jim Pivarski, 2016
-# 
+#
 # (This is the MIT License with the serial numbers scratched off and my
 # name written in in crayon.  I would prefer "share and enjoy" but
 # apparently that isn't a legally acceptable.)
-# 
+#
 # Copyright (c) 2008 Andrew Dalke <dalke@dalkescientific.com>
 # Dalke Scientific Software, AB
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
 # "Software"), to deal in the Software without restriction, including
@@ -18,10 +20,10 @@
 # distribute, sublicense, and/or sell copies of the Software, and to
 # permit persons to whom the Software is furnished to do so, subject to
 # the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 # EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 # MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -120,8 +122,8 @@ RSQB ]
     if name not in tokens:
         tokens.append(name)  # N**2 operation, but N is small
 
-    ## Used to verify that I didn't make a typo
-    #if not hasattr(tokenize, name):
+    # Used to verify that I didn't make a typo
+    # if not hasattr(tokenize, name):
     #    raise AssertionError("Unknown token name %r" % (name,))
 
     # Define the corresponding t_ token for PLY
@@ -139,6 +141,7 @@ del t_name, line, name, literal
 # I think the compiler module is wrong for these cases
 BACKWARDS_COMPATIBLE = False
 
+
 def _raise_error(message, t, klass):
     lineno, lexpos, lexer = t.lineno, t.lexpos, t.lexer
     fileName = lexer.fileName
@@ -152,8 +155,11 @@ def _raise_error(message, t, klass):
     # use offset+1 because the exception is 1-based
     raise klass(message, (fileName, lineno, offset+1, text))
 
+
 def raise_syntax_error(message, t):
     _raise_error(message, t, SyntaxError)
+
+
 def raise_indentation_error(message, t):
     _raise_error(message, t, IndentationError)
 
@@ -176,7 +182,7 @@ tokens = tuple(tokens) + (
     "INDENT",
     "DEDENT",
     "ENDMARKER",
-    )
+)
 
 states = (
     ("SINGLEQ1", "exclusive"),
@@ -216,7 +222,7 @@ def t_WS(t):
     # over multiple physical lines using backslashes; the whitespace
     # up to the first backslash determines the indentation.
     pos = 0
-    while 1:
+    while True:
         pos = value.find("\t")
         if pos == -1:
             break
@@ -227,6 +233,8 @@ def t_WS(t):
         return t
 
 # string continuation - ignored beyond the tokenizer level
+
+
 def t_escaped_newline(t):
     r"\\\n"
     t.type = "STRING_CONTINUE"
@@ -250,13 +258,16 @@ def t_newline(t):
 
 # imaginary numbers in Python are represented with floats,
 #   (1j).imag is represented the same as (1.0j).imag -- with a float
+
+
 @TOKEN(tokenize.Imagnumber)
 def t_IMAG_NUMBER(t):
     t.type = "NUMBER"
-    t.value = (float(t.value[:-1])* 1j, t.value, t.lexer.kwds(t.lexpos))
+    t.value = (float(t.value[:-1]) * 1j, t.value, t.lexer.kwds(t.lexpos))
     return t
 
 # Then check for floats (must have a ".")
+
 
 @TOKEN(tokenize.Floatnumber)
 def t_FLOAT_NUMBER(t):
@@ -267,17 +278,20 @@ def t_FLOAT_NUMBER(t):
 # These are upgraded from patterns to functions so I can track the
 # indentation level
 
+
 @TOKEN(t_LPAR)
 def t_LPAR(t):
     t.lexer.paren_count += 1
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_RPAR)
 def t_RPAR(t):
     t.lexer.paren_count -= 1
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_LBRACE)
 def t_LBRACE(t):
@@ -286,6 +300,7 @@ def t_LBRACE(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_RBRACE)
 def t_RBRACE(t):
     r"\}"
@@ -293,11 +308,13 @@ def t_RBRACE(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_LSQB)
 def t_LSQB(t):
     t.lexer.paren_count += 1
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_RSQB)
 def t_RSQB(t):
@@ -305,160 +322,193 @@ def t_RSQB(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_DOT)
 def t_DOT(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_COLON)
 def t_COLON(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_BACKQUOTE)
 def t_BACKQUOTE(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_AT)
 def t_AT(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_PLUSEQUAL)
 def t_PLUSEQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_MINEQUAL)
 def t_MINEQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_STAREQUAL)
 def t_STAREQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_SLASHEQUAL)
 def t_SLASHEQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_PERCENTEQUAL)
 def t_PERCENTEQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_AMPEREQUAL)
 def t_AMPEREQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_VBAREQUAL)
 def t_VBAREQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_CIRCUMFLEXEQUAL)
 def t_CIRCUMFLEXEQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_LEFTSHIFTEQUAL)
 def t_LEFTSHIFTEQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_RIGHTSHIFTEQUAL)
 def t_RIGHTSHIFTEQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_DOUBLESTAREQUAL)
 def t_DOUBLESTAREQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_DOUBLESLASHEQUAL)
 def t_DOUBLESLASHEQUAL(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_VBAR)
 def t_VBAR(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_CIRCUMFLEX)
 def t_CIRCUMFLEX(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_AMPER)
 def t_AMPER(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_LEFTSHIFT)
 def t_LEFTSHIFT(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_RIGHTSHIFT)
 def t_RIGHTSHIFT(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_PLUS)
 def t_PLUS(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_RIGHTARROW)
 def t_RIGHTARROW(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_MINUS)
 def t_MINUS(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 def t_DOUBLESTAR(t):
     r"\*\*"
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 def t_STAR(t):
     r"\*"
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 def t_DOUBLESLASH(t):
     r"//"
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 def t_SLASH(t):
     r"/"
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 @TOKEN(t_PERCENT)
 def t_PERCENT(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 @TOKEN(t_TILDE)
 def t_TILDE(t):
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
 
+
 def t_DOLLARNUMBER(t):
     r"\$[1-9][0-9]*"
     t.value = (t.value, t.lexer.kwds(t.lexpos))
     return t
+
+
 tokens = tokens + ("DOLLARNUMBER",)
 
 # In the following I use 'long' to make the actual type match the
@@ -466,6 +516,8 @@ tokens = tokens + ("DOLLARNUMBER",)
 
 # Python allows "0x", but in reading python-dev it looks like this was
 # removed in 2.6/3.0.  I don't allow it.
+
+
 def t_HEX_NUMBER(t):
     r"0[xX][0-9a-fA-F]+[lL]?"
     t.type = "NUMBER"
@@ -479,6 +531,8 @@ def t_HEX_NUMBER(t):
     return t
 
 # Python 2 allows "0o", but Python 3 doesn't.  This allows it: how to switch?
+
+
 def t_OCT_NUMBER(t):
     r"0[oO]?[0-7]*[lL]?"
     t.type = "NUMBER"
@@ -490,6 +544,7 @@ def t_OCT_NUMBER(t):
         f = int
     t.value = (f(value, 8), t.value, t.lexer.kwds(t.lexpos))
     return t
+
 
 def t_DEC_NUMBER(t):
     r"[1-9][0-9]*[lL]?"
@@ -518,13 +573,16 @@ error_message = {
 }
 
 # Handle "\" escapes
+
+
 def t_SINGLEQ1_SINGLEQ2_TRIPLEQ1_TRIPLEQ2_escaped(t):
     r"\\(.|\n)"
     t.type = "STRING_CONTINUE"
     t.lexer.lineno += t.value.count("\n")
     return t
 
-### Triple Q1
+# Triple Q1
+
 
 def t_start_triple_quoted_q1_string(t):
     r"([bB]|[uU])?[rR]?'''"
@@ -535,16 +593,19 @@ def t_start_triple_quoted_q1_string(t):
     t.value = t.value.split("'", 1)[0]
     return t
 
+
 def t_TRIPLEQ1_simple(t):
     r"[^'\\]+"
     t.type = "STRING_CONTINUE"
     t.lexer.lineno += t.value.count("\n")
     return t
 
+
 def t_TRIPLEQ1_q1_but_not_triple(t):
     r"'(?!'')"
     t.type = "STRING_CONTINUE"
     return t
+
 
 def t_TRIPLEQ1_end(t):
     r"'''"
@@ -563,16 +624,19 @@ def t_start_triple_quoted_q2_string(t):
     t.value = t.value.split('"', 1)[0]
     return t
 
+
 def t_TRIPLEQ2_simple(t):
     r'[^"\\]+'
     t.type = "STRING_CONTINUE"
     t.lexer.lineno += t.value.count("\n")
     return t
 
+
 def t_TRIPLEQ2_q2_but_not_triple(t):
     r'"(?!"")'
     t.type = "STRING_CONTINUE"
     return t
+
 
 def t_TRIPLEQ2_end(t):
     r'"""'
@@ -581,18 +645,20 @@ def t_TRIPLEQ2_end(t):
     t.lexer.is_raw = False
     return t
 
+
 t_TRIPLEQ1_ignore = ""  # supress PLY warning
 t_TRIPLEQ2_ignore = ""  # supress PLY warning
 
+
 def t_TRIPLEQ1_error(t):
     raise_syntax_error()
+
 
 def t_TRIPLEQ2_error(t):
     raise_syntax_error()
 
 
-
-### Single quoted strings
+# Single quoted strings
 
 def t_start_single_quoted_q1_string(t):
     r"([bB]|[uU])?[rR]?'"
@@ -603,10 +669,12 @@ def t_start_single_quoted_q1_string(t):
     t.value = t.value.split("'", 1)[0]
     return t
 
+
 def t_SINGLEQ1_simple(t):
     r"[^'\\\n]+"
     t.type = "STRING_CONTINUE"
     return t
+
 
 def t_SINGLEQ1_end(t):
     r"'"
@@ -614,6 +682,7 @@ def t_SINGLEQ1_end(t):
     t.lexer.pop_state()
     t.lexer.is_raw = False
     return t
+
 
 def t_start_single_quoted_q2_string(t):
     r'([bB]|[uU])?[rR]?"'
@@ -624,10 +693,12 @@ def t_start_single_quoted_q2_string(t):
     t.value = t.value.split('"', 1)[0]
     return t
 
+
 def t_SINGLEQ2_simple(t):
     r'[^"\\\n]+'
     t.type = "STRING_CONTINUE"
     return t
+
 
 def t_SINGLEQ2_end(t):
     r'"'
@@ -639,6 +710,7 @@ def t_SINGLEQ2_end(t):
 
 t_SINGLEQ1_ignore = ""  # supress PLY warning
 t_SINGLEQ2_ignore = ""  # supress PLY warning
+
 
 def t_SINGLEQ1_error(t):
     raise_syntax_error("EOL while scanning single quoted string", t)
@@ -659,6 +731,7 @@ def t_NAME(t):
 
 ########
 
+
 def _new_token(type, lineno):
     tok = lex.LexToken()
     tok.type = type
@@ -668,10 +741,14 @@ def _new_token(type, lineno):
     return tok
 
 # Synthesize a DEDENT tag
+
+
 def DEDENT(lineno):
     return _new_token("DEDENT", lineno)
 
 # Synthesize an INDENT tag
+
+
 def INDENT(lineno):
     return _new_token("INDENT", lineno)
 
@@ -681,7 +758,9 @@ def INDENT(lineno):
 def t_error(t):
     raise_syntax_error("invalid syntax", t)
 
+
 _lexer = lex.lex()
+
 
 def _parse_quoted_string(start_tok, string_toks):
     # The four combinations are:
@@ -707,6 +786,7 @@ def _parse_quoted_string(start_tok, string_toks):
         return s
     else:
         raise AssertionError("Unknown string quote type: %r" % (quote_type,))
+
 
 def create_strings(lexer, token_stream):
     for tok in token_stream:
@@ -742,7 +822,7 @@ def create_strings(lexer, token_stream):
         yield start_tok
 
 
-##### Keep track of indentation state
+# Keep track of indentation state
 
 # I implemented INDENT / DEDENT generation as a post-processing filter
 
@@ -764,6 +844,8 @@ MAY_INDENT = 1
 MUST_INDENT = 2
 
 # only care about whitespace at the start of a line
+
+
 def annotate_indentation_state(lexer, token_stream):
     lexer.at_line_start = at_line_start = True
     indent = NO_INDENT
@@ -775,7 +857,7 @@ def annotate_indentation_state(lexer, token_stream):
             at_line_start = False
             indent = MAY_INDENT
             token.must_indent = False
-            
+
         elif token.type == "NEWLINE":
             at_line_start = True
             if indent == MAY_INDENT:
@@ -856,7 +938,7 @@ def synthesize_indentation_tokens(token_stream):
                     # I report the error position at the start of the
                     # token.  Python reports it at the end.  I prefer mine.
                     raise_indentation_error(
-     "unindent does not match any outer indentation level", token)
+                        "unindent does not match any outer indentation level", token)
                 for _ in range(i+1, len(levels)):
                     yield DEDENT(token.lineno)
                     levels.pop()
@@ -870,7 +952,8 @@ def synthesize_indentation_tokens(token_stream):
         assert token is not None
         for _ in range(1, len(levels)):
             yield DEDENT(token.lineno)
-    
+
+
 def add_endmarker(token_stream):
     tok = None
     for tok in token_stream:
@@ -880,9 +963,12 @@ def add_endmarker(token_stream):
     else:
         lineno = 1
     yield _new_token("ENDMARKER", lineno)
+
+
 _add_endmarker = add_endmarker
 
-def make_token_stream(lexer, add_endmarker = True):
+
+def make_token_stream(lexer, add_endmarker=True):
     token_stream = iter(lexer.token, None)
     token_stream = create_strings(lexer, token_stream)
     token_stream = annotate_indentation_state(lexer, token_stream)
@@ -893,6 +979,8 @@ def make_token_stream(lexer, add_endmarker = True):
 
 
 _newline_pattern = re.compile(r"\r?\n")
+
+
 def get_line_offsets(text):
     offsets = [0]
     for m in _newline_pattern.finditer(text):
@@ -900,6 +988,7 @@ def get_line_offsets(text):
     # This is only really needed if the input does not end with a newline
     offsets.append(len(text))
     return offsets
+
 
 class PythonLexer(object):
     def __init__(self, lexer=None, fileName="<string>"):
@@ -910,13 +999,14 @@ class PythonLexer(object):
         self.lexer.is_raw = False
         self.lexer.fileName = fileName
         self.token_stream = None
-        
+
     def input(self, data, add_endmarker=True):
         self.lexer.source = data
         self.lexer.input(data)
         self.lexer.paren_count = 0
         self.lexer.is_raw = False
         self.lexer.line_offsets = get_line_offsets(data)
+
         def kwds(pos):
             i = 0
             for i in xrange(len(self.lexer.line_offsets) - 1):

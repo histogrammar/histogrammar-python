@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 # Copyright 2016 DIANA-HEP
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,12 +18,13 @@ import json
 import math
 import sys
 
-# Definitions for python 2/3 compatability 
+# Definitions for python 2/3 compatability
 if sys.version_info[0] > 2:
     basestring = str
     long = int
 
 MAX_REPR = 50
+
 
 class JsonObject(dict):
     def __init__(self, *pairs, **kwarg):
@@ -37,8 +38,10 @@ class JsonObject(dict):
         if any(not isinstance(kv, tuple) or len(kv) != 2 for kv in self._pairs):
             raise TypeError("JsonObject pairs must all be two-element tuples")
 
-        if any(not isinstance(k, basestring) or not (v is None or isinstance(v, (basestring, bool, int, long, float, JsonObject, JsonArray))) for k, v in self._pairs):
-            raise TypeError("JsonObject keys must be strings and values must be (string, bool, int, float, JsonObject, JsonArray)")
+        if any(not isinstance(k, basestring) or not (v is None or isinstance(
+                v, (basestring, bool, int, long, float, JsonObject, JsonArray))) for k, v in self._pairs):
+            raise TypeError(
+                "JsonObject keys must be strings and values must be (string, bool, int, float, JsonObject, JsonArray)")
 
     def toJsonString(self, prefix="", indent=2):
         out = ["{\n", prefix, " "]
@@ -88,9 +91,11 @@ class JsonObject(dict):
                 return JsonObject(*[(key, value) if k == key else (k, v) for k, v in self._pairs])
         else:
             if index == -1:
-                raise ValueError("JsonObject field {0} does not contain path ({1})".format(repr(key), ", ".join(map(repr, path[1:]))))
+                raise ValueError("JsonObject field {0} does not contain path ({1})".format(
+                    repr(key), ", ".join(map(repr, path[1:]))))
             elif not isinstance(self._pairs[index][1], (JsonObject, JsonArray)):
-                raise ValueError("JsonObject field {0} does not contain path ({1})".format(repr(key), ", ".join(map(repr, path[1:]))))
+                raise ValueError("JsonObject field {0} does not contain path ({1})".format(
+                    repr(key), ", ".join(map(repr, path[1:]))))
             else:
                 return JsonObject(*[(k, v.set(*path[1:], **kwds)) if k == key else (k, v) for k, v in self._pairs])
 
@@ -106,21 +111,25 @@ class JsonObject(dict):
                 return JsonObject(*[(k, v) for k, v in self._pairs if k != key])
         else:
             if index == -1:
-                raise ValueError("JsonObject field {0} does not contain path ({1})".format(repr(key), ", ".join(map(repr, path[1:]))))
+                raise ValueError("JsonObject field {0} does not contain path ({1})".format(
+                    repr(key), ", ".join(map(repr, path[1:]))))
             elif not isinstance(self._pairs[index][1], (JsonObject, JsonArray)):
-                raise ValueError("JsonObject field {0} does not contain path ({1})".format(repr(key), ", ".join(map(repr, path[1:]))))
+                raise ValueError("JsonObject field {0} does not contain path ({1})".format(
+                    repr(key), ", ".join(map(repr, path[1:]))))
             else:
                 return JsonObject(*[(k, v.without(*path[1:])) if k == key else (k, v) for k, v in self._pairs])
-        
+
     def overlay(self, other):
         out = self
         for k, v in other.items():
             out = out.set(k, to=v)
         return out
 
-    ### override built-in dict methods
+    # override built-in dict methods
 
     def __cmp__(self, other):
+        def cmp(a, b):
+            return (a > b) - (a < b)
         return cmp(dict(self._pairs), dict(other._pairs))
 
     def __contains__(self, key):
@@ -159,7 +168,7 @@ class JsonObject(dict):
 
     def __reduce_ex__(self, protocol):
         return (self.__class__, self._pairs)
-               
+
     def __repr__(self):
         out = "{"
         first = True
@@ -178,7 +187,7 @@ class JsonObject(dict):
         if len(out) > MAX_REPR - 1:
             out = out[:(MAX_REPR - 4)] + "..."
         return out + "}"
-    
+
     def __setitem__(self, key, value):
         raise TypeError("JsonObject cannot be changed in-place; use .set(path, to=value)")
 
@@ -231,7 +240,7 @@ class JsonObject(dict):
 
     def iteritems(self):
         return self.items()
-            
+
     def iterkeys(self):
         return self.keys()
 
@@ -241,7 +250,7 @@ class JsonObject(dict):
     def keys(self):
         for k, v in self._pairs:
             yield k
-    
+
     def pop(self, key, default=None):
         raise TypeError("JsonObject cannot be changed in-place; no immutable equivalent")
 
@@ -267,10 +276,12 @@ class JsonObject(dict):
     def viewvalues(self):
         return self.values()
 
+
 class JsonArray(tuple):
     def __init__(self, *values):
         self._values = values
-        if any(not (v is None or isinstance(v, (basestring, bool, int, long, float, JsonObject, JsonArray))) for v in self._values):
+        if any(not (v is None or isinstance(v, (basestring, bool, int, long, float, JsonObject, JsonArray)))
+               for v in self._values):
             raise TypeError("JsonArray values must be (string, bool, int, float, JsonObject, JsonArray)")
 
     def toJsonString(self, prefix="", indent=2):
@@ -295,7 +306,7 @@ class JsonArray(tuple):
         out.append("]")
         return "".join(out)
 
-    ### override built-in tuple methods
+    # override built-in tuple methods
 
 # __add__
 # __cmp__
@@ -331,7 +342,7 @@ class JsonArray(tuple):
 
 # __rmul__
 # __sizeof__
-        
+
     def __str__(self):
         out = ["["]
         first = False

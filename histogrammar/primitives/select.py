@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 # Copyright 2016 DIANA-HEP
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,20 +19,25 @@ import math
 import numbers
 import struct
 
-from histogrammar.defs import *
-from histogrammar.util import *
-from histogrammar.primitives.count import *
+from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
+from histogrammar.util import n_dim, datatype, serializable, inheritdoc, maybeAdd, floatToJson, hasKeys, numeq, \
+    basestring
+from histogrammar.primitives.count import Count
 
-################################################################ Select
+# Select
+
 
 class Select(Factory, Container):
     """Filter or weight data according to a given selection.
 
-    This primitive is a basic building block, intended to be used in conjunction with anything that needs a user-defined cut. In particular, a standard histogram often has a custom selection, and this can be built by nesting Select -> Bin -> Count.
+    This primitive is a basic building block, intended to be used in conjunction with anything that needs a
+    user-defined cut. In particular, a standard histogram often has a custom selection, and this can be built by
+    nesting Select -> Bin -> Count.
 
     Select also resembles :doc:`Fraction <histogrammar.primitives.fraction.Fraction>`, but without the ``denominator``.
 
-    The efficiency of a cut in a Select aggregator named ``x`` is simply ``x.cut.entries / x.entries`` (because all aggregators have an ``entries`` member).
+    The efficiency of a cut in a Select aggregator named ``x`` is simply ``x.cut.entries / x.entries``
+    (because all aggregators have an ``entries`` member).
     """
 
     @staticmethod
@@ -67,12 +72,14 @@ class Select(Factory, Container):
         else:
             return self.__dict__[attr]
 
-    def __init__(self, quantity, cut=Count()):
+    def __init__(self, quantity=identity, cut=Count()):
         """Create a Select that is capable of being filled and added.
 
         Parameters:
-            quantity (function returning bool or float): computes the quantity of interest from the data and interprets it as a selection (multiplicative factor on weight).
-            cut (:doc:`Container <histogrammar.defs.Container>`): will only be filled with data that pass the cut, and which are weighted by the cut.
+            quantity (function returning bool or float): computes the quantity of interest from the data and interprets
+                it as a selection (multiplicative factor on weight).
+            cut (:doc:`Container <histogrammar.defs.Container>`): will only be filled with data that pass the cut,
+                and which are weighted by the cut.
 
         Other Parameters:
             entries (float): the number of entries, initially 0.0.
@@ -80,7 +87,7 @@ class Select(Factory, Container):
         if not isinstance(cut, Container):
             raise TypeError("cut ({0}) must be a Container".format(cut))
         self.entries = 0.0
-        self.quantity = serializable(quantity)
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.cut = cut
         super(Select, self).__init__()
         self.specialize()
@@ -140,21 +147,55 @@ class Select(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                                     derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode,
+                                     fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
 
-        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+        normexpr = self._c99QuantityExpr(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            None)
 
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
+                        ".entries += " + weightVarStack[-1] + ";")
         fillCode.append(" " * fillIndent + """if (!std::isnan({0})  &&  {0} > 0.0) {{""".format(normexpr))
 
         weightVars.append("weight_" + str(len(weightVars)))
         weightVarStack = weightVarStack + (weightVars[-1],)
-        fillCode.append(" " * (fillIndent + 2) + """{0} = {1} * {2};""".format(weightVarStack[-1], weightVarStack[-2], normexpr))
-        self.cut._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "cut"),), initIndent, fillCode, fillPrefix + (("var", "cut"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        fillCode.append(" " * (fillIndent + 2) +
+                        """{0} = {1} * {2};""".format(weightVarStack[-1], weightVarStack[-2], normexpr))
+        self.cut._c99GenerateCode(parser,
+                                  generator,
+                                  inputFieldNames,
+                                  inputFieldTypes,
+                                  derivedFieldTypes,
+                                  derivedFieldExprs,
+                                  storageStructs,
+                                  initCode,
+                                  initPrefix + (("var",
+                                                 "cut"),
+                                                ),
+                                  initIndent,
+                                  fillCode,
+                                  fillPrefix + (("var",
+                                                 "cut"),
+                                                ),
+                                  fillIndent + 2,
+                                  weightVars,
+                                  weightVarStack,
+                                  tmpVarTypes)
 
         fillCode.append(" " * fillIndent + "}")
 
@@ -173,26 +214,84 @@ class Select(Factory, Container):
     def _c99StructName(self):
         return "Se" + self.cut._c99StructName()
 
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
-        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                          derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                          fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix,
+                          jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        normexpr = self._cudaQuantityExpr(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            None)
 
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
-        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
-        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " +
+                        weightVarStack[-1] + ");")
+        combineCode.append(
+            " " *
+            combineIndent +
+            "atomicAdd(&" +
+            self._c99ExpandPrefix(
+                *
+                totalPrefix) +
+            ".entries, " +
+            self._c99ExpandPrefix(
+                *
+                itemPrefix) +
+            ".entries);")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
         weightVars.append("weight_" + str(len(weightVars)))
         weightVarStack = weightVarStack + (weightVars[-1],)
-        fillCode.append(" " * fillIndent + "{newweight} = (isnan({q})  ||  {q} <= 0.0) ? 0.0 : ({oldweight} * {q});".format(newweight=weightVarStack[-1], oldweight=weightVarStack[-2], q=normexpr))
+        fillCode.append(" " * fillIndent +
+                        "{newweight} = (isnan({q})  ||  {q} <= 0.0) ? 0.0 : ({oldweight} * {q});".format(
+                            newweight=weightVarStack[-1], oldweight=weightVarStack[-2], q=normexpr))
 
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"sub:type\\\": \\\"" + self.cut.name + "\\\"\");")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"data\\\": \");")
-        self.cut._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "cut"),), initIndent, fillCode, fillPrefix + (("var", "cut"),), fillIndent, combineCode, totalPrefix + (("var", "cut"),), itemPrefix + (("var", "cut"),), combineIndent, jsonCode, jsonPrefix + (("var", "cut"),), jsonIndent, weightVars, weightVarStack, tmpVarTypes, False)
+        self.cut._cudaGenerateCode(parser,
+                                   generator,
+                                   inputFieldNames,
+                                   inputFieldTypes,
+                                   derivedFieldTypes,
+                                   derivedFieldExprs,
+                                   storageStructs,
+                                   initCode,
+                                   initPrefix + (("var",
+                                                  "cut"),
+                                                 ),
+                                   initIndent,
+                                   fillCode,
+                                   fillPrefix + (("var",
+                                                  "cut"),
+                                                 ),
+                                   fillIndent,
+                                   combineCode,
+                                   totalPrefix + (("var",
+                                                   "cut"),
+                                                  ),
+                                   itemPrefix + (("var",
+                                                  "cut"),
+                                                 ),
+                                   combineIndent,
+                                   jsonCode,
+                                   jsonPrefix + (("var",
+                                                  "cut"),
+                                                 ),
+                                   jsonIndent,
+                                   weightVars,
+                                   weightVarStack,
+                                   tmpVarTypes,
+                                   False)
 
         if suppressName or self.quantity.name is None:
             jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
         else:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " +
+                            json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{
@@ -235,11 +334,11 @@ class Select(Factory, Container):
         return [self.cut]
 
     @inheritdoc(Container)
-    def toJsonFragment(self, suppressName): return maybeAdd({
-        "entries": floatToJson(self.entries),
-        "sub:type": self.cut.name,
-        "data": self.cut.toJsonFragment(False),
-        }, name=(None if suppressName else self.quantity.name))
+    def toJsonFragment(self, suppressName):
+        return maybeAdd({"entries": floatToJson(self.entries),
+                         "sub:type": self.cut.name,
+                         "data": self.cut.toJsonFragment(False)},
+                        name=(None if suppressName else self.quantity.name))
 
     @staticmethod
     @inheritdoc(Factory)
@@ -277,10 +376,16 @@ class Select(Factory, Container):
     def __eq__(self, other):
         return isinstance(other, Select) and numeq(self.entries, other.entries) and self.cut == other.cut
 
-    def __ne__(self, other): return not self == other
+    def __ne__(self, other):
+        return not self == other
 
     def __hash__(self):
         return hash((self.entries, self.cut))
 
-Factory.register(Select)
 
+# extra properties: number of dimensions and datatypes of sub-hists
+Select.n_dim = n_dim
+Select.datatype = datatype
+
+# register extra methods
+Factory.register(Select)
