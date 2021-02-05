@@ -140,7 +140,7 @@ License
 
 .. |notebook_basic_colab| image:: https://colab.research.google.com/assets/colab-badge.svg
     :alt: Open in Colab
-    :target: https://colab.research.google.com/histogrammar/histogrammar-python/blob/master/histogrammar/notebooks/histogrammar_tutorial_basic.ipynb
+    :target: https://colab.research.google.com/github/histogrammar/histogrammar-python/blob/master/histogrammar/notebooks/histogrammar_tutorial_basic.ipynb
 .. |notebook_advanced_colab| image:: https://colab.research.google.com/assets/colab-badge.svg
     :alt: Open in Colab
-    :target: https://colab.research.google.com/histogrammar/histogrammar-python/blob/master/histogrammar/notebooks/histogrammar_tutorial_advanced.ipynb
+    :target: https://colab.research.google.com/github/histogrammar/histogrammar-python/blob/master/histogrammar/notebooks/histogrammar_tutorial_advanced.ipynb
