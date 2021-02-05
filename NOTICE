@@ -1,0 +1,38 @@
+################################################################################################
+#
+# NOTICE: pass-through licensing of bundled components
+#
+# Histogrammar gathers together a toolkit of pre-existing third-party 
+# open-source software components. These software components are governed by their own licenses 
+# which Histogrammar does not modify or supersede, please consult the originating 
+# authors. These components altogether have a mixture of the following licenses: Apache 2.0, MIT.
+#
+# Although we have examined the licenses to verify acceptance of commercial and non-commercial
+# use, please see and consult the original licenses or authors.
+#
+# Here is the full list of license dependencies:
+#
+# numpy: https://github.com/numpy/numpy/blob/master/LICENSE.txt
+# tqdm: https://github.com/tqdm/tqdm/blob/master/LICENCE
+# matplotlib: https://github.com/matplotlib/matplotlib/blob/master/LICENSE/LICENSE
+# joblib: https://github.com/joblib/joblib/blob/master/LICENSE.txt
+# root: https://root.cern.ch/license
+# popmon: https://github.com/ing-bank/popmon/blob/master/LICENSE
+#
+# There are several functions/classes where code or techniques have been reproduced and/or modified
+# from existing open-source packages. We list these here:
+#
+# Package: popmon
+# popmon file: histogrammar/dfinterface/spark_histogrammar.py
+#    Class: SparkHistogrammar
+#    Reference: https://github.com/ing-bank/popmon/blob/master/popmon/hist/filling/spark_histogrammar.py
+# popmon file: histogrammar/dfinterface/pandas_histogrammar.py
+#    Class: PandasHistogrammar
+#    Reference: https://github.com/ing-bank/popmon/blob/master/popmon/hist/filling/pandas_histogrammar.py
+# popmon file: histogrammar/dfinterface/histogram_filler_base.py
+#    Class: HistogramFillerBase
+#    Reference: https://github.com/ing-bank/popmon/blob/master/popmon/hist/filling/histogram_filler_base.py
+# License: MIT
+#    For details see: https://github.com/ing-bank/popmon/blob/master/LICENSE
+#
+################################################################################################

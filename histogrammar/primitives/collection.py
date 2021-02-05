@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 # Copyright 2016 DIANA-HEP
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,8 +19,9 @@ import math
 import numbers
 import struct
 
-from histogrammar.defs import *
-from histogrammar.util import *
+from histogrammar.defs import Container, Factory, JsonFormatException, ContainerException
+from histogrammar.util import inheritdoc, floatToJson, hasKeys, numeq, basestring, xrange
+
 
 class Collection(object):
     def _c99CanonicalOrder(self, items):
@@ -30,6 +31,7 @@ class Collection(object):
         letter = self.name[0]
         out = [letter, "_"]
         last = None
+        count = 0
         for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
             if s != last:
                 if last is not None:
@@ -47,7 +49,10 @@ class Collection(object):
   typedef struct {
     """]
         last = None
+        count = 0
         n = 0
+        lastN = 0
+        lastType = 0
         for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
             if s != last:
                 if last is not None:
@@ -60,13 +65,24 @@ class Collection(object):
                 count = 0
             count += 1
             last = s
-        out.append("""[{0}];\n    {1}& getSub{2}(int i) {{ return sub{2}[i]; }}\n    double entries;\n  }} {3};""".format(count, lastType, lastN, self._c99StructName()))
+        out.append(
+            """[{0}];\n    {1}& getSub{2}(int i) {{ return sub{2}[i]; }}\n    double entries;\n  }} {3};""".format(
+                count,
+                lastType,
+                lastN,
+                self._c99StructName()))
         return "".join(out)
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                                     derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode,
+                                     fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
         last = None
         n = 0
         i = 0
@@ -74,12 +90,34 @@ class Collection(object):
             if last is not None and s != last:
                 n += 1
                 i = 0
-            v._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, weightVars, weightVarStack, tmpVarTypes)
+            v._c99GenerateCode(parser,
+                               generator,
+                               inputFieldNames,
+                               inputFieldTypes,
+                               derivedFieldTypes,
+                               derivedFieldExprs,
+                               storageStructs,
+                               initCode,
+                               initPrefix + (("var",
+                                              "sub" + str(n)),
+                                             ("index",
+                                              i)),
+                               initIndent,
+                               fillCode,
+                               fillPrefix + (("var",
+                                              "sub" + str(n)),
+                                             ("index",
+                                              i)),
+                               fillIndent,
+                               weightVars,
+                               weightVarStack,
+                               tmpVarTypes)
             i += 1
             last = s
 
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
+                        ".entries += " + weightVarStack[-1] + ";")
 
         storageStructs[self._c99StructName()] = self._c99Struct()
 
@@ -103,6 +141,7 @@ class Collection(object):
     """]
         last = None
         n = 0
+        count = 0
         for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
             if s != last:
                 if last is not None:
@@ -115,11 +154,19 @@ class Collection(object):
         out.append("""[{0}];\n    float entries;\n  }} {1};""".format(count, self._c99StructName()))
         return "".join(out)
 
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                          derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                          fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix,
+                          jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         tmpJsonCode = []
 
         if isinstance(self, (Label, Index)):
-            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"sub:type\\\": \\\"" + self.values[0].name + "\\\", \\\"data\\\": \");")
+            tmpJsonCode.append(
+                " " *
+                jsonIndent +
+                "fprintf(out, \"{\\\"sub:type\\\": \\\"" +
+                self.values[0].name +
+                "\\\", \\\"data\\\": \");")
         else:
             tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"data\\\": \");")
 
@@ -141,12 +188,55 @@ class Collection(object):
             if isinstance(self, (Label, UntypedLabel)):
                 tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"" + json.dumps(json.dumps(k))[1:-1] + ": \");")
             if isinstance(self, (UntypedLabel, Branch)):
-                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"type\\\": \\\"" + v.name + "\\\", \\\"data\\\": \");")
+                tmpJsonCode.append(
+                    " " *
+                    jsonIndent +
+                    "fprintf(out, \"{\\\"type\\\": \\\"" +
+                    v.name +
+                    "\\\", \\\"data\\\": \");")
 
             if last is not None and s != last:
                 n += 1
                 i = 0
-            v._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "sub" + str(n)), ("index", i)), initIndent, fillCode, fillPrefix + (("var", "sub" + str(n)), ("index", i)), fillIndent, combineCode, totalPrefix + (("var", "sub" + str(n)), ("index", i)), itemPrefix + (("var", "sub" + str(n)), ("index", i)), combineIndent, tmpJsonCode, jsonPrefix + (("var", "sub" + str(n)), ("index", i)), jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName)
+            v._cudaGenerateCode(parser,
+                                generator,
+                                inputFieldNames,
+                                inputFieldTypes,
+                                derivedFieldTypes,
+                                derivedFieldExprs,
+                                storageStructs,
+                                initCode,
+                                initPrefix + (("var",
+                                               "sub" + str(n)),
+                                              ("index",
+                                               i)),
+                                initIndent,
+                                fillCode,
+                                fillPrefix + (("var",
+                                               "sub" + str(n)),
+                                              ("index",
+                                               i)),
+                                fillIndent,
+                                combineCode,
+                                totalPrefix + (("var",
+                                                "sub" + str(n)),
+                                               ("index",
+                                                i)),
+                                itemPrefix + (("var",
+                                               "sub" + str(n)),
+                                              ("index",
+                                               i)),
+                                combineIndent,
+                                tmpJsonCode,
+                                jsonPrefix + (("var",
+                                               "sub" + str(n)),
+                                              ("index",
+                                               i)),
+                                jsonIndent,
+                                weightVars,
+                                weightVarStack,
+                                tmpVarTypes,
+                                suppressName)
 
             i += 1
             last = s
@@ -170,8 +260,20 @@ class Collection(object):
             tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"]\");")
 
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
-        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
-        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " +
+                        weightVarStack[-1] + ");")
+        combineCode.append(
+            " " *
+            combineIndent +
+            "atomicAdd(&" +
+            self._c99ExpandPrefix(
+                *
+                totalPrefix) +
+            ".entries, " +
+            self._c99ExpandPrefix(
+                *
+                itemPrefix) +
+            ".entries);")
         tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"entries\\\": \");")
         tmpJsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
         tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
@@ -197,17 +299,24 @@ class Collection(object):
         self.entries += entries
         data = data[struct.calcsize(format):]
         return data
-        
-################################################################ Label
+
+# Label
+
 
 class Label(Factory, Container, Collection):
-    """Accumulate any number of aggregators of the same type and label them with strings. Every sub-aggregator is filled with every input datum.
+    """Accumulate any number of aggregators of the same type and label them with strings.
 
-    This primitive simulates a directory of aggregators. For sub-directories, nest collections within the Label collection.
+    Every sub-aggregator is filled with every input datum. This primitive simulates a directory of aggregators.
+    For sub-directories, nest collections within the Label collection.
 
-    Note that all sub-aggregators within a Label must have the *same type* (e.g. histograms of different binnings, but all histograms). To collect objects of *different types* with string-based look-up keys, use :doc:`UntypedLabel <histogrammar.primitives.collection.UntypedLabel>`.
+    Note that all sub-aggregators within a Label must have the *same type* (e.g. histograms of different binnings,
+    but all histograms). To collect objects of *different types* with string-based look-up keys,
+    use :doc:`UntypedLabel <histogrammar.primitives.collection.UntypedLabel>`.
 
-    To collect aggregators of the *same type* without naming them, use :doc:`Index <histogrammar.primitives.collection.Index>`. To collect aggregators of *different types* without naming them, use :doc:`Branch <histogrammar.primitives.collection.Branch>`.
+    To collect aggregators of the *same type* without naming them,
+    use :doc:`Index <histogrammar.primitives.collection.Index>`.
+    To collect aggregators of *different types* without naming them,
+    use :doc:`Branch <histogrammar.primitives.collection.Branch>`.
 
     In strongly typed languages, the restriction to a single type allows nested objects to be extracted without casting.
     """
@@ -217,7 +326,8 @@ class Label(Factory, Container, Collection):
 
         Parameters:
             entries (float): the number of entries.
-            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled aggregators.
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of
+                filled aggregators.
         """
         if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
@@ -242,7 +352,8 @@ class Label(Factory, Container, Collection):
         """Create a Label that is capable of being filled and added.
 
         Parameters:
-            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of aggregators to fill.
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of aggregators
+                to fill.
 
         Other Parameters:
             entries (float): the number of entries, initially 0.0.
@@ -304,13 +415,20 @@ class Label(Factory, Container, Collection):
         return self.pairs.get(x, default)
 
     @inheritdoc(Container)
-    def zero(self): return Label(**dict((k, v.zero()) for k, v in self.pairs.items()))
+    def zero(self):
+        return Label(**dict((k, v.zero()) for k, v in self.pairs.items()))
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Label):
             if self.keySet != other.keySet:
-                raise ContainerException("cannot add Labels because keys differ:\n    {0}\n    {1}".format(", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))))
+                raise ContainerException(
+                    "cannot add Labels because keys differ:\n    {0}\n    {1}".format(
+                        ", ".join(
+                            sorted(
+                                self.keys)), ", ".join(
+                            sorted(
+                                other.keys))))
 
             out = Label(**dict((k, self(k) + other(k)) for k in self.keys))
             out.entries = self.entries + other.entries
@@ -323,7 +441,13 @@ class Label(Factory, Container, Collection):
     def __iadd__(self, other):
         if isinstance(other, Label):
             if self.keySet != other.keySet:
-                raise ContainerException("cannot add Labels because keys differ:\n    {0}\n    {1}".format(", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))))
+                raise ContainerException(
+                    "cannot add Labels because keys differ:\n    {0}\n    {1}".format(
+                        ", ".join(
+                            sorted(
+                                self.keys)), ", ".join(
+                            sorted(
+                                other.keys))))
             self.entries += other.entries
             for k in self.keys:
                 v = self(k)
@@ -382,11 +506,11 @@ class Label(Factory, Container, Collection):
         return self.values
 
     @inheritdoc(Container)
-    def toJsonFragment(self, suppressName): return {
-        "entries": floatToJson(self.entries),
-        "sub:type": self.values[0].name,
-        "data": dict((k, v.toJsonFragment(False)) for k, v in self.pairs.items()),
-        }
+    def toJsonFragment(self, suppressName):
+        return {"entries": floatToJson(self.entries),
+                "sub:type": self.values[0].name,
+                "data": dict((k, v.toJsonFragment(False)) for k, v in self.pairs.items())
+                }
 
     @staticmethod
     @inheritdoc(Factory)
@@ -418,23 +542,33 @@ class Label(Factory, Container, Collection):
     def __eq__(self, other):
         return isinstance(other, Label) and numeq(self.entries, other.entries) and self.pairs == other.pairs
 
-    def __ne__(self, other): return not self == other
+    def __ne__(self, other):
+        return not self == other
 
     def __hash__(self):
         return hash((self.entries, tuple(sorted(self.pairs.items()))))
 
+
 Factory.register(Label)
 
-################################################################ UntypedLabel
+# UntypedLabel
+
 
 class UntypedLabel(Factory, Container, Collection):
-    """Accumulate any number of aggregators of any type and label them with strings. Every sub-aggregator is filled with every input datum.
+    """Accumulate any number of aggregators of any type and label them with strings.
+
+    Every sub-aggregator is filled with every input datum.
 
     This primitive simulates a directory of aggregators. For sub-directories, nest collections within the UntypedLabel.
 
-    Note that sub-aggregators within an UntypedLabel may have *different types*. In strongly typed languages, this flexibility poses a problem: nested objects must be type-cast before they can be used. To collect objects of the *same type* with string-based look-up keys, use :doc:`Label <histogrammar.primitives.collection.Label>`.
+    Note that sub-aggregators within an UntypedLabel may have *different types*. In strongly typed languages, this
+    flexibility poses a problem: nested objects must be type-cast before they can be used. To collect objects of
+    the *same type* with string-based look-up keys, use :doc:`Label <histogrammar.primitives.collection.Label>`.
 
-    To collect aggregators of the *same type* without naming them, use :doc:`Index <histogrammar.primitives.collection.Index>`. To collect aggregators of *different types* without naming them, use :doc:`Branch <histogrammar.primitives.collection.Branch>`.
+    To collect aggregators of the *same type* without naming them,
+    use :doc:`Index <histogrammar.primitives.collection.Index>`.
+    To collect aggregators of *different types* without naming them,
+    use :doc:`Branch <histogrammar.primitives.collection.Branch>`.
     """
 
     @staticmethod
@@ -443,7 +577,8 @@ class UntypedLabel(Factory, Container, Collection):
 
         Parameters:
             entries (float): the number of entries.
-            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled aggregators.
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled
+                aggregators.
         """
         if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("entries ({0}) must be a number".format(entries))
@@ -468,7 +603,8 @@ class UntypedLabel(Factory, Container, Collection):
         """Create an UntypedLabel that is capable of being filled and added.
 
         Parameters:
-            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of aggregators to fill.
+            pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of aggregators
+                to fill.
 
         Other parameters:
             entries (float): the number of entries, initially 0.0.
@@ -518,13 +654,20 @@ class UntypedLabel(Factory, Container, Collection):
         return self.pairs.get(x, default)
 
     @inheritdoc(Container)
-    def zero(self): return UntypedLabel(**dict((k, v.zero()) for k, v in self.pairs.items()))
+    def zero(self):
+        return UntypedLabel(**dict((k, v.zero()) for k, v in self.pairs.items()))
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, UntypedLabel):
             if self.keySet != other.keySet:
-                raise ContainerException("cannot add UntypedLabels because keys differ:\n    {0}\n    {1}".format(", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))))
+                raise ContainerException(
+                    "cannot add UntypedLabels because keys differ:\n    {0}\n    {1}".format(
+                        ", ".join(
+                            sorted(
+                                self.keys)), ", ".join(
+                            sorted(
+                                other.keys))))
 
             out = UntypedLabel(**dict((k, self(k) + other(k)) for k in self.keys))
             out.entries = self.entries + other.entries
@@ -537,7 +680,13 @@ class UntypedLabel(Factory, Container, Collection):
     def __iadd__(self, other):
         if isinstance(other, UntypedLabel):
             if self.keySet != other.keySet:
-                raise ContainerException("cannot add UntypedLabels because keys differ:\n    {0}\n    {1}".format(", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))))
+                raise ContainerException(
+                    "cannot add UntypedLabels because keys differ:\n    {0}\n    {1}".format(
+                        ", ".join(
+                            sorted(
+                                self.keys)), ", ".join(
+                            sorted(
+                                other.keys))))
             self.entries += other.entries
             for k in self.keys:
                 v = self(k)
@@ -596,10 +745,9 @@ class UntypedLabel(Factory, Container, Collection):
         return self.values
 
     @inheritdoc(Container)
-    def toJsonFragment(self, suppressName): return {
-        "entries": floatToJson(self.entries),
-        "data": dict((k, {"type": v.name, "data": v.toJsonFragment(False)}) for k, v in self.pairs.items()),
-        }
+    def toJsonFragment(self, suppressName):
+        return {"entries": floatToJson(self.entries),
+                "data": dict((k, {"type": v.name, "data": v.toJsonFragment(False)}) for k, v in self.pairs.items())}
 
     @staticmethod
     @inheritdoc(Factory)
@@ -634,23 +782,36 @@ class UntypedLabel(Factory, Container, Collection):
     def __eq__(self, other):
         return isinstance(other, UntypedLabel) and numeq(self.entries, other.entries) and self.pairs == other.pairs
 
-    def __ne__(self, other): return not self == other
+    def __ne__(self, other):
+        return not self == other
 
     def __hash__(self):
         return hash((self.entries, tuple(sorted(self.pairs.items()))))
 
+
 Factory.register(UntypedLabel)
 
-################################################################ Index
+# Index
+
 
 class Index(Factory, Container, Collection):
-    """Accumulate any number of aggregators of the same type in a list. Every sub-aggregator is filled with every input datum.
+    """Accumulate any number of aggregators of the same type in a list.
 
-    This primitive provides an anonymous collection of aggregators (unless the integer index is taken to have special meaning, but generally such bookkeeping should be encoded in strings). Indexes can be nested to create two-dimensional ordinal grids of aggregators. (Use :doc:`Bin <histogrammar.primitives.bin.Bin>` if the space is to have a metric interpretation.)
+    Every sub-aggregator is filled with every input datum.
 
-    Note that all sub-aggregators within an Index must have the *same type* (e.g. histograms of different binnings, but all histograms). To collect objects of *different types,* still indexed by integer, use :doc:`Branch <histogrammar.primitives.collection.Branch>`.
+    This primitive provides an anonymous collection of aggregators (unless the integer index is taken to have special
+    meaning, but generally such bookkeeping should be encoded in strings). Indexes can be nested to create
+    two-dimensional ordinal grids of aggregators. (Use :doc:`Bin <histogrammar.primitives.bin.Bin>` if the space is
+    to have a metric interpretation.)
 
-    To collect aggregators of the *same type* with string-based labels, use :doc:`Label <histogrammar.primitives.collection.Label>`. To collect aggregators of *different types* with string-based labels, use :doc:`UntypedLabel <histogrammar.primitives.collection.UntypedLabel>`.
+    Note that all sub-aggregators within an Index must have the *same type* (e.g. histograms of different binnings,
+    but all histograms). To collect objects of *different types,* still indexed by integer,
+    use :doc:`Branch <histogrammar.primitives.collection.Branch>`.
+
+    To collect aggregators of the *same type* with string-based labels,
+    use :doc:`Label <histogrammar.primitives.collection.Label>`.
+    To collect aggregators of *different types* with string-based labels,
+    use :doc:`UntypedLabel <histogrammar.primitives.collection.UntypedLabel>`.
 
     In strongly typed languages, the restriction to a single type allows nested objects to be extracted without casting.
     """
@@ -732,7 +893,7 @@ class Index(Factory, Container, Collection):
         else:
             return self.values[i]
 
-    def getOrElse(self, x, default):
+    def getOrElse(self, i, default):
         """Attempt to get index ``i``, returning an alternative if it does not exist."""
         if i < 0 or i >= len(self.values):
             return default
@@ -740,13 +901,16 @@ class Index(Factory, Container, Collection):
             return self.values[i]
 
     @inheritdoc(Container)
-    def zero(self): return Index(*[x.zero() for x in self.values])
+    def zero(self):
+        return Index(*[x.zero() for x in self.values])
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Index):
             if self.size != other.size:
-                raise ContainerException("cannot add Indexes because they have different sizes: ({0} vs {1})".format(self.size, other.size))
+                raise ContainerException(
+                    "cannot add Indexes because they have different sizes: ({0} vs {1})".format(
+                        self.size, other.size))
 
             out = Index(*[x + y for x, y in zip(self.values, other.values)])
             out.entries = self.entries + other.entries
@@ -759,7 +923,9 @@ class Index(Factory, Container, Collection):
     def __iadd__(self, other):
         if isinstance(other, Index):
             if self.size != other.size:
-                raise ContainerException("cannot add Indexes because they have different sizes: ({0} vs {1})".format(self.size, other.size))
+                raise ContainerException(
+                    "cannot add Indexes because they have different sizes: ({0} vs {1})".format(
+                        self.size, other.size))
             self.entries += other.entries
             for x, y in zip(self.values, other.values):
                 x += y
@@ -815,11 +981,10 @@ class Index(Factory, Container, Collection):
         return self.values
 
     @inheritdoc(Container)
-    def toJsonFragment(self, suppressName): return {
-        "entries": floatToJson(self.entries),
-        "sub:type": self.values[0].name,
-        "data": [x.toJsonFragment(False) for x in self.values],
-        }
+    def toJsonFragment(self, suppressName):
+        return {"entries": floatToJson(self.entries),
+                "sub:type": self.values[0].name,
+                "data": [x.toJsonFragment(False) for x in self.values]}
 
     @staticmethod
     @inheritdoc(Factory)
@@ -851,39 +1016,53 @@ class Index(Factory, Container, Collection):
     def __eq__(self, other):
         return isinstance(other, Index) and numeq(self.entries, other.entries) and self.values == other.values
 
-    def __ne__(self, other): return not self == other
+    def __ne__(self, other):
+        return not self == other
 
     def __hash__(self):
         return hash((self.entries, tuple(self.values)))
 
+
 Factory.register(Index)
 
-################################################################ Branch
+# Branch
+
 
 class Branch(Factory, Container, Collection):
-    """Accumulate aggregators of different types, indexed by i0 through i9. Every sub-aggregator is filled with every input datum.
+    """Accumulate aggregators of different types, indexed by i0 through i9.
 
-       This primitive provides an anonymous collection of aggregators of *different types,* usually for gluing together various statistics. For instance, if the following associates a sum of weights to every bin in a histogram,
+    Every sub-aggregator is filled with every input datum.
 
-       ::
+    This primitive provides an anonymous collection of aggregators of *different types,* usually for gluing together
+    various statistics. For instance, if the following associates a sum of weights to every bin in a histogram,
 
-           Bin.ing(100, 0, 1, lambda d: d.x,
-             Sum.ing(lambda d: d.weight))
+    ::
 
-       the following would associate the sum of weights and the sum of squared weights to every bin:
+        Bin.ing(100, 0, 1, lambda d: d.x,
+        Sum.ing(lambda d: d.weight))
 
-       ::
+    the following would associate the sum of weights and the sum of squared weights to every bin:
 
-           Bin.ing(100, 0, 1, lambda d: d.x,
-             Branch.ing(Sum.ing(lambda d: d.weight),
-                        Sum.ing(lambda d: d.weight**2)))
+    ::
 
-       Branch is a basic building block for complex aggregators. The limitation to ten branches, indexed from i0 to i9, is a concession to type inference in statically typed languages. It is not a fundamental limit, but the type-metaprogramming becomes increasingly complex as branches are added. Error messages may be convoluted as the compiler presents internals of the type-metaprogramming in response to a user's simple mistake.
+        Bin.ing(100, 0, 1, lambda d: d.x,
+        Branch.ing(Sum.ing(lambda d: d.weight), Sum.ing(lambda d: d.weight**2)))
 
-       Therefore, individual implementations may allow more than ten branches, but the Histogrammar standard only requires ten.
+    Branch is a basic building block for complex aggregators. The limitation to ten branches, indexed from i0 to i9,
+    is a concession to type inference in statically typed languages. It is not a fundamental limit, but the
+    type-metaprogramming becomes increasingly complex as branches are added. Error messages may be convoluted as
+    the compiler presents internals of the type-metaprogramming in response to a user's simple mistake.
 
-       To collect an unlimited number of aggregators of the *same type* without naming them, use :doc:`Index <histogrammar.primitives.collection.Index>`. To collect aggregators of the *same type* with string-based labels, use :doc:`Label <histogrammar.primitives.collection.Label>`. To collect aggregators of *different types* with string-based labels, use :doc:`UntypedLabel <histogrammar.primitives.collection.UntypedLabel>`.
-       """
+    Therefore, individual implementations may allow more than ten branches, but the Histogrammar standard only r
+    equires ten.
+
+    To collect an unlimited number of aggregators of the *same type* without naming them,
+    use :doc:`Index <histogrammar.primitives.collection.Index>`.
+    To collect aggregators of the *same type* with string-based labels,
+    use :doc:`Label <histogrammar.primitives.collection.Label>`.
+    To collect aggregators of *different types* with string-based labels,
+    use :doc:`UntypedLabel <histogrammar.primitives.collection.UntypedLabel>`.
+    """
 
     @staticmethod
     def ed(entries, *values):
@@ -958,7 +1137,7 @@ class Branch(Factory, Container, Collection):
         else:
             return self.values[i]
 
-    def getOrElse(self, x, default):
+    def getOrElse(self, i, default):
         """Attempt to get index ``i``, returning an alternative if it does not exist."""
         if i < 0 or i >= len(self.values):
             return default
@@ -966,13 +1145,16 @@ class Branch(Factory, Container, Collection):
             return self.values[i]
 
     @inheritdoc(Container)
-    def zero(self): return Branch(*[x.zero() for x in self.values])
+    def zero(self):
+        return Branch(*[x.zero() for x in self.values])
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Branch):
             if self.size != other.size:
-                raise ContainerException("cannot add Branches because they have different sizes: ({0} vs {1})".format(self.size, other.size))
+                raise ContainerException(
+                    "cannot add Branches because they have different sizes: ({0} vs {1})".format(
+                        self.size, other.size))
 
             out = Branch(*[x + y for x, y in zip(self.values, other.values)])
             out.entries = self.entries + other.entries
@@ -985,7 +1167,9 @@ class Branch(Factory, Container, Collection):
     def __iadd__(self, other):
         if isinstance(other, Branch):
             if self.size != other.size:
-                raise ContainerException("cannot add Branches because they have different sizes: ({0} vs {1})".format(self.size, other.size))
+                raise ContainerException(
+                    "cannot add Branches because they have different sizes: ({0} vs {1})".format(
+                        self.size, other.size))
             self.entries += other.entries
             for x, y in zip(self.values, other.values):
                 x += y
@@ -1041,10 +1225,9 @@ class Branch(Factory, Container, Collection):
         return self.values
 
     @inheritdoc(Container)
-    def toJsonFragment(self, suppressName): return {
-        "entries": floatToJson(self.entries),
-        "data": [{"type": x.name, "data": x.toJsonFragment(False)} for x in self.values],
-        }
+    def toJsonFragment(self, suppressName):
+        return {"entries": floatToJson(self.entries),
+                "data": [{"type": x.name, "data": x.toJsonFragment(False)} for x in self.values]}
 
     @staticmethod
     @inheritdoc(Factory)
@@ -1072,16 +1255,18 @@ class Branch(Factory, Container, Collection):
 
         else:
             raise JsonFormatException(json, "Branch")
-        
+
     def __repr__(self):
         return "<Branch {0}>".format(" ".join("i" + str(i) + "=" + v.name for i, v in enumerate(self.values)))
 
     def __eq__(self, other):
         return isinstance(other, Branch) and numeq(self.entries, other.entries) and self.values == other.values
 
-    def __ne__(self, other): return not self == other
+    def __ne__(self, other):
+        return not self == other
 
     def __hash__(self):
         return hash((self.entries, tuple(self.values)))
+
 
 Factory.register(Branch)

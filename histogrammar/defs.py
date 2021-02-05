@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 # Copyright 2016 DIANA-HEP
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,69 +27,94 @@ except ImportError:
         def __init__(self):
             self.pairs = {}
             self.keys = []
+
         def __setitem__(self, key, value):
             self.pairs[key] = value
             if key not in self.keys:
                 self.keys.append(key)
+
         def __getitem__(self, key):
             return self.pairs[key]
+
         def values(self):
             return [self.pairs[k] for k in self.keys]
+
         def items(self):
             return [(k, self.pairs[k]) for k in self.keys]
+
         def __iter__(self):
             return iter(self.keys)
+
         def __len__(self):
             return len(self.keys)
 
-from histogrammar.util import *
+from histogrammar.util import FillMethod, PlotMethod, basestring, xrange, named
 from histogrammar.parsing import C99SourceToAst
 from histogrammar.parsing import C99AstToSource
 from histogrammar.pycparser import c_ast
 import histogrammar.version
 
+
 class ContainerException(Exception):
     """Exception type for improperly configured containers."""
     pass
 
+
 class InvalidJsonException(Exception):
     """Exception type for strings that cannot be parsed because they are not proper JSON."""
+
     def __init__(self, message):
         super(InvalidJsonException, self).__init__("invalid JSON: {0}".format(message))
 
+
 class JsonFormatException(Exception):
     """Exception type for unexpected JSON structure, thrown by ``fromJson`` methods."""
+
     def __init__(self, x, context):
         super(JsonFormatException, self).__init__("wrong JSON format for {0}: {1}".format(context, jsonlib.dumps(x)))
 
+
 class Factory(object):
     """Interface for a container factory, always named as imperative verbs, such as "Count" and "Bin".
-    
-    Each factory has:
-    
-       - a custom ``__call__`` method to create an active container than can aggregate data.
-       - a custom ``ed`` method to create a fixed container that cannot aggregate data, only merge with the ``+`` operator.
-       - a uniform ``fromJsonFragment`` method that can reconstruct a fixed container from its JSON representation. This is used by the ``Factory`` object's ``fromJson`` entry point. (Click on the "t" in a circle in the upper-left to see the ``Factory`` object's documentation, rather than the ``Factory`` trait.
 
-    In Python, no class distinction is made between active and fixed containers (e.g. "Counting" and "Counted" are both just "Count"). The distinction is maintained at runtime by which methods are available.
+    Each factory has:
+
+       - a custom ``__call__`` method to create an active container than can aggregate data.
+       - a custom ``ed`` method to create a fixed container that cannot aggregate data, only merge with
+         the ``+`` operator.
+       - a uniform ``fromJsonFragment`` method that can reconstruct a fixed container from its JSON representation.
+         This is used by the ``Factory`` object's ``fromJson`` entry point. (Click on the "t" in a circle in the
+        upper-left to see the ``Factory`` object's documentation, rather than the ``Factory`` trait.
+
+    In Python, no class distinction is made between active and fixed containers (e.g. "Counting" and "Counted" are
+    both just "Count"). The distinction is maintained at runtime by which methods are available.
 
     Also particular to Python, the Container classes are their own Factories. Thus, ``Count.ing()`` makes a ``Count``.
-   """
+    """
 
     registered = {}
-    
+
     @staticmethod
     def register(factory):
-        """Add a new ``Factory`` to the registry, introducing a new container type on the fly. General users usually wouldn't do this, but they could. This method is used internally to define the standard container types."""
+        """Add a new ``Factory`` to the registry, introducing a new container type on the fly.
+
+        General users usually wouldn't do this, but they could. This method is used internally to define the
+        standard container types.
+        """
         Factory.registered[factory.__name__] = factory
 
     def __init__(self):
         self._checkedForCrossReferences = False
 
     def specialize(self):
-        """Explicitly invoke histogrammar.specialized.addImplicitMethods on this object, usually right after construction (in each of the methods that construct: ``__init__``, ``ed``, ``ing``, ``fromJsonFragment``, etc).
+        """Explicitly invoke histogrammar.specialized.addImplicitMethods on this object.
 
-        Objects used as default parameter arguments are created too early for this to be possible, since they are created before the histogrammar.specialized module can be defined. These objects wouldn't satisfy any of ``addImplicitMethod``'s checks anyway.
+        Usually right after construction (in each of the methods that construct: ``__init__``, ``ed``, ``ing``,
+        ``fromJsonFragment``, etc).
+
+        Objects used as default parameter arguments are created too early for this to be possible,
+        since they are created before the histogrammar.specialized module can be defined.
+        These objects wouldn't satisfy any of ``addImplicitMethod``'s checks anyway.
         """
         try:
             import histogrammar.specialized
@@ -102,7 +127,11 @@ class Factory(object):
 
     @staticmethod
     def fromJsonFragment(json, nameFromParent):
-        """Reconstructs a container of known type from JSON. General users should call the ``Factory`` object's ``fromJson``, which uses header data to identify the container type. (This is called by ``fromJson``.)"""
+        """Reconstructs a container of known type from JSON.
+
+        General users should call the ``Factory`` object's ``fromJson``, which uses header data to identify the
+        container type. (This is called by ``fromJson``.)
+        """
         raise NotImplementedError
 
     @staticmethod
@@ -123,7 +152,9 @@ class Factory(object):
         if isinstance(json, dict) and "type" in json and "data" in json and "version" in json:
             if isinstance(json["version"], basestring):
                 if not histogrammar.version.compatible(json["version"]):
-                    raise ContainerException("cannot read a Histogrammar {0} document with histogrammar-python version {1}".format(json["version"], histogrammar.version.version))
+                    raise ContainerException(
+                        "cannot read a Histogrammar {0} document with histogrammar-python version {1}".format(
+                            json["version"], histogrammar.version.version))
             else:
                 raise JsonFormatException(json["version"], "Factory.version")
 
@@ -133,23 +164,27 @@ class Factory(object):
                 raise JsonFormatException(json["type"], "Factory.type")
 
             if name not in Factory.registered:
-                raise JsonFormatException(json, "unrecognized container (is it a custom container that hasn't been registered?): {0}".format(name))
+                raise JsonFormatException(json, "unrecognized container (is it a custom container "
+                                                "that hasn't been registered?): {0}".format(name))
 
             return Factory.registered[name].fromJsonFragment(json["data"], None)
 
         else:
             raise JsonFormatException(json, "Factory")
 
+
 class Container(object):
     """Interface for classes that contain aggregated data, such as "Count" or "Bin".
-    
-    Containers are monoids: they have a neutral element (``zero``) and an associative operator (``+``). Thus, partial sums aggregated in parallel can be combined arbitrarily.
+
+    Containers are monoids: they have a neutral element (``zero``) and an associative operator (``+``).
+    Thus, partial sums aggregated in parallel can be combined arbitrarily.
     """
 
     @property
     def name(self):
         """Name of the concrete ``Factory`` as a string; used to label the container type in JSON."""
         return self.__class__.__name__
+
     @property
     def factory(self):
         """Reference to the container's factory for runtime reflection."""
@@ -168,18 +203,25 @@ class Container(object):
         raise NotImplementedError
 
     def __mul__(self, factor):
-        """Reweight the contents in all nested aggregators by a scalar factor, as though they had been filled with a different weight. The original is unaffected."""
+        """Reweight the contents in all nested aggregators by a scalar factor
+
+        As though they had been filled with a different weight. The original is unaffected.
+        """
         raise NotImplementedError
 
     def __rmul__(self, factor):
-        """Reweight the contents in all nested aggregators by a scalar factor, as though they had been filled with a different weight. The original is unaffected."""
+        """Reweight the contents in all nested aggregators by a scalar factor
+
+        As though they had been filled with a different weight. The original is unaffected.
+        """
         raise NotImplementedError
 
     def fill(self, datum, weight=1.0):
         """Increment the aggregator by providing one ``datum`` to the fill rule with a given ``weight``.
-      
-        Usually all containers in a collection of histograms take the same input data by passing it recursively through the tree. Quantities to plot are specified by the individual container's lambda functions.
-      
+
+        Usually all containers in a collection of histograms take the same input data by passing it recursively
+        through the tree. Quantities to plot are specified by the individual container's lambda functions.
+
         The container is changed in-place.
         """
         raise NotImplementedError
@@ -227,7 +269,7 @@ class Container(object):
 
     def toJson(self):
         """Convert this container to dicts and lists representing JSON (dropping its ``fill`` method).
-       
+
         Note that the dicts and lists can be turned into a string with ``json.dumps``.
         """
         return {"type": self.name, "data": self.toJsonFragment(False), "version": histogrammar.version.specification}
@@ -237,10 +279,15 @@ class Container(object):
         raise NotImplementedError
 
     def toImmutable(self):
-        """Return a copy of this container as though it was created by the ``ed`` function or from JSON (the \"immutable form\" in languages that support it, not Python)."""
+        """Return a copy of this container
+
+        As though it was created by the ``ed`` function or from JSON (the \"immutable form\" in languages that
+        support it, not Python).
+        """
         return Factory.fromJson(self.toJson())
 
     _clingClassNameNumber = 0
+
     def fillroot(self, ttree, start=-1, end=-1, debug=False, debugOnError=True, **exprs):
         self._checkForCrossReferences()
 
@@ -290,7 +337,7 @@ class Container(object):
 
                 else:
                     inputFieldTypes[branch.GetName()] = branch.GetClassName() + "*"
-                    
+
             derivedFieldTypes = {}
             derivedFieldExprs = {}
 
@@ -302,9 +349,37 @@ class Container(object):
             tmpVarTypes = {}
 
             for name, expr in exprs.items():
-                self._clingAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+                self._clingAddExpr(
+                    parser,
+                    generator,
+                    name,
+                    expr,
+                    inputFieldNames,
+                    inputFieldTypes,
+                    derivedFieldTypes,
+                    derivedFieldExprs)
 
-            self._cppGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "storage"),), 4, fillCode, (("var", "storage"),), 6, weightVars, weightVarStack, tmpVarTypes)
+            self._cppGenerateCode(
+                parser,
+                generator,
+                inputFieldNames,
+                inputFieldTypes,
+                derivedFieldTypes,
+                derivedFieldExprs,
+                storageStructs,
+                initCode,
+                (("var",
+                  "storage"),
+                 ),
+                4,
+                fillCode,
+                (("var",
+                  "storage"),
+                 ),
+                6,
+                weightVars,
+                weightVarStack,
+                tmpVarTypes)
 
             className = "HistogrammarClingFiller_" + str(Container._clingClassNameNumber)
             Container._clingClassNameNumber += 1
@@ -335,17 +410,19 @@ public:
   }}
 }};
 """.format(className,
-           "".join(storageStructs.values()),
-           "".join("  double " + n + ";\n" for n in weightVars),
-           "".join("  " + t + " " + self._cppNormalizeInputName(n) + ";\n" for n, t in inputFieldTypes.items() if self._cppNormalizeInputName(n) in inputFieldNames),
-           "".join("  " + t + " " + n + ";\n" for n, t in derivedFieldTypes.items() if t != "auto"),
-           "".join("  " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
-           self._cppStorageType(),
-           "\n".join(initCode),
-           "".join("    ttree->SetBranchAddress(" + jsonlib.dumps(key) + ", &" + n + ");\n" for n, key in inputFieldNames.items()),
-           "".join(x for x in derivedFieldExprs.values()),
-           "\n".join(fillCode),
-           "".join("    ttree->SetBranchStatus(\"" + key + "\", 1);\n" for key in inputFieldNames.values()))
+                "".join(storageStructs.values()),
+                "".join("  double " + n + ";\n" for n in weightVars),
+                "".join("  " + t + " " + self._cppNormalizeInputName(n) + ";\n" for n,
+                        t in inputFieldTypes.items() if self._cppNormalizeInputName(n) in inputFieldNames),
+                "".join("  " + t + " " + n + ";\n" for n, t in derivedFieldTypes.items() if t != "auto"),
+                "".join("  " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
+                self._cppStorageType(),
+                "\n".join(initCode),
+                "".join("    ttree->SetBranchAddress(" + jsonlib.dumps(key) +
+                        ", &" + n + ");\n" for n, key in inputFieldNames.items()),
+                "".join(x for x in derivedFieldExprs.values()),
+                "\n".join(fillCode),
+                "".join("    ttree->SetBranchStatus(\"" + key + "\", 1);\n" for key in inputFieldNames.values()))
 
             if debug:
                 print("line |")
@@ -354,7 +431,15 @@ public:
                 if debug:
                     raise SyntaxError("Could not compile the above")
                 elif debugOnError:
-                    raise SyntaxError("Could not compile the following:\n\n" + "\n".join("{0:4d} | {1}".format(i + 1, line) for i, line in enumerate(classCode.split("\n"))))
+                    raise SyntaxError(
+                        "Could not compile the following:\n\n" +
+                        "\n".join(
+                            "{0:4d} | {1}".format(
+                                i +
+                                1,
+                                line) for i,
+                            line in enumerate(
+                                classCode.split("\n"))))
                 else:
                     raise SyntaxError("Could not compile (rerun with debug=True to see the generated C++ code)")
 
@@ -365,7 +450,9 @@ public:
         self._clingUpdate(self._clingFiller, ("var", "storage"))
 
     _cudaNamespaceNumber = 0
-    def cuda(self, namespace=True, namespaceName=None, writeSize=False, commentMain=True, split=False, testData=[round(random.gauss(0, 1), 2) for x in xrange(10)], **exprs):
+
+    def cuda(self, namespace=True, namespaceName=None, writeSize=False, commentMain=True,
+             split=False, testData=[round(random.gauss(0, 1), 2) for x in xrange(10)], **exprs):
         parser = C99SourceToAst()
         generator = C99AstToSource()
 
@@ -383,9 +470,51 @@ public:
         tmpVarTypes = {}
 
         for name, expr in exprs.items():
-            self._cudaAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+            self._cudaAddExpr(
+                parser,
+                generator,
+                name,
+                expr,
+                inputFieldNames,
+                inputFieldTypes,
+                derivedFieldTypes,
+                derivedFieldExprs)
 
-        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 4, weightVars, weightVarStack, tmpVarTypes, False)
+        self._cudaGenerateCode(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            storageStructs,
+            initCode,
+            (("var",
+              "(*aggregator)"),
+             ),
+            4,
+            fillCode,
+            (("var",
+              "(*aggregator)"),
+             ),
+            4,
+            combineCode,
+            (("var",
+              "(*total)"),
+             ),
+            (("var",
+              "(*item)"),
+             ),
+            4,
+            jsonCode,
+            (("var",
+              "(*aggregator)"),
+             ),
+            4,
+            weightVars,
+            weightVarStack,
+            tmpVarTypes,
+            False)
 
         if namespaceName is None:
             namespaceName = "HistogrammarCUDA_" + str(Container._cudaNamespaceNumber)
@@ -467,7 +596,7 @@ namespace {ns} {{
   //
   //   aggregators: array of aggregators to fill in parallel.
   //   numAggregators: number of aggregators to fill.
-  //   result: single output 
+  //   result: single output
   //
   __global__ void extract(Aggregator* aggregators, int numAggregators, Aggregator* result);
 
@@ -585,7 +714,7 @@ namespace {ns} {{{writeSize}
   //
   //   aggregators: array of aggregators to fill in parallel.
   //   numAggregators: number of aggregators to fill.
-  //   result: single output 
+  //   result: single output
   //
   __global__ void extract(Aggregator* aggregators, int numAggregators, Aggregator* result) {{
     // merge down in log(N) steps until the thread with id == 0 has the total for this block
@@ -674,41 +803,42 @@ int main(int argc, char** argv) {{
 {endComment}
 
 #endif  // {NS}
-'''.format(timestamp = datetime.datetime.now(),
-           namespace = "namespace " + namespaceName if namespace else "extern \"C\"",
-           ns = namespaceName,
-           NS = namespaceName.upper(),
-           writeSize = """  __global__ void write_size(size_t *output) {{
+'''.format(timestamp=datetime.datetime.now(),
+           ns=namespaceName,
+           NS=namespaceName.upper(),
+           writeSize="""  __global__ void write_size(size_t *output) {{
     *output = sizeof(Aggregator);
   }}
 """ if writeSize else "",
-           specVersion = histogrammar.version.specification,
-           factoryName = self.name,
-           typedefs = "".join(storageStructs.values()),
-           lastStructName = "float" if self._c99StructName() == "Ct" else self._c99StructName(),
-           initCode = "\n".join(initCode),
-           fillCode = "\n".join(fillCode),
-           combineCode = "\n".join(combineCode),
-           quantities = "".join(derivedFieldExprs.values()),
-           jsonCode = "\n".join(jsonCode),
-           comma = ", " if len(inputFieldNames) > 0 else "",
-           inputList = ", ".join(norm for norm, name in inputFieldNames.items()),
-           gpuList = ", ".join("gpu_" + name for norm, name in inputFieldNames.items()),
-           inputListId = ", ".join(norm + "[id]" for norm, name in inputFieldNames.items()),
-           inputArgList = ", ".join(inputFieldTypes[name] + " " + norm for norm, name in inputFieldNames.items()),
-           inputArgStarList = ", ".join(inputFieldTypes[name] + "* " + norm for norm, name in inputFieldNames.items()),
-           weightVarDeclarations = "".join("  float " + n + ";\n" for n in weightVars if n != "weight_0"),
-           tmpVarDeclarations = "".join("    " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
-           copyTestData = "".join('''    float* gpu_{1};
+           specVersion=histogrammar.version.specification,
+           factoryName=self.name,
+           typedefs="".join(storageStructs.values()),
+           lastStructName="float" if self._c99StructName() == "Ct" else self._c99StructName(),
+           initCode="\n".join(initCode),
+           fillCode="\n".join(fillCode),
+           combineCode="\n".join(combineCode),
+           quantities="".join(derivedFieldExprs.values()),
+           jsonCode="\n".join(jsonCode),
+           comma=", " if len(inputFieldNames) > 0 else "",
+           inputList=", ".join(norm for norm, name in inputFieldNames.items()),
+           gpuList=", ".join("gpu_" + name for norm, name in inputFieldNames.items()),
+           inputListId=", ".join(norm + "[id]" for norm, name in inputFieldNames.items()),
+           inputArgList=", ".join(inputFieldTypes[name] + " " + norm for norm, name in inputFieldNames.items()),
+           inputArgStarList=", ".join(inputFieldTypes[name] + "* " + norm for norm, name in inputFieldNames.items()),
+           weightVarDeclarations="".join("  float " + n + ";\n" for n in weightVars if n != "weight_0"),
+           tmpVarDeclarations="".join("    " + t + " " + n + ";\n" for n, t in tmpVarTypes.items()),
+           copyTestData="".join('''    float* gpu_{1};
     errorCheck(cudaMalloc((void**)&gpu_{1}, numDataPoints * sizeof(float)));
     errorCheck(cudaMemcpy(gpu_{1}, {0}, numDataPoints * sizeof(float), cudaMemcpyHostToDevice));
 '''.format(norm, name) for norm, name in inputFieldNames.items()),
-           freeTestData = "".join('''    errorCheck(cudaFree(gpu_{0}));
+           freeTestData="".join('''    errorCheck(cudaFree(gpu_{0}));
 '''.format(name) for name in inputFieldNames.values()),
-           initTestData = "".join('''  float {0}[10] = {{{1}}};
-'''.format(norm, ", ".join(str(float(x)) + "f" for x in (testData[name] if isinstance(testData, dict) else testData))) for norm, name in inputFieldNames.items()),
-           startComment = "/*" if commentMain else "",
-           endComment = "*/" if commentMain else ""
+           initTestData="".join('''  float {0}[10] = {{{1}}};
+'''.format(norm, ", ".join(str(float(x)) + "f"
+                           for x in (testData[name] if isinstance(testData, dict) else testData)))
+                                for norm, name in inputFieldNames.items()),
+           startComment="/*" if commentMain else "",
+           endComment="*/" if commentMain else ""
            )
 
         if split:
@@ -756,9 +886,51 @@ int main(int argc, char** argv) {{
             elif not isinstance(expr, basestring) and hasattr(expr, "__iter__"):
                 inputArrays[name] = numpy.array(expr).astype(numpy.float32)
             else:
-                self._cudaAddExpr(parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs)
+                self._cudaAddExpr(
+                    parser,
+                    generator,
+                    name,
+                    expr,
+                    inputFieldNames,
+                    inputFieldTypes,
+                    derivedFieldTypes,
+                    derivedFieldExprs)
 
-        self._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, (("var", "(*aggregator)"),), 4, fillCode, (("var", "(*aggregator)"),), 4, combineCode, (("var", "(*total)"),), (("var", "(*item)"),), 4, jsonCode, (("var", "(*aggregator)"),), 6, weightVars, weightVarStack, tmpVarTypes, False)
+        self._cudaGenerateCode(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            storageStructs,
+            initCode,
+            (("var",
+              "(*aggregator)"),
+             ),
+            4,
+            fillCode,
+            (("var",
+              "(*aggregator)"),
+             ),
+            4,
+            combineCode,
+            (("var",
+              "(*total)"),
+             ),
+            (("var",
+              "(*item)"),
+             ),
+            4,
+            jsonCode,
+            (("var",
+              "(*aggregator)"),
+             ),
+            6,
+            weightVars,
+            weightVarStack,
+            tmpVarTypes,
+            False)
 
         arguments = []
         for name in inputFieldNames.values():
@@ -772,11 +944,14 @@ int main(int argc, char** argv) {{
                 arguments.append(inputArrays[name])
 
         if length is None:
-            raise ValueError("no arrays specified as input fields in the aggregator to get length from (and length not specified explicitly)")
+            raise ValueError(
+                "no arrays specified as input fields in the aggregator to get length from "
+                "(and length not specified explicitly)")
 
         module = pycuda.compiler.SourceModule(self.cuda(namespace=False, writeSize=True))
 
-        numThreadsPerBlock = min(pycuda.driver.Context.get_device().get_attribute(pycuda.driver.device_attribute.MAX_THREADS_PER_BLOCK), length)
+        numThreadsPerBlock = min(pycuda.driver.Context.get_device().get_attribute(
+            pycuda.driver.device_attribute.MAX_THREADS_PER_BLOCK), length)
         numBlocks = int(math.ceil(float(length) / float(numThreadsPerBlock)))
         numAggregators = numThreadsPerBlock
 
@@ -793,11 +968,22 @@ int main(int argc, char** argv) {{
         aggregators = pycuda.driver.InOut(numpy.zeros(numAggregators * aggregatorSize, dtype=numpy.uint8))
         result = numpy.zeros(aggregatorSize, dtype=numpy.uint8)
 
-        initialize(aggregators, numpy.intc(numAggregators), block=(numThreadsPerBlock,1,1), grid=(1, 1))
+        initialize(aggregators, numpy.intc(numAggregators), block=(numThreadsPerBlock, 1, 1), grid=(1, 1))
 
-        fillAll(aggregators, numpy.intc(numAggregators), *(arguments + [numpy.intc(length)]), block=(numThreadsPerBlock,1,1), grid=(numBlocks, 1))
+        fillAll(aggregators, numpy.intc(numAggregators), *(arguments + [numpy.intc(length)]),
+                block=(numThreadsPerBlock, 1, 1), grid=(numBlocks, 1))
 
-        extract(aggregators, numpy.intc(numAggregators), pycuda.driver.Out(result), block=(numThreadsPerBlock,1,1), grid=(1, 1))
+        extract(
+            aggregators,
+            numpy.intc(numAggregators),
+            pycuda.driver.Out(result),
+            block=(
+                numThreadsPerBlock,
+                1,
+                1),
+            grid=(
+                1,
+                1))
 
         pycuda.driver.Context.synchronize()
         self._cudaUnpackAndFill(result.tostring(), False, 4)    # TODO: determine bigendian, alignment and use them!
@@ -859,9 +1045,18 @@ int main(int argc, char** argv) {{
 
         elif isinstance(ast, c_ast.FuncCall):
             # t("field name") for field names that aren't valid C identifiers
-            if isinstance(ast.name, c_ast.ID) and ast.name.name == "t" and isinstance(ast.args, c_ast.ExprList) and len(ast.args.exprs) == 1 and isinstance(ast.args.exprs[0], c_ast.Constant) and ast.args.exprs[0].type == "string":
-                ast = self._cppNormalizeExpr(c_ast.ID(jsonlib.loads(ast.args.exprs[0].value)), inputFieldNames, inputFieldTypes, weightVar)
-            # ordinary function: don't translate the name (let function names live in a different namespace from variables)
+            if isinstance(ast.name, c_ast.ID) and ast.name.name == "t" and isinstance(ast.args, c_ast.ExprList) and \
+                    len(ast.args.exprs) == 1 and isinstance(ast.args.exprs[0], c_ast.Constant) and \
+                    ast.args.exprs[0].type == "string":
+                ast = self._cppNormalizeExpr(
+                    c_ast.ID(
+                        jsonlib.loads(
+                            ast.args.exprs[0].value)),
+                    inputFieldNames,
+                    inputFieldTypes,
+                    weightVar)
+            # ordinary function: don't translate the name (let function names live in
+            # a different namespace from variables)
             elif isinstance(ast.name, c_ast.ID):
                 if ast.args is not None:
                     ast.args = self._cppNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar)
@@ -878,12 +1073,20 @@ int main(int argc, char** argv) {{
         # anything else
         else:
             for fieldName, fieldValue in ast.children():
-                m = re.match("([^[]+)\[([0-9]+)\]", fieldName)
+                m = re.match(r"([^[]+)\[([0-9]+)\]", fieldName)
                 if m is not None:
                     tmp = getattr(ast, m.group(1))
-                    tmp.__setitem__(int(m.group(2)), self._cppNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
+                    tmp.__setitem__(int(m.group(2)), self._cppNormalizeExpr(
+                        fieldValue, inputFieldNames, inputFieldTypes, weightVar))
                 else:
-                    setattr(ast, fieldName, self._cppNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar))
+                    setattr(
+                        ast,
+                        fieldName,
+                        self._cppNormalizeExpr(
+                            fieldValue,
+                            inputFieldNames,
+                            inputFieldTypes,
+                            weightVar))
 
         return ast
 
@@ -902,39 +1105,84 @@ int main(int argc, char** argv) {{
 
         elif isinstance(ast, c_ast.Decl):
             intermediates.add(ast.name)
-            self._cudaNormalizeExpr(ast.init, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+            self._cudaNormalizeExpr(
+                ast.init,
+                inputFieldNames,
+                inputFieldTypes,
+                weightVar,
+                derivedFieldExprs,
+                intermediates)
 
         elif isinstance(ast, c_ast.FuncCall):
-            # ordinary function: don't translate the name (let function names live in a different namespace from variables)
+            # ordinary function: don't translate the name (let function names live in
+            # a different namespace from variables)
             if isinstance(ast.name, c_ast.ID):
                 if ast.args is not None:
-                    ast.args = self._cudaNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+                    ast.args = self._cudaNormalizeExpr(
+                        ast.args,
+                        inputFieldNames,
+                        inputFieldTypes,
+                        weightVar,
+                        derivedFieldExprs,
+                        intermediates)
             # weird function: calling the result of an evaluation, probably an overloaded operator() in C++
             else:
-                ast.name = self._cudaNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+                ast.name = self._cudaNormalizeExpr(
+                    ast.name,
+                    inputFieldNames,
+                    inputFieldTypes,
+                    weightVar,
+                    derivedFieldExprs,
+                    intermediates)
                 if ast.args is not None:
-                    ast.args = self._cudaNormalizeExpr(ast.args, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+                    ast.args = self._cudaNormalizeExpr(
+                        ast.args,
+                        inputFieldNames,
+                        inputFieldTypes,
+                        weightVar,
+                        derivedFieldExprs,
+                        intermediates)
 
         # only the top (x) of a dotted expression (x.y.z) should be interpreted as a field name
         elif isinstance(ast, c_ast.StructRef):
-            self._cudaNormalizeExpr(ast.name, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates)
+            self._cudaNormalizeExpr(
+                ast.name,
+                inputFieldNames,
+                inputFieldTypes,
+                weightVar,
+                derivedFieldExprs,
+                intermediates)
 
         # anything else
         else:
             for fieldName, fieldValue in ast.children():
-                m = re.match("([^[]+)\[([0-9]+)\]", fieldName)
+                m = re.match(r"([^[]+)\[([0-9]+)\]", fieldName)
                 if m is not None:
                     tmp = getattr(ast, m.group(1))
-                    tmp.__setitem__(int(m.group(2)), self._cudaNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates))
+                    tmp.__setitem__(int(m.group(2)),
+                                    self._cudaNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar,
+                                                            derivedFieldExprs, intermediates))
                 else:
-                    setattr(ast, fieldName, self._cudaNormalizeExpr(fieldValue, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates))
+                    setattr(
+                        ast,
+                        fieldName,
+                        self._cudaNormalizeExpr(
+                            fieldValue,
+                            inputFieldNames,
+                            inputFieldTypes,
+                            weightVar,
+                            derivedFieldExprs,
+                            intermediates))
 
         return ast
 
-    def _cppQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
-        return self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar)
+    def _cppQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes,
+                         derivedFieldTypes, derivedFieldExprs, weightVar):
+        return self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes,
+                                     derivedFieldTypes, derivedFieldExprs, weightVar)
 
-    def _c99QuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
+    def _c99QuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes,
+                         derivedFieldTypes, derivedFieldExprs, weightVar):
         if weightVar is not None:
             if not isinstance(self.transform.expr, basestring):
                 raise ContainerException("Count.transform must be provided as a C99 string when used with Cling")
@@ -951,7 +1199,7 @@ int main(int argc, char** argv) {{
                 raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.quantity.expr, str(err)))
 
         ast = [self._cppNormalizeExpr(x, inputFieldNames, inputFieldTypes, weightVar) for x in ast]
-            
+
         if len(ast) == 1 and isinstance(ast[0], c_ast.ID):
             return generator(ast)
 
@@ -966,7 +1214,10 @@ int main(int argc, char** argv) {{
             if derivedFieldName is None:
                 derivedFieldName = "quantity_" + str(len(derivedFieldExprs))
                 if len(ast) > 1:
-                    derivedFieldExprs[derivedFieldName] = "      {\n        " + ";\n        ".join(generator(x) for x in ast[:-1]) + ";\n        " + derivedFieldName + " = " + generator(ast[-1]) + ";\n      }\n"
+                    derivedFieldExprs[derivedFieldName] = "      {\n        " + ";\n        ".join(
+                        generator(x) for x in ast[:-1]) + ";\n        " + \
+                                                          derivedFieldName + " = " + \
+                                                          generator(ast[-1]) + ";\n      }\n"
                 else:
                     derivedFieldExprs[derivedFieldName] = "      " + derivedFieldName + " = " + normexpr + ";\n"
 
@@ -984,7 +1235,8 @@ int main(int argc, char** argv) {{
 
             return derivedFieldName
 
-    def _cudaQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, weightVar):
+    def _cudaQuantityExpr(self, parser, generator, inputFieldNames, inputFieldTypes,
+                          derivedFieldTypes, derivedFieldExprs, weightVar):
         if weightVar is not None:
             if not isinstance(self.transform.expr, basestring):
                 raise ContainerException("Count.transform must be provided as a C99 string when used with CUDA")
@@ -1001,8 +1253,15 @@ int main(int argc, char** argv) {{
                 raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(self.quantity.expr, str(err)))
 
         intermediates = set()
-        ast = [self._cudaNormalizeExpr(x, inputFieldNames, inputFieldTypes, weightVar, derivedFieldExprs, intermediates) for x in ast]
-            
+        ast = [
+            self._cudaNormalizeExpr(
+                x,
+                inputFieldNames,
+                inputFieldTypes,
+                weightVar,
+                derivedFieldExprs,
+                intermediates) for x in ast]
+
         if len(ast) == 1 and isinstance(ast[0], c_ast.ID):
             return generator(ast)
 
@@ -1017,7 +1276,10 @@ int main(int argc, char** argv) {{
             if derivedFieldName is None:
                 derivedFieldName = "quantity_" + str(len(derivedFieldExprs))
                 if len(ast) > 1:
-                    derivedFieldExprs[derivedFieldName] = "    float " + derivedFieldName + ";\n    {\n      " + ";\n      ".join(generator(x) for x in ast[:-1]) + ";\n      " + derivedFieldName + " = " + generator(ast[-1]) + ";\n    }\n"
+                    derivedFieldExprs[derivedFieldName] = "    float " + derivedFieldName + \
+                                                          ";\n    {\n      " + ";\n      ".join(
+                        generator(x) for x in ast[:-1]) + ";\n      " + derivedFieldName + " = " + \
+                                                          generator(ast[-1]) + ";\n    }\n"
                 else:
                     derivedFieldExprs[derivedFieldName] = "    float " + derivedFieldName + " = " + normexpr + ";\n"
 
@@ -1025,7 +1287,8 @@ int main(int argc, char** argv) {{
 
             return derivedFieldName
 
-    def _clingAddExpr(self, parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
+    def _clingAddExpr(self, parser, generator, name, expr, inputFieldNames,
+                      inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
         if not isinstance(expr, basestring):
             raise ContainerException("expressions like {0} must be provided as a C99 string".format(name))
         try:
@@ -1036,12 +1299,14 @@ int main(int argc, char** argv) {{
         ast = [self._cppNormalizeExpr(x, inputFieldNames, inputFieldTypes, None) for x in ast]
 
         if len(ast) > 1:
-            derivedFieldExprs[name] = "      auto " + name + " = [this]{\n        " + ";\n        ".join(generator(x) for x in ast[:-1]) + ";\n        return " + generator(ast[-1]) + ";\n      }();\n"
+            derivedFieldExprs[name] = "      auto " + name + " = [this]{\n        " + ";\n        ".join(
+                generator(x) for x in ast[:-1]) + ";\n        return " + generator(ast[-1]) + ";\n      }();\n"
         else:
             derivedFieldExprs[name] = "      auto " + name + " = " + generator(ast[0]) + ";\n"
         derivedFieldTypes[name] = "auto"
 
-    def _cudaAddExpr(self, parser, generator, name, expr, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
+    def _cudaAddExpr(self, parser, generator, name, expr, inputFieldNames,
+                     inputFieldTypes, derivedFieldTypes, derivedFieldExprs):
         if not isinstance(expr, basestring):
             raise ContainerException("expressions like {0} must be provided as a C99 string".format(name))
         try:
@@ -1050,10 +1315,19 @@ int main(int argc, char** argv) {{
             raise SyntaxError("""Couldn't parse C99 expression "{0}": {1}""".format(expr, str(err)))
 
         intermediates = set()
-        ast = [self._cudaNormalizeExpr(x, inputFieldNames, inputFieldTypes, None, derivedFieldExprs, intermediates) for x in ast]
+        ast = [
+            self._cudaNormalizeExpr(
+                x,
+                inputFieldNames,
+                inputFieldTypes,
+                None,
+                derivedFieldExprs,
+                intermediates) for x in ast]
 
         if len(ast) > 1:
-            derivedFieldExprs[name] = "    float quantity_" + name + ";\n    {\n      " + ";\n      ".join(generator(x) for x in ast[:-1]) + ";\n      quantity_" + name + " = " + generator(ast[-1]) + ";\n    }\n"
+            derivedFieldExprs[name] = "    float quantity_" + name + ";\n    {\n      " + ";\n      ".join(
+                generator(x) for x in ast[:-1]) + ";\n      quantity_" + name + " = " + \
+                                      generator(ast[-1]) + ";\n    }\n"
         else:
             derivedFieldExprs[name] = "    float quantity_" + name + " = " + generator(ast[0]) + ";\n"
         derivedFieldTypes[name] = "float"
@@ -1068,12 +1342,13 @@ int main(int argc, char** argv) {{
         return self._c99StructName()
 
     def fillnumpy(self, data):
-        import numpy
         self._checkForCrossReferences()
         self._numpy(data, 1.0, [None])
 
     def _checkNPQuantity(self, q, shape):
         import numpy
+        if isinstance(q, (list, tuple)):
+            q = numpy.array(q)
         assert isinstance(q, numpy.ndarray)
         assert len(q.shape) == 1
         if shape[0] is None:
@@ -1103,28 +1378,34 @@ int main(int argc, char** argv) {{
 
 # useful functions
 
+
 unweighted = named("unweighted", lambda datum: 1.0)
 identity = named("identity", lambda x: x)
 square = named("square", lambda x: x)
 
 # functions for Spark's RDD.aggregate
 
+
 def increment(container, datum):
     """Increment function for Apache Spark's ``aggregate`` method.
-    * 
-    * Typical use: ``filledHistogram = datasetRDD.aggregate(initialHistogram, increment, combine)`` where ``datasetRDD`` is a collection of ``initialHistogram``'s input type.
-   """
+
+    Typical use: ``filledHistogram = datasetRDD.aggregate(initialHistogram, increment, combine)``
+    where ``datasetRDD`` is a collection of ``initialHistogram``'s input type.
+    """
     container.fill(datum)
     return container
 
+
 def combine(container1, container2):
     """Combine function for Apache Spark's ``aggregate`` method.
-     
-    Typical use: ``filledHistogram = datasetRDD.aggregate(initialHistogram)(increment, combine)`` where ``datasetRDD`` is a collection of ``initialHistogram``'s input type.
-   """
+
+    Typical use: ``filledHistogram = datasetRDD.aggregate(initialHistogram)(increment, combine)``
+    where ``datasetRDD`` is a collection of ``initialHistogram``'s input type.
+    """
     return container1 + container2
 
 # symbols for Branch paths (Index paths use integers, Label/UntypedLabel paths use strings)
+
 
 i0 = 0
 i1 = 1

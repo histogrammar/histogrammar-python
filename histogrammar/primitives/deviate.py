@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 # Copyright 2016 DIANA-HEP
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,15 +19,20 @@ import math
 import numbers
 import struct
 
-from histogrammar.defs import *
-from histogrammar.util import *
+from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
+from histogrammar.util import n_dim, datatype, serializable, inheritdoc, maybeAdd, floatToJson, hasKeys, numeq, \
+    basestring
+
 
 class Deviate(Factory, Container):
     """Accumulate the weighted mean and weighted variance of a given quantity.
 
     The variance is computed around the mean, not zero.
 
-    Uses the numerically stable weighted mean and weighted variance algorithms described in `"Incremental calculation of weighted mean and variance," <http://www-uxsup.csx.cam.ac.uk/~fanf2/hermes/doc/antiforgery/stats.pdf>`_ Tony Finch, *Univeristy of Cambridge Computing Service,* 2009.
+    Uses the numerically stable weighted mean and weighted variance algorithms described
+    in `"Incremental calculation of weighted mean and variance,"
+    <http://www-uxsup.csx.cam.ac.uk/~fanf2/hermes/doc/antiforgery/stats.pdf>`_ Tony Finch,
+    *Univeristy of Cambridge Computing Service,* 2009.
     """
 
     @staticmethod
@@ -58,7 +63,7 @@ class Deviate(Factory, Container):
         """Synonym for ``__init__``."""
         return Deviate(quantity)
 
-    def __init__(self, quantity):
+    def __init__(self, quantity=identity):
         """Create a Deviate that is capable of being filled and added.
 
         Parameters:
@@ -69,7 +74,7 @@ class Deviate(Factory, Container):
             mean (float): the running mean, initially NaN.
             variance (float): the running variance, initially NaN.
         """
-        self.quantity = serializable(quantity)
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.entries = 0.0
         self.mean = float("nan")
         self.varianceTimesEntries = float("nan")
@@ -89,7 +94,8 @@ class Deviate(Factory, Container):
         self.varianceTimesEntries = value * self.entries
 
     @inheritdoc(Container)
-    def zero(self): return Deviate(self.quantity)
+    def zero(self):
+        return Deviate(self.quantity)
 
     @inheritdoc(Container)
     def __add__(self, other):
@@ -104,7 +110,11 @@ class Deviate(Factory, Container):
                 out.varianceTimesEntries = self.varianceTimesEntries
             else:
                 out.mean = (self.entries*self.mean + other.entries*other.mean)/(self.entries + other.entries)
-                out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + self.entries*self.mean*self.mean + other.entries*other.mean*other.mean - 2.0*out.mean*(self.entries*self.mean + other.entries*other.mean) + out.mean*out.mean*out.entries
+                out.varianceTimesEntries = self.varianceTimesEntries + other.varianceTimesEntries + \
+                                           self.entries * self.mean * self.mean + \
+                                           other.entries * other.mean*other.mean - \
+                                           2.0 * out.mean * (self.entries*self.mean + other.entries * other.mean) + \
+                                           out.mean * out.mean * out.entries
             return out.specialize()
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
@@ -170,17 +180,31 @@ class Deviate(Factory, Container):
                 self.mean += shift
                 self.varianceTimesEntries += weight * delta * (q - self.mean)
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                                     derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode,
+                                     fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".mean = 0.0;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".varianceTimesEntries = 0.0;")
 
-        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
-        
+        normexpr = self._c99QuantityExpr(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            None)
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
+                        ".entries += " + weightVarStack[-1] + ";")
+
         delta = "delta_" + str(len(tmpVarTypes))
         tmpVarTypes[delta] = "double"
         shift = "shift_" + str(len(tmpVarTypes))
@@ -206,14 +230,14 @@ class Deviate(Factory, Container):
 {indent}  {shift} = {delta} * {weight} / {entries};
 {indent}  {mean} += {shift};
 {indent}  {varianceTimesEntries} += {weight} * {delta} * ({q} - {mean});
-{indent}}}""".format(indent = " " * fillIndent,
-           entries = self._c99ExpandPrefix(*fillPrefix) + ".entries",
-           mean = self._c99ExpandPrefix(*fillPrefix) + ".mean",
-           varianceTimesEntries = self._c99ExpandPrefix(*fillPrefix) + ".varianceTimesEntries",
-           q = normexpr,
-           delta = delta,
-           shift = shift,
-           weight = weightVarStack[-1]))
+{indent}}}""".format(indent=" " * fillIndent,
+                     entries=self._c99ExpandPrefix(*fillPrefix) + ".entries",
+                     mean=self._c99ExpandPrefix(*fillPrefix) + ".mean",
+                     varianceTimesEntries=self._c99ExpandPrefix(*fillPrefix) + ".varianceTimesEntries",
+                     q=normexpr,
+                     delta=delta,
+                     shift=shift,
+                     weight=weightVarStack[-1]))
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{
@@ -234,8 +258,11 @@ class Deviate(Factory, Container):
             mean = self.mean
             varianceTimesEntries = self.varianceTimesEntries
         else:
-            mean = (self.entries*self.mean + obj.entries*obj.mean)/(self.entries + obj.entries)
-            varianceTimesEntries = self.varianceTimesEntries + obj.varianceTimesEntries + self.entries*self.mean*self.mean + obj.entries*obj.mean*obj.mean - 2.0*mean*(self.entries*self.mean + obj.entries*obj.mean) + mean*mean*entries
+            mean = (self.entries*self.mean + obj.entries * obj.mean) / (self.entries + obj.entries)
+            varianceTimesEntries = self.varianceTimesEntries + obj.varianceTimesEntries + \
+                                   self.entries * self.mean * self.mean + obj.entries * obj.mean * obj.mean - \
+                                   2.0 * mean * (self.entries * self.mean + obj.entries * obj.mean) + \
+                                   mean * mean * entries
 
         self.entries = entries
         self.mean = mean
@@ -244,34 +271,122 @@ class Deviate(Factory, Container):
     def _c99StructName(self):
         return "Dv"
 
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                          derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                          fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix,
+                          jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum = 0.0f;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum2 = 0.0f;")
 
-        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
-        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
-        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".sum, " + weightVarStack[-1] + " * " + normexpr + ");")
-        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".sum2, " + weightVarStack[-1] + " * " + normexpr + " * " + normexpr + ");")
+        normexpr = self._cudaQuantityExpr(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            None)
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " +
+                        weightVarStack[-1] + ");")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) +
+                        ".sum, " + weightVarStack[-1] + " * " + normexpr + ");")
+        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) +
+                        ".sum2, " + weightVarStack[-1] + " * " + normexpr + " * " + normexpr + ");")
 
-        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
-        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".sum, " + self._c99ExpandPrefix(*itemPrefix) + ".sum);")
-        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".sum2, " + self._c99ExpandPrefix(*itemPrefix) + ".sum2);")
+        combineCode.append(
+            " " *
+            combineIndent +
+            "atomicAdd(&" +
+            self._c99ExpandPrefix(
+                *
+                totalPrefix) +
+            ".entries, " +
+            self._c99ExpandPrefix(
+                *
+                itemPrefix) +
+            ".entries);")
+        combineCode.append(
+            " " *
+            combineIndent +
+            "atomicAdd(&" +
+            self._c99ExpandPrefix(
+                *
+                totalPrefix) +
+            ".sum, " +
+            self._c99ExpandPrefix(
+                *
+                itemPrefix) +
+            ".sum);")
+        combineCode.append(
+            " " *
+            combineIndent +
+            "atomicAdd(&" +
+            self._c99ExpandPrefix(
+                *
+                totalPrefix) +
+            ".sum2, " +
+            self._c99ExpandPrefix(
+                *
+                itemPrefix) +
+            ".sum2);")
 
         jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
         jsonCode.append(" " * jsonIndent + "if (" + self._c99ExpandPrefix(*jsonPrefix) + ".entries == 0.0f)")
-        jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"mean\\\": \\\"nan\\\", \\\"variance\\\": \\\"nan\\\"\");")
+        jsonCode.append(
+            " " *
+            jsonIndent +
+            "  fprintf(out, \", \\\"mean\\\": \\\"nan\\\", \\\"variance\\\": \\\"nan\\\"\");")
         jsonCode.append(" " * jsonIndent + "else {")
         jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"mean\\\": \");")
-        jsonCode.append(" " * jsonIndent + "  floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".sum / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
+        jsonCode.append(
+            " " *
+            jsonIndent +
+            "  floatToJson(out, " +
+            self._c99ExpandPrefix(
+                *
+                jsonPrefix) +
+            ".sum / " +
+            self._c99ExpandPrefix(
+                *
+                jsonPrefix) +
+            ".entries);")
         jsonCode.append(" " * jsonIndent + "  fprintf(out, \", \\\"variance\\\": \");")
-        jsonCode.append(" " * jsonIndent + "  floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".sum2 / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries - (" + self._c99ExpandPrefix(*jsonPrefix) + ".sum / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries)*(" + self._c99ExpandPrefix(*jsonPrefix) + ".sum / " + self._c99ExpandPrefix(*jsonPrefix) + ".entries));")
+        jsonCode.append(
+            " " *
+            jsonIndent +
+            "  floatToJson(out, " +
+            self._c99ExpandPrefix(
+                *
+                jsonPrefix) +
+            ".sum2 / " +
+            self._c99ExpandPrefix(
+                *
+                jsonPrefix) +
+            ".entries - (" +
+            self._c99ExpandPrefix(
+                *
+                jsonPrefix) +
+            ".sum / " +
+            self._c99ExpandPrefix(
+                *
+                jsonPrefix) +
+            ".entries)*(" +
+            self._c99ExpandPrefix(
+                *
+                jsonPrefix) +
+            ".sum / " +
+            self._c99ExpandPrefix(
+                *
+                jsonPrefix) +
+            ".entries));")
         jsonCode.append(" " * jsonIndent + "}")
         if suppressName or self.quantity.name is None:
             jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
         else:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " +
+                            json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{
@@ -300,7 +415,10 @@ class Deviate(Factory, Container):
             objmean = objsum / objentries
             objvariance = (objsum2 / objentries) - (objmean * objmean)
             mean = (self.entries*self.mean + objsum)/(self.entries + objentries)
-            varianceTimesEntries = self.varianceTimesEntries + (objvariance*objentries) + self.entries*self.mean*self.mean + objentries*objmean*objmean - 2.0*mean*(self.entries*self.mean + objentries*objmean) + mean*mean*entries
+            varianceTimesEntries = self.varianceTimesEntries + (objvariance * objentries) + \
+                                   self.entries * self.mean * self.mean + objentries * objmean * objmean - \
+                                   2.0 * mean * (self.entries * self.mean + objentries * objmean) + \
+                                   mean * mean * entries
             variance = varianceTimesEntries / entries
 
         self.entries = entries
@@ -337,10 +455,11 @@ class Deviate(Factory, Container):
             mb = numpy.average(q, weights=weights)
             sb = cb*numpy.average((q - mb)*(q - mb), weights=weights)
             self.mean = float((ca*ma + (ca_plus_cb - ca)*mb) / ca_plus_cb)
-            self.varianceTimesEntries = float(sa + sb + ca*ma*ma + cb*mb*mb - 2.0*self.mean*(ca*ma + cb*mb) + self.mean*self.mean*ca_plus_cb)
+            self.varianceTimesEntries = float(sa + sb + ca*ma*ma + cb*mb*mb - 2.0 *
+                                              self.mean*(ca*ma + cb*mb) + self.mean*self.mean*ca_plus_cb)
 
     def _sparksql(self, jvm, converter):
-        return converter.Deviate(quantity.asSparkSQL())
+        return converter.Deviate(self.quantity.asSparkSQL())
 
     @property
     def children(self):
@@ -348,11 +467,11 @@ class Deviate(Factory, Container):
         return []
 
     @inheritdoc(Container)
-    def toJsonFragment(self, suppressName): return maybeAdd({
-        "entries": floatToJson(self.entries),
-        "mean": floatToJson(self.mean),
-        "variance": floatToJson(self.variance),
-        }, name=(None if suppressName else self.quantity.name))
+    def toJsonFragment(self, suppressName):
+        return maybeAdd({"entries": floatToJson(self.entries),
+                         "mean": floatToJson(self.mean),
+                         "variance": floatToJson(self.variance)},
+                        name=(None if suppressName else self.quantity.name))
 
     @staticmethod
     @inheritdoc(Factory)
@@ -386,16 +505,24 @@ class Deviate(Factory, Container):
 
         else:
             raise JsonFormatException(json, "Deviate")
-        
+
     def __repr__(self):
         return "<Deviate mean={0} variance={1}>".format(self.mean, self.variance)
 
     def __eq__(self, other):
-        return isinstance(other, Deviate) and self.quantity == other.quantity and numeq(self.entries, other.entries) and numeq(self.mean, other.mean) and numeq(self.variance, other.variance)
+        return isinstance(other, Deviate) and self.quantity == other.quantity and numeq(
+            self.entries, other.entries) and numeq(self.mean, other.mean) and numeq(self.variance, other.variance)
 
-    def __ne__(self, other): return not self == other
+    def __ne__(self, other):
+        return not self == other
 
     def __hash__(self):
         return hash((self.quantity, self.entries, self.mean, self.variance))
 
+
+# extra properties: number of dimensions and datatypes of sub-hists
+Deviate.n_dim = n_dim
+Deviate.datatype = datatype
+
+# register extra methods
 Factory.register(Deviate)

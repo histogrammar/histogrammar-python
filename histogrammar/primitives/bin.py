@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 # Copyright 2016 DIANA-HEP
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,10 +17,14 @@
 import json
 import math
 import numbers
+import struct
 
-from histogrammar.defs import *
-from histogrammar.util import *
-from histogrammar.primitives.count import *
+from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
+from histogrammar.util import n_dim, datatype, serializable, inheritdoc, maybeAdd, floatToJson, hasKeys, numeq, \
+    xrange, long, basestring
+
+from histogrammar.primitives.count import Count
+
 
 class Bin(Factory, Container):
     """Split a quantity into equally spaced bins between a low and high threshold and fill exactly one bin per datum.
@@ -55,7 +59,8 @@ class Bin(Factory, Container):
             low (float): the minimum-value edge of the first bin.
             high (float): the maximum-value edge of the last bin; must be strictly greater than `low`.
             entries (float): the number of entries.
-            values (list of :doc:`Container <histogrammar.defs.Container>`): the filled sub-aggregators, one for each bin.
+            values (list of :doc:`Container <histogrammar.defs.Container>`): the filled sub-aggregators,
+                one for each bin.
             underflow (:doc:`Container <histogrammar.defs.Container>`): the filled underflow bin.
             overflow (:doc:`Container <histogrammar.defs.Container>`): the filled overflow bin.
             nanflow (:doc:`Container <histogrammar.defs.Container>`): is the filled nanflow bin.
@@ -92,18 +97,24 @@ class Bin(Factory, Container):
         """Synonym for ``__init__``."""
         return Bin(num, low, high, quantity, value, underflow, overflow, nanflow)
 
-    def __init__(self, num, low, high, quantity, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
+    def __init__(self, num, low, high, quantity=identity, value=Count(),
+                 underflow=Count(), overflow=Count(), nanflow=Count()):
         """Create a Bin that is capable of being filled and added.
 
         Parameters:
             num (int): the number of bins; must be at least one.
             low (float): the minimum-value edge of the first bin.
             high (float): the maximum-value edge of the last bin; must be strictly greater than `low`.
-            quantity (function returning float): computes the quantity of interest from the data.
+            quantity (function returning float or string): function that computes the quantity of interest from
+                the data. pass on all values by default. If a string is given, quantity is set to identity(string),
+                in which case that column is picked up from a pandas df.
             value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators to put in each bin.
-            underflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is less than `low`.
-            overflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is greater than or equal to `high`.
-            nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is NaN.
+            underflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity
+                is less than `low`.
+            overflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity
+                is greater than or equal to `high`.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity
+                is NaN.
 
         Other parameters:
             entries (float): the number of entries, initially 0.0.
@@ -132,7 +143,7 @@ class Bin(Factory, Container):
         self.entries = 0.0
         self.low = float(low)
         self.high = float(high)
-        self.quantity = serializable(quantity)
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         if value is None:
             self.values = [None] * num
             self.contentType = "Count"
@@ -167,14 +178,14 @@ class Bin(Factory, Container):
         while i < length:
             dots[i] = int(round((values[i] - minimum)*prop))
             i += 1
-        
+
         # Get range of values corresponding to each bin
         ranges = ["underflow"] + [None] * (length - 3) + ["overflow", "nanflow"]
         i = 1
         while i < (length - 2):
             ranges[i] = "[" + str(self.range(i))[1:]
             i += 1
-     
+
         printedValues = ["{0:<.4g}".format(v) for v in values]
         printedValuesWidth = max(len(x) for x in printedValues)
         formatter = "{0:<14} {1:<%s} {2:<65}" % printedValuesWidth
@@ -190,15 +201,18 @@ class Bin(Factory, Container):
         print(" " * (16 + printedValuesWidth) + "+" + "-" * 62 + "+")
 
     def histogram(self):
-        """Return a plain histogram by converting all sub-aggregator values into :doc:`Counts <histogrammar.primitives.count.Count>`."""
-        out = Bin(len(self.values), self.low, self.high, self.quantity, None, self.underflow.copy(), self.overflow.copy(), self.nanflow.copy())
+        """Return a plain histogram by converting all sub-aggregator values into Counts"""
+        out = Bin(len(self.values), self.low, self.high, self.quantity, None,
+                  self.underflow.copy(), self.overflow.copy(), self.nanflow.copy())
         out.entries = float(self.entries)
         for i, v in enumerate(self.values):
             out.values[i] = Count.ed(v.entries)
         return out.specialize()
 
     @inheritdoc(Container)
-    def zero(self): return Bin(len(self.values), self.low, self.high, self.quantity, self.values[0].zero(), self.underflow.zero(), self.overflow.zero(), self.nanflow.zero())
+    def zero(self):
+        return Bin(len(self.values), self.low, self.high, self.quantity, self.values[0].zero(), self.underflow.zero(),
+                   self.overflow.zero(), self.nanflow.zero())
 
     @inheritdoc(Container)
     def __add__(self, other):
@@ -206,13 +220,23 @@ class Bin(Factory, Container):
             if self.low != other.low:
                 raise ContainerException("cannot add Bins because low differs ({0} vs {1})".format(self.low, other.low))
             if self.high != other.high:
-                raise ContainerException("cannot add Bins because high differs ({0} vs {1})".format(self.high, other.high))
+                raise ContainerException(
+                    "cannot add Bins because high differs ({0} vs {1})".format(
+                        self.high, other.high))
             if len(self.values) != len(other.values):
-                raise ContainerException("cannot add Bins because nubmer of values differs ({0} vs {1})".format(len(self.values), len(other.values)))
+                raise ContainerException("cannot add Bins because nubmer of values differs ({0} vs {1})".format(
+                    len(self.values), len(other.values)))
             if len(self.values) == 0:
                 raise ContainerException("cannot add Bins because number of values is zero")
 
-            out = Bin(len(self.values), self.low, self.high, self.quantity, self.values[0], self.underflow + other.underflow, self.overflow + other.overflow, self.nanflow + other.nanflow)
+            out = Bin(len(self.values),
+                      self.low,
+                      self.high,
+                      self.quantity,
+                      self.values[0],
+                      self.underflow + other.underflow,
+                      self.overflow + other.overflow,
+                      self.nanflow + other.nanflow)
             out.entries = self.entries + other.entries
             out.values = [x + y for x, y in zip(self.values, other.values)]
             return out.specialize()
@@ -226,9 +250,12 @@ class Bin(Factory, Container):
             if self.low != other.low:
                 raise ContainerException("cannot add Bins because low differs ({0} vs {1})".format(self.low, other.low))
             if self.high != other.high:
-                raise ContainerException("cannot add Bins because high differs ({0} vs {1})".format(self.high, other.high))
+                raise ContainerException(
+                    "cannot add Bins because high differs ({0} vs {1})".format(
+                        self.high, other.high))
             if len(self.values) != len(other.values):
-                raise ContainerException("cannot add Bins because nubmer of values differs ({0} vs {1})".format(len(self.values), len(other.values)))
+                raise ContainerException("cannot add Bins because nubmer of values differs ({0} vs {1})".format(
+                    len(self.values), len(other.values)))
             if len(self.values) == 0:
                 raise ContainerException("cannot add Bins because number of values is zero")
             self.entries += other.entries
@@ -266,7 +293,7 @@ class Bin(Factory, Container):
 
     def bin(self, x):
         """Find the bin index associated with numerical value ``x``.
-        
+
         @return -1 if ``x`` is out of range; the bin index otherwise.
         """
         if self.under(x) or self.over(x) or self.nan(x):
@@ -293,7 +320,8 @@ class Bin(Factory, Container):
 
     def range(self, index):
         """Get the low and high edge of a bin (given by index number)."""
-        return ((self.high - self.low) * index / self.num + self.low, (self.high - self.low) * (index + 1) / self.num + self.low)
+        return ((self.high - self.low) * index / self.num + self.low,
+                (self.high - self.low) * (index + 1) / self.num + self.low)
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -316,25 +344,96 @@ class Bin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                                     derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode,
+                                     fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
 
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._c99QuantityExpr(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            None)
 
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
+                        ".entries += " + weightVarStack[-1] + ";")
 
         fillCode.append(" " * fillIndent + "if (std::isnan({0})) {{".format(normexpr))
-        self.nanflow._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        self.nanflow._c99GenerateCode(parser,
+                                      generator,
+                                      inputFieldNames,
+                                      inputFieldTypes,
+                                      derivedFieldTypes,
+                                      derivedFieldExprs,
+                                      storageStructs,
+                                      initCode,
+                                      initPrefix + (("var",
+                                                     "nanflow"),
+                                                    ),
+                                      initIndent,
+                                      fillCode,
+                                      fillPrefix + (("var",
+                                                     "nanflow"),
+                                                    ),
+                                      fillIndent + 2,
+                                      weightVars,
+                                      weightVarStack,
+                                      tmpVarTypes)
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else if ({0} < {1}) {{".format(normexpr, self.low))
-        self.underflow._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "underflow"),), initIndent, fillCode, fillPrefix + (("var", "underflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        self.underflow._c99GenerateCode(parser,
+                                        generator,
+                                        inputFieldNames,
+                                        inputFieldTypes,
+                                        derivedFieldTypes,
+                                        derivedFieldExprs,
+                                        storageStructs,
+                                        initCode,
+                                        initPrefix + (("var",
+                                                       "underflow"),
+                                                      ),
+                                        initIndent,
+                                        fillCode,
+                                        fillPrefix + (("var",
+                                                       "underflow"),
+                                                      ),
+                                        fillIndent + 2,
+                                        weightVars,
+                                        weightVarStack,
+                                        tmpVarTypes)
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else if ({0} >= {1}) {{".format(normexpr, self.high))
-        self.overflow._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "overflow"),), initIndent, fillCode, fillPrefix + (("var", "overflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        self.overflow._c99GenerateCode(parser,
+                                       generator,
+                                       inputFieldNames,
+                                       inputFieldTypes,
+                                       derivedFieldTypes,
+                                       derivedFieldExprs,
+                                       storageStructs,
+                                       initCode,
+                                       initPrefix + (("var",
+                                                      "overflow"),
+                                                     ),
+                                       initIndent,
+                                       fillCode,
+                                       fillPrefix + (("var",
+                                                      "overflow"),
+                                                     ),
+                                       fillIndent + 2,
+                                       weightVars,
+                                       weightVarStack,
+                                       tmpVarTypes)
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else {")
@@ -343,9 +442,32 @@ class Bin(Factory, Container):
         tmpVarTypes[bin] = "int"
         initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
 
-        fillCode.append(" " * (fillIndent + 2) + "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low, len(self.values)/(self.high - self.low)))
+        fillCode.append(" " * (fillIndent + 2) +
+                        "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low,
+                                                                 len(self.values)/(self.high - self.low)))
 
-        self.values[0]._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        self.values[0]._c99GenerateCode(parser,
+                                        generator,
+                                        inputFieldNames,
+                                        inputFieldTypes,
+                                        derivedFieldTypes,
+                                        derivedFieldExprs,
+                                        storageStructs,
+                                        initCode,
+                                        initPrefix + (("var",
+                                                       "values"),
+                                                      ("index",
+                                                       bin)),
+                                        initIndent + 2,
+                                        fillCode,
+                                        fillPrefix + (("var",
+                                                       "values"),
+                                                      ("index",
+                                                       bin)),
+                                        fillIndent + 2,
+                                        weightVars,
+                                        weightVarStack,
+                                        tmpVarTypes)
 
         initCode.append(" " * initIndent + "}")
         fillCode.append(" " * fillIndent + "}")
@@ -359,7 +481,8 @@ class Bin(Factory, Container):
     {1} values[{2}];
     {1}& getValues(int i) {{ return values[i]; }}
   }} {0};
-""".format(self._c99StructName(), self.values[0]._c99StorageType(), len(self.values), self.underflow._c99StorageType(), self.overflow._c99StorageType(), self.nanflow._c99StorageType())
+""".format(self._c99StructName(), self.values[0]._c99StorageType(), len(self.values), self.underflow._c99StorageType(),
+           self.overflow._c99StorageType(), self.nanflow._c99StorageType())
 
     def _clingUpdate(self, filler, *extractorPrefix):
         obj = self._clingExpandPrefix(filler, *extractorPrefix)
@@ -371,33 +494,176 @@ class Bin(Factory, Container):
         self.nanflow._clingUpdate(obj, ("var", "nanflow"))
 
     def _c99StructName(self):
-        return "Bn" + str(len(self.values)) + self.values[0]._c99StructName() + self.underflow._c99StructName() + self.overflow._c99StructName() + self.nanflow._c99StructName()
+        return "Bn" + str(len(self.values)) + self.values[0]._c99StructName(
+        ) + self.underflow._c99StructName() + self.overflow._c99StructName() + self.nanflow._c99StructName()
 
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix, jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
-        normexpr = self._cudaQuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                          derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                          fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix,
+                          jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
+        normexpr = self._cudaQuantityExpr(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            None)
 
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
-        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
-        combineCode.append(" " * combineIndent + "atomicAdd(&" + self._c99ExpandPrefix(*totalPrefix) + ".entries, " + self._c99ExpandPrefix(*itemPrefix) + ".entries);")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"low\\\": " + str(self.low) + ", \\\"high\\\": " + str(self.high) + ", \\\"entries\\\": \");")
+        fillCode.append(" " * fillIndent +
+                        "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
+        combineCode.append(
+            " " *
+            combineIndent +
+            "atomicAdd(&" +
+            self._c99ExpandPrefix(
+                *
+                totalPrefix) +
+            ".entries, " +
+            self._c99ExpandPrefix(
+                *
+                itemPrefix) +
+            ".entries);")
+        jsonCode.append(" " *
+                        jsonIndent +
+                        "fprintf(out, \"{\\\"low\\\": " +
+                        str(self.low) +
+                        ", \\\"high\\\": " +
+                        str(self.high) +
+                        ", \\\"entries\\\": \");")
         jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
 
         fillCode.append(" " * fillIndent + "if (isnan({0})) {{".format(normexpr))
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"nanflow:type\\\": \\\"" + self.nanflow.name + "\\\"\");")
+        jsonCode.append(
+            " " *
+            jsonIndent +
+            "fprintf(out, \", \\\"nanflow:type\\\": \\\"" +
+            self.nanflow.name +
+            "\\\"\");")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"nanflow\\\": \");")
-        self.nanflow._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent + 2, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, combineCode, totalPrefix + (("var", "nanflow"),), itemPrefix + (("var", "nanflow"),), combineIndent, jsonCode, jsonPrefix + (("var", "nanflow"),), jsonIndent, weightVars, weightVarStack, tmpVarTypes, False)
+        self.nanflow._cudaGenerateCode(parser,
+                                       generator,
+                                       inputFieldNames,
+                                       inputFieldTypes,
+                                       derivedFieldTypes,
+                                       derivedFieldExprs,
+                                       storageStructs,
+                                       initCode,
+                                       initPrefix + (("var",
+                                                      "nanflow"),
+                                                     ),
+                                       initIndent + 2,
+                                       fillCode,
+                                       fillPrefix + (("var",
+                                                      "nanflow"),
+                                                     ),
+                                       fillIndent + 2,
+                                       combineCode,
+                                       totalPrefix + (("var",
+                                                       "nanflow"),
+                                                      ),
+                                       itemPrefix + (("var",
+                                                      "nanflow"),
+                                                     ),
+                                       combineIndent,
+                                       jsonCode,
+                                       jsonPrefix + (("var",
+                                                      "nanflow"),
+                                                     ),
+                                       jsonIndent,
+                                       weightVars,
+                                       weightVarStack,
+                                       tmpVarTypes,
+                                       False)
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else if ({0} < {1}) {{".format(normexpr, self.low))
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"underflow:type\\\": \\\"" + self.underflow.name + "\\\"\");")
+        jsonCode.append(
+            " " *
+            jsonIndent +
+            "fprintf(out, \", \\\"underflow:type\\\": \\\"" +
+            self.underflow.name +
+            "\\\"\");")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"underflow\\\": \");")
-        self.underflow._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "underflow"),), initIndent + 2, fillCode, fillPrefix + (("var", "underflow"),), fillIndent + 2, combineCode, totalPrefix + (("var", "underflow"),), itemPrefix + (("var", "underflow"),), combineIndent, jsonCode, jsonPrefix + (("var", "underflow"),), jsonIndent, weightVars, weightVarStack, tmpVarTypes, False)
+        self.underflow._cudaGenerateCode(parser,
+                                         generator,
+                                         inputFieldNames,
+                                         inputFieldTypes,
+                                         derivedFieldTypes,
+                                         derivedFieldExprs,
+                                         storageStructs,
+                                         initCode,
+                                         initPrefix + (("var",
+                                                        "underflow"),
+                                                       ),
+                                         initIndent + 2,
+                                         fillCode,
+                                         fillPrefix + (("var",
+                                                        "underflow"),
+                                                       ),
+                                         fillIndent + 2,
+                                         combineCode,
+                                         totalPrefix + (("var",
+                                                         "underflow"),
+                                                        ),
+                                         itemPrefix + (("var",
+                                                        "underflow"),
+                                                       ),
+                                         combineIndent,
+                                         jsonCode,
+                                         jsonPrefix + (("var",
+                                                        "underflow"),
+                                                       ),
+                                         jsonIndent,
+                                         weightVars,
+                                         weightVarStack,
+                                         tmpVarTypes,
+                                         False)
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else if ({0} >= {1}) {{".format(normexpr, self.high))
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"overflow:type\\\": \\\"" + self.overflow.name + "\\\"\");")
+        jsonCode.append(
+            " " *
+            jsonIndent +
+            "fprintf(out, \", \\\"overflow:type\\\": \\\"" +
+            self.overflow.name +
+            "\\\"\");")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"overflow\\\": \");")
-        self.overflow._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "overflow"),), initIndent + 2, fillCode, fillPrefix + (("var", "overflow"),), fillIndent + 2, combineCode, totalPrefix + (("var", "overflow"),), itemPrefix + (("var", "overflow"),), combineIndent, jsonCode, jsonPrefix + (("var", "overflow"),), jsonIndent, weightVars, weightVarStack, tmpVarTypes, False)
+        self.overflow._cudaGenerateCode(parser,
+                                        generator,
+                                        inputFieldNames,
+                                        inputFieldTypes,
+                                        derivedFieldTypes,
+                                        derivedFieldExprs,
+                                        storageStructs,
+                                        initCode,
+                                        initPrefix + (("var",
+                                                       "overflow"),
+                                                      ),
+                                        initIndent + 2,
+                                        fillCode,
+                                        fillPrefix + (("var",
+                                                       "overflow"),
+                                                      ),
+                                        fillIndent + 2,
+                                        combineCode,
+                                        totalPrefix + (("var",
+                                                        "overflow"),
+                                                       ),
+                                        itemPrefix + (("var",
+                                                       "overflow"),
+                                                      ),
+                                        combineIndent,
+                                        jsonCode,
+                                        jsonPrefix + (("var",
+                                                       "overflow"),
+                                                      ),
+                                        jsonIndent,
+                                        weightVars,
+                                        weightVarStack,
+                                        tmpVarTypes,
+                                        False)
         fillCode.append(" " * fillIndent + "}")
 
         fillCode.append(" " * fillIndent + "else {")
@@ -407,16 +673,66 @@ class Bin(Factory, Container):
 
         initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
 
-        fillCode.append(" " * (fillIndent + 2) + "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low, len(self.values)/(self.high - self.low)))
+        fillCode.append(" " * (fillIndent + 2) +
+                        "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low,
+                                                                 len(self.values)/(self.high - self.low)))
 
         combineCode.append(" " * combineIndent + "for ({0} = 0;  {0} < {1}; ++{0}) {{".format(bin, len(self.values)))
 
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"values:type\\\": \\\"" + self.values[0].name + "\\\"\");")
+        jsonCode.append(
+            " " *
+            jsonIndent +
+            "fprintf(out, \", \\\"values:type\\\": \\\"" +
+            self.values[0].name +
+            "\\\"\");")
         if hasattr(self.values[0], "quantity") and self.values[0].quantity.name is not None:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"values:name\\\": \\\"" + self.values[0].quantity.name + "\\\"\");")
+            jsonCode.append(
+                " " *
+                jsonIndent +
+                "fprintf(out, \", \\\"values:name\\\": \\\"" +
+                self.values[0].quantity.name +
+                "\\\"\");")
         jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"values\\\": [\");")
         jsonCode.append(" " * jsonIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
-        self.values[0]._cudaGenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "values"), ("index", bin)), initIndent + 2, fillCode, fillPrefix + (("var", "values"), ("index", bin)), fillIndent + 2, combineCode, totalPrefix + (("var", "values"), ("index", bin)), itemPrefix + (("var", "values"), ("index", bin)), combineIndent + 2, jsonCode, jsonPrefix + (("var", "values"), ("index", bin)), jsonIndent + 2, weightVars, weightVarStack, tmpVarTypes, True)
+        self.values[0]._cudaGenerateCode(parser,
+                                         generator,
+                                         inputFieldNames,
+                                         inputFieldTypes,
+                                         derivedFieldTypes,
+                                         derivedFieldExprs,
+                                         storageStructs,
+                                         initCode,
+                                         initPrefix + (("var",
+                                                        "values"),
+                                                       ("index",
+                                                        bin)),
+                                         initIndent + 2,
+                                         fillCode,
+                                         fillPrefix + (("var",
+                                                        "values"),
+                                                       ("index",
+                                                        bin)),
+                                         fillIndent + 2,
+                                         combineCode,
+                                         totalPrefix + (("var",
+                                                         "values"),
+                                                        ("index",
+                                                         bin)),
+                                         itemPrefix + (("var",
+                                                        "values"),
+                                                       ("index",
+                                                        bin)),
+                                         combineIndent + 2,
+                                         jsonCode,
+                                         jsonPrefix + (("var",
+                                                        "values"),
+                                                       ("index",
+                                                        bin)),
+                                         jsonIndent + 2,
+                                         weightVars,
+                                         weightVarStack,
+                                         tmpVarTypes,
+                                         True)
 
         initCode.append(" " * initIndent + "}")
 
@@ -431,7 +747,8 @@ class Bin(Factory, Container):
         if suppressName or self.quantity.name is None:
             jsonCode.append(" " * jsonIndent + "fprintf(out, \"]}\");")
         else:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \"], \\\"name\\\": " + json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
+            jsonCode.append(" " * jsonIndent + "fprintf(out, \"], \\\"name\\\": " +
+                            json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
 
         storageStructs[self._c99StructName()] = """
   typedef struct {{
@@ -441,7 +758,8 @@ class Bin(Factory, Container):
     {5} nanflow;
     {1} values[{2}];
   }} {0};
-""".format(self._c99StructName(), self.values[0]._cudaStorageType(), len(self.values), self.underflow._cudaStorageType(), self.overflow._cudaStorageType(), self.nanflow._cudaStorageType())
+""".format(self._c99StructName(), self.values[0]._cudaStorageType(), len(self.values),
+           self.underflow._cudaStorageType(), self.overflow._cudaStorageType(), self.nanflow._cudaStorageType())
 
     def _cudaUnpackAndFill(self, data, bigendian, alignment):
         format = "<f"
@@ -490,7 +808,8 @@ class Bin(Factory, Container):
         subweights[selection] = 0.0
         self.overflow._numpy(data, subweights, shape)
 
-        if all(isinstance(value, Count) and value.transform is identity for value in self.values) and numpy.all(numpy.isfinite(q)) and numpy.all(numpy.isfinite(weights)):
+        if all(isinstance(value, Count) and value.transform is identity for value in self.values) and numpy.all(
+                numpy.isfinite(q)) and numpy.all(numpy.isfinite(weights)):
             # Numpy defines histograms as including the upper edge of the last bin only, so drop that
             weights[q == self.high] == 0.0
 
@@ -517,7 +836,9 @@ class Bin(Factory, Container):
         self.entries += float(newentries)
 
     def _sparksql(self, jvm, converter):
-        return converter.Bin(len(self.values), self.low, self.high, self.quantity.asSparkSQL(), self.values[0]._sparksql(jvm, converter), self.underflow._sparksql(jvm, converter), self.overflow._sparksql(jvm, converter), self.nanflow._sparksql(jvm, converter))
+        return converter.Bin(len(self.values), self.low, self.high, self.quantity.asSparkSQL(),
+                             self.values[0]._sparksql(jvm, converter), self.underflow._sparksql(jvm, converter),
+                             self.overflow._sparksql(jvm, converter), self.nanflow._sparksql(jvm, converter))
 
     @property
     def children(self):
@@ -545,13 +866,15 @@ class Bin(Factory, Container):
             "overflow": self.overflow.toJsonFragment(False),
             "nanflow:type": self.nanflow.name,
             "nanflow": self.nanflow.toJsonFragment(False),
-            }, **{"name": None if suppressName else self.quantity.name,
-                  "values:name": binsName})
+        }, **{"name": None if suppressName else self.quantity.name,
+              "values:name": binsName})
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values", "underflow:type", "underflow", "overflow:type", "overflow", "nanflow:type", "nanflow"], ["name", "values:name"]):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values",
+                                                            "underflow:type", "underflow", "overflow:type", "overflow",
+                                                            "nanflow:type", "nanflow"], ["name", "values:name"]):
             if json["low"] in ("nan", "inf", "-inf") or isinstance(json["low"], numbers.Real):
                 low = float(json["low"])
             else:
@@ -613,35 +936,33 @@ class Bin(Factory, Container):
 
         else:
             raise JsonFormatException(json, "Bin")
-        
+
     def __repr__(self):
-        return "<Bin num={0} low={1} high={2} values={3} underflow={4} overflow={5} nanflow={6}>".format(len(self.values), self.low, self.high, self.values[0].name, self.underflow.name, self.overflow.name, self.nanflow.name)
+        return "<Bin num={0} low={1} high={2} values={3} underflow={4} overflow={5} nanflow={6}>".format(
+            len(self.values), self.low, self.high, self.values[0].name, self.underflow.name, self.overflow.name,
+            self.nanflow.name)
 
     def __eq__(self, other):
-        return isinstance(other, Bin) and numeq(self.low, other.low) and numeq(self.high, other.high) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.values == other.values and self.underflow == other.underflow and self.overflow == other.overflow and self.nanflow == other.nanflow
+        return isinstance(other, Bin) and numeq(self.low, other.low) and numeq(self.high, other.high) and \
+               self.quantity == other.quantity and numeq(self.entries, other.entries) and \
+               self.values == other.values and self.underflow == other.underflow and \
+               self.overflow == other.overflow and self.nanflow == other.nanflow
 
-    def __ne__(self, other): return not self == other
+    def __ne__(self, other):
+        return not self == other
 
     def __hash__(self):
-        return hash((self.low, self.high, self.quantity, self.entries, tuple(self.values), self.underflow, self.overflow, self.nanflow))
+        return hash((self.low, self.high, self.quantity, self.entries, tuple(
+            self.values), self.underflow, self.overflow, self.nanflow))
 
     @property
     def n_bins(self):
         """Get number of bins, consistent with SparselyBin and Categorize """
         return self.num
 
-    @property
-    def n_dim(self):
-        """Histogram dimension
-
-        :returns: dimension of the histogram
-        :rtype: int
-        """
-        return get_n_dim(self)
-
     def num_bins(self, low=None, high=None):
         """
-        Returns number of bins
+        Returns number of bins of a given (sub-)range
 
         Possible to set range with low and high params
 
@@ -812,6 +1133,10 @@ class Bin(Factory, Container):
 
         return np.array([sum(self.range(i)) / 2.0 for i in range(minBin, maxBin + 1)])
 
+    def _center_from_key(self, idx):
+        xc = (idx + 0.5) * self.bin_width() + self.low
+        return xc
+
     @property
     def mpv(self):
         """Return bin-center of most probable value
@@ -824,5 +1149,10 @@ class Bin(Factory, Container):
         bc = bin_centers[max_idx]
         return bc
 
-Factory.register(Bin)
 
+# extra properties: number of dimensions and datatypes of sub-hists
+Bin.n_dim = n_dim
+Bin.datatype = datatype
+
+# register extra methods such as plotting
+Factory.register(Bin)
