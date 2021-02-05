@@ -1,26 +1,27 @@
 #!/usr/bin/env python
 
 # Copyright 2016 DIANA-HEP
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# "Private" methods; not attached to the histogram because not a member of the class, but within scope because it's a closure.
+# "Private" methods; not attached to the histogram because not a member of the class,
+# but within scope because it's a closure.
 
 import math
 import types
 
 # python 2/3 compatibility fixes
-from histogrammar.util import *
+from histogrammar.util import xrange
 
 try:
     from collections import OrderedDict
@@ -28,16 +29,22 @@ except ImportError:
     class OrderedDict(dict):
         def __init__(self):
             self._data = []
+
         def __setattr__(self, key, value):
             self._data.append((key, value))
+
         def __getattr__(self, key):
             return dict(self._data)[key]
+
         def items(self):
             return self._data
+
         def keys(self):
             return [k for k, v in self._data]
+
         def values(self):
             return [v for k, v in self._data]
+
 
 def setTH1(entries, values, underflow, overflow, th1):
     th1.SetBinContent(0, underflow)
@@ -45,6 +52,7 @@ def setTH1(entries, values, underflow, overflow, th1):
         th1.SetBinContent(i + 1, v)
     th1.SetBinContent(len(values) + 1, overflow)
     th1.SetEntries(entries)
+
 
 def prepareTH2sparse(sparse):
     sample = list(sparse.bins.values())[0]
@@ -61,6 +69,7 @@ def prepareTH2sparse(sparse):
     yhigh = (ymaxBin + 1) * sample.binWidth + sample.origin
     return yminBin, ymaxBin, ynum, ylow, yhigh
 
+
 def setTH2sparse(sparse, yminBin, ymaxBin, th2):
     for i, iindex in enumerate(xrange(sparse.minBin, sparse.maxBin + 1)):
         for j, jindex in enumerate(xrange(yminBin, ymaxBin + 1)):
@@ -69,6 +78,7 @@ def setTH2sparse(sparse, yminBin, ymaxBin, th2):
 
 # "Public" methods; what we want to attach to the Histogram as a mix-in.
 
+
 class HistogramMethods(object):
     def plotroot(self, name, title="", binType="D"):
         import ROOT
@@ -76,6 +86,7 @@ class HistogramMethods(object):
         th1 = constructor(name, title, len(self.values), self.low, self.high)
         setTH1(self.entries, [x.entries for x in self.values], self.underflow.entries, self.overflow.entries, th1)
         return th1
+
 
 class SparselyHistogramMethods(object):
     def plotroot(self, name, title="", binType="D"):
@@ -86,14 +97,26 @@ class SparselyHistogramMethods(object):
         else:
             size = 1 + self.maxBin - self.minBin
             th1 = constructor(name, title, size, self.low, self.high)
-            setTH1(self.entries, [self.bins[i].entries if i in self.bins else 0.0 for i in xrange(self.minBin, self.maxBin + 1)], 0.0, 0.0, th1)
+            setTH1(
+                self.entries, [
+                    self.bins[i].entries if i in self.bins else 0.0 for i in xrange(
+                        self.minBin, self.maxBin + 1)], 0.0, 0.0, th1)
         return th1
+
+
+class IrregularlyHistogramMethods(object):
+    pass
+
+
+class CentrallyHistogramMethods(object):
+    pass
+
 
 class CategorizeHistogramMethods(object):
     def plotroot(self, name, title="", binType="C"):
         """ Construct a ROOT histogram
-            
-        :param str name: name of the histogram 
+
+        :param str name: name of the histogram
         :param str title: title of the histogram (optional)
         :param str binType: histogram bin type. Default is "C" (char).
         :returns: ROOT histgram
@@ -102,14 +125,15 @@ class CategorizeHistogramMethods(object):
         constructor = getattr(ROOT, "TH1" + binType)
         th1 = constructor(name, title, len(self.bins), 0, 1)
         th1.SetMinimum(0)
-        for i,key in enumerate(self.bins.keys()):
+        for i, key in enumerate(self.bins.keys()):
             b = self.bins[key]
             try:
                 label = str(key)
-            except:
+            except BaseException:
                 label = 'bin_%d' % i
-            th1.Fill(label,b.entries)
+            th1.Fill(label, b.entries)
         return th1
+
 
 class ProfileMethods(object):
     def plotroot(self, name, title=""):
@@ -126,6 +150,7 @@ class ProfileMethods(object):
         tprofile.SetBinEntries(len(self.values) + 1, self.overflow.entries)
         tprofile.SetEntries(self.entries)
         return tprofile
+
 
 class SparselyProfileMethods(object):
     def plotroot(self, name, title=""):
@@ -148,6 +173,7 @@ class SparselyProfileMethods(object):
             tprofile.SetEntries(self.entries)
         return tprofile
 
+
 class ProfileErrMethods(object):
     def plotroot(self, name, title=""):
         import ROOT
@@ -163,6 +189,7 @@ class ProfileErrMethods(object):
         tprofile.SetBinEntries(len(self.values) + 1, self.overflow.entries)
         tprofile.SetEntries(self.entries)
         return tprofile
+
 
 class SparselyProfileErrMethods(object):
     def plotroot(self, name, title=""):
@@ -185,9 +212,9 @@ class SparselyProfileErrMethods(object):
             tprofile.SetEntries(self.entries)
         return tprofile
 
+
 class StackedHistogramMethods(object):
     def plotroot(self, *names):
-        import ROOT
         out = OrderedDict()
         for n, (c, v) in zip(names, self.thresholds):
             if isinstance(n, (list, tuple)) and len(n) == 2:
@@ -206,10 +233,10 @@ class StackedHistogramMethods(object):
 
         out.Draw = types.MethodType(Draw, out)
         return out
+
 
 class PartitionedHistogramMethods(object):
     def plotroot(self, *names):
-        import ROOT
         out = OrderedDict()
         for n, (c, v) in zip(names, self.thresholds):
             if isinstance(n, (list, tuple)) and len(n) == 2:
@@ -228,6 +255,7 @@ class PartitionedHistogramMethods(object):
 
         out.Draw = types.MethodType(Draw, out)
         return out
+
 
 class FractionedHistogramMethods(object):
     def plotroot(self, numeratorName, denominatorName):
@@ -239,34 +267,46 @@ class FractionedHistogramMethods(object):
 
         numerator = ROOT.TH1D(numeratorName, "", num, low, high)
         if isinstance(self.numerator, HistogramMethods):
-            setTH1(self.numerator.entries, [x.entries for x in self.numerator.values], self.numerator.underflow.entries, self.numerator.overflow.entries, numerator)
+            setTH1(self.numerator.entries, [x.entries for x in self.numerator.values],
+                   self.numerator.underflow.entries, self.numerator.overflow.entries, numerator)
         elif isinstance(self.numerator, SparselyHistogramMethods):
             setTH1(self.numerator.entries,
-                   [self.numerator.bins[i].entries if i in self.numerator.bins else 0.0 for i in xrange(self.denominator.minBin, self.denominator.maxBin + 1)],
+                   [self.numerator.bins[i].entries if i in self.numerator.bins else 0.0 for i in xrange(
+                       self.denominator.minBin, self.denominator.maxBin + 1)],
                    0.0,
                    0.0,
                    numerator)
 
         return ROOT.TEfficiency(numerator, denominator)
 
+
 class TwoDimensionallyHistogramMethods(object):
     def plotroot(self, name, title="", binType="D"):
         import ROOT
         constructor = getattr(ROOT, "TH2" + binType)
         sample = self.values[0]
-        th2 = constructor(name, title, int(self.num), float(self.low), float(self.high), \
+        th2 = constructor(name, title, int(self.num), float(self.low), float(self.high),
                           int(sample.num), float(sample.low), float(sample.high))
         for i in xrange(self.num):
             for j in xrange(sample.num):
                 th2.SetBinContent(i + 1, j + 1, self.values[i].values[j].entries)
         return th2
 
+
 class SparselyTwoDimensionallyHistogramMethods(object):
     def plotroot(self, name, title="", binType="D"):
         import ROOT
         constructor = getattr(ROOT, "TH2" + binType)
         yminBin, ymaxBin, ynum, ylow, yhigh = prepareTH2sparse(self)
-        th2 = constructor(name, title, int(self.num), float(self.low), float(self.high), \
+        th2 = constructor(name, title, int(self.num), float(self.low), float(self.high),
                           int(ynum), float(ylow), float(yhigh))
         setTH2sparse(self, yminBin, ymaxBin, th2)
         return th2
+
+
+class IrregularlyTwoDimensionallyHistogramMethods(object):
+    pass
+
+
+class CentrallyTwoDimensionallyHistogramMethods(object):
+    pass

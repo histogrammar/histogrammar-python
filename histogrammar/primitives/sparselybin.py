@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 # Copyright 2016 DIANA-HEP
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,22 +17,29 @@
 import math
 import numbers
 
-from histogrammar.defs import *
-from histogrammar.util import *
-from histogrammar.primitives.count import *
+from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
+from histogrammar.util import n_dim, datatype, serializable, inheritdoc, maybeAdd, floatToJson, hasKeys, numeq, \
+    basestring, long
+from histogrammar.primitives.count import Count
 
 LONG_NAN = -9223372036854775808
 LONG_MINUSINF = -9223372036854775807
 LONG_PLUSINF = 9223372036854775807
 
+
 class SparselyBin(Factory, Container):
-    """Split a quantity into equally spaced bins, creating them whenever their ``entries`` would be non-zero. Exactly one sub-aggregator is filled per datum.
+    """Split a quantity into equally spaced bins, creating them whenever their ``entries`` would be non-zero.
+
+    Exactly one sub-aggregator is filled per datum.
 
     Use this when you have a distribution of known scale (bin width) but unknown domain (lowest and highest bin index).
 
-    Unlike fixed-domain binning, this aggregator has the potential to use unlimited memory. A large number of *distinct* outliers can generate many unwanted bins.
+    Unlike fixed-domain binning, this aggregator has the potential to use unlimited memory. A large number
+    of *distinct* outliers can generate many unwanted bins.
 
-    Like fixed-domain binning, the bins are indexed by integers, though they are 64-bit and may be negative. Bin indexes below ``-(2**63 - 1)`` are put in the ``-(2**63 - 1)`` are bin and indexes above ``(2**63 - 1)`` are put in the ``(2**63 - 1)`` bin.
+    Like fixed-domain binning, the bins are indexed by integers, though they are 64-bit and may be negative.
+    Bin indexes below ``-(2**63 - 1)`` are put in the ``-(2**63 - 1)`` are bin and indexes above ``(2**63 - 1)``
+    are put in the ``(2**63 - 1)`` bin.
     """
 
     @staticmethod
@@ -42,8 +49,10 @@ class SparselyBin(Factory, Container):
         Parameters:
             binWidth (float): the width of a bin.
             entries (float): the number of entries.
-            contentType (str): the value's sub-aggregator type (must be provided to determine type for the case when `bins` is empty).
-            bins (dict from int to :doc:`Container <histogrammar.defs.Container>`): the non-empty bin indexes and their values.
+            contentType (str): the value's sub-aggregator type (must be provided to determine type for the case
+                when `bins` is empty).
+            bins (dict from int to :doc:`Container <histogrammar.defs.Container>`): the non-empty bin indexes and
+                their values.
             nanflow (:doc:`Container <histogrammar.defs.Container>`): the filled nanflow bin.
             origin (float): the left edge of the bin whose index is zero.
         """
@@ -53,7 +62,8 @@ class SparselyBin(Factory, Container):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(contentType, basestring):
             raise TypeError("contentType ({0}) must be a string".format(contentType))
-        if not isinstance(bins, dict) or not all(isinstance(k, (int, long)) and isinstance(v, Container) for k, v in bins.items()):
+        if not isinstance(bins, dict) or \
+                not all(isinstance(k, (int, long)) and isinstance(v, Container) for k, v in bins.items()):
             raise TypeError("bins ({0}) must be a map from 64-bit integers to Containers".format(bins))
         if not isinstance(nanflow, Container):
             raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
@@ -75,19 +85,21 @@ class SparselyBin(Factory, Container):
         """Synonym for ``__init__``."""
         return SparselyBin(binWidth, quantity, value, nanflow, origin)
 
-    def __init__(self, binWidth, quantity, value=Count(), nanflow=Count(), origin=0.0):
+    def __init__(self, binWidth, quantity=identity, value=Count(), nanflow=Count(), origin=0.0):
         """Create a SparselyBin that is capable of being filled and added.
 
         Parameters:
             binWidth (float): the width of a bin; must be strictly greater than zero.
             quantity (function returning float): computes the quantity of interest from the data.
             value (:doc:`Container <histogrammar.defs.Container>`): generates sub-aggregators to put in each bin.
-            nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity is NaN.
+            nanflow (:doc:`Container <histogrammar.defs.Container>`): a sub-aggregator to use for data whose quantity
+                is NaN.
             origin (float): the left edge of the bin whose index is 0.
 
         Other parameters:
             entries (float): the number of entries, initially 0.0.
-            bins (dict from int to :doc:`Container <histogrammar.defs.Container>`): the map, probably a hashmap, to fill with values when their `entries` become non-zero.
+            bins (dict from int to :doc:`Container <histogrammar.defs.Container>`): the map, probably a hashmap, to
+                fill with values when their `entries` become non-zero.
         """
         if not isinstance(binWidth, numbers.Real):
             raise TypeError("binWidth ({0}) must be a number".format(binWidth))
@@ -100,9 +112,9 @@ class SparselyBin(Factory, Container):
         if binWidth <= 0.0:
             raise ValueError("binWidth ({0}) must be greater than zero".format(binWidth))
 
-        self.binWidth = binWidth
+        self.binWidth = float(binWidth)
         self.entries = 0.0
-        self.quantity = serializable(quantity)
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.value = value
         if value is not None:
             self.contentType = value.name
@@ -110,12 +122,12 @@ class SparselyBin(Factory, Container):
             self.contentType = "Count"
         self.bins = {}
         self.nanflow = nanflow.copy()
-        self.origin = origin
+        self.origin = float(origin)
         super(SparselyBin, self).__init__()
         self.specialize()
 
     def histogram(self):
-        """Return a plain histogram by converting all sub-aggregator values into :doc:`Counts <histogrammar.primitives.count.Count>`."""
+        """Return a plain histogram by converting all sub-aggregator values into Counts"""
         out = SparselyBin(self.binWidth, self.quantity, Count(), self.nanflow.copy(), self.origin)
         out.entries = float(self.entries)
         out.contentType = "Count"
@@ -124,17 +136,27 @@ class SparselyBin(Factory, Container):
         return out.specialize()
 
     @inheritdoc(Container)
-    def zero(self): return SparselyBin(self.binWidth, self.quantity, self.value, self.nanflow.zero(), self.origin)
+    def zero(self):
+        return SparselyBin(self.binWidth, self.quantity, self.value, self.nanflow.zero(), self.origin)
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, SparselyBin):
             if self.binWidth != other.binWidth:
-                raise ContainerException("cannot add SparselyBins because binWidth differs ({0} vs {1})".format(self.binWidth, other.binWidth))
+                raise ContainerException(
+                    "cannot add SparselyBins because binWidth differs ({0} vs {1})".format(
+                        self.binWidth, other.binWidth))
             if self.origin != other.origin:
-                raise ContainerException("cannot add SparselyBins because origin differs ({0} vs {1})".format(self.origin, other.origin))
+                raise ContainerException(
+                    "cannot add SparselyBins because origin differs ({0} vs {1})".format(
+                        self.origin, other.origin))
 
-            out = SparselyBin(self.binWidth, self.quantity, self.value.copy() if self.value is not None else None, self.nanflow + other.nanflow, self.origin)
+            out = SparselyBin(
+                self.binWidth,
+                self.quantity,
+                self.value.copy() if self.value is not None else None,
+                self.nanflow + other.nanflow,
+                self.origin)
             out.entries = self.entries + other.entries
             out.bins = self.bins.copy()
             for i, v in other.bins.items():
@@ -151,9 +173,13 @@ class SparselyBin(Factory, Container):
     def __iadd__(self, other):
         if isinstance(other, SparselyBin):
             if self.binWidth != other.binWidth:
-                raise ContainerException("cannot add SparselyBins because binWidth differs ({0} vs {1})".format(self.binWidth, other.binWidth))
+                raise ContainerException(
+                    "cannot add SparselyBins because binWidth differs ({0} vs {1})".format(
+                        self.binWidth, other.binWidth))
             if self.origin != other.origin:
-                raise ContainerException("cannot add SparselyBins because origin differs ({0} vs {1})".format(self.origin, other.origin))
+                raise ContainerException(
+                    "cannot add SparselyBins because origin differs ({0} vs {1})".format(
+                        self.origin, other.origin))
             self.entries += other.entries
             for i, v in other.bins.items():
                 if i in self.bins:
@@ -208,6 +234,7 @@ class SparselyBin(Factory, Container):
             return None
         else:
             return max(self.bins.keys())
+
     @property
     def low(self):
         """The low edge of the first non-empty bin or None if no values have been accumulated."""
@@ -236,11 +263,12 @@ class SparselyBin(Factory, Container):
     def range(self, index):
         """Get the low and high edge of a bin (given by index number)."""
         return (index * self.binWidth + self.origin, (index + 1) * self.binWidth + self.origin)
-    
+
     def bin(self, x):
         """Find the bin index associated with numerical value ``x``.
-        
-        Returns `-2**63` if `x` is `NaN`, the bin index if it is between `-(2**63 - 1)` and `(2**63 - 1)`, otherwise saturate at the endpoints.
+
+        Returns `-2**63` if `x` is `NaN`, the bin index if it is between `-(2**63 - 1)` and `(2**63 - 1)`,
+        otherwise saturate at the endpoints.
         """
         if self.nan(x):
             return LONG_NAN
@@ -276,15 +304,44 @@ class SparselyBin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        normexpr = self._c99QuantityExpr(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, None)
+    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
+        normexpr = self._c99QuantityExpr(
+            parser,
+            generator,
+            inputFieldNames,
+            inputFieldTypes,
+            derivedFieldTypes,
+            derivedFieldExprs,
+            None)
 
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
         initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".bins.clear();")
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".entries += " + weightVarStack[-1] + ";")
+        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
+                        ".entries += " + weightVarStack[-1] + ";")
 
         fillCode.append(" " * fillIndent + "if (std::isnan({0})) {{".format(normexpr))
-        self.nanflow._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "nanflow"),), initIndent, fillCode, fillPrefix + (("var", "nanflow"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        self.nanflow._c99GenerateCode(parser,
+                                      generator,
+                                      inputFieldNames,
+                                      inputFieldTypes,
+                                      derivedFieldTypes,
+                                      derivedFieldExprs,
+                                      storageStructs,
+                                      initCode,
+                                      initPrefix + (("var",
+                                                     "nanflow"),
+                                                    ),
+                                      initIndent,
+                                      fillCode,
+                                      fillPrefix + (("var",
+                                                     "nanflow"),
+                                                    ),
+                                      fillIndent + 2,
+                                      weightVars,
+                                      weightVarStack,
+                                      tmpVarTypes)
         fillCode.append(" " * fillIndent + "}")
         fillCode.append(" " * fillIndent + "else {")
 
@@ -305,20 +362,39 @@ class SparselyBin(Factory, Container):
 {indent}if ({bins}.find({key}) == {bins}.end())
 {indent}  {bins}[{key}] = {prototype};    // copy
 {indent}{value} = &({bins}[{key}]);    // reference""".format(
-            indent = " " * (fillIndent + 2),
-            softbin = softbin,
-            q = normexpr,
-            origin = self.origin,
-            scale = 1.0/self.binWidth,
-            key = key,
-            value = value,
-            prototype = self._c99ExpandPrefix(*fillPrefix) + ".value",
-            bins = self._c99ExpandPrefix(*fillPrefix) + ".bins",
-            LONG_MINUSINF = LONG_MINUSINF,
-            LONG_PLUSINF = LONG_PLUSINF
-            ))
+            indent=" " * (fillIndent + 2),
+            softbin=softbin,
+            q=normexpr,
+            origin=self.origin,
+            scale=1.0/self.binWidth,
+            key=key,
+            value=value,
+            prototype=self._c99ExpandPrefix(*fillPrefix) + ".value",
+            bins=self._c99ExpandPrefix(*fillPrefix) + ".bins",
+            LONG_MINUSINF=LONG_MINUSINF,
+            LONG_PLUSINF=LONG_PLUSINF
+        ))
 
-        self.value._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix + (("var", "value"),), initIndent, fillCode, (("var", "(*" + value + ")"),), fillIndent + 2, weightVars, weightVarStack, tmpVarTypes)
+        self.value._c99GenerateCode(parser,
+                                    generator,
+                                    inputFieldNames,
+                                    inputFieldTypes,
+                                    derivedFieldTypes,
+                                    derivedFieldExprs,
+                                    storageStructs,
+                                    initCode,
+                                    initPrefix + (("var",
+                                                   "value"),
+                                                  ),
+                                    initIndent,
+                                    fillCode,
+                                    (("var",
+                                      "(*" + value + ")"),
+                                     ),
+                                    fillIndent + 2,
+                                    weightVars,
+                                    weightVarStack,
+                                    tmpVarTypes)
 
         fillCode.append(" " * fillIndent + "}")
 
@@ -332,7 +408,9 @@ class SparselyBin(Factory, Container):
   }} {0};
 """.format(self._c99StructName(), self.value._c99StorageType(), self.nanflow._c99StorageType())
 
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes, derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes):
+    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
+                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
+                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
         raise NotImplementedError("no C99-compliant implementation of SparselyBin (only C++)")
 
     def _clingUpdate(self, filler, *extractorPrefix):
@@ -400,7 +478,8 @@ class SparselyBin(Factory, Container):
         self.entries += float(newentries)
 
     def _sparksql(self, jvm, converter):
-        return converter.SparselyBin(self.binWidth, self.quantity.asSparkSQL(), self.value._sparksql(jvm, converter), self.nanflow._sparksql(jvm, converter), self.origin)
+        return converter.SparselyBin(self.binWidth, self.quantity.asSparkSQL(), self.value._sparksql(
+            jvm, converter), self.nanflow._sparksql(jvm, converter), self.origin)
 
     @property
     def children(self):
@@ -441,13 +520,15 @@ class SparselyBin(Factory, Container):
             "nanflow:type": self.nanflow.name,
             "nanflow": self.nanflow.toJsonFragment(False),
             "origin": self.origin,
-            }, **{"name": None if suppressName else self.quantity.name,
-                  "bins:name": binsName})
+        }, **{"name": None if suppressName else self.quantity.name,
+              "bins:name": binsName})
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"], ["name", "bins:name"]):
+        if isinstance(json, dict) and hasKeys(
+                json.keys(), ["binWidth", "entries", "bins:type", "bins", "nanflow:type", "nanflow", "origin"],
+                ["name", "bins:name"]):
             if json["binWidth"] in ("nan", "inf", "-inf") or isinstance(json["binWidth"], numbers.Real):
                 binWidth = float(json["binWidth"])
             else:
@@ -504,7 +585,7 @@ class SparselyBin(Factory, Container):
 
         else:
             raise JsonFormatException(json, "SparselyBin")
-        
+
     def __repr__(self):
         if self.bins is None:
             contentType = self.contentType
@@ -516,29 +597,25 @@ class SparselyBin(Factory, Container):
             contentType = self.contentType
         else:  # revert to default
             contentType = 'Count'
-        return "<SparselyBin binWidth={0} bins={1} nanflow={2}>".format(self.binWidth, self.value.name if self.value is not None else self.contentType, self.nanflow.name)
+        return "<SparselyBin binWidth={0} bins={1} nanflow={2}>".format(
+            self.binWidth, self.value.name if self.value is not None else contentType, self.nanflow.name)
 
     def __eq__(self, other):
-        return isinstance(other, SparselyBin) and numeq(self.binWidth, other.binWidth) and self.quantity == other.quantity and numeq(self.entries, other.entries) and self.bins == other.bins and self.nanflow == other.nanflow and numeq(self.origin, other.origin)
+        return isinstance(other, SparselyBin) and numeq(self.binWidth, other.binWidth) and \
+               self.quantity == other.quantity and numeq(self.entries, other.entries) and self.bins == other.bins and \
+               self.nanflow == other.nanflow and numeq(self.origin, other.origin)
 
-    def __ne__(self, other): return not self == other
+    def __ne__(self, other):
+        return not self == other
 
     def __hash__(self):
-        return hash((self.binWidth, self.quantity, self.entries, tuple(sorted(self.bins.items())), self.nanflow, self.origin))
+        return hash((self.binWidth, self.quantity, self.entries, tuple(
+            sorted(self.bins.items())), self.nanflow, self.origin))
 
     @property
     def n_bins(self):
         """Get number of bins, consistent with SparselyBin and Categorize """
         return self.size
-
-    @property
-    def n_dim(self):
-        """Histogram dimension
-
-        :returns: dimension of the histogram
-        :rtype: int
-        """
-        return get_n_dim(self)
 
     def num_bins(self, low=None, high=None):
         """
@@ -696,4 +773,14 @@ class SparselyBin(Factory, Container):
         bc = bin_centers[max_idx]
         return bc
 
+    def _center_from_key(self, bin_key):
+        xc = (bin_key + 0.5) * self.binWidth + self.origin
+        return xc
+
+
+# extra properties: number of dimensions and datatypes of sub-hists
+SparselyBin.n_dim = n_dim
+SparselyBin.datatype = datatype
+
+# register extra methods such as plotting
 Factory.register(SparselyBin)

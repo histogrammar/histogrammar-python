@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 # Copyright 2016 DIANA-HEP
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,10 +19,12 @@ import subprocess
 import tempfile
 import os
 
+
 def write(vegaSpec, outputFile, format=None):
     """Use the 'vega' package in Nodejs to write to SVG or PNG files.
 
-    Unlike interactive plotting, this does not require a round trip through a web browser, but it does require a Nodejs installation on your computer (to evaluate the Javascript).
+    Unlike interactive plotting, this does not require a round trip through a web browser, but it does require a
+    Nodejs installation on your computer (to evaluate the Javascript).
 
     To install the prerequisites on an Ubuntu system, do
 
@@ -72,15 +74,17 @@ def write(vegaSpec, outputFile, format=None):
     tmp.close()
 
     if outputFile is None:
-        vg2x = subprocess.Popen([cmd, tmp.name], stdout=subprocess.PIPE, env=dict(os.environ, PATH=npmbin + ":" + os.environ.get("PATH", "")))
+        vg2x = subprocess.Popen([cmd, tmp.name], stdout=subprocess.PIPE, env=dict(
+            os.environ, PATH=npmbin + ":" + os.environ.get("PATH", "")))
         if vg2x.wait() == 0:
             return vg2x.stdout.read()
         else:
             os.unlink(tmp.name)
             raise IOError("Command '{0}' failed; if it's not installed, install it with 'npm install vega'".format(cmd))
-        
+
     else:
-        vg2x = subprocess.Popen([cmd, tmp.name, outputFile], stdout=subprocess.PIPE, env=dict(os.environ, PATH=npmbin + ":" + os.environ.get("PATH", "")))
+        vg2x = subprocess.Popen([cmd, tmp.name, outputFile], stdout=subprocess.PIPE,
+                                env=dict(os.environ, PATH=npmbin + ":" + os.environ.get("PATH", "")))
         if vg2x.wait() != 0:
             os.unlink(tmp.name)
             raise IOError("Command '{0}' failed; if it's not installed, install it with 'npm install vega'".format(cmd))

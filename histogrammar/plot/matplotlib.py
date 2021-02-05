@@ -15,32 +15,13 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-import types
 
 # python 2/3 compatibility fixes
-from histogrammar.util import *
+from histogrammar.util import xrange
+from histogrammar.plot.hist_numpy import get_2dgrid, prepare2Dsparse, set2Dsparse
 
-def prepare2Dsparse(sparse):
-    yminBins = [v.minBin for v in sparse.bins.values() if v.minBin is not None]
-    ymaxBins = [v.maxBin for v in sparse.bins.values() if v.maxBin is not None]
-    if len(yminBins) > 0 and len(ymaxBins) > 0:
-        yminBin = min(yminBins)
-        ymaxBin = max(ymaxBins)
-    else:
-        yminBin = 0
-        ymaxBin = 0
-    sample = list(sparse.bins.values())[0]
-    ynum = 1 + ymaxBin - yminBin
-    ylow = yminBin * sample.binWidth + sample.origin
-    yhigh = (ymaxBin + 1.0) * sample.binWidth + sample.origin
-    return yminBin, ymaxBin, ynum, ylow, yhigh
 
-def set2Dsparse(sparse, yminBin, ymaxBin, grid):
-    for i, iindex in enumerate(xrange(sparse.minBin, sparse.maxBin + 1)):
-        for j, jindex in enumerate(xrange(yminBin, ymaxBin + 1)):
-            if iindex in sparse.bins and jindex in sparse.bins[iindex].bins:
-                grid[j, i] = sparse.bins[iindex].bins[jindex].entries
-    return grid
+# 1d plotting of counts + generic 2d plotting of counts
 
 class HistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
@@ -50,15 +31,19 @@ class HistogramMethods(object):
 
             Returns a matplotlib.axes instance
         """
+        # catch generic 2d plotting of counts
+        if self.n_dim >= 2:
+            return plot2dmatplotlib(self, name, **kwargs)
+
+        # specialized 1d plotting of counts from here on
         import matplotlib.pyplot as plt
-        import numpy as np
         ax = plt.gca()
 
         edges = self.bin_edges()
         entries = self.bin_entries()
         width = self.bin_width()
 
-        ax.bar(edges[:-1], entries, width=width, **kwargs)
+        ax.bar(edges[:-1], entries, width=width, align='edge', **kwargs)
 
         if name is not None:
             ax.set_title(name)
@@ -66,6 +51,7 @@ class HistogramMethods(object):
             ax.set_title(self.name)
 
         return ax
+
 
 class SparselyHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
@@ -75,17 +61,21 @@ class SparselyHistogramMethods(object):
 
             Returns a matplotlib.axes instance
         """
+        # catch generic 2d plotting of counts
+        if self.n_dim >= 2:
+            return plot2dmatplotlib(self, name, **kwargs)
+
+        # specialized 1d plotting of counts from here on
         import matplotlib.pyplot as plt
-        import numpy as np
         ax = plt.gca()
 
         edges = self.bin_edges()
         entries = self.bin_entries()
         width = self.bin_width()
 
-        ax.bar(edges[:-1], entries, width=width, **kwargs)
-        ax.set_xlim(self.low,self.high)
-        
+        ax.bar(edges[:-1], entries, width=width, align='edge', **kwargs)
+        ax.set_xlim(self.low, self.high)
+
         if name is not None:
             ax.set_title(name)
         else:
@@ -93,7 +83,8 @@ class SparselyHistogramMethods(object):
 
         return ax
 
-class CategorizeHistogramMethods(object):
+
+class IrregularlyHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
         """
             name : title of the plot.
@@ -101,21 +92,56 @@ class CategorizeHistogramMethods(object):
 
             Returns a matplotlib.axes instance
         """
+        # catch generic 2d plotting of counts
+        if self.n_dim >= 2:
+            return plot2dmatplotlib(self, name, **kwargs)
+
+        # specialized 1d plotting of counts from here on
+        import matplotlib.pyplot as plt
+        ax = plt.gca()
+
+        edges = self.edges[1:-1]
+        entries = self.bin_entries()[1:-1]
+        width = self.bin_width()
+
+        ax.bar(edges, entries, width=width, align='edge', **kwargs)
+
+        if name is not None:
+            ax.set_title(name)
+        else:
+            ax.set_title(self.name)
+
+        return ax
+
+
+class CentrallyHistogramMethods(object):
+    def plotmatplotlib(self, name=None, **kwargs):
+        """
+            name : title of the plot.
+            kwargs :  `matplotlib.patches.Rectangle` properties.
+
+            Returns a matplotlib.axes instance
+        """
+        # catch generic 2d plotting of counts
+        if self.n_dim >= 2:
+            return plot2dmatplotlib(self, name, **kwargs)
+
+        # specialized 1d plotting of counts from here on
         import matplotlib.pyplot as plt
         import numpy as np
         ax = plt.gca()
 
-        width = kwargs.pop('width',0.8)
+        width = kwargs.pop('width', 0.8)
 
-        labels = self.bin_labels()
+        labels = self.bin_centers()
         values = self.bin_entries()
-        assert len(labels)==len(values), \
+        assert len(labels) == len(values), \
             'labels and values have different array lengths: %d vs %d.' % \
-            (len(labels),len(values))
+            (len(labels), len(values))
 
         # plot histogram
         tick_pos = np.arange(len(labels)) + 0.5
-        ax.bar(tick_pos - 0.4, values, width=width, **kwargs)
+        ax.bar(tick_pos, values, width=width, **kwargs)
 
         # set x-axis properties
         def xtick(lab):
@@ -135,6 +161,62 @@ class CategorizeHistogramMethods(object):
 
         return ax
 
+
+class CategorizeHistogramMethods(object):
+    def plotmatplotlib(self, name=None, **kwargs):
+        """
+            name : title of the plot.
+            kwargs :  `matplotlib.patches.Rectangle` properties.
+
+            Returns a matplotlib.axes instance
+        """
+        # catch generic 2d plotting of counts
+        if self.n_dim >= 2:
+            return plot2dmatplotlib(self, name, **kwargs)
+
+        # specialized 1d plotting of counts from here on
+        import matplotlib.pyplot as plt
+        import numpy as np
+        ax = plt.gca()
+
+        width = kwargs.pop('width', 0.8)
+
+        labels = self.bin_labels()
+        values = self.bin_entries()
+        assert len(labels) == len(values), \
+            'labels and values have different array lengths: %d vs %d.' % \
+            (len(labels), len(values))
+
+        # sort labels alphabetically
+        idx = np.argsort(labels)
+        labels = labels[idx]
+        values = values[idx]
+
+        # plot histogram
+        tick_pos = np.arange(len(labels)) + 0.5
+        ax.bar(tick_pos, values, width=width, **kwargs)
+
+        # set x-axis properties
+        def xtick(lab):
+            lab = str(lab)
+            if len(lab) > 20:
+                lab = lab[:17] + '...'
+            return lab
+        ax.set_xlim((0., float(len(labels))))
+        ax.set_xticks(tick_pos)
+        ax.set_xticklabels([xtick(lab) for lab in labels], fontsize=12, rotation=90)
+
+        # set title
+        if name is not None:
+            ax.set_title(name)
+        else:
+            ax.set_title(self.name)
+
+        return ax
+
+
+# 1d plotting of profiles
+
 class ProfileMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for Bin of Average
@@ -144,11 +226,9 @@ class ProfileMethods(object):
             Returns a matplotlib.axes instance
         """
         import matplotlib.pyplot as plt
-        import numpy as np
         ax = plt.gca()
 
         xranges = [self.range(x) for x in self.indexes]
-        means = self.meanValues
 
         xmins = [x[0] for x in xranges]
         xmaxs = [x[1] for x in xranges]
@@ -159,6 +239,7 @@ class ProfileMethods(object):
         else:
             ax.set_title(self.name)
         return ax
+
 
 class SparselyProfileMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
@@ -189,6 +270,7 @@ class SparselyProfileMethods(object):
         else:
             ax.set_title(self.name)
         return ax
+
 
 class ProfileErrMethods(object):
     def plotmatplotlib(self, name=None, aspect=True, **kwargs):
@@ -228,6 +310,7 @@ class ProfileErrMethods(object):
             ax.set_title(self.name)
 
         return ax
+
 
 class SparselyProfileErrMethods(object):
     def plotmatplotlib(self, name=None, aspect=True, **kwargs):
@@ -275,12 +358,14 @@ class SparselyProfileErrMethods(object):
             ax.set_title(self.name)
         return ax
 
+
+# other 1d/2d plotting
+
 class StackedHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for
         """
         import matplotlib.pyplot as plt
-        import numpy as np
         ax = plt.gca()
         color_cycle = plt.rcParams['axes.color_cycle']
         if "color" in kwargs:
@@ -296,13 +381,13 @@ class StackedHistogramMethods(object):
         else:
             ax.set_title(self.name)
         return ax
+
 
 class PartitionedHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for
         """
         import matplotlib.pyplot as plt
-        import numpy as np
         ax = plt.gca()
         color_cycle = plt.rcParams['axes.color_cycle']
         if "color" in kwargs:
@@ -318,6 +403,7 @@ class PartitionedHistogramMethods(object):
         else:
             ax.set_title(self.name)
         return ax
+
 
 class FractionedHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
@@ -335,14 +421,18 @@ class FractionedHistogramMethods(object):
             xmaxs = [x[1] for x in xranges]
             ax.hlines(fracs, xmins, xmaxs, **kwargs)
 
-
         elif isinstance(self.numerator, SparselyHistogramMethods):
             assert self.numerator.binWidth == self.denominator.binWidth,\
                    "Fraction numerator and denominator histograms must have same binWidth."
             numerator = self.numerator
             denominator = self.denominator
             xmins = np.arange(numerator.low, numerator.high, numerator.binWidth)
-            xmaxs = np.arange(numerator.low + numerator.binWidth, numerator.high + numerator.binWidth, numerator.binWidth)
+            xmaxs = np.arange(
+                numerator.low +
+                numerator.binWidth,
+                numerator.high +
+                numerator.binWidth,
+                numerator.binWidth)
 
             fracs = np.nan*np.zeros(xmaxs.shape)
 
@@ -359,6 +449,9 @@ class FractionedHistogramMethods(object):
             ax.set_title(self.name)
         return ax
 
+
+# specialized 2d plotting of counts
+
 class TwoDimensionallyHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
         """ Plotting method for Bin of Bin of Count
@@ -368,12 +461,13 @@ class TwoDimensionallyHistogramMethods(object):
             Returns a matplotlib.axes instance
         """
         import matplotlib.pyplot as plt
-        import numpy as np
-        ax = plt.gca()
+        fig, ax = plt.subplots(nrows=1)
 
         x_ranges, y_ranges, grid = self.xy_ranges_grid()
 
-        ax.pcolormesh(x_ranges, y_ranges, grid, **kwargs)
+        im = ax.pcolormesh(x_ranges, y_ranges, grid, **kwargs)
+        fig.colorbar(im, ax=ax)
+
         ax.set_ylim(self.y_lim())
         ax.set_xlim(self.x_lim())
 
@@ -396,20 +490,20 @@ class TwoDimensionallyHistogramMethods(object):
 
         for j in range(self.num):
             for i in range(samp.num):
-                grid[i,j] = self.values[j].values[i].entries
+                grid[i, j] = self.values[j].values[i].entries
 
         return x_ranges, y_ranges, grid
 
     def x_lim(self):
         """ return x low high tuble
         """
-        return (self.low,self.high)
-    
+        return (self.low, self.high)
+
     def y_lim(self):
         """ return y low high tuble
         """
         samp = self.values[0]
-        return (samp.low,samp.high)
+        return (samp.low, samp.high)
 
     def project_on_x(self):
         """ project 2d histogram onto x-axis
@@ -419,11 +513,10 @@ class TwoDimensionallyHistogramMethods(object):
         """
         from histogrammar import Bin, Count
 
-        h_x = Bin(num = self.num, low = self.low, high = self.high, \
-                  quantity = self.quantity, value = Count())
+        h_x = Bin(num=self.num, low=self.low, high=self.high, quantity=self.quantity, value=Count())
         # loop over all counters and integrate over y (=j)
-        for i,bi in enumerate(self.values):
-            h_x.values[i].entries += sum(bj.entries for bj in bi.values) 
+        for i, bi in enumerate(self.values):
+            h_x.values[i].entries += sum(bj.entries for bj in bi.values)
         return h_x
 
     def project_on_y(self):
@@ -433,16 +526,15 @@ class TwoDimensionallyHistogramMethods(object):
         :rtype: histogrammar.Bin
         """
         from histogrammar import Bin, Count
-        
+
         ybin = self.values[0]
-        h_y = Bin(num = ybin.num, low = ybin.low, high = ybin.high, \
-                  quantity = ybin.quantity, value = Count())
+        h_y = Bin(num=ybin.num, low=ybin.low, high=ybin.high, quantity=ybin.quantity, value=Count())
         # loop over all counters and integrate over x (=i)
         for bi in self.values:
-            for j,bj in enumerate(bi.values):
+            for j, bj in enumerate(bi.values):
                 h_y.values[j].entries += bj.entries
         return h_y
-    
+
 
 class SparselyTwoDimensionallyHistogramMethods(object):
     def plotmatplotlib(self, name=None, **kwargs):
@@ -453,12 +545,13 @@ class SparselyTwoDimensionallyHistogramMethods(object):
             Returns a matplotlib.axes instance
         """
         import matplotlib.pyplot as plt
-        import numpy as np
-        ax = plt.gca()
+        fig, ax = plt.subplots(nrows=1)
 
         x_ranges, y_ranges, grid = self.xy_ranges_grid()
-        
-        ax.pcolormesh(x_ranges, y_ranges, grid, **kwargs)
+
+        im = ax.pcolormesh(x_ranges, y_ranges, grid, **kwargs)
+        fig.colorbar(im, ax=ax)
+
         ax.set_ylim(self.y_lim())
         ax.set_xlim(self.x_lim())
 
@@ -466,7 +559,6 @@ class SparselyTwoDimensionallyHistogramMethods(object):
             ax.set_title(name)
         else:
             ax.set_title(self.name)
-
         return ax
 
     def xy_ranges_grid(self):
@@ -479,7 +571,7 @@ class SparselyTwoDimensionallyHistogramMethods(object):
         xbinWidth = self.binWidth
         try:
             ykey = list(self.bins.keys())[0]
-        except:
+        except BaseException:
             raise KeyError('SparselyBin 2d hist is not filled.')
         ybinWidth = self.bins[ykey].binWidth
 
@@ -503,14 +595,14 @@ class SparselyTwoDimensionallyHistogramMethods(object):
         xminBin = min(self.bins.keys())
         xlow = xminBin * self.binWidth + self.origin
         xhigh = (xmaxBin + 1) * self.binWidth + self.origin
-        return (xlow,xhigh)
-    
+        return (xlow, xhigh)
+
     def y_lim(self):
         """ return y low high tuble
         """
         yminBin, ymaxBin, ynum, ylow, yhigh = prepare2Dsparse(self)
-        return (ylow,yhigh)
-        
+        return (ylow, yhigh)
+
     def project_on_x(self):
         """ project 2d sparselybin histogram onto x-axis
 
@@ -519,12 +611,12 @@ class SparselyTwoDimensionallyHistogramMethods(object):
         """
         from histogrammar import SparselyBin, Count
 
-        h_x = SparselyBin(binWidth = self.binWidth, origin = self.origin, \
-                          quantity = self.quantity, value = Count())
+        h_x = SparselyBin(binWidth=self.binWidth, origin=self.origin,
+                          quantity=self.quantity, value=Count())
         # loop over all counters and integrate over y (=j)
         for i in self.bins:
             bi = self.bins[i]
-            h_x.bins[i] = Count.ed( sum(bi.bins[j].entries for j in bi.bins) ) 
+            h_x.bins[i] = Count.ed(sum(bi.bins[j].entries for j in bi.bins))
         return h_x
 
     def project_on_y(self):
@@ -537,16 +629,149 @@ class SparselyTwoDimensionallyHistogramMethods(object):
 
         try:
             ykey = list(self.bins.keys())[0]
-        except:
+        except BaseException:
             raise KeyError('SparselyBin 2d hist is not filled. Cannot project on y-axis.')
         ybin = self.bins[ykey]
-        h_y = SparselyBin(binWidth = ybin.binWidth, origin = ybin.origin, \
-                          quantity = ybin.quantity, value = Count())
+        h_y = SparselyBin(binWidth=ybin.binWidth, origin=ybin.origin,
+                          quantity=ybin.quantity, value=Count())
         # loop over all counters and integrate over x (=i)
         for i in self.bins:
             bi = self.bins[i]
             for j in bi.bins:
-                if not j in h_y.bins:
+                if j not in h_y.bins:
                     h_y.bins[j] = Count()
                 h_y.bins[j].entries += bi.bins[j].entries
         return h_y
+
+
+class IrregularlyTwoDimensionallyHistogramMethods(object):
+    def plotmatplotlib(self, name=None, **kwargs):
+        """ Plotting method for Bin of Bin of Count
+              name : title of the plot.
+              kwargs: matplotlib.collections.QuadMesh properties.
+
+            Returns a matplotlib.axes instance
+        """
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(nrows=1)
+
+        x_ranges, y_ranges, grid = self.xy_ranges_grid()
+
+        im = ax.pcolormesh(x_ranges, y_ranges, grid, **kwargs)
+        fig.colorbar(im, ax=ax)
+
+        ax.set_ylim(self.y_lim())
+        ax.set_xlim(self.x_lim())
+
+        if name is not None:
+            ax.set_title(name)
+        else:
+            ax.set_title(self.name)
+        return ax
+
+    def xy_ranges_grid(self):
+        """ Return x and y ranges and x,y grid
+        """
+        import numpy as np
+
+        samp = self.bins[0][1]
+        x_ranges = self.bin_edges()[1:-1]  # cut underflow and overflow bins
+        y_ranges = samp.bin_edges()[1:-1]
+
+        grid = np.zeros((samp.n_bins - 2, self.n_bins - 2))
+
+        for j in range(1, self.n_bins - 1):
+            for i in range(1, samp.n_bins - 1):
+                grid[i-1, j-1] = (self.bins[j][1]).bins[i][1].entries
+
+        return x_ranges, y_ranges, grid
+
+    def x_lim(self):
+        """ return x low high tuble
+        """
+        # cut underflow and overflow bins
+        x_ranges = self.bin_edges()[1:-1]
+        return (x_ranges[0], x_ranges[-1])
+
+    def y_lim(self):
+        """ return y low high tuble
+        """
+        # cut underflow and overflow bins
+        samp = self.bins[0][1]
+        y_ranges = samp.bin_edges()[1:-1]
+        return (y_ranges[0], y_ranges[-1])
+
+    def project_on_x(self):
+        """ project 2d histogram onto x-axis
+
+        :returns: on x-axis projected histogram (1d)
+        :rtype: histogrammar.Bin
+        """
+        from histogrammar import IrregularlyBin, Count
+
+        h_x = IrregularlyBin(edges=self.edges[1:], quantity=self.quantity, value=Count())
+        # loop over all counters and integrate over y (=j)
+        for i, bi in enumerate(self.bins):
+            h_x.bins[i][1].entries += sum(bj.entries for _, bj in bi[1].bins)
+        return h_x
+
+    def project_on_y(self):
+        """ project 2d histogram onto y-axis
+
+        :returns: on y-axis projected histogram (1d)
+        :rtype: histogrammar.Bin
+        """
+        from histogrammar import IrregularlyBin, Count
+
+        ybin = self.bins[0][1]
+        h_y = IrregularlyBin(edges=ybin.edges[1:], quantity=ybin.quantity, value=Count())
+        # loop over all counters and integrate over x (=i)
+        for _, bi in self.bins:
+            for j, bj in enumerate(bi.bins):
+                h_y.bins[j][1].entries += bj[1].entries
+        return h_y
+
+
+# generic 2d plotting function of counts
+
+def plot2dmatplotlib(self, name=None, **kwargs):
+    """ General plotting method for 2d Bin/SparselyBin/Categorize/CentrallyBin/IrregularlyBin of Count
+          name : title of the plot.
+          kwargs: matplotlib.collections.QuadMesh properties.
+
+        Returns a matplotlib.axes instance
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    fig, ax = plt.subplots(nrows=1)
+
+    x_labels, y_labels, grid = get_2dgrid(self)
+
+    # set label properties
+    def tick(lab):
+        lab = str(lab)
+        if len(lab) > 20:
+            lab = lab[:17] + '...'
+        return lab
+    x_labels = [tick(lab) for lab in x_labels]
+    y_labels = [tick(lab) for lab in y_labels]
+
+    # plot 2d grid
+    xtick_pos = np.arange(len(x_labels)) + 0.5
+    ytick_pos = np.arange(len(y_labels)) + 0.5
+
+    im = ax.pcolormesh(xtick_pos, ytick_pos, grid, shading='auto', **kwargs)
+    fig.colorbar(im, ax=ax)
+
+    ax.set_xlim((0., float(len(x_labels))))
+    ax.set_ylim((0., float(len(y_labels))))
+    ax.set_xticks(xtick_pos)
+    ax.set_yticks(ytick_pos)
+    ax.set_xticklabels(x_labels, rotation=90)
+    ax.set_yticklabels(y_labels)
+
+    if name is not None:
+        ax.set_title(name)
+    else:
+        ax.set_title(self.name)
+    return ax
