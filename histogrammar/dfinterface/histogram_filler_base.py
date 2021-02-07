@@ -72,7 +72,7 @@ class HistogramFillerBase(object):
 
             .. code-block:: python
 
-                bin_specs = {'x': {'bin_width': 1, 'bin_offset': 0},
+                bin_specs = {'x': {'binWidth': 1, 'origin': 0},
                              'y': {'num': 10, 'low': 0.0, 'high': 2.0},
                              'x:y': [{}, {'num': 5, 'low': 0.0, 'high': 1.0}],
                              'a': {'edges': [0, 2, 10, 11, 21, 101]},
@@ -116,10 +116,10 @@ class HistogramFillerBase(object):
         self.store_key = store_key
 
         # several default unit values
-        self._unit_bin_specs = {"bin_width": 1.0, "bin_offset": 0.0}
+        self._unit_bin_specs = {"binWidth": 1.0, "origin": 0.0}
         self._unit_timestamp_specs = {
-            "bin_width": pd.Timedelta(days=30).value,
-            "bin_offset": pd.Timestamp("2010-01-04").value,
+            "binWidth": pd.Timedelta(days=30).value,
+            "origin": pd.Timestamp("2010-01-04").value,
         }
         self._auto_n_bins_1d = nbins_1d
         self._auto_n_bins_2d = nbins_2d
@@ -360,13 +360,13 @@ class HistogramFillerBase(object):
 
                 if c == self.time_axis and idx == 0:
                     # time axis is always sparselybin (unbound)
-                    specs.append({"bin_width": bin_width, "bin_offset": bin_offset})
+                    specs.append({"binWidth": bin_width, "origin": bin_offset})
                 elif len(cols) >= 3:
                     # always binned histogram for high n-dim histograms, avoid potentially exploding histograms
                     specs.append({"num": n_bins, "low": low, "high": high})
                 else:
                     # sparse allowed for low dimensional histograms (1 and 2 dim)
-                    specs.append({"bin_width": bin_width, "bin_offset": bin_offset})
+                    specs.append({"binWidth": bin_width, "origin": bin_offset})
             if len(cols) == 1:
                 specs = specs[0]
             self.bin_specs[n] = specs

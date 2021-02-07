@@ -27,8 +27,8 @@ def test_get_histograms():
             ["latitude", "longitude"],
         ],
         bin_specs={
-            "longitude": {"bin_width": 5, "bin_offset": 0},
-            "latitude": {"bin_width": 5, "bin_offset": 0},
+            "longitude": {"binWidth": 5, "origin": 0},
+            "latitude": {"binWidth": 5, "origin": 0},
         },
     )
     current_hists = pandas_filler.get_histograms(pytest.test_df)
@@ -62,8 +62,8 @@ def test_make_histograms():
     ]
     bin_specs = {
         "transaction": {"num": 100, "low": -2000, "high": 2000},
-        "longitude": {"bin_width": 5, "bin_offset": 0},
-        "latitude": {"bin_width": 5, "bin_offset": 0},
+        "longitude": {"binWidth": 5, "origin": 0},
+        "latitude": {"binWidth": 5, "origin": 0},
     }
 
     current_hists = make_histograms(
@@ -104,8 +104,8 @@ def test_make_histograms_no_time_axis():
         assert isinstance(bs, dict)
     assert "age" in bin_specs
     dateage = bin_specs["age"]
-    assert dateage["bin_width"] == 2.0
-    assert dateage["bin_offset"] == 9.5
+    assert dateage["binWidth"] == 2.0
+    assert dateage["origin"] == 9.5
 
 
 def test_make_histograms_with_time_axis():
@@ -129,35 +129,35 @@ def test_make_histograms_with_time_axis():
         assert len(bs) == 2
     assert "date:age" in bin_specs
     dateage = bin_specs["date:age"]
-    assert dateage[0]["bin_width"] == 751582381944448.0
-    assert dateage[1]["bin_width"] == 2.0
-    assert dateage[1]["bin_offset"] == 9.5
+    assert dateage[0]["binWidth"] == 751582381944448.0
+    assert dateage[1]["binWidth"] == 2.0
+    assert dateage[1]["origin"] == 9.5
 
     # test get_bin_specs 1
     bin_specs = get_bin_specs(hists)
     assert "date:age" in bin_specs
     dateage = bin_specs["date:age"]
-    assert dateage[0]["bin_width"] == 751582381944448.0
-    assert dateage[1]["bin_width"] == 2.0
-    assert dateage[1]["bin_offset"] == 9.5
+    assert dateage[0]["binWidth"] == 751582381944448.0
+    assert dateage[1]["binWidth"] == 2.0
+    assert dateage[1]["origin"] == 9.5
 
     # test get_bin_specs 2
     bin_specs = get_bin_specs(hists, skip_first_axis=True)
     assert "age" in bin_specs
     age = bin_specs["age"]
-    assert age["bin_width"] == 2.0
-    assert age["bin_offset"] == 9.5
+    assert age["binWidth"] == 2.0
+    assert age["origin"] == 9.5
 
     # test get_bin_specs 3
     bin_specs = get_bin_specs(hists["date:age"])
-    assert bin_specs[0]["bin_width"] == 751582381944448.0
-    assert bin_specs[1]["bin_width"] == 2.0
-    assert bin_specs[1]["bin_offset"] == 9.5
+    assert bin_specs[0]["binWidth"] == 751582381944448.0
+    assert bin_specs[1]["binWidth"] == 2.0
+    assert bin_specs[1]["origin"] == 9.5
 
     # test get_bin_specs 4
     bin_specs = get_bin_specs(hists["date:age"], skip_first_axis=True)
-    assert bin_specs["bin_width"] == 2.0
-    assert bin_specs["bin_offset"] == 9.5
+    assert bin_specs["binWidth"] == 2.0
+    assert bin_specs["origin"] == 9.5
 
 
 def test_make_histograms_unit_binning():
@@ -201,8 +201,8 @@ def test_get_histograms_module():
             ["latitude", "longitude"],
         ],
         bin_specs={
-            "longitude": {"bin_width": 5, "bin_offset": 0},
-            "latitude": {"bin_width": 5, "bin_offset": 0},
+            "longitude": {"binWidth": 5, "origin": 0},
+            "latitude": {"binWidth": 5, "origin": 0},
         },
         read_key="input",
         store_key="output",

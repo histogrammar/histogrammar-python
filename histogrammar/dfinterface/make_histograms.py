@@ -21,13 +21,28 @@
 import copy
 import logging
 
-import histogrammar
 import numpy as np
 import pandas as pd
+
+from ..primitives.average import Average
+from ..primitives.bag import Bag
+from ..primitives.bin import Bin
+from ..primitives.categorize import Categorize
+from ..primitives.centrallybin import CentrallyBin
+from ..primitives.count import Count
+from ..primitives.deviate import Deviate
+from ..primitives.fraction import Fraction
+from ..primitives.irregularlybin import IrregularlyBin
+from ..primitives.minmax import Minimize, Maximize
+from ..primitives.select import Select
+from ..primitives.sparselybin import SparselyBin
+from ..primitives.stack import Stack
+from ..primitives.sum import Sum
 
 from .pandas_histogrammar import PandasHistogrammar
 from .spark_histogrammar import SparkHistogrammar
 from .filling_utils import check_dtype
+from ..util import _get_sub_hist
 
 logger = logging.getLogger()
 
@@ -64,7 +79,7 @@ def make_histograms(
 
         .. code-block:: python
 
-            bin_specs = {'x': {'bin_width': 1, 'bin_offset': 0},
+            bin_specs = {'x': {'binWidth': 1, 'origin': 0},
                          'y': {'num': 10, 'low': 0.0, 'high': 2.0},
                          'x:y': [{}, {'num': 5, 'low': 0.0, 'high': 1.0}],
                          'a': {'edges': [0, 2, 10, 11, 21, 101]},
@@ -78,8 +93,8 @@ def make_histograms(
                          'h': {'bag': True},
                          }
 
-        In the bin specs for x:y, x is not provided (here) and reverts to the 1-dim setting. The 'bin_width',
-        'bin_offset' notation makes an open-ended histogram (for that feature) with given bin width and offset.
+        In the bin specs for x:y, x is not provided (here) and reverts to the 1-dim setting. The 'binWidth',
+        'origin' notation makes an open-ended histogram (for that feature) with given bin width and offset.
         The notation 'num', 'low', 'high' gives a fixed range histogram from 'low' to 'high' with 'num'
         number of bins.
     :param str time_axis: name of datetime feature, used as time axis, eg 'date'. if True, will be guessed.
@@ -150,8 +165,8 @@ def make_histograms(
             )
         # convert time width and offset to nanoseconds
         time_specs = {
-            "bin_width": float(pd.Timedelta(time_width).value),
-            "bin_offset": float(pd.Timestamp(time_offset).value),
+            "binWidth": float(pd.Timedelta(time_width).value),
+            "origin": float(pd.Timestamp(time_offset).value),
         }
         bin_specs[time_axis] = time_specs
 
@@ -194,7 +209,7 @@ def get_data_type(df, col):
         # spark conversions to numpy or python equivalent
         if dt == "string":
             dt = "str"
-        elif dt == "timestamp":
+        elif dt == "timestamp" or dt == "date":
             dt = np.datetime64
         elif dt == "boolean":
             dt = bool
@@ -247,23 +262,42 @@ def _get_bin_specs(h):
     :rtype: list
     """
     bin_specs = []
-    if isinstance(h, histogrammar.Count):
+    if isinstance(h, Count):
         return bin_specs
 
-    if isinstance(h, histogrammar.Categorize):
+    if isinstance(h, Categorize):
         bin_specs.append({})
-    elif isinstance(h, histogrammar.Bin):
+    elif isinstance(h, Bin):
         bin_specs.append(dict(num=h.num, low=h.low, high=h.high))
-    elif isinstance(h, histogrammar.SparselyBin):
-        bin_specs.append(dict(bin_width=h.binWidth, bin_offset=h.origin))
+    elif isinstance(h, SparselyBin):
+        bin_specs.append(dict(binWidth=h.binWidth, origin=h.origin))
+    elif isinstance(h, IrregularlyBin):
+        bin_specs.append(dict(edges=h.edges[1:]))  # ignore -inf
+    elif isinstance(h, CentrallyBin):
+        bin_specs.append(dict(centers=h.centers))
+    elif isinstance(h, Stack):
+        bin_specs.append(dict(thresholds=h.thresholds[1:]))  # ignore -inf
+    elif isinstance(h, Maximize):
+        bin_specs.append(dict(maximize=True))
+    elif isinstance(h, Minimize):
+        bin_specs.append(dict(minimize=True))
+    elif isinstance(h, Average):
+        bin_specs.append(dict(average=True))
+    elif isinstance(h, Deviate):
+        bin_specs.append(dict(deviate=True))
+    elif isinstance(h, Sum):
+        bin_specs.append(dict(sum=True))
+    elif isinstance(h, Bag):
+        bin_specs.append(dict(bag=True, range=h.range))
+    elif isinstance(h, Sum):
+        bin_specs.append(dict(sum=True))
+    elif isinstance(h, Fraction):
+        bin_specs.append(dict(fraction=True))
+    elif isinstance(h, Select):
+        bin_specs.append(dict(cut=True))
 
     # histogram may have a sub-histogram. Extract it and recurse
-    if hasattr(h, "bins"):
-        hist = list(h.bins.values())[0] if h.bins else histogrammar.Count()
-    elif hasattr(h, "values"):
-        hist = h.values[0] if h.values else histogrammar.Count()
-    else:
-        hist = histogrammar.Count()
+    hist = _get_sub_hist(h)
     return bin_specs + _get_bin_specs(hist)
 
 

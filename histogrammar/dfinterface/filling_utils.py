@@ -183,15 +183,15 @@ def value_to_bin_index(val, **kwargs):
 
     Convert a numeric or timestamp column to an integer bin index.
 
-    :param bin_width: bin_width value needed to convert column
+    :param binWidth: bin width value needed to convert column
         to an integer bin index
-    :param bin_offset: bin_offset value needed to convert column
+    :param origin: bin offset value needed to convert column
         to an integer bin index
     """
     try:
         # NOTE this notation also works for timestamps
-        bin_width = kwargs.get("bin_width", 1)
-        bin_offset = kwargs.get("bin_offset", 0)
+        bin_width = kwargs.get("binWidth", kwargs.get("bin_width", 1))
+        bin_offset = kwargs.get("origin", kwargs.get("bin_offset", 0))
         bin_index = int(np.floor((val - bin_offset) / bin_width))
         return bin_index
     except BaseException:
@@ -204,16 +204,16 @@ def value_to_bin_center(val, **kwargs):
 
     Convert a numeric or timestamp column to a common bin center value.
 
-    :param bin_width: bin_width value needed to convert column
+    :param binWidth: bin width value needed to convert column
         to a common bin center value
-    :param bin_offset: bin_offset value needed to convert column
+    :param origin: bin_offset value needed to convert column
         to a common bin center value
     """
     try:
         # NOTE this notation also works for timestamps, and does not change the
         # unit
-        bin_width = kwargs.get("bin_width", 1)
-        bin_offset = kwargs.get("bin_offset", 0)
+        bin_width = kwargs.get("binWidth", kwargs.get("bin_width", 1))
+        bin_offset = kwargs.get("origin", kwargs.get("bin_offset", 0))
         bin_index = int(np.floor((val - bin_offset) / bin_width))
         obj_type = type(bin_width)
         return bin_offset + obj_type((bin_index + 0.5) * bin_width)

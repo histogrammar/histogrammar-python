@@ -62,7 +62,7 @@ class PandasHistogrammar(HistogramFillerBase):
 
             .. code-block:: python
 
-                bin_specs = {'x': {'bin_width': 1, 'bin_offset': 0},
+                bin_specs = {'x': {'binWidth': 1, 'origin': 0},
                              'y': {'num': 10, 'low': 0.0, 'high': 2.0},
                              'x:y': [{}, {'num': 5, 'low': 0.0, 'high': 1.0}],
                              'a': {'edges': [0, 2, 10, 11, 21, 101]},
