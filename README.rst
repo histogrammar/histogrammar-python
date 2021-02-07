@@ -118,8 +118,15 @@ As a quick example, you can do:
   ll.toJsonFile('longitude_latitude.json')
   ll2 = hg.Factory().fromJsonFile('longitude_latitude.json')
 
+These examples also work with Spark dataframes (sdf):
 
-These examples also work with Spark dataframes. For more examples please see the notebooks and tutorials.
+.. code-block:: python
+
+  from pyspark.sql.functions import col
+  hist = hg.Histogram(num=100, low=0, high=100, quantity=col('age'))
+  hist.fill.sparksql(sdf)
+
+For more examples please see the example notebooks and tutorials.
 
 
 Project contributors
