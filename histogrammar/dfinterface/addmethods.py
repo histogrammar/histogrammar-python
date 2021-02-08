@@ -52,15 +52,15 @@ from ..defs import Factory
 from .make_histograms import make_histograms
 
 
-def add_sparksql_methods(cls):
-    add_methods(cls, hg=hg_fill_sparksql)
+def add_sparksql_methods(cls, prefix=''):
+    add_methods(cls=cls, hg=hg_fill_sparksqlm, prefix=prefix)
 
 
-def add_pandas_methods(cls):
-    add_methods(cls, hg=hg_fill_numpy)
+def add_pandas_methods(cls, prefix=''):
+    add_methods(cls=cls, hg=hg_fill_numpy, prefix=prefix)
 
 
-def add_methods(cls, hg):
+def add_methods(cls, hg, prefix='hg_'):
     def Average(self, quantity):
         return self.histogrammar(hg_Average(quantity))
 
@@ -151,68 +151,69 @@ def add_methods(cls, hg):
 
     if inspect.isclass(cls):
         # pure class, not instantiated
-        cls.histogrammar = hg
-        cls.hg_Average = Average
-        cls.hg_Bag = Bag
-        cls.hg_Bin = Bin
-        cls.hg_Categorize = Categorize
-        cls.hg_CentrallyBin = CentrallyBin
-        cls.hg_Label = Label
-        cls.hg_UntypedLabel = UntypedLabel
-        cls.hg_Index = Index
-        cls.hg_Branch = Branch
-        cls.hg_Count = Count
-        cls.hg_Deviate = Deviate
-        cls.hg_Fraction = Fraction
-        cls.hg_IrregularlyBin = IrregularlyBin
-        cls.hg_Minimize = Minimize
-        cls.hg_Maximize = Maximize
-        cls.hg_Select = Select
-        cls.hg_SparselyBin = SparselyBin
-        cls.hg_Stack = Stack
-        cls.hg_Sum = Sum
-        cls.hg_make_histograms = make_histograms
-        cls.hg_Histogram = Histogram
-        cls.hg_SparselyHistogram = SparselyHistogram
-        cls.hg_CategorizeHistogram = CategorizeHistogram
-        cls.hg_Profile = Profile
-        cls.hg_SparselyProfile = SparselyProfile
-        cls.hg_ProfileErr = ProfileErr
-        cls.hg_SparselyProfileErr = SparselyProfileErr
-        cls.hg_TwoDimensionallyHistogram = TwoDimensionallyHistogram
-        cls.hg_TwoDimensionallySparselyHistogram = TwoDimensionallySparselyHistogram
+        setattr(cls, 'histogrammar', hg)
+        setattr(cls, prefix + 'Average', Average)
+        setattr(cls, prefix + 'Bag', Bag)
+        setattr(cls, prefix + 'Bin', Bin)
+        setattr(cls, prefix + 'Categorize', Categorize)
+        setattr(cls, prefix + 'CentrallyBin', CentrallyBin)
+        setattr(cls, prefix + 'Label', Label)
+        setattr(cls, prefix + 'UntypedLabel', UntypedLabel)
+        setattr(cls, prefix + 'Index', Index)
+        setattr(cls, prefix + 'Branch', Branch)
+        setattr(cls, prefix + 'Count', Count)
+        setattr(cls, prefix + 'Deviate', Deviate)
+        setattr(cls, prefix + 'Fraction', Fraction)
+        setattr(cls, prefix + 'IrregularlyBin', IrregularlyBin)
+        setattr(cls, prefix + 'Minimize', Minimize)
+        setattr(cls, prefix + 'Maximize', Maximize)
+        setattr(cls, prefix + 'Select', Select)
+        setattr(cls, prefix + 'SparselyBin', SparselyBin)
+        setattr(cls, prefix + 'Stack', Stack)
+        setattr(cls, prefix + 'Sum', Sum)
+        setattr(cls, prefix + 'make_histograms', make_histograms)
+        setattr(cls, prefix + 'Histogram', Histogram)
+        setattr(cls, prefix + 'SparselyHistogram', SparselyHistogram)
+        setattr(cls, prefix + 'CategorizeHistogram', CategorizeHistogram)
+        setattr(cls, prefix + 'Profile', Profile)
+        setattr(cls, prefix + 'SparselyProfile', SparselyProfile)
+        setattr(cls, prefix + 'ProfileErr', ProfileErr)
+        setattr(cls, prefix + 'SparselyProfileErr', SparselyProfileErr)
+        setattr(cls, prefix + 'TwoDimensionallyHistogram', TwoDimensionallyHistogram)
+        setattr(cls, prefix + 'TwoDimensionallySparselyHistogram', TwoDimensionallySparselyHistogram)
     else:
         # instantiated class
-        cls.histogrammar = types.MethodType(hg, cls)
-        cls.hg_Average = types.MethodType(Average, cls)
-        cls.hg_Bag = types.MethodType(Bag, cls)
-        cls.hg_Bin = types.MethodType(Bin, cls)
-        cls.hg_Categorize = types.MethodType(Categorize, cls)
-        cls.hg_CentrallyBin = types.MethodType(CentrallyBin, cls)
-        cls.hg_Label = types.MethodType(Label, cls)
-        cls.hg_UntypedLabel = types.MethodType(UntypedLabel, cls)
-        cls.hg_Index = types.MethodType(Index, cls)
-        cls.hg_Branch = types.MethodType(Branch, cls)
-        cls.hg_Count = types.MethodType(Count, cls)
-        cls.hg_Deviate = types.MethodType(Deviate, cls)
-        cls.hg_Fraction = types.MethodType(Fraction, cls)
-        cls.hg_IrregularlyBin = types.MethodType(IrregularlyBin, cls)
-        cls.hg_Minimize = types.MethodType(Minimize, cls)
-        cls.hg_Maximize = types.MethodType(Maximize, cls)
-        cls.hg_Select = types.MethodType(Select, cls)
-        cls.hg_SparselyBin = types.MethodType(SparselyBin, cls)
-        cls.hg_Stack = types.MethodType(Stack, cls)
-        cls.hg_Sum = types.MethodType(Sum, cls)
-        cls.hg_make_histograms = types.MethodType(make_histograms, cls)
-        cls.hg_Histogram = types.MethodType(Histogram, cls)
-        cls.hg_SparselyHistogram = types.MethodType(SparselyHistogram, cls)
-        cls.hg_CategorizeHistogram = types.MethodType(CategorizeHistogram, cls)
-        cls.hg_Profile = types.MethodType(Profile, cls)
-        cls.hg_SparselyProfile = types.MethodType(SparselyProfile, cls)
-        cls.hg_ProfileErr = types.MethodType(ProfileErr, cls)
-        cls.hg_SparselyProfileErr = types.MethodType(SparselyProfileErr, cls)
-        cls.hg_TwoDimensionallyHistogram = types.MethodType(TwoDimensionallyHistogram, cls)
-        cls.hg_TwoDimensionallySparselyHistogram = types.MethodType(TwoDimensionallySparselyHistogram, cls)
+        setattr(cls, 'histogrammar', types.MethodType(hg, cls))
+        setattr(cls, prefix + 'Average', types.MethodType(Average, cls))
+        setattr(cls, prefix + 'Bag', types.MethodType(Bag, cls))
+        setattr(cls, prefix + 'Bin', types.MethodType(Bin, cls))
+        setattr(cls, prefix + 'Categorize', types.MethodType(Categorize, cls))
+        setattr(cls, prefix + 'CentrallyBin', types.MethodType(CentrallyBin, cls))
+        setattr(cls, prefix + 'Label', types.MethodType(Label, cls))
+        setattr(cls, prefix + 'UntypedLabel', types.MethodType(UntypedLabel, cls))
+        setattr(cls, prefix + 'Index', types.MethodType(Index, cls))
+        setattr(cls, prefix + 'Branch', types.MethodType(Branch, cls))
+        setattr(cls, prefix + 'Count', types.MethodType(Count, cls))
+        setattr(cls, prefix + 'Deviate', types.MethodType(Deviate, cls))
+        setattr(cls, prefix + 'Fraction', types.MethodType(Fraction, cls))
+        setattr(cls, prefix + 'IrregularlyBin', types.MethodType(IrregularlyBin, cls))
+        setattr(cls, prefix + 'Minimize', types.MethodType(Minimize, cls))
+        setattr(cls, prefix + 'Maximize', types.MethodType(Maximize, cls))
+        setattr(cls, prefix + 'Select', types.MethodType(Select, cls))
+        setattr(cls, prefix + 'SparselyBin', types.MethodType(SparselyBin, cls))
+        setattr(cls, prefix + 'Stack', types.MethodType(Stack, cls))
+        setattr(cls, prefix + 'Sum', types.MethodType(Sum, cls))
+        setattr(cls, prefix + 'make_histograms', types.MethodType(make_histograms, cls))
+        setattr(cls, prefix + 'Histogram', types.MethodType(Histogram, cls))
+        setattr(cls, prefix + 'SparselyHistogram', types.MethodType(SparselyHistogram, cls))
+        setattr(cls, prefix + 'CategorizeHistogram', types.MethodType(CategorizeHistogram, cls))
+        setattr(cls, prefix + 'Profile', types.MethodType(Profile, cls))
+        setattr(cls, prefix + 'SparselyProfile', types.MethodType(SparselyProfile, cls))
+        setattr(cls, prefix + 'ProfileErr', types.MethodType(ProfileErr, cls))
+        setattr(cls, prefix + 'SparselyProfileErr', types.MethodType(SparselyProfileErr, cls))
+        setattr(cls, prefix + 'TwoDimensionallyHistogram', types.MethodType(TwoDimensionallyHistogram, cls))
+        setattr(cls, prefix + 'TwoDimensionallySparselyHistogram',
+                types.MethodType(TwoDimensionallySparselyHistogram, cls))
 
 
 def hg_fill_sparksql(self, hist):
