@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import histogrammar.plot.root as plotroot
+import histogrammar.plot.bokeh as plotbokeh
+import histogrammar.plot.matplotlib as plotmpl
+
 from histogrammar.primitives.average import Average
 from histogrammar.primitives.bin import Bin
 from histogrammar.primitives.count import Count
@@ -26,19 +30,24 @@ from histogrammar.primitives.sparselybin import SparselyBin
 from histogrammar.primitives.categorize import Categorize
 from histogrammar.primitives.stack import Stack
 
-import histogrammar.plot.root as plotroot
-import histogrammar.plot.bokeh as plotbokeh
-import histogrammar.plot.matplotlib as plotmpl
+# moved to convenience.py, but imported for backward compatibility
+from histogrammar.convenience import Histogram, HistogramCut  # noqa: F401
+from histogrammar.convenience import SparselyHistogram  # noqa: F401
+from histogrammar.convenience import CategorizeHistogram  # noqa: F401
+from histogrammar.convenience import Profile, SparselyProfile  # noqa: F401
+from histogrammar.convenience import ProfileErr, SparselyProfileErr  # noqa: F401
+from histogrammar.convenience import TwoDimensionallyHistogram  # noqa: F401
+from histogrammar.convenience import TwoDimensionallySparselyHistogram  # noqa: F401
 
 COMMON_PLOT_TYPES = (Count, Bin, SparselyBin, Categorize, IrregularlyBin, CentrallyBin)
 
 
 # 1d plotting of counts + generic 2d plotting of counts
 
-class BinHistogramMethods(Bin,
-                          plotroot.HistogramMethods,
-                          plotbokeh.HistogramMethods,
-                          plotmpl.HistogramMethods):
+class HistogramMethods(Bin,
+                       plotroot.HistogramMethods,
+                       plotbokeh.HistogramMethods,
+                       plotmpl.HistogramMethods):
     """Methods that are implicitly added to container combinations that look like histograms."""
 
     @property
@@ -427,7 +436,7 @@ def addImplicitMethods(container):
 
     # 1d plotting of counts + generic 2d plotting of counts
     elif isinstance(container, Bin) and all(isinstance(v, COMMON_PLOT_TYPES) for v in container.values):
-        container.__class__ = BinHistogramMethods
+        container.__class__ = HistogramMethods
 
     elif isinstance(container, SparselyBin) and all(isinstance(v, COMMON_PLOT_TYPES) for v in container.bins.values()):
         container.__class__ = SparselyHistogramMethods
