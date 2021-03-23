@@ -96,7 +96,7 @@ def test_make_histograms_no_time_axis():
     assert time_axis == ""
     assert "date" in hists
     h = hists["date"]
-    assert h.binWidth == 751582381944440.9
+    assert h.binWidth == 751582381944448.0
     for cols in features:
         cols = cols.split(":")
         assert len(cols) == 1
@@ -121,7 +121,7 @@ def test_make_histograms_with_time_axis():
     assert time_axis == "date"
     assert "date:age" in hists
     h = hists["date:age"]
-    assert h.binWidth == 751582381944440.9
+    assert h.binWidth == 751582381944448.0
     for cols in features:
         cols = cols.split(":")
         assert len(cols) == 2 and cols[0] == "date"
@@ -129,7 +129,7 @@ def test_make_histograms_with_time_axis():
         assert len(bs) == 2
     assert "date:age" in bin_specs
     dateage = bin_specs["date:age"]
-    assert dateage[0]["binWidth"] == 751582381944440.9
+    assert dateage[0]["binWidth"] == 751582381944448.0
     assert dateage[1]["binWidth"] == 2.0
     assert dateage[1]["origin"] == 9.5
 
@@ -137,7 +137,7 @@ def test_make_histograms_with_time_axis():
     bin_specs = get_bin_specs(hists)
     assert "date:age" in bin_specs
     dateage = bin_specs["date:age"]
-    assert dateage[0]["binWidth"] == 751582381944440.9
+    assert dateage[0]["binWidth"] == 751582381944448.0
     assert dateage[1]["binWidth"] == 2.0
     assert dateage[1]["origin"] == 9.5
 
@@ -150,7 +150,7 @@ def test_make_histograms_with_time_axis():
 
     # test get_bin_specs 3
     bin_specs = get_bin_specs(hists["date:age"])
-    assert bin_specs[0]["binWidth"] == 751582381944440.9
+    assert bin_specs[0]["binWidth"] == 751582381944448.0
     assert bin_specs[1]["binWidth"] == 2.0
     assert bin_specs[1]["origin"] == 9.5
 
