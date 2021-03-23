@@ -20,6 +20,7 @@
 
 import copy
 import logging
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -159,16 +160,17 @@ def make_histograms(
         if not isinstance(bin_specs, (type(None), dict)):
             raise RuntimeError("bin_specs object is not a dictionary")
         bin_specs = copy.copy(bin_specs) if isinstance(bin_specs, dict) else {}
-        if time_axis in bin_specs:
-            raise RuntimeError(
-                f'time-axis "{time_axis}" already found in binning specifications.'
+        if time_axis not in bin_specs:
+            # convert time width and offset to nanoseconds
+            time_specs = {
+                "binWidth": float(pd.Timedelta(time_width).value),
+                "origin": float(pd.Timestamp(time_offset).value),
+            }
+            bin_specs[time_axis] = time_specs
+        else:
+            warnings.warn(
+                f'time-axis "{time_axis}" already found in binning specifications. not overwriting.'
             )
-        # convert time width and offset to nanoseconds
-        time_specs = {
-            "binWidth": float(pd.Timedelta(time_width).value),
-            "origin": float(pd.Timestamp(time_offset).value),
-        }
-        bin_specs[time_axis] = time_specs
 
     cls = PandasHistogrammar if isinstance(df, pd.DataFrame) else SparkHistogrammar
     hist_filler = cls(

@@ -3,9 +3,9 @@
 import re
 
 name = "histogrammar"
-__version__ = "1.0.21"
-version = "1.0.21"
-full_version = "1.0.21"
+__version__ = "1.0.22"
+version = "1.0.22"
+full_version = "1.0.22"
 release = True
 
 version_info = tuple(re.split(r"[-\.]", __version__))

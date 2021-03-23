@@ -129,6 +129,13 @@ class HistogramFillerBase(object):
         # these get filled during execution
         self._hists = {}
 
+    def set_logger(self, logger):
+        """Set logger of module
+
+        :param logger: input logger
+        """
+        self.logger = logger
+
     def assert_dataframe(self, df):
         """assert dataframe datatype"""
         raise NotImplementedError("assert_dataframe not implemented!")
