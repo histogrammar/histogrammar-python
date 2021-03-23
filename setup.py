@@ -22,7 +22,7 @@ NAME = "histogrammar"
 
 MAJOR = 1
 REVISION = 0
-PATCH = 22
+PATCH = 23
 DEV = False
 # NOTE: also update version at: README.rst
 
