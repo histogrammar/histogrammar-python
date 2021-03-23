@@ -19,7 +19,7 @@ Histograms and other aggregators may also be converted into CUDA code for inclus
 PyCUDA is available, they can also be filled from Numpy arrays by JIT-compiling the CUDA code.
 This Python implementation of histogrammar been tested to guarantee compatibility with its Scala implementation.
 
-Latest Python release: v1.0.22 (Mar 2021).
+Latest Python release: v1.0.23 (Mar 2021).
 
 Announcements
 =============

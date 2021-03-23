@@ -53,7 +53,7 @@ from .make_histograms import make_histograms
 
 
 def add_sparksql_methods(cls, prefix=''):
-    add_methods(cls=cls, hg=hg_fill_sparksqlm, prefix=prefix)
+    add_methods(cls=cls, hg=hg_fill_sparksql, prefix=prefix)
 
 
 def add_pandas_methods(cls, prefix=''):
