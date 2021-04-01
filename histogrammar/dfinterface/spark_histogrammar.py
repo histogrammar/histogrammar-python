@@ -15,7 +15,7 @@ from .histogram_filler_base import HistogramFillerBase
 try:
     from pyspark.sql import DataFrame
     from pyspark.sql.functions import approxCountDistinct
-    from pyspark.sql.functions import col as sparkcol
+    from pyspark.sql import functions as f
 except (ModuleNotFoundError, AttributeError):
     pass
 
@@ -148,7 +148,7 @@ class SparkHistogrammar(HistogramFillerBase):
         """
         if not columns:
             columns = df.columns
-        qdf = df.agg(*(approxCountDistinct(sparkcol(c)).alias(c) for c in columns))
+        qdf = df.agg(*(approxCountDistinct(f.col(c)).alias(c) for c in columns))
         return qdf.toPandas().T[0].to_dict()
 
     def get_data_type(self, df, col):
@@ -185,18 +185,25 @@ class SparkHistogrammar(HistogramFillerBase):
         idf = df.alias("")
 
         # timestamp variables are converted here to ns since 1970-1-1
-        # histogrammar does not yet support long integers, so convert timestamps to float
-        # epoch = (sparkcol("ts").cast("bigint") * 1000000000).cast("bigint")
+        # histogrammar does not (yet) support long integers, so convert timestamps to float
         for col in cols_by_type["dt"]:
             self.logger.debug(
                 'Converting column "{col}" of type "{type}" to nanosec.'.format(
                     col=col, type=self.var_dtype[col]
                 )
             )
-
             # first cast to timestamp (in case column is stored as date)
-            to_ns = sparkcol(col).cast("timestamp").cast("float") * 1e9
+            to_ns = f.col(col).cast("timestamp").cast("float") * 1e9
             idf = idf.withColumn(col, to_ns)
+
+        # spark nulls are interpreted to 0 when cast to double in scala, done when given as input to numeric histograms
+        # in columns that have them, replace by nones by nans
+        for col in cols_by_type["num"]:
+            if len(idf.where(f.col(col).isNull()).limit(1).collect()) > 0:
+                self.logger.debug(
+                    'In numeric column "{col}" converting each None to NaN.'.format(col=col)
+                )
+                idf = idf.withColumn(col, f.when(f.col(col).isNotNull(), f.col(col)).otherwise(float('nan')))
 
         return idf
 

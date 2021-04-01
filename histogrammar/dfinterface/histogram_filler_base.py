@@ -231,6 +231,7 @@ class HistogramFillerBase(object):
         all_cols = (
             list(cols_by_type["num"]) +
             list(cols_by_type["dt"]) +
+            list(cols_by_type["bool"]) +
             list(cols_by_type["str"])
         )
 
@@ -421,6 +422,10 @@ class HistogramFillerBase(object):
                     colset = cols_by_type["dt"]
                     if col not in colset:
                         colset.add(col)
+                elif np.issubdtype(dt, np.bool_):
+                    colset = cols_by_type["bool"]
+                    if col not in colset:
+                        colset.add(col)
                 else:
                     colset = cols_by_type["str"]
                     if col not in colset:
@@ -500,7 +505,7 @@ class HistogramFillerBase(object):
     def get_hist_bin(self, hist, features, quant, col, dt):
         is_number = np.issubdtype(dt, np.number)
         is_timestamp = np.issubdtype(dt, np.datetime64)
-        is_bool = np.issubdtype(dt, bool)
+        is_bool = np.issubdtype(dt, np.bool_)
         specs = self.var_bin_specs(features, features.index(col))
 
         if is_number or is_timestamp:

@@ -157,7 +157,7 @@ class PandasHistogrammar(HistogramFillerBase):
         """
         # timestamp variables are converted to ns here
         # make temp df for value counting (used below)
-        idf = df[list(cols_by_type["num"]) + list(cols_by_type["str"])].copy()
+        idf = df[list(cols_by_type["num"]) + list(cols_by_type["str"]) + list(cols_by_type["bool"])].copy()
         for col in cols_by_type["dt"]:
             self.logger.debug(
                 'Converting column "{col}" of type "{type}" to nanosec.'.format(
@@ -215,7 +215,7 @@ class PandasHistogrammar(HistogramFillerBase):
             # histogram type depends on the data type
             dt = self.var_dtype[col]
 
-            # processing function, e.g. only accept boolians during filling
+            # processing function, e.g. only accept booleans during filling
             f = QUANTITY[dt]
             if len(features) == 1:
                 # df[col] is a pd.series
