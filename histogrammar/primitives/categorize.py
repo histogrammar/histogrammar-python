@@ -16,6 +16,7 @@
 
 import math
 import numbers
+import numpy as np
 
 from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
 from histogrammar.util import n_dim, datatype, serializable, inheritdoc, maybeAdd, floatToJson, hasKeys, numeq, \
@@ -186,8 +187,12 @@ class Categorize(Factory, Container):
 
         if weight > 0.0:
             q = self.quantity(datum)
-            if not isinstance(q, basestring):
-                raise TypeError("function return value ({0}) must be a string".format(q))
+            if isinstance(q, (basestring, bool)):
+                pass
+            elif q is None or np.isnan(q):
+                q = 'NaN'
+            if not isinstance(q, (basestring, bool)):
+                raise TypeError("function return value ({0}) must be a string or bool".format(q))
 
             if q not in self.bins:
                 self.bins[q] = self.value.zero()
@@ -275,6 +280,8 @@ class Categorize(Factory, Container):
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
+        if isinstance(q, (list, tuple)):
+            q = np.array(q)
         self._checkNPQuantity(q, shape)
         self._checkNPWeights(weights, shape)
         weights = self._makeNPWeights(weights, shape)
@@ -283,17 +290,19 @@ class Categorize(Factory, Container):
         subweights = weights.copy()
         subweights[weights < 0.0] = 0.0
 
-        import numpy
-        selection = numpy.empty(q.shape, dtype=numpy.bool)
-
-        uniques, inverse = numpy.unique(q, return_inverse=True)
+        selection = np.empty(q.shape, dtype=np.bool)
+        uniques, inverse = np.unique(q, return_inverse=True)
 
         # no possibility of exception from here on out (for rollback)
         for i, x in enumerate(uniques):
+            if isinstance(x, (basestring, bool)):
+                pass
+            elif x is None or np.isnan(x):
+                x = 'NaN'
             if x not in self.bins:
                 self.bins[x] = self.value.zero()
 
-            numpy.not_equal(inverse, i, selection)
+            np.not_equal(inverse, i, selection)
             subweights[:] = weights
             subweights[selection] = 0.0
             self.bins[x]._numpy(data, subweights, shape)
@@ -412,7 +421,6 @@ class Categorize(Factory, Container):
         :returns: array of bin-entries
         :rtype: numpy.array
         """
-        import numpy as np
         if len(labels) == 0:
             return np.array([self.bins[i].entries for i in self.bins])
         entries = [self.bins[lab].entries if lab in self.bins else 0.0 for lab in labels]
@@ -426,7 +434,6 @@ class Categorize(Factory, Container):
         :returns: array of labels
         :rtype: numpy.array
         """
-        import numpy as np
         labels = []
 
         for i, key in enumerate(self.bins.keys()):

@@ -3,11 +3,13 @@ from os.path import abspath, dirname, join
 import pandas as pd
 import pytest
 
-# from popmon.hist.filling import make_histograms
 from histogrammar.dfinterface.spark_histogrammar import SparkHistogrammar
+from histogrammar.dfinterface.make_histograms import make_histograms
+
 
 try:
     from pyspark.sql import SparkSession
+    from pyspark import __version__ as pyspark_version
 
     spark_found = True
 except (ModuleNotFoundError, AttributeError):
@@ -20,8 +22,9 @@ def get_spark():
 
     current_path = dirname(abspath(__file__))
 
-    hist_spark_jar = join(current_path, "jars/histogrammar-sparksql_2.12-1.0.11.jar")
-    hist_jar = join(current_path, "jars/histogrammar_2.12-1.0.11.jar")
+    scala = '2.12' if int(pyspark_version[0]) >= 3 else '2.11'
+    hist_spark_jar = join(current_path, f"jars/histogrammar-sparksql_{scala}-1.0.20.jar")
+    hist_jar = join(current_path, f"jars/histogrammar_{scala}-1.0.20.jar")
 
     spark = (
         SparkSession.builder.master("local")
@@ -251,3 +254,37 @@ def test_get_histograms_date(spark_co):
     filler = SparkHistogrammar(features=["dt"])
     current_hists = filler.get_histograms(sdf)
     assert current_hists["dt"].toJson() == expected
+
+
+@pytest.mark.spark
+@pytest.mark.skipif(not spark_found, reason="spark not found")
+@pytest.mark.filterwarnings(
+    "ignore:createDataFrame attempted Arrow optimization because"
+)
+def test_null_histograms(spark_co):
+    spark = spark_co
+
+    data = [(None, None, None, None), (1, None, None, 2), (None, True, "Jones", None), (3, True, "USA", 4),
+            (4, False, "FL", 5)]
+    columns = ["transaction", "isActive", "eyeColor", "t2"]
+    sdf = spark.createDataFrame(data=data, schema=columns)
+
+    hists = make_histograms(sdf, bin_specs={'transaction': {'num': 40, 'low': 0, 'high': 10}})
+
+    assert 'transaction' in hists
+    assert 'isActive' in hists
+    assert 'eyeColor' in hists
+    assert 't2' in hists
+
+    h = hists['transaction']
+    assert h.nanflow.entries == 2
+    h = hists['t2']
+    assert h.nanflow.entries == 2
+
+    h = hists['isActive']
+    assert 'NaN' in h.bins
+    assert h.bins['NaN'].entries == 2
+
+    h = hists['eyeColor']
+    assert 'NaN' in h.bins
+    assert h.bins['NaN'].entries == 2

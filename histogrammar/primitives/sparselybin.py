@@ -186,6 +186,7 @@ class SparselyBin(Factory, Container):
                     self.bins[i] += v
                 else:
                     self.bins[i] = v.copy()
+            self.nanflow += other.nanflow
             return self
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
