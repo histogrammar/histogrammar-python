@@ -405,7 +405,7 @@ class HistogramFillerBase(object):
         for col_list in features:
             for col in col_list:
 
-                dt = check_dtype(self.get_data_type(df, col))
+                dt = self.var_dtype.get(col, check_dtype(self.get_data_type(df, col)))
 
                 if col not in self.var_dtype:
                     self.var_dtype[col] = dt

@@ -11,9 +11,11 @@ import multiprocessing
 
 import histogrammar as hg
 import joblib
+import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from tqdm import tqdm
+from pandas.api.types import infer_dtype
 
 from .filling_utils import to_ns, QUANTITY
 from .histogram_filler_base import HistogramFillerBase
@@ -121,6 +123,31 @@ class PandasHistogrammar(HistogramFillerBase):
         :param df: input pandas dataframe
         """
         return df.columns.tolist()
+
+    def get_data_type(self, df, col):
+        """Get data type of dataframe column.
+
+        :param df: input data frame
+        :param str col: column
+        """
+        if col not in df.columns:
+            raise KeyError(f'column "{col:s}" not in input dataframe')
+
+        inferred = infer_dtype(df[col], skipna=True)
+        if inferred in 'string':
+            data_type = 'str'
+        elif inferred == 'integer':
+            data_type = 'int'
+        elif inferred == 'boolean':
+            data_type = 'bool'
+        elif inferred in {'decimal', 'floating', 'mixed-integer-float'}:
+            data_type = 'float'
+        elif inferred in {'date', 'datetime', 'datetime64'}:
+            data_type = 'datetime64'
+        else:  # categorical, mixed, etc -> object uses to_string()
+            data_type = np.object_
+
+        return data_type
 
     def get_quantiles(self, df, quantiles=[0.05, 0.95], columns=[]):
         """return dict with quantiles for given columns

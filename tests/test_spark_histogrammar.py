@@ -264,8 +264,8 @@ def test_get_histograms_date(spark_co):
 def test_null_histograms(spark_co):
     spark = spark_co
 
-    data = [(None, None, None, None), (1, None, None, 2), (None, True, "Jones", None), (3, True, "USA", 4),
-            (4, False, "FL", 5)]
+    data = [(None, None, None, None), (1, None, None, 2.), (None, True, "Jones", None), (3, True, "USA", 4.),
+            (4, False, "FL", 5.)]
     columns = ["transaction", "isActive", "eyeColor", "t2"]
     sdf = spark.createDataFrame(data=data, schema=columns)
 
