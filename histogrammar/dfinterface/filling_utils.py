@@ -49,8 +49,9 @@ def check_dtype(dtype):
             # this converts pandas types, such as pd.Int64, into numpy types
             dtype = type(dtype.type())
         dtype = np.dtype(dtype).type
-        if dtype in {np.str_, np.string_, np.object_}:
+        if dtype in {np.str_, np.string_}:
             dtype = np.dtype(str).type
+        # MB 20210404: nb.object_ is kept an object -> uses to_string(). str uses only_str()
     except BaseException:
         raise RuntimeError(f'unknown assigned datatype "{dtype}"')
     return dtype
@@ -95,11 +96,9 @@ def to_str(val):
                 )
             )
         )
-
     elif hasattr(val, "__str__"):
         return str(val)
-
-    return ""
+    return "None"
 
 
 def only_str(val):
@@ -127,9 +126,9 @@ def only_bool(val):
         return val
     elif hasattr(val, "__iter__") and not isinstance(val, str):
         return np.asarray(
-            [s if isinstance(s, (np.bool_, bool)) else np.nan for s in val]
+            [s if isinstance(s, (np.bool_, bool)) else "NaN" for s in val]
         )
-    return np.nan
+    return "NaN"
 
 
 def only_int(val):
@@ -165,6 +164,9 @@ def only_float(val):
 
 
 QUANTITY = {
+    # MB 20210404: to_string for object types b/c it's a mixed type
+    np.object: to_str,
+    np.object_: to_str,
     str: only_str,
     np.str_: only_str,
     int: only_int,
