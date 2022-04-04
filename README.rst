@@ -19,7 +19,7 @@ Histograms and other aggregators may also be converted into CUDA code for inclus
 PyCUDA is available, they can also be filled from Numpy arrays by JIT-compiling the CUDA code.
 This Python implementation of histogrammar been tested to guarantee compatibility with its Scala implementation.
 
-Latest Python release: v1.0.25 (April 2021).
+Latest Python release: v1.0.25 (April 2022).
 
 Announcements
 =============
@@ -50,6 +50,8 @@ Example notebooks
      - |notebook_basic_colab|
    * - `Detailed example (featuring configuration, Apache Spark and more) <https://nbviewer.jupyter.org/github/histogrammar/histogrammar-python/blob/master/histogrammar/notebooks/histogrammar_tutorial_advanced.ipynb>`_
      - |notebook_advanced_colab|
+   * - `Exercises <https://nbviewer.jupyter.org/github/histogrammar/histogrammar-python/blob/master/histogrammar/notebooks/histogrammar_tutorial_exercises.ipynb>`_
+     - |notebook_exercises_colab|
 
 Documentation
 =============
@@ -151,3 +153,6 @@ License
 .. |notebook_advanced_colab| image:: https://colab.research.google.com/assets/colab-badge.svg
     :alt: Open in Colab
     :target: https://colab.research.google.com/github/histogrammar/histogrammar-python/blob/master/histogrammar/notebooks/histogrammar_tutorial_advanced.ipynb
+.. |notebook_exercises_colab| image:: https://colab.research.google.com/assets/colab-badge.svg
+    :alt: Open in Colab
+    :target: https://colab.research.google.com/github/histogrammar/histogrammar-python/blob/master/histogrammar/notebooks/histogrammar_tutorial_exercises.ipynb
