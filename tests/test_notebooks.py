@@ -24,3 +24,7 @@ def test_notebook_basic(nb_tester):
 
 def test_notebook_advanced(nb_tester):
     nb_tester.check(notebook("histogrammar_tutorial_advanced.ipynb"))
+
+
+def test_notebook_exercises(nb_tester):
+    nb_tester.check(notebook("histogrammar_tutorial_exercises.ipynb"))
