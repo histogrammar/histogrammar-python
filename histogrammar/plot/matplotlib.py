@@ -757,16 +757,20 @@ def plot2dmatplotlib(self, name=None, **kwargs):
     y_labels = [tick(lab) for lab in y_labels]
 
     # plot 2d grid
+    xedges = np.arange(len(x_labels) + 1)
+    yedges = np.arange(len(y_labels) + 1)
+
     xtick_pos = np.arange(len(x_labels)) + 0.5
     ytick_pos = np.arange(len(y_labels)) + 0.5
 
-    im = ax.pcolormesh(xtick_pos, ytick_pos, grid, shading='auto', **kwargs)
+    # always needs egdes, so one more than grid length
+    im = ax.pcolormesh(xedges, yedges, grid, shading='auto', **kwargs)
     fig.colorbar(im, ax=ax)
 
-    ax.set_xlim((0., float(len(x_labels))))
-    ax.set_ylim((0., float(len(y_labels))))
     ax.set_xticks(xtick_pos)
     ax.set_yticks(ytick_pos)
+    ax.set_xlim((0., float(len(x_labels))))
+    ax.set_ylim((0., float(len(y_labels))))
     ax.set_xticklabels(x_labels, rotation=90)
     ax.set_yticklabels(y_labels)
 
