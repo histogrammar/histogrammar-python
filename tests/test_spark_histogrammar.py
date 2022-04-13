@@ -46,22 +46,22 @@ def spark_co():
     return spark
 
 
-@pytest.mark.spark
+# @pytest.mark.spark
 @pytest.mark.skipif(not spark_found, reason="spark not found")
 @pytest.mark.filterwarnings(
     "ignore:createDataFrame attempted Arrow optimization because"
 )
 def test_get_histograms(spark_co):
-    pytest.age["data"]["name"] = "b'age'"
-    pytest.company["data"]["name"] = "b'company'"
-    pytest.eyesColor["data"]["name"] = "b'eyeColor'"
-    pytest.gender["data"]["name"] = "b'gender'"
-    pytest.isActive["data"]["name"] = "b'isActive'"
-    pytest.latitude["data"]["name"] = "b'latitude'"
-    pytest.longitude["data"]["name"] = "b'longitude'"
-    pytest.transaction["data"]["name"] = "b'transaction'"
+    pytest.age["data"]["name"] = "'age'"
+    pytest.company["data"]["name"] = "'company'"
+    pytest.eyesColor["data"]["name"] = "'eyeColor'"
+    pytest.gender["data"]["name"] = "'gender'"
+    pytest.isActive["data"]["name"] = "'isActive'"
+    pytest.latitude["data"]["name"] = "'latitude'"
+    pytest.longitude["data"]["name"] = "'longitude'"
+    pytest.transaction["data"]["name"] = "'transaction'"
 
-    pytest.latitude_longitude["data"]["name"] = "b'latitude:longitude'"
+    pytest.latitude_longitude["data"]["name"] = "'latitude:longitude'"
     pytest.latitude_longitude["data"]["bins:name"] = "unit_func"
 
     spark = spark_co
@@ -107,21 +107,21 @@ def test_get_histograms(spark_co):
     #     json.dump(current_hists["transaction"].toJson(), outfile, indent=4)
 
 
-@pytest.mark.spark
+# @pytest.mark.spark
 @pytest.mark.skipif(not spark_found, reason="spark not found")
 @pytest.mark.filterwarnings(
     "ignore:createDataFrame attempted Arrow optimization because"
 )
 def test_get_histograms_module(spark_co):
-    pytest.age["data"]["name"] = "b'age'"
-    pytest.company["data"]["name"] = "b'company'"
-    pytest.eyesColor["data"]["name"] = "b'eyeColor'"
-    pytest.gender["data"]["name"] = "b'gender'"
-    pytest.isActive["data"]["name"] = "b'isActive'"
-    pytest.latitude["data"]["name"] = "b'latitude'"
-    pytest.longitude["data"]["name"] = "b'longitude'"
+    pytest.age["data"]["name"] = "'age'"
+    pytest.company["data"]["name"] = "'company'"
+    pytest.eyesColor["data"]["name"] = "'eyeColor'"
+    pytest.gender["data"]["name"] = "'gender'"
+    pytest.isActive["data"]["name"] = "'isActive'"
+    pytest.latitude["data"]["name"] = "'latitude'"
+    pytest.longitude["data"]["name"] = "'longitude'"
 
-    pytest.latitude_longitude["data"]["name"] = "b'latitude:longitude'"
+    pytest.latitude_longitude["data"]["name"] = "'latitude:longitude'"
     pytest.latitude_longitude["data"]["bins:name"] = "unit_func"
 
     spark = spark_co
@@ -166,7 +166,7 @@ def test_get_histograms_module(spark_co):
     # assert current_hists['latitude:longitude'].toJson() == pytest.latitude_longitude
 
 
-@pytest.mark.spark
+# @pytest.mark.spark
 @pytest.mark.skipif(not spark_found, reason="spark not found")
 @pytest.mark.filterwarnings(
     "ignore:createDataFrame attempted Arrow optimization because"
@@ -199,7 +199,7 @@ def test_get_histograms_timestamp(spark_co):
             "bins": {"108": 9.0, "109": 1.0},
             "bins:type": "Count",
             "entries": 10.0,
-            "name": "b'dt'",
+            "name": "'dt'",
             "nanflow": 0.0,
             "nanflow:type": "Count",
             "origin": 1.2625632e18,
@@ -212,7 +212,7 @@ def test_get_histograms_timestamp(spark_co):
     assert current_hists["dt"].toJson() == expected
 
 
-@pytest.mark.spark
+# @pytest.mark.spark
 @pytest.mark.skipif(not spark_found, reason="spark not found")
 @pytest.mark.filterwarnings(
     "ignore:createDataFrame attempted Arrow optimization because"
@@ -243,7 +243,7 @@ def test_get_histograms_date(spark_co):
             "bins": {"108": 9.0, "109": 1.0},
             "bins:type": "Count",
             "entries": 10.0,
-            "name": "b'dt'",
+            "name": "'dt'",
             "nanflow": 0.0,
             "nanflow:type": "Count",
             "origin": 1.2625632e18,
@@ -256,7 +256,7 @@ def test_get_histograms_date(spark_co):
     assert current_hists["dt"].toJson() == expected
 
 
-@pytest.mark.spark
+# @pytest.mark.spark
 @pytest.mark.skipif(not spark_found, reason="spark not found")
 @pytest.mark.filterwarnings(
     "ignore:createDataFrame attempted Arrow optimization because"

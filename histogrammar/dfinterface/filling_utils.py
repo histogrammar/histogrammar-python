@@ -165,7 +165,7 @@ def only_float(val):
 
 QUANTITY = {
     # MB 20210404: to_string for object types b/c it's a mixed type
-    np.object: to_str,
+    object: to_str,
     np.object_: to_str,
     str: only_str,
     np.str_: only_str,
