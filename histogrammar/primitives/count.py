@@ -50,7 +50,7 @@ class Count(Factory, Container):
             raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Count()
         out.entries = float(entries)
-        return out.specialize()
+        return out
 
     @staticmethod
     def ing(transform=identity):
@@ -69,7 +69,6 @@ class Count(Factory, Container):
         self.entries = 0.0
         self.transform = serializable(transform)
         super(Count, self).__init__()
-        self.specialize()
 
     @inheritdoc(Container)
     def zero(self):
@@ -80,7 +79,7 @@ class Count(Factory, Container):
         if isinstance(other, Count):
             out = Count(self.transform)
             out.entries = self.entries + other.entries
-            return out.specialize()
+            return out
         else:
             raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
 
@@ -106,7 +105,7 @@ class Count(Factory, Container):
         else:
             out = self.zero()
             out.entries = factor * self.entries
-            return out.specialize()
+            return out
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
