@@ -110,6 +110,9 @@ def only_str(val):
     """
     if isinstance(val, str):
         return val
+    elif isinstance(val, pd.Series) and val.dtype in [str, object]:
+        # SB 18052022: object may contain non-str
+        return val.values
     elif hasattr(val, "__iter__"):
         return np.asarray([s if isinstance(s, str) else "None" for s in val])
     return "None"
