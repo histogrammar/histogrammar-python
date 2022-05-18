@@ -291,8 +291,10 @@ class Categorize(Factory, Container):
         subweights[weights < 0.0] = 0.0
 
         selection = np.empty(q.shape, dtype=np.bool)
-        uniques, inverse = np.unique(q, return_inverse=True)
-
+        uniques = pd.unique(q)
+        mapping = dict(zip(uniques, np.arange(len(uniques))))
+        inverse = np.vectorize(mapping.__getitem__)(q)
+        
         # no possibility of exception from here on out (for rollback)
         for i, x in enumerate(uniques):
             if isinstance(x, (basestring, bool)):
