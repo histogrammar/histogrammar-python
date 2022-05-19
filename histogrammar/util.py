@@ -55,18 +55,12 @@ class PlotMethod(object):
     def __init__(self, container, plot):
         self.container = container
         self.plot = plot
-        try:
+        if hasattr(container, 'plotroot'):
             self.root = container.plotroot
-        except (AttributeError, KeyError):
-            pass
-        try:
+        if hasattr(container, 'plotbokeh'):
             self.bokeh = container.plotbokeh
-        except (AttributeError, KeyError):
-            pass
-        try:
+        if hasattr(container, 'plotmatplotlib'):
             self.matplotlib = container.plotmatplotlib
-        except (AttributeError, KeyError):
-            pass
 
     def __call__(self, *args, **kwds):
         return self.plot(*args, **kwds)
