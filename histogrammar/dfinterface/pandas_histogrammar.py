@@ -6,14 +6,9 @@ https://github.com/KaveIO/Eskapade/blob/master/python/eskapade/analysis/links/hi
 All modifications copyright ING WBAA.
 """
 
-import contextlib
-import multiprocessing
-
 import histogrammar as hg
-import joblib
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
 from tqdm import tqdm
 from pandas.api.types import infer_dtype
 
@@ -206,20 +201,15 @@ class PandasHistogrammar(HistogramFillerBase):
                 # create an (empty) histogram of right type
                 self._hists[name] = self.construct_empty_hist(cols)
 
-        # parallel histogram filling with working progress bar
-        num_cores = multiprocessing.cpu_count()
-        with tqdm_joblib(
-            tqdm(total=len(self.features), ncols=100)
-        ) as progress_bar:  # noqa: F841
-            res = Parallel(n_jobs=num_cores)(
-                delayed(_fill_histogram)(
-                    idf=idf[c], hist=self._hists[":".join(c)], features=c
-                )
-                for c in self.features
-            )
-            # update dictionary
-            for name, hist in res:
-                self._hists[name] = hist
+        # histogram filling with working progress bar
+        res = [
+            _fill_histogram(idf=idf[c], hist=self._hists[":".join(c)], features=c)
+            for c in tqdm(self.features, total=len(self.features), ncols=100)
+        ]
+
+        # update dictionary
+        for name, hist in res:
+            self._hists[name] = hist
 
     def construct_empty_hist(self, features):
         """Create an (empty) histogram of right type.
@@ -271,30 +261,3 @@ def _fill_histogram(idf, hist, features):
     # do the actual filling
     hist.fill.numpy(idf[clm])
     return name, hist
-
-
-# tqdm working with joblib
-@contextlib.contextmanager
-def tqdm_joblib(tqdm_object):
-    """Context manager to patch joblib to report into tqdm progress bar given as argument
-
-    From: https://stackoverflow.com/questions/24983493/tracking-progress-of-joblib-parallel-execution?rq=1
-    """
-
-    class TqdmBatchCompletionCallback:
-        def __init__(self, time, index, parallel):
-            self.index = index
-            self.parallel = parallel
-
-        def __call__(self, index):
-            tqdm_object.update()
-            if self.parallel._original_iterator is not None:
-                self.parallel.dispatch_next()
-
-    old_batch_callback = joblib.parallel.BatchCompletionCallBack
-    joblib.parallel.BatchCompletionCallBack = TqdmBatchCompletionCallback
-    try:
-        yield tqdm_object
-    finally:
-        joblib.parallel.BatchCompletionCallBack = old_batch_callback
-        tqdm_object.close()
