@@ -54,6 +54,12 @@ from histogrammar.parsing import C99AstToSource
 from histogrammar.pycparser import c_ast
 import histogrammar.version
 
+try:
+    import histogrammar.specialized
+    spec = True
+except (ImportError, AttributeError):
+    spec = False
+
 
 class ContainerException(Exception):
     """Exception type for improperly configured containers."""
@@ -116,11 +122,9 @@ class Factory(object):
         since they are created before the histogrammar.specialized module can be defined.
         These objects wouldn't satisfy any of ``addImplicitMethod``'s checks anyway.
         """
-        try:
-            import histogrammar.specialized
+        if spec:
             histogrammar.specialized.addImplicitMethods(self)
-        except (ImportError, AttributeError):
-            pass
+
         self.fill = FillMethod(self, self.fill)
         self.plot = PlotMethod(self, self.plot)
         return self
