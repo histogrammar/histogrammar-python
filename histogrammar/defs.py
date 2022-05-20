@@ -20,6 +20,7 @@ import json as jsonlib
 import math
 import random
 import re
+
 try:
     from collections import OrderedDict
 except ImportError:
@@ -53,12 +54,6 @@ from histogrammar.parsing import C99SourceToAst
 from histogrammar.parsing import C99AstToSource
 from histogrammar.pycparser import c_ast
 import histogrammar.version
-
-try:
-    import histogrammar.specialized
-    spec = True
-except (ImportError, AttributeError):
-    spec = False
 
 
 class ContainerException(Exception):
@@ -122,10 +117,13 @@ class Factory(object):
         since they are created before the histogrammar.specialized module can be defined.
         These objects wouldn't satisfy any of ``addImplicitMethod``'s checks anyway.
         """
-        if spec:
+        try:
             # MB 20220517: warning, this is a slow function.
             # Adding functions to each object, ideally avoid this.
+            import histogrammar.specialized
             histogrammar.specialized.addImplicitMethods(self)
+        except (ImportError, AttributeError):
+            pass
 
         self.fill = FillMethod(self, self.fill)
         self.plot = PlotMethod(self, self.plot)
@@ -237,6 +235,7 @@ class Container(object):
         raise NotImplementedError
 
     def __getstate__(self):
+        # used by pickling
         state = dict(self.__dict__)
         for s in ['fill', 'plot']:
             # these states are set dynamically by FillMethod and PlotMethod, in factory.specialize().
@@ -247,6 +246,7 @@ class Container(object):
         return state
 
     def __setstate__(self, dict):
+        # used by unpickling
         self.__dict__ = dict
         self.fill = FillMethod(self, self.fill)
         self.plot = PlotMethod(self, self.plot)
