@@ -17,9 +17,10 @@ more quickly via Numpy commands, rather than Python for loops. If PyROOT is avai
 aggregators can be filled from ROOT TTrees hundreds of times more quickly by JIT-compiling a specialized C++ filler.
 Histograms and other aggregators may also be converted into CUDA code for inclusion in a GPU workflow. And if
 PyCUDA is available, they can also be filled from Numpy arrays by JIT-compiling the CUDA code.
+
 This Python implementation of histogrammar been tested to guarantee compatibility with its Scala implementation.
 
-Latest Python release: v1.0.26 (April 2022).
+Latest Python release: v1.0.27 (May 2022).
 
 Announcements
 =============

@@ -2,6 +2,17 @@
 Release notes
 =============
 
+Version 1.0.27, May 2022
+------------------------
+* Multiple performance updates, thanks to Simon Brugman.
+* Use pandas functions to infer datatypes and return numpy arrays.
+* Turn of unnecessary specialize function (slow) for Count objects.
+
+Version 1.0.26, Apr 2022
+------------------------
+* Added tutorial notebook with exercises.
+* Fixed 2d heatmap for categorical histograms, where one column was accidentally dropped.
+
 Version 1.0.25, Apr 2021
 ------------------------
 * Improve null handling in pandas dataframes, by inferring datatype using pandas' infer_dtype function.
