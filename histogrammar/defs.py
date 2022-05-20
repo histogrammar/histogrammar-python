@@ -123,6 +123,8 @@ class Factory(object):
         These objects wouldn't satisfy any of ``addImplicitMethod``'s checks anyway.
         """
         if spec:
+            # MB 20220517: warning, this is a slow function.
+            # Adding functions to each object, ideally avoid this.
             histogrammar.specialized.addImplicitMethods(self)
 
         self.fill = FillMethod(self, self.fill)
@@ -236,8 +238,12 @@ class Container(object):
 
     def __getstate__(self):
         state = dict(self.__dict__)
-        del state["fill"]
-        del state["plot"]
+        for s in ['fill', 'plot']:
+            # these states are set dynamically by FillMethod and PlotMethod, in factory.specialize().
+            # MB 20220517: turned off specialize() for Count objects,
+            # for which specialized fill and plot methods are not needed.
+            if s in state:
+                del state[s]
         return state
 
     def __setstate__(self, dict):
@@ -1345,9 +1351,9 @@ int main(int argc, char** argv) {{
     def _cudaStorageType(self):
         return self._c99StructName()
 
-    def fillnumpy(self, data):
+    def fillnumpy(self, data, weights=1.0):
         self._checkForCrossReferences()
-        self._numpy(data, 1.0, [None])
+        self._numpy(data, weights, shape=[None])
 
     def _checkNPQuantity(self, q, shape):
         import numpy
