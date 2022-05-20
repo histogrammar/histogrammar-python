@@ -110,6 +110,9 @@ def only_str(val):
     """
     if isinstance(val, str):
         return val
+    elif isinstance(val, pd.Series) and val.dtype in [str, object]:
+        # SB 18052022: object may contain non-str
+        return val.values
     elif hasattr(val, "__iter__"):
         return np.asarray([s if isinstance(s, str) else "None" for s in val])
     return "None"
@@ -124,6 +127,8 @@ def only_bool(val):
     """
     if isinstance(val, (np.bool_, bool)):
         return val
+    elif isinstance(val, pd.Series) and val.dtype in [np.bool_, bool]:
+        return val.values
     elif hasattr(val, "__iter__") and not isinstance(val, str):
         return np.asarray(
             [s if isinstance(s, (np.bool_, bool)) else "NaN" for s in val]
@@ -140,6 +145,8 @@ def only_int(val):
     """
     if isinstance(val, (np.int64, int)):
         return val
+    elif isinstance(val, pd.Series) and val.dtype in [np.int64, int]:
+        return val.values
     elif hasattr(val, "__iter__") and not isinstance(val, str):
         return np.asarray(
             [s if isinstance(s, (np.int64, int)) else np.nan for s in val]
@@ -156,6 +163,8 @@ def only_float(val):
     """
     if isinstance(val, (np.float64, float)):
         return val
+    elif isinstance(val, pd.Series) and val.dtype in [np.float64, float]:
+        return val.values
     elif hasattr(val, "__iter__") and not isinstance(val, str):
         return np.asarray(
             [s if isinstance(s, (np.float64, float)) else np.nan for s in val]
