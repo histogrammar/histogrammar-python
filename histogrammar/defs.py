@@ -1351,9 +1351,9 @@ int main(int argc, char** argv) {{
     def _cudaStorageType(self):
         return self._c99StructName()
 
-    def fillnumpy(self, data):
+    def fillnumpy(self, data, weights=1.0):
         self._checkForCrossReferences()
-        self._numpy(data, 1.0, [None])
+        self._numpy(data, weights, shape=[None])
 
     def _checkNPQuantity(self, q, shape):
         import numpy

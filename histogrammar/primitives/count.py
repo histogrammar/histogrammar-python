@@ -207,7 +207,7 @@ class Count(Factory, Container):
     def _cudaStorageType(self):
         return "float"
 
-    def _numpy(self, data, weights, shape):
+    def _numpy(self, _, weights, shape):
         import numpy
         if isinstance(weights, numpy.ndarray):
             assert len(weights.shape) == 1
