@@ -83,6 +83,9 @@ def to_str(val):
     """
     if isinstance(val, str):
         return val
+    elif isinstance(val, pd.Series):
+        # Note: at this point, data type of pd.series has already been inferred as being of type object (mixed)
+        return val.astype(str).values
     elif hasattr(val, "__iter__"):
         return np.asarray(
             list(
@@ -110,9 +113,10 @@ def only_str(val):
     """
     if isinstance(val, str):
         return val
-    elif isinstance(val, pd.Series) and val.dtype in [str, object]:
-        # SB 18052022: object may contain non-str
-        return val.values
+    elif isinstance(val, pd.Series):
+        # at this point, data type of pd.series has already been inferred as *to be* 'string'
+        dtype = np.dtype(val.dtype).type
+        return val.values if dtype in [str, np.str_, np.string_] else val.astype(str).values
     elif hasattr(val, "__iter__"):
         return np.asarray([s if isinstance(s, str) else "None" for s in val])
     return "None"
