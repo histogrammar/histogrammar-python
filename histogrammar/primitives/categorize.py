@@ -283,6 +283,13 @@ class Categorize(Factory, Container):
         if isinstance(q, (list, tuple)):
             q = np.array(q)
         self._checkNPQuantity(q, shape)
+
+        if isinstance(weights, (float, int)) and weights == 1:
+            all_weights_one = True
+        elif isinstance(weights, np.ndarray) and np.all(weights == 1):
+            all_weights_one = True
+        else:
+            all_weights_one = False
         self._checkNPWeights(weights, shape)
         weights = self._makeNPWeights(weights, shape)
         newentries = weights.sum()
@@ -290,22 +297,37 @@ class Categorize(Factory, Container):
         subweights = weights.copy()
         subweights[weights < 0.0] = 0.0
 
-        selection = np.empty(q.shape, dtype=np.bool)
-        uniques, inverse = np.unique(q, return_inverse=True)
+        if self.n_dim == 1 and all_weights_one and isinstance(self.value, Count):
+            # special case of filling single array where all weights are 1
+            uniques, counts = np.unique(q, return_counts=True)
 
-        # no possibility of exception from here on out (for rollback)
-        for i, x in enumerate(uniques):
-            if isinstance(x, (basestring, bool)):
-                pass
-            elif x is None or np.isnan(x):
-                x = 'NaN'
-            if x not in self.bins:
-                self.bins[x] = self.value.zero()
+            for c, x in zip(counts, uniques):
+                if isinstance(x, (basestring, bool)):
+                    pass
+                elif x is None or np.isnan(x):
+                    x = 'NaN'
+                if x not in self.bins:
+                    self.bins[x] = self.value.zero()
+                self.bins[x]._numpy(None, c, [None])
+        else:
+            # all other cases ...
+            selection = np.empty(q.shape, dtype=np.bool)
+            uniques, inverse = np.unique(q, return_inverse=True)
 
-            np.not_equal(inverse, i, selection)
-            subweights[:] = weights
-            subweights[selection] = 0.0
-            self.bins[x]._numpy(data, subweights, shape)
+            # no possibility of exception from here on out (for rollback)
+            for i, x in enumerate(uniques):
+                if isinstance(x, (basestring, bool)):
+                    pass
+                elif x is None or np.isnan(x):
+                    x = 'NaN'
+                if x not in self.bins:
+                    self.bins[x] = self.value.zero()
+
+                # passing on the full array seems faster for one- AND multi-dim histograms
+                np.not_equal(inverse, i, selection)
+                subweights[:] = weights
+                subweights[selection] = 0.0
+                self.bins[x]._numpy(data, subweights, shape)
 
         self.entries += float(newentries)
 
@@ -430,12 +452,14 @@ class Categorize(Factory, Container):
         """
         Returns bin labels
 
-        :param int max_length: maximum length of a label. Default if full length.
+        :param int max_length: maximum length of a label. Default is full length.
         :returns: array of labels
         :rtype: numpy.array
         """
-        labels = []
+        if max_length == -1:
+            return np.array(list(self.bins.keys()))
 
+        labels = []
         for i, key in enumerate(self.bins.keys()):
             try:
                 label = str(key)
@@ -444,7 +468,7 @@ class Categorize(Factory, Container):
             except BaseException:
                 label = 'bin_%d' % i
             labels.append(label)
-        return np.asarray(labels)
+        return np.array(labels)
 
     def bin_centers(self, max_length=-1):
         """

@@ -148,7 +148,7 @@ class Bin(Factory, Container):
             self.values = [None] * num
             self.contentType = "Count"
         else:
-            self.values = [value.zero() for i in xrange(num)]
+            self.values = [value.zero() for i in range(num)]
             self.contentType = value.name
         self.underflow = underflow.copy()
         self.overflow = overflow.copy()
@@ -956,6 +956,11 @@ class Bin(Factory, Container):
             self.values), self.underflow, self.overflow, self.nanflow))
 
     @property
+    def size(self):
+        """Get number of bins, consistent with SparselyBin and Categorize """
+        return self.num
+
+    @property
     def n_bins(self):
         """Get number of bins, consistent with SparselyBin and Categorize """
         return self.num
@@ -1107,7 +1112,8 @@ class Bin(Factory, Container):
         import numpy as np
         # trivial case
         if low is None and high is None:
-            return np.array([sum(self.range(i)) / 2.0 for i in self.indexes])
+            bw = self.bin_width()
+            return np.arange(self.low + bw / 2., self.high + bw / 2., bw)
         # catch weird cases
         elif low is not None and high is not None:
             if low > high:
@@ -1131,7 +1137,7 @@ class Bin(Factory, Container):
             if np.isclose(high, self.low + self.bin_width() * maxBin):
                 maxBin -= 1
 
-        return np.array([sum(self.range(i)) / 2.0 for i in range(minBin, maxBin + 1)])
+        return self.low + (np.linspace(minBin, maxBin, maxBin - minBin + 1) + 0.5) * self.bin_width()
 
     def _center_from_key(self, idx):
         xc = (idx + 0.5) * self.bin_width() + self.low

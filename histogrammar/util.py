@@ -595,7 +595,7 @@ def get_datatype(hist, itr=0):
         # let's make an educated guess if it's a converted timestamp
         datatype = [np.number]
         if isinstance(hist, (histogrammar.Bin, histogrammar.SparselyBin)):
-            values = hist.bin_centers()
+            values = [hist.low, hist.high]
         elif isinstance(hist, histogrammar.CentrallyBin):
             values = hist.centers
         elif isinstance(hist, (histogrammar.IrregularlyBin, histogrammar.Stack)):
@@ -607,7 +607,7 @@ def get_datatype(hist, itr=0):
         #     values = []
         else:
             values = []
-        if len(values) > 0 and all([_is_probable_timestamp(v) for v in values]):
+        if len(values) > 0 and _is_probable_timestamp(values[0]) and _is_probable_timestamp(values[-1]):
             datatype = [np.datetime64]
 
     # Extract sub-hist and recurse
@@ -628,11 +628,9 @@ def _get_sub_hist(hist):
     if isinstance(hist, histogrammar.Categorize):
         sub_hist = hist.values[0] if hist.values else hist.value
     elif isinstance(hist, histogrammar.Bin):
-        entries = [h.entries for h in hist.values]
-        n_in_bins = sum(entries)
-        if n_in_bins > 0:
+        if hist.entries > 0:
             # pick first sub-hist found that is filled
-            idx = next(x[0] for x in enumerate(entries) if x[1] > 0)
+            idx = next(i for i, b in enumerate(hist.values) if b.entries > 0)
             sub_hist = hist.values[idx]
         else:
             sub_hist = hist.values[0] if hist.values else histogrammar.Count()
@@ -696,6 +694,7 @@ def datatype(self):  # noqa
         elif len(datatype) == 0:
             return type(None)
     return datatype
+
 
 def get_hist_props(hist):
     """Get histogram datatype properties.
