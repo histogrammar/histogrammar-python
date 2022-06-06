@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import math
 import numbers
 
@@ -259,7 +260,32 @@ class SparselyBin(Factory, Container):
     @property
     def indexes(self):
         """Get a sequence of filled indexes."""
-        return sorted(self.keys)
+        return sorted(self.bins.keys())
+
+    @property
+    def binsMap(self):
+        """Input ``bins`` as a key-value map."""
+        return self.bins
+
+    @property
+    def size(self):
+        """Number of ``bins``."""
+        return len(self.bins)
+
+    @property
+    def keys(self):
+        """Iterable over the keys of the ``bins``."""
+        return self.bins.keys()
+
+    @property
+    def values(self):
+        """Iterable over the values of the ``bins``."""
+        return list(self.bins.values())
+
+    @property
+    def keySet(self):
+        """Set of keys among the ``bins``."""
+        return set(self.bins.keys())
 
     def range(self, index):
         """Get the low and high edge of a bin (given by index number)."""
@@ -432,48 +458,76 @@ class SparselyBin(Factory, Container):
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)
+
+        if isinstance(weights, (float, int)) and weights == 1:
+            all_weights_one = True
+        elif isinstance(weights, np.ndarray) and np.all(weights == 1):
+            all_weights_one = True
+        else:
+            all_weights_one = False
         self._checkNPWeights(weights, shape)
         weights = self._makeNPWeights(weights, shape)
         newentries = weights.sum()
 
-        import numpy
-
-        selection = numpy.isnan(q)
-        numpy.bitwise_not(selection, selection)
+        selection = np.isnan(q)
+        np.bitwise_not(selection, selection)  # invert selection
         subweights = weights.copy()
         subweights[selection] = 0.0
         self.nanflow._numpy(data, subweights, shape)
+        subweights[:] = weights
 
         # switch to float here like in bin.py else numpy throws
         # TypeError on trivial integer cases such as:
-        # >>> q = numpy.array([1,2,3,4])
+        # >>> q = np.array([1,2,3,4])
         # >>> np.divide(q,1,q)
         # >>> np.floor(q,q)
-        q = numpy.array(q, dtype=numpy.float64)
-        neginfs = numpy.isneginf(q)
-        posinfs = numpy.isposinf(q)
+        q = np.array(q, dtype=np.float64)
+        neginfs = np.isneginf(q)
+        posinfs = np.isposinf(q)
 
-        numpy.subtract(q, self.origin, q)
-        numpy.divide(q, self.binWidth, q)
-        numpy.floor(q, q)
-        q = numpy.array(q, dtype=numpy.int64)
+        np.subtract(q, self.origin, q)
+        np.divide(q, self.binWidth, q)
+        np.floor(q, q)
+        q = np.array(q, dtype=np.int64)
         q[neginfs] = LONG_MINUSINF
         q[posinfs] = LONG_PLUSINF
 
         selected = q[weights > 0.0]
 
-        selection = numpy.empty(q.shape, dtype=numpy.bool)
-        for index in numpy.unique(selected):
-            if index != LONG_NAN:
-                bin = self.bins.get(index)
-                if bin is None:
-                    bin = self.value.zero()
-                    self.bins[index] = bin
+        # used below. bit expensive, so do here once
+        n_dim = self.n_dim
 
-                numpy.not_equal(q, index, selection)
-                subweights[:] = weights
-                subweights[selection] = 0.0
-                bin._numpy(data, subweights, shape)
+        if n_dim == 1 and all_weights_one and isinstance(self.value, Count):
+            # special case: filling single array where all weights are 1
+            # (use fast np.unique that returns counts)
+            uniques, counts = np.unique(selected, return_counts=True)
+            for c, index in zip(counts, uniques):
+                if index != LONG_NAN:
+                    bin = self.bins.get(index)
+                    if bin is None:
+                        bin = self.value.zero()
+                        self.bins[index] = bin
+                    # pass counts directly to Count object
+                    self.bins[index]._numpy(None, c, [None])
+        else:
+            # all other cases ...
+            selection = np.empty(q.shape, dtype=np.bool)
+            for index in np.unique(selected):
+                if index != LONG_NAN:
+                    bin = self.bins.get(index)
+                    if bin is None:
+                        bin = self.value.zero()
+                        self.bins[index] = bin
+                    if n_dim == 1:
+                        # passing on the full array is faster for one-dim histograms
+                        np.not_equal(q, index, selection)
+                        subweights[:] = weights
+                        subweights[selection] = 0.0
+                        self.bins[index]._numpy(data, subweights, shape)
+                    else:
+                        # in practice passing on sliced arrays is faster for multi-dim histograms
+                        np.equal(q, index, selection)
+                        self.bins[index]._numpy(data[selection], subweights[selection], [np.sum(selection)])
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(newentries)
@@ -615,12 +669,12 @@ class SparselyBin(Factory, Container):
 
     @property
     def n_bins(self):
-        """Get number of bins, consistent with SparselyBin and Categorize """
-        return self.size
+        """Get number of filled bins, consistent with SparselyBin and Categorize """
+        return len(self.bins)
 
     def num_bins(self, low=None, high=None):
         """
-        Returns number of bins
+        Returns number of bins from low to high, including unfilled
 
         Possible to set range with low and high params
 
@@ -629,7 +683,6 @@ class SparselyBin(Factory, Container):
         :returns: number of bins in range
         :rtype: int
         """
-        import numpy as np
         # sparse hist not filled
         if self.minBin is None or self.maxBin is None:
             return 0
@@ -672,7 +725,6 @@ class SparselyBin(Factory, Container):
         :returns: numpy array with bin edges for selected range
         :rtype: numpy.array
         """
-        import numpy as np
         # sparse hist not filled
         if self.minBin is None or self.maxBin is None:
             return np.array([self.origin, self.origin + 1])
@@ -715,7 +767,6 @@ class SparselyBin(Factory, Container):
         :returns: numpy array with numbers of entries for selected bins
         :rtype: numpy.array
         """
-        import numpy as np
         # sparse hist not filled
         if self.minBin is None or self.maxBin is None:
             return np.array([])
@@ -757,10 +808,8 @@ class SparselyBin(Factory, Container):
         :returns: numpy array with bin centers for selected range
         :rtype: numpy.array
         """
-        import numpy as np
         bin_edges = self.bin_edges(low, high)
-        centers = [(bin_edges[i] + bin_edges[i + 1]) / 2. for i in range(len(bin_edges) - 1)]
-        return np.array(centers)
+        return (bin_edges[:-1] + bin_edges[1:]) / 2
 
     @property
     def mpv(self):

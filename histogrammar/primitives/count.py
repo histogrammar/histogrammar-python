@@ -232,6 +232,12 @@ class Count(Factory, Container):
                 assert t.shape[0] == 1
                 self.entries += float(t[0])
 
+        elif isinstance(weights, (int, float, numpy.number)):
+            if self.transform is identity:
+                self.entries += float(weights)
+            else:
+                self.entries += self.transform(weights)
+
         else:
             raise ValueError("cannot use Numpy to fill an isolated Count (unless the weights are given as an array)")
 

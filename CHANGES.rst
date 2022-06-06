@@ -2,6 +2,14 @@
 Release notes
 =============
 
+Version 1.0.28, June 2022
+-------------------------
+* Multiple performance updates, to Bin, SparselyBin and Categorize histograms.
+* SparselyBin, Categorize: optimized filling with 1-d and 2-d numpy arrays
+* Bin, SparselyBin, Categorize: (fast) numpy arrays for bin-centers and bin-labels.
+* Count: new, fast filling option when float weight is known.
+* util.py: faster get_datatype() and get_ndim() functions.
+
 Version 1.0.27, May 2022
 ------------------------
 * Multiple performance updates, thanks to Simon Brugman.
