@@ -1004,8 +1004,8 @@ class Bin(Factory, Container):
             if np.isclose(high, self.low + self.bin_width() * maxBin):
                 maxBin -= 1
             high = self.low + self.bin_width() * (maxBin + 1)
-        # number of bins
-        num_bins = int((high - low) / self.bin_width())
+        # number of bins. use np.round to correct for machine level rounding errors
+        num_bins = int(np.round((high - low) / self.bin_width()))
         return num_bins
 
     def bin_width(self):
@@ -1096,7 +1096,8 @@ class Bin(Factory, Container):
             if np.isclose(high, self.low + self.bin_width() * maxBin):
                 maxBin -= 1
             high = self.low + self.bin_width() * (maxBin + 1)
-
+        # new low and high values reset, so redo num_bins
+        num_bins = self.num_bins(low, high)
         edges = np.linspace(low, high, num_bins + 1)
         return edges
 
