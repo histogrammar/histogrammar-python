@@ -2,6 +2,10 @@
 Release notes
 =============
 
+Version 1.0.29, June 2022
+-------------------------
+* Fix for machine-level rounding error, which can show up on in num_bins() call of Bin histogram.
+
 Version 1.0.28, June 2022
 -------------------------
 * Multiple performance updates, to Bin, SparselyBin and Categorize histograms.

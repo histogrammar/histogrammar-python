@@ -736,8 +736,6 @@ class SparselyBin(Factory, Container):
         elif low is not None and high is not None:
             if low > high:
                 raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
-        # number of bins, before low/high adjustments
-        num_bins = self.num_bins(low, high)
         # lowest edge
         if low is None:
             low = self.low
@@ -752,6 +750,8 @@ class SparselyBin(Factory, Container):
             if np.isclose(high, self.origin + self.bin_width() * maxBin):
                 maxBin -= 1
             high = self.origin + self.bin_width() * (maxBin + 1)
+        # number of bins, after low/high adjustments
+        num_bins = self.num_bins(low, high)
         edges = np.linspace(low, high, num_bins + 1)
         return edges
 
