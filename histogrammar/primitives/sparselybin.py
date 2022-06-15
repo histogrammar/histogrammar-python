@@ -511,7 +511,7 @@ class SparselyBin(Factory, Container):
                     self.bins[index]._numpy(None, c, [None])
         else:
             # all other cases ...
-            selection = np.empty(q.shape, dtype=np.bool)
+            selection = np.empty(q.shape, dtype=bool)
             for index in np.unique(selected):
                 if index != LONG_NAN:
                     bin = self.bins.get(index)
