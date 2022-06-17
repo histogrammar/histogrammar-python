@@ -311,7 +311,7 @@ class Categorize(Factory, Container):
                 self.bins[x]._numpy(None, c, [None])
         else:
             # all other cases ...
-            selection = np.empty(q.shape, dtype=np.bool)
+            selection = np.empty(q.shape, dtype=bool)
             uniques, inverse = np.unique(q, return_inverse=True)
 
             # no possibility of exception from here on out (for rollback)
