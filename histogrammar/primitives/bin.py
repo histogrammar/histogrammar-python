@@ -1097,7 +1097,7 @@ class Bin(Factory, Container):
                 maxBin -= 1
             high = self.low + self.bin_width() * (maxBin + 1)
         # new low and high values reset, so redo num_bins
-        num_bins = self.num_bins(low, high)
+        num_bins = self.num_bins(low + np.finfo(float).eps, high - np.finfo(float).eps)
         edges = np.linspace(low, high, num_bins + 1)
         return edges
 

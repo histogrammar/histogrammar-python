@@ -751,7 +751,7 @@ class SparselyBin(Factory, Container):
                 maxBin -= 1
             high = self.origin + self.bin_width() * (maxBin + 1)
         # number of bins, after low/high adjustments
-        num_bins = self.num_bins(low, high)
+        num_bins = self.num_bins(low + np.finfo(float).eps, high - np.finfo(float).eps)
         edges = np.linspace(low, high, num_bins + 1)
         return edges
 

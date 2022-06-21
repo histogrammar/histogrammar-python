@@ -723,6 +723,7 @@ class TestPandas(unittest.TestCase):
                 hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
                 hist4 = hg.Bin(num=20, low=0.0, high=20., quantity=unit('A'))
                 hist5 = hg.Bin(num=20, low=0.0, high=20., quantity=unit('A'))
+                hist6 = hg.Bin(num=201, low=0.0, high=1.005)
 
                 # fill them
                 hist2.fill.numpy(df1)
@@ -734,16 +735,19 @@ class TestPandas(unittest.TestCase):
                 assert hist3.num_bins() == 18
                 assert hist4.num_bins() == 20
                 assert hist5.num_bins() == 20
+                assert hist6.num_bins() == 201
 
                 assert hist2.num_bins(low=10, high=25) == 15
                 assert hist3.num_bins(low=10, high=25) == 15
                 assert hist4.num_bins(low=10, high=25) == 10
                 assert hist5.num_bins(low=10, high=25) == 10
+                assert hist6.num_bins(low=0.2089, high=0.9333) == 146
 
                 assert hist2.num_bins(low=-10, high=28) == 38
                 assert hist3.num_bins(low=-10, high=28) == 38
                 assert hist4.num_bins(low=-10, high=28) == 20
                 assert hist5.num_bins(low=-10, high=28) == 20
+                assert hist6.num_bins(low=0.205, high=0.935) == 146
 
     def test_most_probable_value(self):
         """ Test getting most probable value or label from histogram
@@ -917,6 +921,7 @@ class TestPandas(unittest.TestCase):
                 hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
                 hist4 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
                 hist5 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+                hist6 = hg.Bin(num=201, low=0.0, high=1.005)
 
                 # fill them
                 hist2.fill.numpy(df1)
@@ -936,6 +941,10 @@ class TestPandas(unittest.TestCase):
                 np.testing.assert_array_equal(hist4.bin_edges(low=2.1, high=11.9), [
                                               2., 3., 4., 5., 6., 7., 8., 9., 10.])
                 np.testing.assert_array_equal(hist5.bin_edges(low=1.1, high=5.4), [1., 2., 3., 4., 5., 6.])
+
+                assert len(hist6.bin_edges()) == 202
+                assert len(hist6.bin_edges(low=0.2089, high=0.9333)) == 147
+                assert len(hist6.bin_edges(low=0.205, high=0.935)) == 147
 
     def test_bin_width(self):
         """ Test getting the bin width of bin and sparselybin histograms
