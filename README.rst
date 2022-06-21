@@ -20,7 +20,7 @@ PyCUDA is available, they can also be filled from Numpy arrays by JIT-compiling 
 
 This Python implementation of histogrammar been tested to guarantee compatibility with its Scala implementation.
 
-Latest Python release: v1.0.29 (June 2022).
+Latest Python release: v1.0.30 (June 2022).
 
 Announcements
 =============
