@@ -18,6 +18,7 @@ import math
 import pickle
 import sys
 import unittest
+import numpy as np
 
 from histogrammar.defs import Factory
 from histogrammar.primitives.average import Average
@@ -40,6 +41,7 @@ from histogrammar.convenience import HistogramCut
 
 from histogrammar import util
 from histogrammar.util import xrange, named
+from histogrammar.util import _is_probable_timestamp
 
 tolerance = 1e-12
 util.relativeTolerance = tolerance
@@ -170,6 +172,7 @@ class TestBasic(unittest.TestCase):
         self.testPlotProfileErr()
         self.testPlotStack()
         self.testSparselyBin()
+        self.testIsProbableTimestamp()
         self.testCentrallyBin()
         self.testFraction()
         self.testFractionSum()
@@ -902,6 +905,16 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(len(edges), 3)
         self.assertEqual(len(entries), 2)
         self.assertEqual(list(entries), [0, 0])
+    
+    def testIsProbableTimestamp(self):
+        self.assertEqual(True,_is_probable_timestamp(np.int64(9e17)))
+        self.assertEqual(True,_is_probable_timestamp(np.double(7.9e16)))
+        self.assertEqual(True,_is_probable_timestamp(7.9e16))
+        self.assertEqual(True,_is_probable_timestamp(6e16))
+        self.assertEqual(False,_is_probable_timestamp(np.float32(4.9e16)))
+        self.assertEqual(False,_is_probable_timestamp(False))
+        self.assertEqual(False,_is_probable_timestamp("7.9e16"))
+
 
     # CentrallyBin
 
