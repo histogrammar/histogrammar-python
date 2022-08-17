@@ -648,8 +648,8 @@ class IrregularlyBin(Factory, Container):
 
         # FIXME: the case of all Counts could be optimized with numpy.histogram (see CentrallyBin for an example)
 
-        selection = numpy.empty(q.shape, dtype=numpy.bool)
-        selection2 = numpy.empty(q.shape, dtype=numpy.bool)
+        selection = numpy.empty(q.shape, dtype=bool)
+        selection2 = numpy.empty(q.shape, dtype=bool)
         subweights = weights.copy()
         for (low, sub), (high, _) in zip(self.bins, self.bins[1:] + ((float("nan"), None),)):
             numpy.greater_equal(q, low, selection)
