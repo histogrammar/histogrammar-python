@@ -703,8 +703,8 @@ class CentrallyBin(Factory, Container):
                 v.fill(None, float(hi))
 
         else:
-            selection = numpy.empty(q.shape, dtype=numpy.bool)
-            selection2 = numpy.empty(q.shape, dtype=numpy.bool)
+            selection = numpy.empty(q.shape, dtype=bool)
+            selection2 = numpy.empty(q.shape, dtype=bool)
 
             for index in xrange(len(self.bins)):
                 if index == 0:

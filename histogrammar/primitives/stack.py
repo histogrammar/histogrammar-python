@@ -527,7 +527,7 @@ class Stack(Factory, Container):
         weights = weights.copy()
         weights[selection] = 0.0
 
-        selection = numpy.empty(q.shape, dtype=numpy.bool)
+        selection = numpy.empty(q.shape, dtype=bool)
         for threshold, sub in self.bins:
             numpy.less(q, threshold, selection)
             subweights[:] = weights
