@@ -36,7 +36,7 @@ from histogrammar.primitives.stack import Stack
 from histogrammar.primitives.sum import Sum
 from histogrammar.util import xrange, named
 from histogrammar import util
-from tests.testnumpy import makeSamples
+from tests.test_numpy import makeSamples
 
 tolerance = 1e-5
 util.relativeTolerance = tolerance
