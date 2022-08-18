@@ -672,6 +672,31 @@ class SparselyBin(Factory, Container):
         """Get number of filled bins, consistent with SparselyBin and Categorize """
         return len(self.bins)
 
+    def _bin_range(self, low=None, high=None):
+        """Utility function for calculating bins ranges and numbers for given constraints [low, high]
+        :returns: (minBin, maxBin, numBins, minBinLeftEdge, maxBinRightEdge)
+        """
+        if low is not None and high is not None and low > high:
+            raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
+        # sparse hist not filled
+        if self.minBin is None or self.maxBin is None:
+            return 0, -1, 0, self.origin, self.origin+1
+
+        if low is None:
+            minBin = self.minBin
+        else:
+            minBin = self.bin(low)
+        if high is None:
+            maxBin = self.maxBin
+        else:
+            maxBin = self.bin(high)
+            if np.isclose(high, self.origin + self.bin_width() * maxBin):
+                maxBin -= 1
+        numBins = maxBin + 1 - minBin
+        minBinLeftEdge = self.origin + self.bin_width() * minBin
+        maxBinRightEdge = self.origin + self.bin_width() * (maxBin + 1)
+        return minBin, maxBin, numBins, minBinLeftEdge, maxBinRightEdge
+
     def num_bins(self, low=None, high=None):
         """
         Returns number of bins from low to high, including unfilled
@@ -683,30 +708,8 @@ class SparselyBin(Factory, Container):
         :returns: number of bins in range
         :rtype: int
         """
-        # sparse hist not filled
-        if self.minBin is None or self.maxBin is None:
-            return 0
-        # trivial case
-        if low is None and high is None:
-            return (self.maxBin - self.minBin + 1)
-        # catch weird cases
-        elif low is not None and high is not None:
-            if low > high:
-                raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
-        # lowest edge
-        if low is None:
-            minBin = self.minBin
-        else:
-            minBin = self.bin(low)
-        # highest case
-        if high is None:
-            maxBin = self.maxBin
-        else:
-            maxBin = self.bin(high)
-            if np.isclose(high, self.origin + self.bin_width() * maxBin):
-                maxBin -= 1
-        nbins = maxBin - minBin + 1
-        return nbins
+        _, _, numBins, _, _ = self._bin_range(low, high)
+        return numBins
 
     def bin_width(self):
         """
@@ -725,37 +728,10 @@ class SparselyBin(Factory, Container):
         :returns: numpy array with bin edges for selected range
         :rtype: numpy.array
         """
-        # sparse hist not filled
-        if self.minBin is None or self.maxBin is None:
-            return np.array([self.origin, self.origin + 1])
-        # trivial cases first
-        if low is None and high is None:
-            num_bins = self.maxBin - self.minBin + 1
-            return np.linspace(self.low, self.high, num_bins + 1)
-        # catch weird cases
-        elif low is not None and high is not None:
-            if low > high:
-                raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
-        # lowest edge
-        if low is None:
-            low = self.low
-        else:
-            minBin = self.bin(low)
-            low = self.origin + self.bin_width() * minBin
-        # highest edge
-        if high is None:
-            high = self.high
-        else:
-            maxBin = self.bin(high)
-            if np.isclose(high, self.origin + self.bin_width() * maxBin):
-                maxBin -= 1
-            high = self.origin + self.bin_width() * (maxBin + 1)
-        # number of bins, after low/high adjustments
-        num_bins = self.num_bins(low + np.finfo(float).eps, high - np.finfo(float).eps)
-        edges = np.linspace(low, high, num_bins + 1)
-        return edges
+        _, _, numBins, minBinLeftEdge, maxBinRightEdge = self._bin_range(low, high)
+        return np.linspace(minBinLeftEdge, maxBinRightEdge, numBins + 1)
 
-    def bin_entries(self, low=None, high=None, xvalues=[]):
+    def bin_entries(self, low=None, high=None, xvalues=None):
         """
         Returns bin values
 
@@ -767,33 +743,10 @@ class SparselyBin(Factory, Container):
         :returns: numpy array with numbers of entries for selected bins
         :rtype: numpy.array
         """
-        # sparse hist not filled
-        if self.minBin is None or self.maxBin is None:
-            return np.array([])
-        # trivial cases first
-        if low is None and high is None and len(xvalues) == 0:
-            entries = [self.bins[i].entries if i in self.bins else 0.0 for i in range(self.minBin, self.maxBin + 1)]
-            return np.array(entries)
-        # catch weird cases
-        elif low is not None and high is not None and len(xvalues) == 0:
-            if low > high:
-                raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
-        # entries at request list of x-values
-        elif len(xvalues) > 0:
+        if xvalues is not None and len(xvalues) > 0:
             entries = [self.bins[self.bin(x)].entries if self.bin(x) in self.bins else 0.0 for x in xvalues]
             return np.array(entries)
-        # lowest edge
-        if low is None:
-            minBin = self.minBin
-        else:
-            minBin = self.bin(low)
-        # highest case
-        if high is None:
-            maxBin = self.maxBin
-        else:
-            maxBin = self.bin(high)
-            if np.isclose(high, self.origin + self.bin_width() * maxBin):
-                maxBin -= 1
+        minBin, maxBin, _, _, _ = self._bin_range(low, high)
         entries = [self.bins[i].entries if i in self.bins else 0.0 for i in range(minBin, maxBin + 1)]
         return np.array(entries)
 

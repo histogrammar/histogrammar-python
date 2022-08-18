@@ -888,6 +888,21 @@ class TestBasic(unittest.TestCase):
         self.checkPickle(two)
         self.checkName(two)
 
+    def testSparselyBinWithFloatBinWidth(self):
+        binWidth = 10.1
+        values = [0.114, 146.756, 302.333, 417.022, 720.324]
+        low, high = 314.0, 332.0
+
+        hist = SparselyBin(binWidth=binWidth)
+        for x in values:
+            hist.fill(x)
+        edges = hist.bin_edges(low=low, high=high)
+        entries = hist.bin_entries(low=low, high=high)
+        self.assertAlmostEqual(edges[1] - edges[0], binWidth)
+        self.assertEqual(len(edges), 3)
+        self.assertEqual(len(entries), 2)
+        self.assertEqual(list(entries), [0, 0])
+
     # CentrallyBin
 
     def testCentrallyBin(self):
