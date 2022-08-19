@@ -661,7 +661,7 @@ def _is_probable_timestamp(value, DATE_LOW=5e16, DATE_HIGH=9.9e18):
 
     # timestamp is in ns since 1970, so a huge number.
     is_ts = False
-    if isinstance(value, np.number) and not np.isnan(value):
+    if isinstance(value, (np.number,float,int)) and not np.isnan(value):
         is_ts = DATE_LOW < value < DATE_HIGH
     return is_ts
 
