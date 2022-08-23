@@ -22,9 +22,9 @@ NAME = "histogrammar"
 
 MAJOR = 1
 REVISION = 0
-PATCH = 30
+PATCH = 31
 DEV = False
-# NOTE: also update version at: README.rst
+# NOTE: also update version at: README.rst and update CHANGES.rst
 
 with open("requirements.txt") as f:
     REQUIREMENTS = f.read().splitlines()

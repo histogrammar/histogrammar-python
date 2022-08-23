@@ -2,6 +2,11 @@
 Release notes
 =============
 
+Version 1.0.31, Aug 2022
+------------------------
+* fix of spark df timestamp datatype detection (#59)
+* fix for invalid bin_edges for SparselyBin histogram (#60)
+
 Version 1.0.30, June 2022
 -------------------------
 * Fix for machine-level rounding error, which can show up on in num_bins() call of Bin histogram.
