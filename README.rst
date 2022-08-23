@@ -22,6 +22,12 @@ This Python implementation of histogrammar been tested to guarantee compatibilit
 
 Latest Python release: v1.0.31 (Aug 2022).
 
+Changes
+=======
+
+See `here <https://github.com/histogrammar/histogrammar-python/blob/master/CHANGES.rst>`_.
+
+
 Announcements
 =============
 
