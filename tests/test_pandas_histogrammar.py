@@ -13,7 +13,6 @@ from histogrammar.dfinterface.make_histograms import (
 
 
 def test_get_histograms():
-
     pandas_filler = PandasHistogrammar(
         features=[
             "date",
@@ -47,7 +46,6 @@ def test_get_histograms():
 
 
 def test_make_histograms():
-
     features = [
         "date",
         "isActive",
@@ -85,15 +83,14 @@ def test_make_histograms():
 
 
 def test_make_histograms_no_time_axis():
-
     hists, features, bin_specs, time_axis, var_dtype = make_histograms(
         pytest.test_df, time_axis="", ret_specs=True,
     )
 
-    assert len(hists) == 21
-    assert len(features) == 21
-    assert len(bin_specs) == 6
-    assert len(var_dtype) == 21
+    assert len(hists) == 22
+    assert len(features) == 22
+    assert len(bin_specs) == 7
+    assert len(var_dtype) == 22
     assert time_axis == ""
     assert "date" in hists
     h = hists["date"]
@@ -110,15 +107,14 @@ def test_make_histograms_no_time_axis():
 
 
 def test_make_histograms_with_time_axis():
-
     hists, features, bin_specs, time_axis, var_dtype = make_histograms(
         pytest.test_df, time_axis=True, ret_specs=True, time_width=None, time_offset=None
     )
 
-    assert len(hists) == 20
-    assert len(features) == 20
-    assert len(bin_specs) == 20
-    assert len(var_dtype) == 21
+    assert len(hists) == 21
+    assert len(features) == 21
+    assert len(bin_specs) == 21
+    assert len(var_dtype) == 22
     assert time_axis == "date"
     assert "date:age" in hists
     h = hists["date:age"]
@@ -167,10 +163,10 @@ def test_make_histograms_unit_binning():
         pytest.test_df, binning="unit", time_axis="", ret_specs=True
     )
 
-    assert len(hists) == 21
-    assert len(features) == 21
+    assert len(hists) == 22
+    assert len(features) == 22
     assert len(bin_specs) == 0
-    assert len(var_dtype) == 21
+    assert len(var_dtype) == 22
     assert time_axis == ""
     assert "date" in hists
     h = hists["date"]

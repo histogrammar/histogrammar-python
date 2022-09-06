@@ -1,3 +1,4 @@
+from decimal import Decimal
 from json import load
 from os.path import dirname
 
@@ -88,4 +89,8 @@ def pytest_configure():
 
     df = pd.read_csv(resources.data(CSV_FILE))
     df["date"] = pd.to_datetime(df["date"])
+
+    # Decimal type
+    df["amount"] = df["balance"].str.replace("$", "", regex=False).str.replace(",", "", regex=False).apply(Decimal)
+
     pytest.test_df = df
