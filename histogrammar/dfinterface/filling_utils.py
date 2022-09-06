@@ -38,7 +38,7 @@ def check_column(col, sep=":"):
     return col
 
 
-def check_dtype(dtype):
+def normalize_dtype(dtype):
     """Convert datatype to consistent numpy datatype
 
     :param dtype: input datatype
