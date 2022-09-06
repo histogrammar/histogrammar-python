@@ -30,7 +30,6 @@ def get_spark():
         SparkSession.builder.master("local")
         .appName("histogrammar-pytest")
         .config("spark.jars", f"{hist_spark_jar},{hist_jar}")
-        .config("spark.sql.execution.arrow.enabled", "false")
         .config("spark.sql.session.timeZone", "GMT")
         .getOrCreate()
     )
