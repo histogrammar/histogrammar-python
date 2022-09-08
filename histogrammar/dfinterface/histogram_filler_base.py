@@ -27,7 +27,7 @@ from ..primitives.sparselybin import SparselyBin
 from ..primitives.stack import Stack
 from ..primitives.sum import Sum
 
-from .filling_utils import check_column, check_dtype
+from .filling_utils import check_column, normalize_dtype
 
 
 class HistogramFillerBase(object):
@@ -111,7 +111,7 @@ class HistogramFillerBase(object):
         self.bin_specs = bin_specs or {}
         self.time_axis = time_axis
         var_dtype = var_dtype or {}
-        self.var_dtype = {k: check_dtype(v) for k, v in var_dtype.items()}
+        self.var_dtype = {k: normalize_dtype(v) for k, v in var_dtype.items()}
         self.read_key = read_key
         self.store_key = store_key
 
@@ -404,32 +404,31 @@ class HistogramFillerBase(object):
 
         for col_list in features:
             for col in col_list:
+                # data type with metadata
+                dt_col = self.get_data_type(df, col)
 
-                dt = self.var_dtype.get(col, check_dtype(self.get_data_type(df, col)))
+                # normalized data type
+                dt = self.var_dtype.get(col, normalize_dtype(dt_col))
 
                 if col not in self.var_dtype:
                     self.var_dtype[col] = dt
 
+                # metadata indicates decimal
+                if hasattr(dt_col, 'metadata') and dt_col.metadata is not None and dt_col.metadata["decimal"]:
+                    cols_by_type["decimal"].add(col)
+
                 if np.issubdtype(dt, np.integer):
-                    colset = cols_by_type["int"]
-                    if col not in colset:
-                        colset.add(col)
+                    cols_by_type["int"].add(col)
+
                 if np.issubdtype(dt, np.number):
                     colset = cols_by_type["num"]
-                    if col not in colset:
-                        colset.add(col)
                 elif np.issubdtype(dt, np.datetime64):
                     colset = cols_by_type["dt"]
-                    if col not in colset:
-                        colset.add(col)
                 elif np.issubdtype(dt, np.bool_):
                     colset = cols_by_type["bool"]
-                    if col not in colset:
-                        colset.add(col)
                 else:
                     colset = cols_by_type["str"]
-                    if col not in colset:
-                        colset.add(col)
+                colset.add(col)
 
                 self.logger.debug(
                     'Data type of column "{col}" is "{type}".'.format(

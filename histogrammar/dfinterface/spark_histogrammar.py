@@ -169,6 +169,8 @@ class SparkHistogrammar(HistogramFillerBase):
             dt = bool
         elif dt == "bigint":
             dt = np.int64
+        elif dt.startswith("decimal("):
+            return np.dtype(float, metadata={"decimal": True})
 
         return np.dtype(dt)
 

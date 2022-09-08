@@ -30,7 +30,6 @@ def get_spark():
         SparkSession.builder.master("local")
         .appName("histogrammar-pytest")
         .config("spark.jars", f"{hist_spark_jar},{hist_jar}")
-        .config("spark.sql.execution.arrow.enabled", "false")
         .config("spark.sql.session.timeZone", "GMT")
         .getOrCreate()
     )
@@ -81,6 +80,7 @@ def test_get_histograms(spark_co):
             ["isActive", "age"],
             ["latitude", "longitude"],
             "transaction",
+            "amount",
         ],
         bin_specs={
             "transaction": {"num": 100, "low": -2000, "high": 2000},
@@ -140,6 +140,7 @@ def test_get_histograms_module(spark_co):
             "longitude",
             ["isActive", "age"],
             ["latitude", "longitude"],
+            "amount",
         ],
         bin_specs={
             "longitude": {"bin_width": 5.0, "bin_offset": 0.0},

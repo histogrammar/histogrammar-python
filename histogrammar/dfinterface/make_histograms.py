@@ -42,7 +42,7 @@ from ..primitives.sum import Sum
 
 from .pandas_histogrammar import PandasHistogrammar
 from .spark_histogrammar import SparkHistogrammar
-from .filling_utils import check_dtype
+from .filling_utils import normalize_dtype
 from ..util import _get_sub_hist
 
 logger = logging.getLogger()
@@ -232,7 +232,7 @@ def get_time_axes(df):
     return [
         c
         for c in df.columns
-        if np.issubdtype(check_dtype(get_data_type(df, c)), np.datetime64)
+        if np.issubdtype(normalize_dtype(get_data_type(df, c)), np.datetime64)
     ]
 
 

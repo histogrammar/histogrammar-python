@@ -136,7 +136,11 @@ class PandasHistogrammar(HistogramFillerBase):
         elif inferred == 'boolean':
             data_type = 'bool'
         elif inferred in {'decimal', 'floating', 'mixed-integer-float'}:
-            data_type = 'float'
+            # decimal needs preprocessing (cast), signal this in metadata
+            if inferred == "decimal":
+                data_type = np.dtype('float', metadata={"decimal": True})
+            else:
+                data_type = "float"
         elif inferred in {'date', 'datetime', 'datetime64'}:
             data_type = 'datetime64'
         else:  # categorical, mixed, etc -> object uses to_string()
@@ -187,6 +191,12 @@ class PandasHistogrammar(HistogramFillerBase):
                 )
             )
             idf[col] = df[col].apply(to_ns)
+
+        # treat decimal as float, as decimal is not supported by .quantile
+        # (https://github.com/pandas-dev/pandas/issues/13157)
+        for col in cols_by_type["decimal"]:
+            idf[col] = df[col].apply(float)
+
         return idf
 
     def fill_histograms(self, idf):
