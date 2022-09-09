@@ -20,7 +20,7 @@ PyCUDA is available, they can also be filled from Numpy arrays by JIT-compiling 
 
 This Python implementation of histogrammar been tested to guarantee compatibility with its Scala implementation.
 
-Latest Python release: v1.0.31 (Aug 2022).
+Latest Python release: v1.0.32 (Sep 2022).
 
 
 Announcements
@@ -29,7 +29,7 @@ Announcements
 Changes
 -------
 
-See `here <https://github.com/histogrammar/histogrammar-python/blob/master/CHANGES.rst>`_.
+See Changes log `here <https://github.com/histogrammar/histogrammar-python/blob/master/CHANGES.rst>`_.
 
 
 Spark 3.0
@@ -44,6 +44,7 @@ With Spark 3.0, based on Scala 2.12, make sure to pick up the correct histogramm
 For Spark 2.X compiled against scala 2.11, in the string above simply replace "2.12" with "2.11".
 
 February, 2021
+
 
 Example notebooks
 =================

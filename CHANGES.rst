@@ -2,6 +2,10 @@
 Release notes
 =============
 
+Version 1.0.32, Sep 2022
+------------------------
+* Support for decimal datetype in pandas and spark.
+
 Version 1.0.31, Aug 2022
 ------------------------
 * fix of spark df timestamp datatype detection (#59)
