@@ -2,7 +2,7 @@
 Release notes
 =============
 
-Version 1.0.33, Sep 2022
+Version 1.0.33, Dec 2022
 ------------------------
 * fix of get_sub_hist() when Bin histogram is filled only with nans.
 
