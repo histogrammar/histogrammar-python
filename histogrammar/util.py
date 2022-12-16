@@ -628,12 +628,17 @@ def _get_sub_hist(hist):
     if isinstance(hist, histogrammar.Categorize):
         sub_hist = hist.values[0] if hist.values else hist.value
     elif isinstance(hist, histogrammar.Bin):
-        if hist.entries > 0:
+        if hist.entries > 0 and len(hist.values) > 0:
             # pick first sub-hist found that is filled
-            idx = next(i for i, b in enumerate(hist.values) if b.entries > 0)
+            # note: could still be that all bins are unfilled. if so pick first bin.
+            idx = 0
+            for i, b in enumerate(hist.values):
+                if b.entries > 0:
+                    idx = i
+                    break
             sub_hist = hist.values[idx]
         else:
-            sub_hist = hist.values[0] if hist.values else histogrammar.Count()
+            sub_hist = hist.values[0] if len(hist.values) > 0 else histogrammar.Count()
     elif isinstance(hist, (histogrammar.SparselyBin, histogrammar.CentrallyBin)):
         sub_hist = list(dict(hist.bins).values())[0] if hist.bins else hist.value
     elif isinstance(hist, (histogrammar.IrregularlyBin, histogrammar.Stack)):

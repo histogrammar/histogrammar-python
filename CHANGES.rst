@@ -2,6 +2,10 @@
 Release notes
 =============
 
+Version 1.0.33, Sep 2022
+------------------------
+* fix of get_sub_hist() when Bin histogram is filled only with nans.
+
 Version 1.0.32, Sep 2022
 ------------------------
 * Support for decimal datetype in pandas and spark.
