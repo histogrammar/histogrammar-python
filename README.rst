@@ -21,7 +21,7 @@ PyCUDA is available, they can also be filled from Numpy arrays by JIT-compiling 
 This Python implementation of histogrammar been tested to guarantee compatibility with its Scala implementation.
 
 Latest Python release: v1.0.33 (Dec 2022).
-
+Latest update: Dec 2023.
 
 Announcements
 =============
@@ -72,7 +72,7 @@ See `histogrammar-docs <https://histogrammar.github.io/histogrammar-docs/>`_ for
 Check it out
 ============
 
-The `historgrammar` library requires Python 3.6+ and is pip friendly. To get started, simply do:
+The `historgrammar` library requires Python 3.8+ and is pip friendly. To get started, simply do:
 
 .. code-block:: bash
 
