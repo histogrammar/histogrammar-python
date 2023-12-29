@@ -35,7 +35,7 @@ See Changes log `here <https://github.com/histogrammar/histogrammar-python/blob/
 Spark 3.X
 ---------
 
-With Spark 3.X, based on Scala 2.12 or 3.13, make sure to pick up the correct histogrammar jar files:
+With Spark 3.X, based on Scala 2.12 or 2.13, make sure to pick up the correct histogrammar jar files:
 
 .. code-block:: python
 
