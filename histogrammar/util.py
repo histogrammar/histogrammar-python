@@ -21,7 +21,7 @@ import sys
 
 import histogrammar.pycparser.c_ast
 
-# Definitions for python 2/3 compatability
+# Definitions for python 2/3 compatibility
 if sys.version_info[0] > 2:
     basestring = str
     xrange = range
@@ -584,7 +584,7 @@ def get_datatype(hist, itr=0):
             keys = list(hist.bins.keys())
             dt = type(keys[0]) if len(keys) > 0 else str
             dt = np.dtype(dt).type
-            if (dt is np.str_) or (dt is np.string_) or (dt is np.object_):
+            if (dt is np.str_) or (dt is np.bytes_) or (dt is np.object_):
                 dt = str
             datatype = [dt]
         else:

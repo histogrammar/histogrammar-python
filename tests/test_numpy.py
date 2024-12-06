@@ -221,6 +221,8 @@ class TestNumpy(unittest.TestCase):
     withholes2 = data["withholes2"]
 
     def twosigfigs(self, number):
+        if number == 0:
+            return 0
         return round(number, 1 - int(math.floor(math.log10(number))))
 
     def compare(self, name, hnp, npdata, hpy, pydata):

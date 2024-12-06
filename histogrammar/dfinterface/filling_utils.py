@@ -49,7 +49,7 @@ def normalize_dtype(dtype):
             # this converts pandas types, such as pd.Int64, into numpy types
             dtype = type(dtype.type())
         dtype = np.dtype(dtype).type
-        if dtype in {np.str_, np.string_}:
+        if dtype in {np.str_, np.bytes_}:
             dtype = np.dtype(str).type
         # MB 20210404: nb.object_ is kept an object -> uses to_string(). str uses only_str()
     except BaseException:
@@ -116,7 +116,7 @@ def only_str(val):
     elif isinstance(val, pd.Series):
         # at this point, data type of pd.series has already been inferred as *to be* 'string'
         dtype = np.dtype(val.dtype).type
-        return val.values if dtype in [str, np.str_, np.string_] else val.astype(str).values
+        return val.values if dtype in [str, np.str_, np.bytes_] else val.astype(str).values
     elif hasattr(val, "__iter__"):
         return np.asarray([s if isinstance(s, str) else "None" for s in val])
     return "None"

@@ -2,6 +2,12 @@
 Release notes
 =============
 
+Version 1.0.34, Dec 2024
+------------------------
+* Support numpy >= 2.0.0 (np.string_ -> np.bytes_).
+* Fix test utility corner case error (test_numpy.twosigfigs function).
+* Fix 4 failing tests of SparselyBin.
+
 Version 1.0.33, Dec 2022
 ------------------------
 * fix of get_sub_hist() when Bin histogram is filled only with nans.
