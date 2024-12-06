@@ -4,7 +4,7 @@ Release notes
 
 Version 1.0.34, Dec 2024
 ------------------------
-* Support numpy >= 2.0.0 (np.string_ -> np.bytes_).
+* Support numpy >= 2.0.0 (np.string_ -> np.bytes_, np.unicode_ -> np.str_).
 * Fix test utility corner case error (test_numpy.twosigfigs function).
 * Fix typo in build pipeline Python versions config list.
 * Fix 4 failing tests of SparselyBin.

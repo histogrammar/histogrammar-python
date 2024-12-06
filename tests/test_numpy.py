@@ -242,7 +242,7 @@ class TestNumpy(unittest.TestCase):
         numpyTime = max(numpyTime, 1e-10)
 
 
-        if pydata.dtype != numpy.unicode_:
+        if pydata.dtype != numpy.str_:
             for key in npdata:
                 diff = (npdata[key] != npdata2[key]) & numpy.bitwise_not(
                     numpy.isnan(npdata[key])) & numpy.bitwise_not(numpy.isnan(npdata2[key]))
@@ -260,7 +260,7 @@ class TestNumpy(unittest.TestCase):
 
         startTime = time.time()
         for d in pydata:
-            if isinstance(d, numpy.unicode_):
+            if isinstance(d, numpy.str_):
                 d = str(d)
             else:
                 d = float(d)
@@ -271,7 +271,7 @@ class TestNumpy(unittest.TestCase):
 
         for h in [hpy2, hpy3, hpy3]:
             for d in pydata:
-                if isinstance(d, numpy.unicode_):
+                if isinstance(d, numpy.str_):
                     d = str(d)
                 else:
                     d = float(d)
@@ -283,8 +283,8 @@ class TestNumpy(unittest.TestCase):
         assert (hpy + hpy.zero()) == hpy2
         assert (hpy.zero() + hpy) == hpy2
 
-        hnpj = json.dumps(hnp.toJson())
-        hpyj = json.dumps(hpy.toJson())
+        hnpj = json.dumps(hnp.toJson(), sort_keys=True)
+        hpyj = json.dumps(hpy.toJson(), sort_keys=True)
 
         if Factory.fromJson(hnp.toJson()) != Factory.fromJson(hpy.toJson()):
             raise AssertionError("\n numpy: {0}\npython: {1}".format(hnpj, hpyj))

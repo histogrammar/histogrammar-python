@@ -318,7 +318,7 @@ class UserFcn(object):
                         context.update(datum)                  # use its items as variables
 
                     # if the datum is a Numpy record array, override the namespace with its field names
-                    elif numpy is not None and isinstance(datum, numpy.core.records.recarray):
+                    elif numpy is not None and isinstance(datum, numpy._core.records.recarray):
                         context.update(dict((n, datum[n]) for n in datum.dtype.names))
 
                     # if the datum is a Pandas DataFrame, override the namespace with its column names
