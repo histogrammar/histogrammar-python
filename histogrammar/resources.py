@@ -21,20 +21,20 @@
 # Resources lookup file for histogrammar
 
 import pathlib
-from pkg_resources import resource_filename
-import histogrammar as hg
+
+ROOT_DIRECTORY = pathlib.Path(__file__).resolve().parent
 
 
 # data files that are shipped with histogrammar.
 _DATA = {
     _.name: _
-    for _ in pathlib.Path(resource_filename(hg.__name__, "test_data")).glob("*")
+    for _ in pathlib.Path(ROOT_DIRECTORY / "test_data").glob("*")
 }
 
 # Tutorial notebooks
 _NOTEBOOK = {
     _.name: _
-    for _ in pathlib.Path(resource_filename(hg.__name__, "notebooks")).glob("*.ipynb")
+    for _ in pathlib.Path(ROOT_DIRECTORY / "notebooks").glob("*.ipynb")
 }
 
 # Resource types

@@ -657,7 +657,7 @@ class SparselyBin(Factory, Container):
 
     def __eq__(self, other):
         return isinstance(other, SparselyBin) and numeq(self.binWidth, other.binWidth) and \
-               self.quantity == other.quantity and numeq(self.entries, other.entries) and self.bins == other.bins and \
+               self.quantity == other.quantity and numeq(self.entries, other.entries) and sorted(self.bins) == sorted(other.bins) and \
                self.nanflow == other.nanflow and numeq(self.origin, other.origin)
 
     def __ne__(self, other):

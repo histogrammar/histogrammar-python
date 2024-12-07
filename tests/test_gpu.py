@@ -16,10 +16,10 @@
 
 import json
 import math
+import shutil
 import subprocess
 import sys
 import unittest
-from distutils import spawn
 
 from histogrammar.defs import Factory
 from histogrammar.primitives.average import Average
@@ -54,7 +54,7 @@ class TestGPU(unittest.TestCase):
     except ImportError:
         numpy = None
 
-    nvcc = spawn.find_executable("nvcc")
+    nvcc = shutil.which("nvcc")
 
     def runTest(self):
         self.testCount()
