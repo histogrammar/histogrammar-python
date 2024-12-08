@@ -19,22 +19,19 @@
 
 
 # Resources lookup file for histogrammar
-
-import pathlib
-
-ROOT_DIRECTORY = pathlib.Path(__file__).resolve().parent
+from importlib import resources
 
 
 # data files that are shipped with histogrammar.
 _DATA = {
     _.name: _
-    for _ in pathlib.Path(ROOT_DIRECTORY / "test_data").glob("*")
+    for _ in resources.files("histogrammar.test_data").iterdir()
 }
 
 # Tutorial notebooks
 _NOTEBOOK = {
-    _.name: _
-    for _ in pathlib.Path(ROOT_DIRECTORY / "notebooks").glob("*.ipynb")
+    p.name: p
+    for p in resources.files("histogrammar.notebooks").iterdir() if p.suffix == ".ipynb"
 }
 
 # Resource types
