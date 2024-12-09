@@ -4,12 +4,20 @@ Release notes
 
 Version 1.0.34, Dec 2024
 ------------------------
-* Support numpy >= 2.0.0 (np.string_ -> np.bytes_, np.unicode_ -> np.str_).
-* Fix test utility corner case error (test_numpy.twosigfigs function).
 * Fix typo in build pipeline Python versions config list.
-* Fix error in test context manager for pandas
-* Refactor tests with Numpy() and Pandas() context managers
-* Remove uses of pd.util.testing.makeMixedDataFrame not available anymore
+* Fix error in SparselyBin __eq__ method.
+* Fix test utility corner case error (test_numpy.twosigfigs function).
+* Fix error in test context manager for pandas which prevented execution of tests.
+* Prevent logging zero execution time TestNumpy class.
+
+* Remove Python 3.8 environment from build pipeline.
+* Support numpy >= 2.0.0 (np.string_ -> np.bytes_, np.unicode_ -> np.str_).
+* Remove uses of pd.util.testing.makeMixedDataFrame not available in pandas >= 2.0.0.
+* Switch from 'pkg_resources' to 'importlib' module for resolving package files.
+* Switch from 'distutils.spawn' to 'shutil.which' for finding nvcc command.
+
+* Remove unused test_gpu.twosigfigs function.
+* Refactor tests with Numpy() and Pandas() context managers to use single 'with' statement.
 
 Version 1.0.33, Dec 2022
 ------------------------
