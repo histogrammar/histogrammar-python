@@ -20,18 +20,19 @@
 
 # Resources lookup file for histogrammar
 from importlib import resources
+from histogrammar import test_data, notebooks
 
 
 # data files that are shipped with histogrammar.
 _DATA = {
     _.name: _
-    for _ in resources.files("histogrammar.test_data").iterdir()
+    for _ in resources.files(test_data).iterdir()
 }
 
 # Tutorial notebooks
 _NOTEBOOK = {
     p.name: p
-    for p in resources.files("histogrammar.notebooks").iterdir() if p.suffix == ".ipynb"
+    for p in resources.files(notebooks).iterdir() if p.suffix == ".ipynb"
 }
 
 # Resource types
