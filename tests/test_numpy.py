@@ -236,6 +236,9 @@ class TestNumpy(unittest.TestCase):
         startTime = time.time()
         hnp.fill.numpy(npdata)
         numpyTime = time.time() - startTime
+        # protect against zero time.
+        numpyTime = max(numpyTime, 1e-10)
+
 
         if pydata.dtype != numpy.unicode_:
             for key in npdata:
@@ -261,6 +264,8 @@ class TestNumpy(unittest.TestCase):
                 d = float(d)
             hpy.fill(d)
         pyTime = time.time() - startTime
+        # protect against zero time.
+        pyTime = max(pyTime, 1e-10)
 
         for h in [hpy2, hpy3, hpy3]:
             for d in pydata:
