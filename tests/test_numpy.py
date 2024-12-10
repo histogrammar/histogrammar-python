@@ -711,7 +711,7 @@ class TestPandas(unittest.TestCase):
 
             assert hist1.n_bins == 5
             assert hist2.n_bins == 5
-            assert hist3.n_bins == 7
+            assert hist3.n_bins == 5
 
     def test_num_bins(self):
         """ Test getting the number of bins from lowest to highest bin
