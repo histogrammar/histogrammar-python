@@ -71,6 +71,7 @@ class Pandas(object):
     def __enter__(self):
         try:
             import pandas  # noqa
+            return pandas
         except ImportError:
             return None
 
@@ -88,31 +89,30 @@ def makeSamples(SIZE, HOLES):
 
         empty = numpy.array([], dtype=float)
 
-        if numpy is not None:
-            rand = random.Random(12345)
+        rand = random.Random(12345)
 
-            positive = numpy.array([abs(rand.gauss(0, 1)) + 1e-12 for i in xrange(SIZE)])
-            assert all(x > 0.0 for x in positive)
+        positive = numpy.array([abs(rand.gauss(0, 1)) + 1e-12 for i in xrange(SIZE)])
+        assert all(x > 0.0 for x in positive)
 
-            boolean = positive > 1.5
+        boolean = positive > 1.5
 
-            noholes = numpy.array([rand.gauss(0, 1) for i in xrange(SIZE)])
+        noholes = numpy.array([rand.gauss(0, 1) for i in xrange(SIZE)])
 
-            withholes = numpy.array([rand.gauss(0, 1) for i in xrange(SIZE)])
-            for i in xrange(HOLES):
-                withholes[rand.randint(0, SIZE)] = float("nan")
-            for i in xrange(HOLES):
-                withholes[rand.randint(0, SIZE)] = float("inf")
-            for i in xrange(HOLES):
-                withholes[rand.randint(0, SIZE)] = float("-inf")
+        withholes = numpy.array([rand.gauss(0, 1) for i in xrange(SIZE)])
+        for i in xrange(HOLES):
+            withholes[rand.randint(0, SIZE)] = float("nan")
+        for i in xrange(HOLES):
+            withholes[rand.randint(0, SIZE)] = float("inf")
+        for i in xrange(HOLES):
+            withholes[rand.randint(0, SIZE)] = float("-inf")
 
-            withholes2 = numpy.array([rand.gauss(0, 1) for i in xrange(SIZE)])
-            for i in xrange(HOLES):
-                withholes2[rand.randint(0, SIZE)] = float("nan")
-            for i in xrange(HOLES):
-                withholes2[rand.randint(0, SIZE)] = float("inf")
-            for i in xrange(HOLES):
-                withholes2[rand.randint(0, SIZE)] = float("-inf")
+        withholes2 = numpy.array([rand.gauss(0, 1) for i in xrange(SIZE)])
+        for i in xrange(HOLES):
+            withholes2[rand.randint(0, SIZE)] = float("nan")
+        for i in xrange(HOLES):
+            withholes2[rand.randint(0, SIZE)] = float("inf")
+        for i in xrange(HOLES):
+            withholes2[rand.randint(0, SIZE)] = float("-inf")
 
         return {"empty": empty, "positive": positive, "boolean": boolean, "noholes": noholes, "withholes": withholes, "withholes2": withholes2}
 
@@ -133,13 +133,13 @@ def get_test_histograms1():
     """
     # dummy dataset with mixed types
     # convert timestamp (col D) to nanosec since 1970-1-1
-    import pandas as pd
-    import histogrammar as hg
-
-    df = pd.util.testing.makeMixedDataFrame()
+    df = make_mixed_dataframe()
     df['date'] = df['D'].apply(to_ns)
     df['boolT'] = True
     df['boolF'] = False
+
+    import histogrammar as hg
+    import pandas as pd
 
     # building 1d-, 2d-, and 3d-histogram (iteratively)
     hist1 = hg.Categorize(unit('C'))
@@ -157,12 +157,10 @@ def get_test_histograms1():
 def get_test_histograms2():
     """ Get set 2 of test histograms
     """
-    # dummy dataset with mixed types
-    # convert timestamp (col D) to nanosec since 1970-1-1
-    import pandas as pd
     import histogrammar as hg
 
-    df = pd.util.testing.makeMixedDataFrame()
+    # dummy dataset with mixed types
+    df = make_mixed_dataframe()
 
     # building 1d-, 2d-histogram (iteratively)
     hist1 = hg.Categorize(unit('C'))
@@ -177,6 +175,19 @@ def get_test_histograms2():
     hist4.fill.numpy(df)
 
     return df, hist1, hist2, hist3, hist4
+
+
+def make_mixed_dataframe():
+    import pandas as pd
+    from pandas.core.indexes.datetimes import bdate_range
+    return pd.DataFrame(
+        {
+            "A": [0.0, 1.0, 2.0, 3.0, 4.0],
+            "B": [0.0, 1.0, 0.0, 1.0, 0.0],
+            "C": ["foo1", "foo2", "foo3", "foo4", "foo5"],
+            "D": bdate_range("1/1/2009", periods=5),
+        }
+    )
 
 
 class TestNumpy(unittest.TestCase):
@@ -221,6 +232,8 @@ class TestNumpy(unittest.TestCase):
     withholes2 = data["withholes2"]
 
     def twosigfigs(self, number):
+        if number == 0:
+            return 0
         return round(number, 1 - int(math.floor(math.log10(number))))
 
     def compare(self, name, hnp, npdata, hpy, pydata):
@@ -240,7 +253,7 @@ class TestNumpy(unittest.TestCase):
         numpyTime = max(numpyTime, 1e-10)
 
 
-        if pydata.dtype != numpy.unicode_:
+        if pydata.dtype != numpy.str_:
             for key in npdata:
                 diff = (npdata[key] != npdata2[key]) & numpy.bitwise_not(
                     numpy.isnan(npdata[key])) & numpy.bitwise_not(numpy.isnan(npdata2[key]))
@@ -258,7 +271,7 @@ class TestNumpy(unittest.TestCase):
 
         startTime = time.time()
         for d in pydata:
-            if isinstance(d, numpy.unicode_):
+            if isinstance(d, numpy.str_):
                 d = str(d)
             else:
                 d = float(d)
@@ -269,7 +282,7 @@ class TestNumpy(unittest.TestCase):
 
         for h in [hpy2, hpy3, hpy3]:
             for d in pydata:
-                if isinstance(d, numpy.unicode_):
+                if isinstance(d, numpy.str_):
                     d = str(d)
                 else:
                     d = float(d)
@@ -281,8 +294,8 @@ class TestNumpy(unittest.TestCase):
         assert (hpy + hpy.zero()) == hpy2
         assert (hpy.zero() + hpy) == hpy2
 
-        hnpj = json.dumps(hnp.toJson())
-        hpyj = json.dumps(hpy.toJson())
+        hnpj = json.dumps(hnp.toJson(), sort_keys=True)
+        hpyj = json.dumps(hpy.toJson(), sort_keys=True)
 
         if Factory.fromJson(hnp.toJson()) != Factory.fromJson(hpy.toJson()):
             raise AssertionError("\n numpy: {0}\npython: {1}".format(hnpj, hpyj))
@@ -659,325 +672,294 @@ class TestPandas(unittest.TestCase):
     def test_n_dim(self):
         """ Test dimension assigned to a histogram
         """
-        with Pandas() as pd:
-            if pd is None:
+        with Pandas() as pd, Numpy() as np:  # noqa
+            if pd is None or np is None:
                 return
-            with Numpy() as np:  # noqa
-                if numpy is None:
-                    return
-                sys.stderr.write("\n")
+            sys.stderr.write("\n")
 
-                df, hist1, hist2, hist3 = get_test_histograms1()
-                hist0 = hg.Count()
+            df, hist1, hist2, hist3 = get_test_histograms1()
+            hist0 = hg.Count()
 
-                assert hist0.n_dim == 0
-                assert hist1.n_dim == 1
-                assert hist2.n_dim == 2
-                assert hist3.n_dim == 3
+            assert hist0.n_dim == 0
+            assert hist1.n_dim == 1
+            assert hist2.n_dim == 2
+            assert hist3.n_dim == 3
 
     def test_datatype(self):
         """ Test dimension assigned to a histogram
         """
-        with Pandas() as pd:
-            if pd is None:
+        with Pandas() as pd, Numpy() as np:  # noqa
+            if pd is None or np is None:
                 return
-            with Numpy() as np:  # noqa
-                if numpy is None:
-                    return
-                sys.stderr.write("\n")
+            sys.stderr.write("\n")
 
-                df, hist1, hist2, hist3 = get_test_histograms1()
+            df, hist1, hist2, hist3 = get_test_histograms1()
 
-                assert hist1.datatype == str
-                np.testing.assert_array_equal(hist2.datatype, [numpy.number, str])
-                np.testing.assert_array_equal(hist3.datatype, [numpy.datetime64, numpy.number, str])
+            assert hist1.datatype == str
+            np.testing.assert_array_equal(hist2.datatype, [numpy.number, str])
+            np.testing.assert_array_equal(hist3.datatype, [numpy.datetime64, numpy.number, str])
 
     def test_n_bins(self):
         """ Test getting the number of allocated bins
         """
-        with Pandas() as pd:
-            if pd is None:
+        with Pandas() as pd, Numpy() as np:  # noqa
+            if pd is None or np is None:
                 return
-            with Numpy() as np:  # noqa
-                if numpy is None:
-                    return
-                sys.stderr.write("\n")
+            sys.stderr.write("\n")
 
-                df, hist1, hist2, hist3 = get_test_histograms1()
+            df, hist1, hist2, hist3 = get_test_histograms1()
 
-                assert hist1.n_bins == 5
-                assert hist2.n_bins == 5
-                assert hist3.n_bins == 7
+            assert hist1.n_bins == 5
+            assert hist2.n_bins == 5
+            assert hist3.n_bins == 5
 
     def test_num_bins(self):
         """ Test getting the number of bins from lowest to highest bin
         """
-        with Pandas() as pd:
-            if pd is None:
+        with Pandas() as pd, Numpy() as np:  # noqa
+            if pd is None or np is None:
                 return
-            with Numpy() as np:  # noqa
-                if numpy is None:
-                    return
-                sys.stderr.write("\n")
+            sys.stderr.write("\n")
 
-                df1 = pd.DataFrame({'A': [0, 2, 4, 5, 7, 9, 11, 13, 13, 15]})
-                df2 = pd.DataFrame({'A': [2, 4, 4, 6, 8, 7, 10, 14, 17, 19]})
+            df1 = pd.DataFrame({'A': [0, 2, 4, 5, 7, 9, 11, 13, 13, 15]})
+            df2 = pd.DataFrame({'A': [2, 4, 4, 6, 8, 7, 10, 14, 17, 19]})
 
-                # building 1d-, 2d-, and 3d-histogram (iteratively)
-                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
-                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
-                hist4 = hg.Bin(num=20, low=0.0, high=20., quantity=unit('A'))
-                hist5 = hg.Bin(num=20, low=0.0, high=20., quantity=unit('A'))
-                hist6 = hg.Bin(num=201, low=0.0, high=1.005)
+            # building 1d-, 2d-, and 3d-histogram (iteratively)
+            hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            hist4 = hg.Bin(num=20, low=0.0, high=20., quantity=unit('A'))
+            hist5 = hg.Bin(num=20, low=0.0, high=20., quantity=unit('A'))
+            hist6 = hg.Bin(num=201, low=0.0, high=1.005)
 
-                # fill them
-                hist2.fill.numpy(df1)
-                hist3.fill.numpy(df2)
-                hist4.fill.numpy(df1)
-                hist5.fill.numpy(df2)
+            # fill them
+            hist2.fill.numpy(df1)
+            hist3.fill.numpy(df2)
+            hist4.fill.numpy(df1)
+            hist5.fill.numpy(df2)
 
-                assert hist2.num_bins() == 16
-                assert hist3.num_bins() == 18
-                assert hist4.num_bins() == 20
-                assert hist5.num_bins() == 20
-                assert hist6.num_bins() == 201
+            assert hist2.num_bins() == 16
+            assert hist3.num_bins() == 18
+            assert hist4.num_bins() == 20
+            assert hist5.num_bins() == 20
+            assert hist6.num_bins() == 201
 
-                assert hist2.num_bins(low=10, high=25) == 15
-                assert hist3.num_bins(low=10, high=25) == 15
-                assert hist4.num_bins(low=10, high=25) == 10
-                assert hist5.num_bins(low=10, high=25) == 10
-                assert hist6.num_bins(low=0.2089, high=0.9333) == 146
+            assert hist2.num_bins(low=10, high=25) == 15
+            assert hist3.num_bins(low=10, high=25) == 15
+            assert hist4.num_bins(low=10, high=25) == 10
+            assert hist5.num_bins(low=10, high=25) == 10
+            assert hist6.num_bins(low=0.2089, high=0.9333) == 146
 
-                assert hist2.num_bins(low=-10, high=28) == 38
-                assert hist3.num_bins(low=-10, high=28) == 38
-                assert hist4.num_bins(low=-10, high=28) == 20
-                assert hist5.num_bins(low=-10, high=28) == 20
-                assert hist6.num_bins(low=0.205, high=0.935) == 146
+            assert hist2.num_bins(low=-10, high=28) == 38
+            assert hist3.num_bins(low=-10, high=28) == 38
+            assert hist4.num_bins(low=-10, high=28) == 20
+            assert hist5.num_bins(low=-10, high=28) == 20
+            assert hist6.num_bins(low=0.205, high=0.935) == 146
 
     def test_most_probable_value(self):
         """ Test getting most probable value or label from histogram
         """
-        with Pandas() as pd:
-            if pd is None:
+        with Pandas() as pd, Numpy() as np:  # noqa
+            if pd is None or np is None:
                 return
-            with Numpy() as np:  # noqa
-                if numpy is None:
-                    return
-                sys.stderr.write("\n")
+            sys.stderr.write("\n")
 
-                df1 = pd.DataFrame(
-                    {'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1], 'C': ['f1', 'f3', 'f4', 'f3', 'f4', 'f2', 'f2', 'f1', 'f3', 'f4']})
-                df2 = pd.DataFrame(
-                    {'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8], 'C': ['f7', 'f3', 'f5', 'f8', 'f9', 'f2', 'f3', 'f6', 'f7', 'f7']})
+            df1 = pd.DataFrame(
+                {'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1], 'C': ['f1', 'f3', 'f4', 'f3', 'f4', 'f2', 'f2', 'f1', 'f3', 'f4']})
+            df2 = pd.DataFrame(
+                {'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8], 'C': ['f7', 'f3', 'f5', 'f8', 'f9', 'f2', 'f3', 'f6', 'f7', 'f7']})
 
-                # building 1d-, 2d-, and 3d-histogram (iteratively)
-                hist0 = hg.Categorize(unit('C'))
-                hist1 = hg.Categorize(unit('C'))
-                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
-                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            # building 1d-, 2d-, and 3d-histogram (iteratively)
+            hist0 = hg.Categorize(unit('C'))
+            hist1 = hg.Categorize(unit('C'))
+            hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
 
-                # fill them
-                hist0.fill.numpy(df1)
-                hist1.fill.numpy(df2)
-                hist2.fill.numpy(df1)
-                hist3.fill.numpy(df2)
+            # fill them
+            hist0.fill.numpy(df1)
+            hist1.fill.numpy(df2)
+            hist2.fill.numpy(df1)
+            hist3.fill.numpy(df2)
 
-                assert hist0.mpv == 'f3'
-                assert hist1.mpv == 'f7'
-                assert hist2.mpv == 1.5
-                assert hist3.mpv == 4.5
+            assert hist0.mpv == 'f3'
+            assert hist1.mpv == 'f7'
+            assert hist2.mpv == 1.5
+            assert hist3.mpv == 4.5
 
     def test_bin_labels(self):
         """ Test getting correct bin-labels from Categorize histograms
         """
-        with Pandas() as pd:
-            if pd is None:
+        with Pandas() as pd, Numpy() as np:  # noqa
+            if pd is None or np is None:
                 return
-            with Numpy() as np:  # noqa
-                if numpy is None:
-                    return
-                sys.stderr.write("\n")
+            sys.stderr.write("\n")
 
-                df, hist1, hist2, hist3 = get_test_histograms1()
+            df, hist1, hist2, hist3 = get_test_histograms1()
 
-                import numpy as np
-                np.testing.assert_array_equal(hist1.bin_labels(), ['foo1', 'foo2', 'foo3', 'foo4', 'foo5'])
+            import numpy as np
+            np.testing.assert_array_equal(hist1.bin_labels(), ['foo1', 'foo2', 'foo3', 'foo4', 'foo5'])
 
     def test_bin_centers(self):
         """ Test getting assigned bin-centers for Bin and SparselyBin histograms
         """
-        with Pandas() as pd:
-            if pd is None:
+        with Pandas() as pd, Numpy() as np:  # noqa
+            if pd is None or np is None:
                 return
-            with Numpy() as np:  # noqa
-                if numpy is None:
-                    return
-                sys.stderr.write("\n")
+            sys.stderr.write("\n")
 
-                df1 = pd.DataFrame(
-                    {'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1]})
-                df2 = pd.DataFrame(
-                    {'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8]})
+            df1 = pd.DataFrame(
+                {'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1]})
+            df2 = pd.DataFrame(
+                {'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8]})
 
-                # histograms
-                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
-                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
-                hist4 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
-                hist5 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+            # histograms
+            hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            hist4 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+            hist5 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
 
-                # fill them
-                hist2.fill.numpy(df1)
-                hist3.fill.numpy(df2)
-                hist4.fill.numpy(df1)
-                hist5.fill.numpy(df2)
+            # fill them
+            hist2.fill.numpy(df1)
+            hist3.fill.numpy(df2)
+            hist4.fill.numpy(df1)
+            hist5.fill.numpy(df2)
 
-                import numpy as np
-                np.testing.assert_array_equal(hist2.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5])
-                np.testing.assert_array_equal(hist3.bin_centers(), [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5])
-                np.testing.assert_array_equal(hist2.bin_centers(low=5, high=15),
-                                              [5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5])
-                np.testing.assert_array_equal(hist3.bin_centers(), [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5])
-                np.testing.assert_array_equal(hist3.bin_centers(low=2.1, high=5.6), [2.5, 3.5, 4.5, 5.5])
+            import numpy as np
+            np.testing.assert_array_equal(hist2.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5])
+            np.testing.assert_array_equal(hist3.bin_centers(), [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5])
+            np.testing.assert_array_equal(hist2.bin_centers(low=5, high=15),
+                                          [5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5])
+            np.testing.assert_array_equal(hist3.bin_centers(), [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5])
+            np.testing.assert_array_equal(hist3.bin_centers(low=2.1, high=5.6), [2.5, 3.5, 4.5, 5.5])
 
-                np.testing.assert_array_equal(hist4.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5])
-                np.testing.assert_array_equal(hist5.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5])
-                np.testing.assert_array_equal(hist4.bin_centers(low=5, high=15), [5.5, 6.5, 7.5, 8.5, 9.5])
-                np.testing.assert_array_equal(hist5.bin_centers(low=2.1, high=9.1), [
-                                              2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5])
+            np.testing.assert_array_equal(hist4.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5])
+            np.testing.assert_array_equal(hist5.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5])
+            np.testing.assert_array_equal(hist4.bin_centers(low=5, high=15), [5.5, 6.5, 7.5, 8.5, 9.5])
+            np.testing.assert_array_equal(hist5.bin_centers(low=2.1, high=9.1), [
+                                          2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5])
 
     def test_bin_entries(self):
         """ Test getting the number of bins for all assigned bins
         """
-        with Pandas() as pd:
-            if pd is None:
+        with Pandas() as pd, Numpy() as np:  # noqa
+            if pd is None or np is None:
                 return
-            with Numpy() as np:
-                if numpy is None:
-                    return
-                sys.stderr.write("\n")
+            sys.stderr.write("\n")
 
-                df1 = pd.DataFrame(
-                    {'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1], 'C': ['f1', 'f3', 'f4', 'f3', 'f4', 'f2', 'f2', 'f1', 'f3', 'f4']})
-                df2 = pd.DataFrame(
-                    {'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8], 'C': ['f7', 'f3', 'f5', 'f8', 'f9', 'f2', 'f3', 'f6', 'f7', 'f7']})
+            df1 = pd.DataFrame(
+                {'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1], 'C': ['f1', 'f3', 'f4', 'f3', 'f4', 'f2', 'f2', 'f1', 'f3', 'f4']})
+            df2 = pd.DataFrame(
+                {'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8], 'C': ['f7', 'f3', 'f5', 'f8', 'f9', 'f2', 'f3', 'f6', 'f7', 'f7']})
 
-                # building 1d-, 2d-, and 3d-histogram (iteratively)
-                hist0 = hg.Categorize(unit('C'))
-                hist1 = hg.Categorize(unit('C'))
-                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
-                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
-                hist4 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
-                hist5 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+            # building 1d-, 2d-, and 3d-histogram (iteratively)
+            hist0 = hg.Categorize(unit('C'))
+            hist1 = hg.Categorize(unit('C'))
+            hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            hist4 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+            hist5 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
 
-                # fill them
-                hist0.fill.numpy(df1)
-                hist1.fill.numpy(df2)
-                hist2.fill.numpy(df1)
-                hist3.fill.numpy(df2)
-                hist4.fill.numpy(df1)
-                hist5.fill.numpy(df2)
+            # fill them
+            hist0.fill.numpy(df1)
+            hist1.fill.numpy(df2)
+            hist2.fill.numpy(df1)
+            hist3.fill.numpy(df2)
+            hist4.fill.numpy(df1)
+            hist5.fill.numpy(df2)
 
-                labels0 = hist0.bin_labels()
-                labels1 = hist1.bin_labels()
-                centers2 = hist2.bin_centers()
-                centers3 = hist3.bin_centers()
-                centers = hist4.bin_centers()
+            labels0 = hist0.bin_labels()
+            labels1 = hist1.bin_labels()
+            centers2 = hist2.bin_centers()
+            centers3 = hist3.bin_centers()
+            centers = hist4.bin_centers()
 
-                import numpy as np
-                np.testing.assert_array_equal(hist0.bin_entries(), [2., 2., 3., 3.])
-                np.testing.assert_array_equal(hist1.bin_entries(), [1., 2., 1., 1., 3., 1., 1.])
-                np.testing.assert_array_equal(hist0.bin_entries(labels=labels1), [2., 3., 0., 0., 0., 0., 0.])
-                np.testing.assert_array_equal(hist1.bin_entries(labels=labels0), [0., 1., 2., 0.])
+            np.testing.assert_array_equal(hist0.bin_entries(), [2., 2., 3., 3.])
+            np.testing.assert_array_equal(hist1.bin_entries(), [1., 2., 1., 1., 3., 1., 1.])
+            np.testing.assert_array_equal(hist0.bin_entries(labels=labels1), [2., 3., 0., 0., 0., 0., 0.])
+            np.testing.assert_array_equal(hist1.bin_entries(labels=labels0), [0., 1., 2., 0.])
 
-                np.testing.assert_array_equal(hist2.bin_entries(), [1., 4., 2., 2., 1.])
-                np.testing.assert_array_equal(hist3.bin_entries(), [1., 1., 2., 2., 1., 2., 1.])
-                np.testing.assert_array_equal(hist4.bin_entries(), [1., 4., 2., 2., 1., 0., 0., 0., 0., 0.])
-                np.testing.assert_array_equal(hist5.bin_entries(), [0., 0., 1., 1., 2., 2., 1., 2., 1., 0.])
+            np.testing.assert_array_equal(hist2.bin_entries(), [1., 4., 2., 2., 1.])
+            np.testing.assert_array_equal(hist3.bin_entries(), [1., 1., 2., 2., 1., 2., 1.])
+            np.testing.assert_array_equal(hist4.bin_entries(), [1., 4., 2., 2., 1., 0., 0., 0., 0., 0.])
+            np.testing.assert_array_equal(hist5.bin_entries(), [0., 0., 1., 1., 2., 2., 1., 2., 1., 0.])
 
-                np.testing.assert_array_equal(hist2.bin_entries(xvalues=centers3), [2., 2., 1., 0., 0., 0., 0.])
-                np.testing.assert_array_equal(hist3.bin_entries(xvalues=centers2), [0., 0., 1., 1., 2.])
-                np.testing.assert_array_equal(hist2.bin_entries(xvalues=centers), [
-                                              1., 4., 2., 2., 1., 0., 0., 0., 0., 0.])
-                np.testing.assert_array_equal(hist3.bin_entries(xvalues=centers), [
-                                              0., 0., 1., 1., 2., 2., 1., 2., 1., 0.])
+            np.testing.assert_array_equal(hist2.bin_entries(xvalues=centers3), [2., 2., 1., 0., 0., 0., 0.])
+            np.testing.assert_array_equal(hist3.bin_entries(xvalues=centers2), [0., 0., 1., 1., 2.])
+            np.testing.assert_array_equal(hist2.bin_entries(xvalues=centers), [
+                                          1., 4., 2., 2., 1., 0., 0., 0., 0., 0.])
+            np.testing.assert_array_equal(hist3.bin_entries(xvalues=centers), [
+                                          0., 0., 1., 1., 2., 2., 1., 2., 1., 0.])
 
-                np.testing.assert_array_equal(hist2.bin_entries(low=2.1, high=11.9), [
-                                              2., 2., 1., 0., 0., 0., 0., 0., 0., 0.])
-                np.testing.assert_array_equal(hist3.bin_entries(low=1.1, high=5.4), [0., 1., 1., 2., 2.])
-                np.testing.assert_array_equal(hist4.bin_entries(low=2.1, high=11.9), [2., 2., 1., 0., 0., 0., 0., 0.])
-                np.testing.assert_array_equal(hist5.bin_entries(low=1.1, high=5.4), [0., 1., 1., 2., 2.])
+            np.testing.assert_array_equal(hist2.bin_entries(low=2.1, high=11.9), [
+                                          2., 2., 1., 0., 0., 0., 0., 0., 0., 0.])
+            np.testing.assert_array_equal(hist3.bin_entries(low=1.1, high=5.4), [0., 1., 1., 2., 2.])
+            np.testing.assert_array_equal(hist4.bin_entries(low=2.1, high=11.9), [2., 2., 1., 0., 0., 0., 0., 0.])
+            np.testing.assert_array_equal(hist5.bin_entries(low=1.1, high=5.4), [0., 1., 1., 2., 2.])
 
     def test_bin_edges(self):
         """ Test getting the bin edges for requested ranges
         """
-        with Pandas() as pd:
-            if pd is None:
+        with Pandas() as pd, Numpy() as np:  # noqa
+            if pd is None or np is None:
                 return
-            with Numpy() as np:
-                if numpy is None:
-                    return
-                sys.stderr.write("\n")
+            sys.stderr.write("\n")
 
-                df1 = pd.DataFrame({'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1]})
-                df2 = pd.DataFrame({'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8]})
+            df1 = pd.DataFrame({'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1]})
+            df2 = pd.DataFrame({'A': [2, 3, 4, 5, 7, 4, 6, 5, 7, 8]})
 
-                # building test histograms
-                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
-                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
-                hist4 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
-                hist5 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
-                hist6 = hg.Bin(num=201, low=0.0, high=1.005)
+            # building test histograms
+            hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            hist4 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+            hist5 = hg.Bin(num=10, low=0.0, high=10., quantity=unit('A'))
+            hist6 = hg.Bin(num=201, low=0.0, high=1.005)
 
-                # fill them
-                hist2.fill.numpy(df1)
-                hist3.fill.numpy(df2)
-                hist4.fill.numpy(df1)
-                hist5.fill.numpy(df2)
+            # fill them
+            hist2.fill.numpy(df1)
+            hist3.fill.numpy(df2)
+            hist4.fill.numpy(df1)
+            hist5.fill.numpy(df2)
 
-                import numpy as np
-                np.testing.assert_array_equal(hist2.bin_edges(), [0., 1., 2., 3., 4., 5.])
-                np.testing.assert_array_equal(hist3.bin_edges(), [2., 3., 4., 5., 6., 7., 8., 9.])
-                np.testing.assert_array_equal(hist4.bin_edges(), [0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.])
-                np.testing.assert_array_equal(hist5.bin_edges(), [0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.])
+            import numpy as np
+            np.testing.assert_array_equal(hist2.bin_edges(), [0., 1., 2., 3., 4., 5.])
+            np.testing.assert_array_equal(hist3.bin_edges(), [2., 3., 4., 5., 6., 7., 8., 9.])
+            np.testing.assert_array_equal(hist4.bin_edges(), [0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.])
+            np.testing.assert_array_equal(hist5.bin_edges(), [0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.])
 
-                np.testing.assert_array_equal(hist2.bin_edges(low=2.1, high=11.9), [
-                                              2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.])
-                np.testing.assert_array_equal(hist3.bin_edges(low=1.1, high=6), [1., 2., 3., 4., 5., 6.])
-                np.testing.assert_array_equal(hist4.bin_edges(low=2.1, high=11.9), [
-                                              2., 3., 4., 5., 6., 7., 8., 9., 10.])
-                np.testing.assert_array_equal(hist5.bin_edges(low=1.1, high=5.4), [1., 2., 3., 4., 5., 6.])
+            np.testing.assert_array_equal(hist2.bin_edges(low=2.1, high=11.9), [
+                                          2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.])
+            np.testing.assert_array_equal(hist3.bin_edges(low=1.1, high=6), [1., 2., 3., 4., 5., 6.])
+            np.testing.assert_array_equal(hist4.bin_edges(low=2.1, high=11.9), [
+                                          2., 3., 4., 5., 6., 7., 8., 9., 10.])
+            np.testing.assert_array_equal(hist5.bin_edges(low=1.1, high=5.4), [1., 2., 3., 4., 5., 6.])
 
-                assert len(hist6.bin_edges()) == 202
-                assert len(hist6.bin_edges(low=0.2089, high=0.9333)) == 147
-                assert len(hist6.bin_edges(low=0.205, high=0.935)) == 147
+            assert len(hist6.bin_edges()) == 202
+            assert len(hist6.bin_edges(low=0.2089, high=0.9333)) == 147
+            assert len(hist6.bin_edges(low=0.205, high=0.935)) == 147
 
     def test_bin_width(self):
         """ Test getting the bin width of bin and sparselybin histograms
         """
-        with Pandas() as pd:
-            if pd is None:
+        with Pandas() as pd, Numpy() as np:  # noqa
+            if pd is None or np is None:
                 return
-            with Numpy() as np:  # noqa
-                if numpy is None:
-                    return
-                sys.stderr.write("\n")
+            sys.stderr.write("\n")
 
-                df1 = pd.DataFrame({'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1]})
+            df1 = pd.DataFrame({'A': [0, 1, 2, 3, 4, 3, 2, 1, 1, 1]})
 
-                # building test histograms
-                hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
-                hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
-                hist4 = hg.Bin(num=20, low=0.0, high=10., quantity=unit('A'))
-                hist5 = hg.Bin(num=20, low=0.0, high=10., quantity=unit('A'))
+            # building test histograms
+            hist2 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            hist3 = hg.SparselyBin(origin=0.0, binWidth=1.0, quantity=unit('A'))
+            hist4 = hg.Bin(num=20, low=0.0, high=10., quantity=unit('A'))
+            hist5 = hg.Bin(num=20, low=0.0, high=10., quantity=unit('A'))
 
-                # fill them
-                hist2.fill.numpy(df1)
-                hist4.fill.numpy(df1)
+            # fill them
+            hist2.fill.numpy(df1)
+            hist4.fill.numpy(df1)
 
-                assert hist2.bin_width() == 1.0
-                assert hist3.bin_width() == 1.0
-                assert hist4.bin_width() == 0.5
-                assert hist5.bin_width() == 0.5
+            assert hist2.bin_width() == 1.0
+            assert hist3.bin_width() == 1.0
+            assert hist4.bin_width() == 0.5
+            assert hist5.bin_width() == 0.5
 
     def test_irregular(self):
         """ Test numpy functions of irregular histogram"""

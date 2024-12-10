@@ -109,9 +109,6 @@ class TestGPU(unittest.TestCase):
             self.assertEqual(aggregator.toImmutable(), duplicate.toImmutable())
             self.assertEqual(aggregator, duplicate)
 
-    def twosigfigs(self, number):
-        return round(number, 1 - int(math.floor(math.log10(number))))
-
     def compare(self, name, hgpu, hpy, pydata, debug=False):
         sys.stderr.write(name + "\n")
 
