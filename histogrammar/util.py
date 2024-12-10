@@ -312,13 +312,15 @@ class UserFcn(object):
                     if numpy is not None:
                         context["numpy"] = numpy
                         context["np"] = numpy
+                        major = int(numpy.__version__.split('.')[0])
+                        npcore = numpy._core if major > 1 else numpy.core
 
                     # if the datum is a dict, override the namespace with its dict keys
                     if isinstance(datum, dict):                # if it's a dict
                         context.update(datum)                  # use its items as variables
 
                     # if the datum is a Numpy record array, override the namespace with its field names
-                    elif numpy is not None and isinstance(datum, numpy._core.records.recarray):
+                    elif numpy is not None and isinstance(datum, npcore.records.recarray):
                         context.update(dict((n, datum[n]) for n in datum.dtype.names))
 
                     # if the datum is a Pandas DataFrame, override the namespace with its column names
