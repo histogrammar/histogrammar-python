@@ -8,6 +8,7 @@ Version 1.0.34, Dec 2024
 * Fix error in SparselyBin __eq__ method.
 * Fix test utility corner case error (test_numpy.twosigfigs function).
 * Fix error in test context manager for pandas which prevented execution of tests.
+* Fix error in expected bin count in test_numpy.test_n_bins test.
 * Prevent logging zero execution time TestNumpy class.
 
 * Remove Python 3.8 environment from build pipeline.
