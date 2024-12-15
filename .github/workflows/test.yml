@@ -37,7 +37,7 @@ jobs:
           if [ "${{ matrix.numpy_version }}" = "numpy<2" ]; then
             pip install ".[test,test_numpy_pre2]"
           else
-            pip install ".[test]"          
+            pip install ".[test,spark]"          
           fi
 
       - name: Test with pytest
