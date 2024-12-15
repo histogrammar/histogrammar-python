@@ -90,11 +90,11 @@ def to_str(val):
         return np.asarray(
             list(
                 map(
-                    lambda s: s
-                    if isinstance(s, str)
-                    else str(s)
-                    if hasattr(s, "__str__")
-                    else "",
+                    lambda s: (
+                        s
+                        if isinstance(s, str)
+                        else str(s) if hasattr(s, "__str__") else ""
+                    ),
                     val,
                 )
             )
@@ -116,7 +116,9 @@ def only_str(val):
     elif isinstance(val, pd.Series):
         # at this point, data type of pd.series has already been inferred as *to be* 'string'
         dtype = np.dtype(val.dtype).type
-        return val.values if dtype in [str, np.str_, np.bytes_] else val.astype(str).values
+        return (
+            val.values if dtype in [str, np.str_, np.bytes_] else val.astype(str).values
+        )
     elif hasattr(val, "__iter__"):
         return np.asarray([s if isinstance(s, str) else "None" for s in val])
     return "None"

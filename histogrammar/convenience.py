@@ -20,11 +20,11 @@
 from histogrammar.defs import identity, unweighted
 from histogrammar.primitives.average import Average
 from histogrammar.primitives.bin import Bin
+from histogrammar.primitives.categorize import Categorize
 from histogrammar.primitives.count import Count
 from histogrammar.primitives.deviate import Deviate
-from histogrammar.primitives.sparselybin import SparselyBin
-from histogrammar.primitives.categorize import Categorize
 from histogrammar.primitives.select import Select
+from histogrammar.primitives.sparselybin import SparselyBin
 
 
 def Histogram(num, low, high, quantity=identity):
@@ -38,7 +38,9 @@ def Histogram(num, low, high, quantity=identity):
             the data. pass on all values by default. If a string is given, quantity is set to identity(string),
             in which case that column is picked up from a pandas df.
     """
-    return Bin.ing(num, low, high, quantity, Count.ing(), Count.ing(), Count.ing(), Count.ing())
+    return Bin.ing(
+        num, low, high, quantity, Count.ing(), Count.ing(), Count.ing(), Count.ing()
+    )
 
 
 def HistogramCut(num, low, high, quantity=identity, selection=unweighted):
@@ -54,7 +56,12 @@ def HistogramCut(num, low, high, quantity=identity, selection=unweighted):
         selection (function returning boolean): function that computes if data point is accepted or not.
             default is: lamba x: True
     """
-    return Select.ing(selection, Bin.ing(num, low, high, quantity, Count.ing(), Count.ing(), Count.ing(), Count.ing()))
+    return Select.ing(
+        selection,
+        Bin.ing(
+            num, low, high, quantity, Count.ing(), Count.ing(), Count.ing(), Count.ing()
+        ),
+    )
 
 
 def SparselyHistogram(binWidth, quantity=identity, origin=0.0):
@@ -88,7 +95,9 @@ def Profile(num, low, high, binnedQuantity, averagedQuantity):
 
 def SparselyProfile(binWidth, binnedQuantity, averagedQuantity, origin=0.0):
     """Convenience function for creating sparsely binned binwise averages."""
-    return SparselyBin.ing(binWidth, binnedQuantity, Average.ing(averagedQuantity), Count.ing(), origin)
+    return SparselyBin.ing(
+        binWidth, binnedQuantity, Average.ing(averagedQuantity), Count.ing(), origin
+    )
 
 
 def ProfileErr(num, low, high, binnedQuantity, averagedQuantity):
@@ -104,16 +113,26 @@ def SparselyProfileErr(binWidth, binnedQuantity, averagedQuantity, origin=0.0):
 
     This is a Profile with variances.
     """
-    return SparselyBin.ing(binWidth, binnedQuantity, Deviate.ing(averagedQuantity), Count.ing(), origin)
+    return SparselyBin.ing(
+        binWidth, binnedQuantity, Deviate.ing(averagedQuantity), Count.ing(), origin
+    )
 
 
-def TwoDimensionallyHistogram(xnum, xlow, xhigh, xquantity, ynum, ylow, yhigh, yquantity):
+def TwoDimensionallyHistogram(
+    xnum, xlow, xhigh, xquantity, ynum, ylow, yhigh, yquantity
+):
     """Convenience function for creating a conventional, two-dimensional histogram."""
     return Bin.ing(xnum, xlow, xhigh, xquantity, Bin.ing(ynum, ylow, yhigh, yquantity))
 
 
-def TwoDimensionallySparselyHistogram(xbinWidth, xquantity, ybinWidth, yquantity, xorigin=0.0, yorigin=0.0):
+def TwoDimensionallySparselyHistogram(
+    xbinWidth, xquantity, ybinWidth, yquantity, xorigin=0.0, yorigin=0.0
+):
     """Convenience function for creating a sparsely binned, two-dimensional histogram."""
-    return SparselyBin.ing(xbinWidth, xquantity,
-                           SparselyBin.ing(ybinWidth, yquantity, Count.ing(), Count.ing(), yorigin),
-                           Count.ing(), xorigin)
+    return SparselyBin.ing(
+        xbinWidth,
+        xquantity,
+        SparselyBin.ing(ybinWidth, yquantity, Count.ing(), Count.ing(), yorigin),
+        Count.ing(),
+        xorigin,
+    )

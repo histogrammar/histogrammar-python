@@ -24,145 +24,164 @@ import math
 
 
 class HistogramMethods(object):
-    def plotbokeh(self, glyphType="line", glyphSize=1, fillColor="red",
-                  lineColor="black", lineAlpha=1, fillAlpha=0.1, lineDash='solid'):
+    def plotbokeh(
+        self,
+        glyphType="line",
+        glyphSize=1,
+        fillColor="red",
+        lineColor="black",
+        lineAlpha=1,
+        fillAlpha=0.1,
+        lineDash="solid",
+    ):
 
         # glyphs
-        from bokeh.models.glyphs import Rect, Line
-        from bokeh.models.renderers import GlyphRenderer
-        from bokeh.models.markers import (Circle, Cross,
-                                          Diamond, Square,
-                                          Triangle)
-
         # data
         from bokeh.models import ColumnDataSource
+        from bokeh.models.glyphs import Line, Rect
+        from bokeh.models.markers import Circle, Cross, Diamond, Square, Triangle
+        from bokeh.models.renderers import GlyphRenderer
 
         # Parameters of the histogram
         lo = self.low
         hi = self.high
         num = self.num
-        bin_width = (hi-lo)/num
+        bin_width = (hi - lo) / num
         x = list()
         center = lo
         for _ in range(num):
-            x.append(center+bin_width/2)
+            x.append(center + bin_width / 2)
             center += bin_width
         y = self.numericalValues
-        ci = [2.*v for v in self.confidenceIntervalValues()]
+        ci = [2.0 * v for v in self.confidenceIntervalValues()]
 
         source = ColumnDataSource(data=dict(x=x, y=y, ci=ci))
 
         glyph = None
         if glyphType == "square":
             glyph = Square(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "diamond":
             glyph = Diamond(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "cross":
             glyph = Cross(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "triangle":
             glyph = Triangle(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "circle":
             glyph = Circle(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "rect":
             glyph = Rect(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 width=bin_width,
                 height=0.1,
                 fill_alpha=fillAlpha,
                 line_color=lineColor,
-                fill_color=fillColor)
+                fill_color=fillColor,
+            )
         elif glyphType == "errors":
             glyph = Rect(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 width=bin_width,
-                height='ci',
+                height="ci",
                 fill_alpha=fillAlpha,
                 line_color=lineColor,
-                fill_color=fillColor)
+                fill_color=fillColor,
+            )
         elif glyphType == "histogram":
             h = y
-            y = [yy/2 for yy in y]
+            y = [yy / 2 for yy in y]
             source = ColumnDataSource(dict(x=x, y=y, h=h))
             glyph = Rect(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 width=bin_width,
-                height='h',
+                height="h",
                 fill_alpha=fillAlpha,
                 line_color=lineColor,
-                fill_color=fillColor)
+                fill_color=fillColor,
+            )
         else:
             glyph = Line(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 line_alpha=lineAlpha,
                 line_width=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
 
         return GlyphRenderer(glyph=glyph, data_source=source)
 
 
 class SparselyHistogramMethods(object):
-    def plotbokeh(self, glyphType="line", glyphSize=1, fillColor="red",
-                  lineColor="black", lineAlpha=1, fillAlpha=0.1, lineDash='solid'):
+    def plotbokeh(
+        self,
+        glyphType="line",
+        glyphSize=1,
+        fillColor="red",
+        lineColor="black",
+        lineAlpha=1,
+        fillAlpha=0.1,
+        lineDash="solid",
+    ):
 
         # glyphs
-        from bokeh.models.glyphs import Rect, Line
-        from bokeh.models.renderers import GlyphRenderer
-        from bokeh.models.markers import (Circle, Cross,
-                                          Diamond, Square,
-                                          Triangle)
-
         # data
         from bokeh.models import ColumnDataSource
+        from bokeh.models.glyphs import Line, Rect
+        from bokeh.models.markers import Circle, Cross, Diamond, Square, Triangle
+        from bokeh.models.renderers import GlyphRenderer
 
         # Parameters of the histogram
         lo = self.low
         hi = self.high
         num = self.numFilled
-        bin_width = (hi-lo)/num
+        bin_width = (hi - lo) / num
         x = list()
         center = lo
         for _ in range(num):
-            x.append(center+bin_width/2)
+            x.append(center + bin_width / 2)
             center += bin_width
         y = [v.entries for _, v in sorted(self.bins.items())]
 
@@ -171,89 +190,98 @@ class SparselyHistogramMethods(object):
         glyph = None
         if glyphType == "square":
             glyph = Square(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "diamond":
             glyph = Diamond(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "cross":
             glyph = Cross(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "triangle":
             glyph = Triangle(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "circle":
             glyph = Circle(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "rect":
             glyph = Rect(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 width=bin_width,
                 height=0.1,
                 fill_alpha=fillAlpha,
                 line_color=lineColor,
-                fill_color=fillColor)
+                fill_color=fillColor,
+            )
         elif glyphType == "errors":
-            ci = [2.*v for v in self.confidenceIntervalValues()]
+            ci = [2.0 * v for v in self.confidenceIntervalValues()]
             source = ColumnDataSource(data=dict(x=x, y=y, ci=ci))
             glyph = Rect(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 width=bin_width,
-                height='ci',
+                height="ci",
                 fill_alpha=fillAlpha,
                 line_color=lineColor,
-                fill_color=fillColor)
+                fill_color=fillColor,
+            )
         elif glyphType == "histogram":
             h = y
-            y = [yy/2 for yy in y]
+            y = [yy / 2 for yy in y]
             source = ColumnDataSource(dict(x=x, y=y, h=h))
             glyph = Rect(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 width=bin_width,
-                height='h',
+                height="h",
                 fill_alpha=fillAlpha,
                 line_color=lineColor,
-                fill_color=fillColor)
+                fill_color=fillColor,
+            )
         else:
             glyph = Line(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 line_alpha=lineAlpha,
                 line_width=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
 
         return GlyphRenderer(glyph=glyph, data_source=source)
 
@@ -271,31 +299,36 @@ class CentrallyHistogramMethods(object):
 
 
 class ProfileMethods(object):
-    def plotbokeh(self, glyphType="line", glyphSize=1, fillColor="red",
-                  lineColor="black", lineAlpha=1, fillAlpha=0.1, lineDash='solid'):
+    def plotbokeh(
+        self,
+        glyphType="line",
+        glyphSize=1,
+        fillColor="red",
+        lineColor="black",
+        lineAlpha=1,
+        fillAlpha=0.1,
+        lineDash="solid",
+    ):
 
         # glyphs
-        from bokeh.models.glyphs import Rect, Line
-        from bokeh.models.renderers import GlyphRenderer
-        from bokeh.models.markers import (Circle, Cross,
-                                          Diamond, Square,
-                                          Triangle)
-
         # data
         from bokeh.models import ColumnDataSource
+        from bokeh.models.glyphs import Line, Rect
+        from bokeh.models.markers import Circle, Cross, Diamond, Square, Triangle
+        from bokeh.models.renderers import GlyphRenderer
 
         # Parameters of the histogram
         lo = self.low
         hi = self.high
         num = self.num
-        bin_width = (hi-lo)/num
+        bin_width = (hi - lo) / num
         x = list()
         y = list()
         center = lo
         for v in self.values:
             if not math.isnan(v.mean):
                 y.append(v.mean)
-                x.append(center+bin_width/2)
+                x.append(center + bin_width / 2)
                 center += bin_width
 
         source = ColumnDataSource(data=dict(x=x, y=y))
@@ -303,70 +336,77 @@ class ProfileMethods(object):
         glyph = None
         if glyphType == "square":
             glyph = Square(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "diamond":
             glyph = Diamond(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "cross":
             glyph = Cross(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "triangle":
             glyph = Triangle(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "circle":
             glyph = Circle(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "histogram":
             w = [bin_width for _ in x]
             h = y
-            y = [yy/2 for yy in y]
+            y = [yy / 2 for yy in y]
             source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
             glyph = Rect(
-                x='x',
-                y='y',
-                width='w',
-                height='h',
+                x="x",
+                y="y",
+                width="w",
+                height="h",
                 fill_alpha=fillAlpha,
                 line_color=lineColor,
-                fill_color=fillColor)
+                fill_color=fillColor,
+            )
         else:
             glyph = Line(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 line_alpha=lineAlpha,
                 line_width=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
 
         return GlyphRenderer(glyph=glyph, data_source=source)
 
@@ -376,33 +416,38 @@ class SparselyProfileMethods(object):
 
 
 class ProfileErrMethods(object):
-    def plotbokeh(self, glyphType="line", glyphSize=1, fillColor="red",
-                  lineColor="black", lineAlpha=1, fillAlpha=0.1, lineDash='solid'):
+    def plotbokeh(
+        self,
+        glyphType="line",
+        glyphSize=1,
+        fillColor="red",
+        lineColor="black",
+        lineAlpha=1,
+        fillAlpha=0.1,
+        lineDash="solid",
+    ):
 
         # glyphs
-        from bokeh.models.glyphs import Rect, Line
-        from bokeh.models.renderers import GlyphRenderer
-        from bokeh.models.markers import (Circle, Cross,
-                                          Diamond, Square,
-                                          Triangle)
+        from math import sqrt
 
         # data
         from bokeh.models import ColumnDataSource
-
-        from math import sqrt
+        from bokeh.models.glyphs import Line, Rect
+        from bokeh.models.markers import Circle, Cross, Diamond, Square, Triangle
+        from bokeh.models.renderers import GlyphRenderer
 
         # Parameters of the histogram
         lo = self.low
         hi = self.high
         num = self.num
-        bin_width = (hi-lo)/num
+        bin_width = (hi - lo) / num
         x = list()
         y = list()
         center = lo
         for v in self.values:
             if not math.isnan(v.mean):
                 y.append(v.mean)
-                x.append(center+bin_width/2)
+                x.append(center + bin_width / 2)
                 center += bin_width
 
         source = ColumnDataSource(data=dict(x=x, y=y))
@@ -410,82 +455,93 @@ class ProfileErrMethods(object):
         glyph = None
         if glyphType == "square":
             glyph = Square(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "diamond":
             glyph = Diamond(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "cross":
             glyph = Cross(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "triangle":
             glyph = Triangle(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "circle":
             glyph = Circle(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 fill_color=fillColor,
                 line_alpha=lineAlpha,
                 size=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
         elif glyphType == "errors":
             w = [bin_width for _ in x]
-            h = [sqrt(v.variance/v.entries) if v.entries > 0 else 0.0 for v in self.values]
+            h = [
+                sqrt(v.variance / v.entries) if v.entries > 0 else 0.0
+                for v in self.values
+            ]
             source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
             glyph = Rect(
-                x='x',
-                y='y',
-                width='w',
-                height='h',
+                x="x",
+                y="y",
+                width="w",
+                height="h",
                 fill_alpha=fillAlpha,
                 line_color=lineColor,
-                fill_color=fillColor)
+                fill_color=fillColor,
+            )
         elif glyphType == "histogram":
             w = [bin_width for _ in x]
             h = y
-            y = [yy/2 for yy in y]
+            y = [yy / 2 for yy in y]
             source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
             glyph = Rect(
-                x='x',
-                y='y',
-                width='w',
-                height='h',
+                x="x",
+                y="y",
+                width="w",
+                height="h",
                 fill_alpha=fillAlpha,
                 line_color=lineColor,
-                fill_color=fillColor)
+                fill_color=fillColor,
+            )
         else:
             glyph = Line(
-                x='x',
-                y='y',
+                x="x",
+                y="y",
                 line_color=lineColor,
                 line_alpha=lineAlpha,
                 line_width=glyphSize,
-                line_dash=lineDash)
+                line_dash=lineDash,
+            )
 
         return GlyphRenderer(glyph=glyph, data_source=source)
 
@@ -496,18 +552,25 @@ class SparselyProfileErrMethods(object):
 
 class StackedHistogramMethods(object):
     nMaxStacked = 10
-    glyphTypeDefaults = ["circle"]*nMaxStacked
-    glyphSizeDefaults = [1]*nMaxStacked
-    fillColorDefaults = ["red"]*nMaxStacked
-    lineColorDefaults = ["red"]*nMaxStacked
-    lineAlphaDefaults = [1]*nMaxStacked
-    fillAlphaDefaults = [0.1]*nMaxStacked
-    lineDashDefaults = ["solid"]*nMaxStacked
+    glyphTypeDefaults = ["circle"] * nMaxStacked
+    glyphSizeDefaults = [1] * nMaxStacked
+    fillColorDefaults = ["red"] * nMaxStacked
+    lineColorDefaults = ["red"] * nMaxStacked
+    lineAlphaDefaults = [1] * nMaxStacked
+    fillAlphaDefaults = [0.1] * nMaxStacked
+    lineDashDefaults = ["solid"] * nMaxStacked
 
-    def plotbokeh(self, glyphTypes=glyphTypeDefaults, glyphSizes=glyphSizeDefaults, fillColors=fillColorDefaults,
-                  lineColors=lineColorDefaults, lineAlphas=lineAlphaDefaults, fillAlphas=fillAlphaDefaults,
-                  lineDashes=lineDashDefaults):
-        nChildren = len(self.children)-1
+    def plotbokeh(
+        self,
+        glyphTypes=glyphTypeDefaults,
+        glyphSizes=glyphSizeDefaults,
+        fillColors=fillColorDefaults,
+        lineColors=lineColorDefaults,
+        lineAlphas=lineAlphaDefaults,
+        fillAlphas=fillAlphaDefaults,
+        lineDashes=lineDashDefaults,
+    ):
+        nChildren = len(self.children) - 1
 
         assert len(glyphSizes) >= nChildren
         assert len(glyphTypes) >= nChildren
@@ -520,13 +583,17 @@ class StackedHistogramMethods(object):
         stackedGlyphs = list()
         # for ichild, p in enumerate(self.children,start=1):
         for ichild in range(nChildren):
-            stackedGlyphs.append(self.children[ichild+1].plotbokeh(glyphTypes[ichild],
-                                                                   glyphSizes[ichild],
-                                                                   fillColors[ichild],
-                                                                   lineColors[ichild],
-                                                                   lineAlphas[ichild],
-                                                                   fillAlphas[ichild],
-                                                                   lineDashes[ichild]))
+            stackedGlyphs.append(
+                self.children[ichild + 1].plotbokeh(
+                    glyphTypes[ichild],
+                    glyphSizes[ichild],
+                    fillColors[ichild],
+                    lineColors[ichild],
+                    lineAlphas[ichild],
+                    fillAlphas[ichild],
+                    lineDashes[ichild],
+                )
+            )
 
         return stackedGlyphs
 
@@ -555,10 +622,9 @@ class CentrallyTwoDimensionallyHistogramMethods(object):
     pass
 
 
-def plot(xLabel='x', yLabel='y', *args):
+def plot(xLabel="x", yLabel="y", *args):
 
-    from bokeh.models import DataRange1d, Plot, LinearAxis
-    from bokeh.models import PanTool, WheelZoomTool
+    from bokeh.models import DataRange1d, LinearAxis, PanTool, Plot, WheelZoomTool
 
     xdr = DataRange1d()
     ydr = DataRange1d()
@@ -569,16 +635,16 @@ def plot(xLabel='x', yLabel='y', *args):
     if not isinstance(xLabel, str) and not isinstance(yLabel, str):
         extra.append(xLabel)
         extra.append(yLabel)
-        xLabel = 'x'
-        yLabel = 'y'
+        xLabel = "x"
+        yLabel = "y"
     elif not isinstance(xLabel, str):
         extra.append(xLabel)
-        xLabel = 'x'
+        xLabel = "x"
     elif not isinstance(yLabel, str):
         extra.append(yLabel)
-        yLabel = 'y'
+        yLabel = "y"
 
-    args = extra+list(args)
+    args = extra + list(args)
     for renderer in args:
         if not isinstance(renderer, list):
             plot.renderers.append(renderer)
@@ -587,9 +653,9 @@ def plot(xLabel='x', yLabel='y', *args):
 
     # axes
     xaxis = LinearAxis(axis_label=xLabel)
-    plot.add_layout(xaxis, 'below')
+    plot.add_layout(xaxis, "below")
     yaxis = LinearAxis(axis_label=yLabel)
-    plot.add_layout(yaxis, 'left')
+    plot.add_layout(yaxis, "left")
     # add grid to the plot
     # plot.add_layout(Grid(dimension=0, ticker=xaxis.ticker))
     # plot.add_layout(Grid(dimension=1, ticker=yaxis.ticker))
@@ -602,14 +668,16 @@ def plot(xLabel='x', yLabel='y', *args):
 
 def save(plot, fname):
     # SaveTool https://github.com/bokeh/bokeh/blob/118b6a765ee79232b1fef0e82ed968a9dbb0e17f/examples/models/line.py
-    from bokeh.io import save, output_file
+    from bokeh.io import output_file, save
+
     output_file(fname)
     save(plot)
 
 
 def view(plot, show=False):
-    from bokeh.plotting import curdoc
     from bokeh.client import push_session
+    from bokeh.plotting import curdoc
+
     if show:
         session = push_session(curdoc())
         session.show(plot)

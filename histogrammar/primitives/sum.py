@@ -14,14 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import math
 import numbers
-import struct
 
-from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
-from histogrammar.util import n_dim, datatype, serializable, inheritdoc, maybeAdd, floatToJson, hasKeys, numeq, \
-    basestring
+from histogrammar.defs import (
+    Container,
+    ContainerException,
+    Factory,
+    JsonFormatException,
+    identity,
+)
+from histogrammar.util import (
+    basestring,
+    datatype,
+    floatToJson,
+    hasKeys,
+    inheritdoc,
+    maybeAdd,
+    n_dim,
+    numeq,
+    serializable,
+)
 
 
 class Sum(Factory, Container):
@@ -40,7 +53,11 @@ class Sum(Factory, Container):
             entries (float): the number of entries.
             sum (float): the sum.
         """
-        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in (
+            "nan",
+            "inf",
+            "-inf",
+        ):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(sum, numbers.Real) and entries not in ("nan", "inf", "-inf"):
             raise TypeError("sum ({0}) must be a number".format(sum))
@@ -66,7 +83,9 @@ class Sum(Factory, Container):
             entries (float): the number of entries, initially 0.0.
             sum (float): the running sum, initially 0.0.
         """
-        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
+        self.quantity = serializable(
+            identity(quantity) if isinstance(quantity, str) else quantity
+        )
         self.entries = 0.0
         self.sum = 0.0
         super(Sum, self).__init__()
@@ -84,7 +103,9 @@ class Sum(Factory, Container):
             out.sum = self.sum + other.sum
             return out.specialize()
         else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+            raise ContainerException(
+                "cannot add {0} and {1}".format(self.name, other.name)
+            )
 
     @inheritdoc(Container)
     def __iadd__(self, other):
@@ -113,128 +134,13 @@ class Sum(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, numbers.Real):
-                raise TypeError("function return value ({0}) must be boolean or number".format(q))
+                raise TypeError(
+                    "function return value ({0}) must be boolean or number".format(q)
+                )
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
             self.sum += q * weight
-
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                                     derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode,
-                                     fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
-
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum = 0.0;")
-
-        normexpr = self._c99QuantityExpr(
-            parser,
-            generator,
-            inputFieldNames,
-            inputFieldTypes,
-            derivedFieldTypes,
-            derivedFieldExprs,
-            None)
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
-                        ".entries += " + weightVarStack[-1] + ";")
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + ".sum += " + normexpr + ";")
-
-        storageStructs[self._c99StructName()] = """
-  typedef struct {{
-    double entries;
-    double sum;
-  }} {0};
-""".format(self._c99StructName())
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefix(filler, *extractorPrefix)
-        self.entries += obj.entries
-        self.sum += obj.sum
-
-    def _c99StructName(self):
-        return "Sm"
-
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                          derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                          fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix,
-                          jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".sum = 0.0f;")
-
-        normexpr = self._cudaQuantityExpr(
-            parser,
-            generator,
-            inputFieldNames,
-            inputFieldTypes,
-            derivedFieldTypes,
-            derivedFieldExprs,
-            None)
-        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " +
-                        weightVarStack[-1] + ");")
-        fillCode.append(
-            " " *
-            fillIndent +
-            "atomicAdd(&" +
-            self._c99ExpandPrefix(
-                *
-                fillPrefix) +
-            ".sum, " +
-            normexpr +
-            ");")
-
-        combineCode.append(
-            " " *
-            combineIndent +
-            "atomicAdd(&" +
-            self._c99ExpandPrefix(
-                *
-                totalPrefix) +
-            ".entries, " +
-            self._c99ExpandPrefix(
-                *
-                itemPrefix) +
-            ".entries);")
-        combineCode.append(
-            " " *
-            combineIndent +
-            "atomicAdd(&" +
-            self._c99ExpandPrefix(
-                *
-                totalPrefix) +
-            ".sum, " +
-            self._c99ExpandPrefix(
-                *
-                itemPrefix) +
-            ".sum);")
-
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
-        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"sum\\\": \");")
-        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".sum);")
-        if suppressName or self.quantity.name is None:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
-        else:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " +
-                            json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
-
-        storageStructs[self._c99StructName()] = """
-  typedef struct {{
-    float entries;
-    float sum;
-  }} {0};
-""".format(self._c99StructName())
-
-    def _cudaUnpackAndFill(self, data, bigendian, alignment):
-        format = "<ff"
-        entries, sum = struct.unpack(format, data[:struct.calcsize(format)])
-        self.entries += entries
-        self.sum += sum
-        return data[struct.calcsize(format):]
 
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
@@ -246,6 +152,7 @@ class Sum(Factory, Container):
         self.entries += float(weights.sum())
 
         import numpy
+
         selection = numpy.isnan(q)
         numpy.bitwise_not(selection, selection)
         numpy.bitwise_and(selection, weights > 0.0, selection)
@@ -265,15 +172,20 @@ class Sum(Factory, Container):
 
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
-        return maybeAdd({"entries": floatToJson(self.entries),
-                         "sum": floatToJson(self.sum)},
-                        name=(None if suppressName else self.quantity.name))
+        return maybeAdd(
+            {"entries": floatToJson(self.entries), "sum": floatToJson(self.sum)},
+            name=(None if suppressName else self.quantity.name),
+        )
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sum"], ["name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
+        if isinstance(json, dict) and hasKeys(
+            json.keys(), ["entries", "sum"], ["name"]
+        ):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
+                json["entries"], numbers.Real
+            ):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Sum.entries")
@@ -285,7 +197,9 @@ class Sum(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Sum.name")
 
-            if json["sum"] in ("nan", "inf", "-inf") or isinstance(json["sum"], numbers.Real):
+            if json["sum"] in ("nan", "inf", "-inf") or isinstance(
+                json["sum"], numbers.Real
+            ):
                 sum = float(json["sum"])
             else:
                 raise JsonFormatException(json["sum"], "Sum.sum")
@@ -301,8 +215,12 @@ class Sum(Factory, Container):
         return "<Sum sum={0}>".format(self.sum)
 
     def __eq__(self, other):
-        return isinstance(other, Sum) and self.quantity == other.quantity and numeq(
-            self.entries, other.entries) and numeq(self.sum, other.sum)
+        return (
+            isinstance(other, Sum)
+            and self.quantity == other.quantity
+            and numeq(self.entries, other.entries)
+            and numeq(self.sum, other.sum)
+        )
 
     def __ne__(self, other):
         return not self == other

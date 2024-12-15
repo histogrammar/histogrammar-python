@@ -3,13 +3,12 @@ from os.path import abspath, dirname, join
 import pandas as pd
 import pytest
 
-from histogrammar.dfinterface.spark_histogrammar import SparkHistogrammar
 from histogrammar.dfinterface.make_histograms import make_histograms
-
+from histogrammar.dfinterface.spark_histogrammar import SparkHistogrammar
 
 try:
-    from pyspark.sql import SparkSession
     from pyspark import __version__ as pyspark_version
+    from pyspark.sql import SparkSession
 
     spark_found = True
 except (ModuleNotFoundError, AttributeError):
@@ -22,8 +21,10 @@ def get_spark():
 
     current_path = dirname(abspath(__file__))
 
-    scala = '2.12' if int(pyspark_version[0]) >= 3 else '2.11'
-    hist_spark_jar = join(current_path, f"jars/histogrammar-sparksql_{scala}-1.0.20.jar")
+    scala = "2.12" if int(pyspark_version[0]) >= 3 else "2.11"
+    hist_spark_jar = join(
+        current_path, f"jars/histogrammar-sparksql_{scala}-1.0.20.jar"
+    )
     hist_jar = join(current_path, f"jars/histogrammar_{scala}-1.0.20.jar")
 
     spark = (
@@ -265,27 +266,34 @@ def test_get_histograms_date(spark_co):
 def test_null_histograms(spark_co):
     spark = spark_co
 
-    data = [(None, None, None, None), (1, None, None, 2.), (None, True, "Jones", None), (3, True, "USA", 4.),
-            (4, False, "FL", 5.)]
+    data = [
+        (None, None, None, None),
+        (1, None, None, 2.0),
+        (None, True, "Jones", None),
+        (3, True, "USA", 4.0),
+        (4, False, "FL", 5.0),
+    ]
     columns = ["transaction", "isActive", "eyeColor", "t2"]
     sdf = spark.createDataFrame(data=data, schema=columns)
 
-    hists = make_histograms(sdf, bin_specs={'transaction': {'num': 40, 'low': 0, 'high': 10}})
+    hists = make_histograms(
+        sdf, bin_specs={"transaction": {"num": 40, "low": 0, "high": 10}}
+    )
 
-    assert 'transaction' in hists
-    assert 'isActive' in hists
-    assert 'eyeColor' in hists
-    assert 't2' in hists
+    assert "transaction" in hists
+    assert "isActive" in hists
+    assert "eyeColor" in hists
+    assert "t2" in hists
 
-    h = hists['transaction']
+    h = hists["transaction"]
     assert h.nanflow.entries == 2
-    h = hists['t2']
+    h = hists["t2"]
     assert h.nanflow.entries == 2
 
-    h = hists['isActive']
-    assert 'NaN' in h.bins
-    assert h.bins['NaN'].entries == 2
+    h = hists["isActive"]
+    assert "NaN" in h.bins
+    assert h.bins["NaN"].entries == 2
 
-    h = hists['eyeColor']
-    assert 'NaN' in h.bins
-    assert h.bins['NaN'].entries == 2
+    h = hists["eyeColor"]
+    assert "NaN" in h.bins
+    assert h.bins["NaN"].entries == 2

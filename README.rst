@@ -11,17 +11,23 @@ At its core histogrammar is a suite of data aggregation primitives designed for 
 In the simplest case, you can use this to compute histograms, but the generality of the primitives
 allows much more.
 
-Several common histogram types can be plotted in Matplotlib, Bokeh and PyROOT with a single method call.
+Several common histogram types can be plotted in Matplotlib and Bokeh with a single method call.
 If Numpy or Pandas is available, histograms and other aggregators can be filled from arrays ten to a hundred times
-more quickly via Numpy commands, rather than Python for loops. If PyROOT is available, histograms and other
-aggregators can be filled from ROOT TTrees hundreds of times more quickly by JIT-compiling a specialized C++ filler.
-Histograms and other aggregators may also be converted into CUDA code for inclusion in a GPU workflow. And if
-PyCUDA is available, they can also be filled from Numpy arrays by JIT-compiling the CUDA code.
+more quickly via Numpy commands, rather than Python for loops.
 
 This Python implementation of histogrammar been tested to guarantee compatibility with its Scala implementation.
 
 Latest Python release: v1.0.34 (Dec 2024).
 Latest update: Dec 2024.
+
+References
+==========
+
+Histogrammar is a core component of `popmon <https://github.com/ing-bank/popmon>`_, a package by ING bank
+that allows one to check the stability of a dataset. popmon works with both pandas and spark datasets,
+largely thanks to Histogrammar.
+
+
 
 Announcements
 =============

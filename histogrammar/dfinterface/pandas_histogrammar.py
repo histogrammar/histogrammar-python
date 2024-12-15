@@ -6,13 +6,14 @@ https://github.com/KaveIO/Eskapade/blob/master/python/eskapade/analysis/links/hi
 All modifications copyright ING WBAA.
 """
 
-import histogrammar as hg
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 from pandas.api.types import infer_dtype
+from tqdm import tqdm
 
-from .filling_utils import to_ns, QUANTITY
+import histogrammar as hg
+
+from .filling_utils import QUANTITY, to_ns
 from .histogram_filler_base import HistogramFillerBase
 
 
@@ -129,20 +130,20 @@ class PandasHistogrammar(HistogramFillerBase):
             raise KeyError(f'column "{col:s}" not in input dataframe')
 
         inferred = infer_dtype(df[col], skipna=True)
-        if inferred in 'string':
-            data_type = 'str'
-        elif inferred == 'integer':
-            data_type = 'int'
-        elif inferred == 'boolean':
-            data_type = 'bool'
-        elif inferred in {'decimal', 'floating', 'mixed-integer-float'}:
+        if inferred in "string":
+            data_type = "str"
+        elif inferred == "integer":
+            data_type = "int"
+        elif inferred == "boolean":
+            data_type = "bool"
+        elif inferred in {"decimal", "floating", "mixed-integer-float"}:
             # decimal needs preprocessing (cast), signal this in metadata
             if inferred == "decimal":
-                data_type = np.dtype('float', metadata={"decimal": True})
+                data_type = np.dtype("float", metadata={"decimal": True})
             else:
                 data_type = "float"
-        elif inferred in {'date', 'datetime', 'datetime64'}:
-            data_type = 'datetime64'
+        elif inferred in {"date", "datetime", "datetime64"}:
+            data_type = "datetime64"
         else:  # categorical, mixed, etc -> object uses to_string()
             data_type = np.object_
 
@@ -183,7 +184,11 @@ class PandasHistogrammar(HistogramFillerBase):
         """
         # timestamp variables are converted to ns here
         # make temp df for value counting (used below)
-        idf = df[list(cols_by_type["num"]) + list(cols_by_type["str"]) + list(cols_by_type["bool"])].copy()
+        idf = df[
+            list(cols_by_type["num"])
+            + list(cols_by_type["str"])
+            + list(cols_by_type["bool"])
+        ].copy()
         for col in cols_by_type["dt"]:
             self.logger.debug(
                 'Converting column "{col}" of type "{type}" to nanosec.'.format(

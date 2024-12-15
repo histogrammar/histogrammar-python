@@ -17,9 +17,26 @@
 import math
 import numbers
 
-from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
-from histogrammar.util import n_dim, datatype, serializable, inheritdoc, maybeAdd, floatToJson, hasKeys, numeq, \
-    floatOrNan, rangeToJson, basestring, xrange
+from histogrammar.defs import (
+    Container,
+    ContainerException,
+    Factory,
+    JsonFormatException,
+    identity,
+)
+from histogrammar.util import (
+    basestring,
+    datatype,
+    floatOrNan,
+    floatToJson,
+    hasKeys,
+    inheritdoc,
+    maybeAdd,
+    n_dim,
+    numeq,
+    rangeToJson,
+    serializable,
+)
 
 
 class Bag(Factory, Container):
@@ -46,10 +63,18 @@ class Bag(Factory, Container):
                 or string.
         """
 
-        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in (
+            "nan",
+            "inf",
+            "-inf",
+        ):
             raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(values, dict) and not all(isinstance(k, numbers.Real) for k, v in values.items()):
-            raise TypeError("values ({0}) must be a dict from numbers to range type".format(values))
+        if not isinstance(values, dict) and not all(
+            isinstance(k, numbers.Real) for k, v in values.items()
+        ):
+            raise TypeError(
+                "values ({0}) must be a dict from numbers to range type".format(values)
+            )
         if float(entries) < 0.0:
             raise ValueError("entries ({0}) cannot be negative".format(entries))
         out = Bag(None, range)
@@ -75,7 +100,9 @@ class Bag(Factory, Container):
             range ("N", "N#" where "#" is a positive integer, or "S"): the data type: number, vector of numbers,
             or string. default is "S".
         """
-        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
+        self.quantity = serializable(
+            identity(quantity) if isinstance(quantity, str) else quantity
+        )
         self.entries = 0.0
         self.values = {}
         self.range = range
@@ -96,7 +123,9 @@ class Bag(Factory, Container):
             if self.range != other.range:
                 raise ContainerException(
                     "cannot add Bag because range differs ({0} vs {1})".format(
-                        self.range, other.range))
+                        self.range, other.range
+                    )
+                )
 
             out = Bag(self.quantity, self.range)
 
@@ -112,7 +141,9 @@ class Bag(Factory, Container):
             return out.specialize()
 
         else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+            raise ContainerException(
+                "cannot add {0} and {1}".format(self.name, other.name)
+            )
 
     @inheritdoc(Container)
     def __iadd__(self, other):
@@ -146,13 +177,21 @@ class Bag(Factory, Container):
     def _update(self, q, weight):
         if self.range == "S":
             if not isinstance(q, basestring):
-                raise TypeError("function return value ({0}) must be a string for range {1}".format(q, self.range))
+                raise TypeError(
+                    "function return value ({0}) must be a string for range {1}".format(
+                        q, self.range
+                    )
+                )
 
         elif self.range == "N":
             try:
                 q = floatOrNan(q)
             except BaseException:
-                raise TypeError("function return value ({0}) must be a number for range {1}".format(q, self.range))
+                raise TypeError(
+                    "function return value ({0}) must be a number for range {1}".format(
+                        q, self.range
+                    )
+                )
 
         else:
             try:
@@ -161,7 +200,9 @@ class Bag(Factory, Container):
             except BaseException:
                 raise TypeError(
                     "function return value ({0}) must be a list/tuple of numbers with length {1} for range {2}".format(
-                        q, self.dimension, self.range))
+                        q, self.dimension, self.range
+                    )
+                )
 
         # no possibility of exception from here on out (for rollback)
         self.entries += weight
@@ -170,91 +211,9 @@ class Bag(Factory, Container):
         else:
             self.values[q] = weight
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        normexpr = self._c99QuantityExpr(
-            parser,
-            generator,
-            inputFieldNames,
-            inputFieldTypes,
-            derivedFieldTypes,
-            derivedFieldExprs,
-            None)
-
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".values.clear();")
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
-                        ".entries += " + weightVarStack[-1] + ";")
-
-        fillCode.append("""{indent}if ({values}.find({q}) == {values}.end())
-{indent}  {values}[{q}] = 0.0;
-{indent}{values}[{q}] += {weight};""".format(
-            indent=" " * fillIndent,
-            values=self._c99ExpandPrefix(*fillPrefix) + ".values",
-            q=normexpr,
-            weight=weightVarStack[-1]
-        ))
-
-        if self.range[0] == "N" and len(self.range) > 1:
-            storageStructs[self.range] = """
-  class {0} {{
-    public:
-      double {1};
-      {0}({2}): {3} {{ }}
-      {0}(const {0}& other): {4} {{ }}
-      {0}(): {5} {{ }}
-      Bool_t operator<(const {0}& other) const {{
-        {6}
-        else return false;
-      }}
-  }};
-""".format(self.range,
-                ", ".join("v" + str(i) for i in xrange(self.dimension)),
-                ", ".join("double v" + str(i) for i in xrange(self.dimension)),
-                ", ".join("v" + str(i) + "(v" + str(i) + ")" for i in xrange(self.dimension)),
-                ", ".join("v" + str(i) + "(other.v" + str(i) + ")" for i in xrange(self.dimension)),
-                ", ".join("v" + str(i) + "(0.0)" for i in xrange(self.dimension)),
-                "\n        ".join(
-                    ("else " if i != 0 else "") +
-                    "if (v" +
-                    str(i) +
-                    " < other.v" +
-                    str(i) +
-                    ") return true;" for i in xrange(
-                        self.dimension))
-           )
-
-        storageStructs[self._c99StructName()] = """
-  typedef struct {{
-    double entries;
-    std::map<{1}, double> values;
-    double getValues({1} i) {{ return values[i]; }}
-  }} {0};
-""".format(self._c99StructName(), "double" if self.range == "N" else "std::string" if self.range == "S" else self.range)
-
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        raise NotImplementedError("no C99-compliant implementation of Bag (only C++)")
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefix(filler, *extractorPrefix)
-        self.entries += obj.entries
-
-        for i in obj.values:
-            key = i.first
-            if self.range[0] == "N" and len(self.range) > 1:
-                key = tuple(getattr(key, "v" + str(x)) for x in xrange(self.dimension))
-            if key not in self.values:
-                self.values[key] = 0.0
-            self.values[key] += i.second
-
-    def _c99StructName(self):
-        return "Bg" + self.range + "_"
-
     def _numpy(self, data, weights, shape):
         import numpy
+
         q = self.quantity(data)
         assert isinstance(q, numpy.ndarray)
         if shape[0] is None:
@@ -287,6 +246,7 @@ class Bag(Factory, Container):
                 aslist.append(("nan", self.values["nan"]))
 
         elif self.range[0] == "N":
+
             class Sorter(object):
                 def __init__(self, x):
                     self.x = x
@@ -302,22 +262,35 @@ class Bag(Factory, Container):
                         elif xi > yi:
                             return False
                     return False
-            aslist = sorted((x for x in self.values.items()), key=lambda y: tuple(Sorter(z) for z in y))
+
+            aslist = sorted(
+                (x for x in self.values.items()),
+                key=lambda y: tuple(Sorter(z) for z in y),
+            )
 
         else:
             aslist = sorted(x for x in self.values.items())
 
-        return maybeAdd({
-            "entries": floatToJson(self.entries),
-            "values": [{"w": floatToJson(n), "v": rangeToJson(v)} for v, n in aslist],
-            "range": self.range,
-        }, name=(None if suppressName else self.quantity.name))
+        return maybeAdd(
+            {
+                "entries": floatToJson(self.entries),
+                "values": [
+                    {"w": floatToJson(n), "v": rangeToJson(v)} for v, n in aslist
+                ],
+                "range": self.range,
+            },
+            name=(None if suppressName else self.quantity.name),
+        )
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "values", "range"], ["name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
+        if isinstance(json, dict) and hasKeys(
+            json.keys(), ["entries", "values", "range"], ["name"]
+        ):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
+                json["entries"], numbers.Real
+            ):
                 entries = json["entries"]
             else:
                 raise JsonFormatException(json["entries"], "Bag.entries")
@@ -336,22 +309,34 @@ class Bag(Factory, Container):
                 values = {}
                 for i, nv in enumerate(json["values"]):
                     if isinstance(nv, dict) and hasKeys(nv.keys(), ["w", "v"]):
-                        if nv["w"] in ("nan", "inf", "-inf") or isinstance(nv["w"], numbers.Real):
+                        if nv["w"] in ("nan", "inf", "-inf") or isinstance(
+                            nv["w"], numbers.Real
+                        ):
                             n = float(nv["w"])
                         else:
-                            raise JsonFormatException(nv["w"], "Bag.values {0} n".format(i))
+                            raise JsonFormatException(
+                                nv["w"], "Bag.values {0} n".format(i)
+                            )
 
-                        if nv["v"] in ("nan", "inf", "-inf") or isinstance(nv["v"], numbers.Real):
+                        if nv["v"] in ("nan", "inf", "-inf") or isinstance(
+                            nv["v"], numbers.Real
+                        ):
                             v = floatOrNan(nv["v"])
                         elif isinstance(nv["v"], basestring):
                             v = nv["v"]
                         elif isinstance(nv["v"], (list, tuple)):
                             for j, d in enumerate(nv["v"]):
-                                if d not in ("nan", "inf", "-inf") and not isinstance(d, numbers.Real):
-                                    raise JsonFormatException(d, "Bag.values {0} v {1}".format(i, j))
+                                if d not in ("nan", "inf", "-inf") and not isinstance(
+                                    d, numbers.Real
+                                ):
+                                    raise JsonFormatException(
+                                        d, "Bag.values {0} v {1}".format(i, j)
+                                    )
                             v = tuple(map(floatOrNan, nv["v"]))
                         else:
-                            raise JsonFormatException(nv["v"], "Bag.values {0} v".format(i))
+                            raise JsonFormatException(
+                                nv["v"], "Bag.values {0} v".format(i)
+                            )
 
                         values[v] = n
 
@@ -387,10 +372,15 @@ class Bag(Factory, Container):
             return False
 
         if self.range == "N":
-            one = sorted(x for x in self.values.items() if x[0] != "nan") + [("nan", self.values.get("nan"))]
-            two = sorted(x for x in other.values.items() if x[0] != "nan") + [("nan", other.values.get("nan"))]
+            one = sorted(x for x in self.values.items() if x[0] != "nan") + [
+                ("nan", self.values.get("nan"))
+            ]
+            two = sorted(x for x in other.values.items() if x[0] != "nan") + [
+                ("nan", other.values.get("nan"))
+            ]
 
         elif self.range[0] == "N":
+
             class Sorter(object):
                 def __init__(self, x):
                     self.x = x
@@ -406,8 +396,15 @@ class Bag(Factory, Container):
                         elif xi > yi:
                             return False
                     return False
-            one = sorted((x for x in self.values.items()), key=lambda y: tuple(Sorter(z) for z in y))
-            two = sorted((x for x in other.values.items()), key=lambda y: tuple(Sorter(z) for z in y))
+
+            one = sorted(
+                (x for x in self.values.items()),
+                key=lambda y: tuple(Sorter(z) for z in y),
+            )
+            two = sorted(
+                (x for x in other.values.items()),
+                key=lambda y: tuple(Sorter(z) for z in y),
+            )
 
         else:
             one = sorted(x for x in self.values.items())
@@ -441,13 +438,19 @@ class Bag(Factory, Container):
             else:
                 return False
 
-        return isinstance(other, Bag) and self.quantity == other.quantity and numeq(self.entries, other.entries)
+        return (
+            isinstance(other, Bag)
+            and self.quantity == other.quantity
+            and numeq(self.entries, other.entries)
+        )
 
     def __ne__(self, other):
         return not self == other
 
     def __hash__(self):
-        return hash((self.quantity, self.entries, tuple(self.values.items()), self.range))
+        return hash(
+            (self.quantity, self.entries, tuple(self.values.items()), self.range)
+        )
 
 
 # extra properties: number of dimensions and datatypes of sub-hists
