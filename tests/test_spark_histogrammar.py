@@ -193,7 +193,7 @@ def test_get_histograms_timestamp(spark_co):
             "origin": 1.2625632e18,
         },
         "type": "SparselyBin",
-        "version": "1.0",
+        "version": "1.1",
     }
     filler = SparkHistogrammar(features=["dt"])
     current_hists = filler.get_histograms(sdf)
@@ -235,7 +235,7 @@ def test_get_histograms_date(spark_co):
             "origin": 1.2625632e18,
         },
         "type": "SparselyBin",
-        "version": "1.0",
+        "version": "1.1",
     }
     filler = SparkHistogrammar(features=["dt"])
     current_hists = filler.get_histograms(sdf)

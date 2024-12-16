@@ -17,7 +17,7 @@ more quickly via Numpy commands, rather than Python for loops.
 
 This Python implementation of histogrammar been tested to guarantee compatibility with its Scala implementation.
 
-Latest Python release: v1.0.34 (Dec 2024).
+Latest Python release: v1.1.0 (Dec 2024).
 Latest update: Dec 2024.
 
 References
