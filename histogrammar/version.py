@@ -3,7 +3,7 @@
 import re
 from typing import Tuple
 
-version = "1.0.34"
+version = "1.1.0"
 
 
 def split_version_string(version_string: str) -> Tuple[int, int]:
