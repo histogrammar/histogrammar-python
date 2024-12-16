@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "histogrammar"
+description = "Composable histogram primitives for distributed data reduction"
+keywords = [
+    "pandas",
+    "spark",
+    "data-science",
+    "data-analysis",
+    "statistics",
+    "python",
+    "jupyter",
+    "ipython"
+]
+readme = "README.rst"
+requires-python = ">=3.9"
+authors = [{ name = "Jim Pivarski (DIANA-HEP)", email = "pivarski@fnal.gov" }, { name = "Max Baak", email = "maxbaak@gmail.com" }]
+maintainers = [{ name = "Max Baak", email = "maxbaak@gmail.com" }]
+license = { type = "Apache Software License v2", file = "LICENSE" }
+dependencies = [
+    "numpy",
+    "tqdm",
+    "joblib>=0.14.0"
+]
+classifiers = ["Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+pandas = [
+    "pandas"
+]
+spark = [
+    "pyspark>=3.1; python_version <= '3.11'",
+]
+test = [
+    "ipykernel>=5.1.3",
+    "jupyter_client>=5.2.3",
+    "matplotlib",
+    "pandas",
+    "pre-commit>=2.9.0",
+    "pytest-notebook>=0.6.1",
+    "pytest>=4.0.2",
+]
+test_numpy_pre2 = [
+    "numpy<2",
+    "pandas<2",
+]
+
+# files to be shipped with the installation, under: histogrammar/test_data and histogrammar/notebooks
+# after installation, these can be found with the functions in resources.py
+[tool.setuptools.package-data]
+histogrammar = [
+    "test_data/*.csv.gz",
+    "test_data/*.json*",
+    "notebooks/*tutorial*.ipynb",
+]
+
+[project.urls]
+repository = "https://github.com/histogrammar/histogrammar-python"
+
+[tool.semantic_release]
+version_variable = [
+    "histogrammar/version.py:version",
+]
+build_command = "pip install build && python -m build"
+
+[tool.setuptools.dynamic]
+version = { attr = "histogrammar.version.version" }

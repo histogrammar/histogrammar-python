@@ -20,6 +20,9 @@ Version 1.0.34, Dec 2024
 * Remove unused test_gpu.twosigfigs function.
 * Refactor tests with Numpy() and Pandas() context managers to use single 'with' statement.
 
+* Switch from setup.py to pyproject.toml
+* Add numpy<2,pandas<2 test environment to build pipeline test matrix
+
 Version 1.0.33, Dec 2022
 ------------------------
 * fix of get_sub_hist() when Bin histogram is filled only with nans.

@@ -9,27 +9,37 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        python: ['3.9', '3.10', '3.11', '3.12']
+        os: [ ubuntu-latest ]
+        python: [ "3.9", "3.10", "3.11", "3.12" ]
+        numpy_version: [ "numpy-latest", "numpy<2" ]
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python }}
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python }}
-    - uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/requirements-test.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .
-        pip install -r requirements-test.txt
-    - name: Test with pytest
-      run: |
-        pytest tests/
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Use cache for pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ "${{ matrix.numpy_version }}" = "numpy<2" ]; then
+            pip install ".[test,pandas,spark,test_numpy_pre2]"
+          else
+            pip install ".[test,pandas,spark]"          
+          fi
+
+      - name: Test with pytest
+        run: |
+          pytest tests
