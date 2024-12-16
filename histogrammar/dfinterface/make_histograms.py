@@ -34,16 +34,15 @@ from ..primitives.count import Count
 from ..primitives.deviate import Deviate
 from ..primitives.fraction import Fraction
 from ..primitives.irregularlybin import IrregularlyBin
-from ..primitives.minmax import Minimize, Maximize
+from ..primitives.minmax import Maximize, Minimize
 from ..primitives.select import Select
 from ..primitives.sparselybin import SparselyBin
 from ..primitives.stack import Stack
 from ..primitives.sum import Sum
-
+from ..util import _get_sub_hist
+from .filling_utils import normalize_dtype
 from .pandas_histogrammar import PandasHistogrammar
 from .spark_histogrammar import SparkHistogrammar
-from .filling_utils import normalize_dtype
-from ..util import _get_sub_hist
 
 logger = logging.getLogger()
 
@@ -54,8 +53,8 @@ def make_histograms(
     binning="auto",
     bin_specs=None,
     time_axis="",
-    time_width='30d',
-    time_offset='2010-01-04',
+    time_width="30d",
+    time_offset="2010-01-04",
     var_dtype=None,
     ret_specs=False,
     nbins_1d=40,
@@ -130,9 +129,9 @@ def make_histograms(
     ):
         raise TypeError("time_axis needs to be a string, or a bool set to True")
     if (
-        isinstance(time_axis, str) and
-        len(time_axis) > 0 and
-        time_axis not in df.columns
+        isinstance(time_axis, str)
+        and len(time_axis) > 0
+        and time_axis not in df.columns
     ):
         raise ValueError(f'time_axis "{time_axis}" not found in columns of dataframe.')
     if isinstance(time_axis, bool):
@@ -152,10 +151,10 @@ def make_histograms(
 
     # if time_axis present, interpret time_width and time_offset
     if (
-        isinstance(time_axis, str) and
-        len(time_axis) > 0 and
-        isinstance(time_width, (str, int, float)) and
-        isinstance(time_offset, (str, int, float))
+        isinstance(time_axis, str)
+        and len(time_axis) > 0
+        and isinstance(time_width, (str, int, float))
+        and isinstance(time_offset, (str, int, float))
     ):
         if not isinstance(bin_specs, (type(None), dict)):
             raise RuntimeError("bin_specs object is not a dictionary")

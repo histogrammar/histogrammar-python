@@ -14,15 +14,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import math
 import numbers
-import struct
 
-from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
-from histogrammar.util import n_dim, datatype, serializable, inheritdoc, maybeAdd, floatToJson, hasKeys, numeq, \
-    basestring
+from histogrammar.defs import (
+    Container,
+    ContainerException,
+    Factory,
+    JsonFormatException,
+    identity,
+)
 from histogrammar.primitives.count import Count
+from histogrammar.util import (
+    basestring,
+    datatype,
+    floatToJson,
+    hasKeys,
+    inheritdoc,
+    maybeAdd,
+    n_dim,
+    numeq,
+    serializable,
+)
 
 
 class Fraction(Factory, Container):
@@ -48,7 +61,11 @@ class Fraction(Factory, Container):
             numerator: (:doc:`Container <histogrammar.defs.Container>`): the filled numerator.
             denominator (:doc:`Container <histogrammar.defs.Container>`): the filled denominator.
         """
-        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
+        if not isinstance(entries, numbers.Real) and entries not in (
+            "nan",
+            "inf",
+            "-inf",
+        ):
             raise TypeError("entries ({0}) must be a number".format(entries))
         if not isinstance(numerator, Container):
             raise TypeError("numerator ({0}) must be a Container".format(numerator))
@@ -86,7 +103,9 @@ class Fraction(Factory, Container):
         if value is not None and not isinstance(value, Container):
             raise TypeError("value ({0}) must be None or a Container".format(value))
         self.entries = 0.0
-        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
+        self.quantity = serializable(
+            identity(quantity) if isinstance(quantity, str) else quantity
+        )
         if value is not None:
             self.numerator = value.zero()
             self.denominator = value.zero()
@@ -129,7 +148,9 @@ class Fraction(Factory, Container):
             out.denominator = self.denominator + other.denominator
             return out.specialize()
         else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+            raise ContainerException(
+                "cannot add {0} and {1}".format(self.name, other.name)
+            )
 
     @inheritdoc(Container)
     def __iadd__(self, other):
@@ -139,7 +160,9 @@ class Fraction(Factory, Container):
             self.denominator += other.denominator
             return self
         else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+            raise ContainerException(
+                "cannot add {0} and {1}".format(self.name, other.name)
+            )
 
     @inheritdoc(Container)
     def __mul__(self, factor):
@@ -163,7 +186,9 @@ class Fraction(Factory, Container):
         if weight > 0.0:
             w = self.quantity(datum)
             if not isinstance(w, numbers.Real):
-                raise TypeError("function return value ({0}) must be boolean or number".format(w))
+                raise TypeError(
+                    "function return value ({0}) must be boolean or number".format(w)
+                )
             w *= weight
 
             self.denominator.fill(datum, weight)
@@ -173,236 +198,6 @@ class Fraction(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                                     derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode,
-                                     fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
-
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
-
-        normexpr = self._c99QuantityExpr(
-            parser,
-            generator,
-            inputFieldNames,
-            inputFieldTypes,
-            derivedFieldTypes,
-            derivedFieldExprs,
-            None)
-
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
-                        ".entries += " + weightVarStack[-1] + ";")
-
-        self.denominator._c99GenerateCode(parser,
-                                          generator,
-                                          inputFieldNames,
-                                          inputFieldTypes,
-                                          derivedFieldTypes,
-                                          derivedFieldExprs,
-                                          storageStructs,
-                                          initCode,
-                                          initPrefix + (("var",
-                                                         "denominator"),
-                                                        ),
-                                          initIndent,
-                                          fillCode,
-                                          fillPrefix + (("var",
-                                                         "denominator"),
-                                                        ),
-                                          fillIndent,
-                                          weightVars,
-                                          weightVarStack,
-                                          tmpVarTypes)
-
-        weightVars.append("weight_" + str(len(weightVars)))
-        weightVarStack = weightVarStack + (weightVars[-1],)
-        fillCode.append(" " * fillIndent + "if (!std::isnan({0})  &&  {0} > 0.0) {{".format(normexpr))
-        fillCode.append(" " * fillIndent +
-                        "  {0} = {1} * {2};".format(weightVarStack[-1], weightVarStack[-2], normexpr))
-
-        self.numerator._c99GenerateCode(parser,
-                                        generator,
-                                        inputFieldNames,
-                                        inputFieldTypes,
-                                        derivedFieldTypes,
-                                        derivedFieldExprs,
-                                        storageStructs,
-                                        initCode,
-                                        initPrefix + (("var",
-                                                       "numerator"),
-                                                      ),
-                                        initIndent,
-                                        fillCode,
-                                        fillPrefix + (("var",
-                                                       "numerator"),
-                                                      ),
-                                        fillIndent + 2,
-                                        weightVars,
-                                        weightVarStack,
-                                        tmpVarTypes)
-
-        fillCode.append(" " * fillIndent + "}")
-
-        storageStructs[self._c99StructName()] = """
-  typedef struct {{
-    double entries;
-    {1} denominator;
-    {1} numerator;
-  }} {0};
-""".format(self._c99StructName(), self.denominator._c99StorageType())
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefix(filler, *extractorPrefix)
-        self.entries += obj.entries
-        self.numerator._clingUpdate(obj, ("var", "numerator"))
-        self.denominator._clingUpdate(obj, ("var", "denominator"))
-
-    def _c99StructName(self):
-        return "Fr" + self.denominator._c99StructName()
-
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                          derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                          fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix,
-                          jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
-        normexpr = self._cudaQuantityExpr(
-            parser,
-            generator,
-            inputFieldNames,
-            inputFieldTypes,
-            derivedFieldTypes,
-            derivedFieldExprs,
-            None)
-
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
-        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " +
-                        weightVarStack[-1] + ");")
-        combineCode.append(
-            " " *
-            combineIndent +
-            "atomicAdd(&" +
-            self._c99ExpandPrefix(
-                *
-                totalPrefix) +
-            ".entries, " +
-            self._c99ExpandPrefix(
-                *
-                itemPrefix) +
-            ".entries);")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"entries\\\": \");")
-        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
-
-        jsonCode.append(
-            " " *
-            jsonIndent +
-            "fprintf(out, \", \\\"sub:type\\\": \\\"" +
-            self.denominator.name +
-            "\\\"\");")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"denominator\\\": \");")
-        self.denominator._cudaGenerateCode(parser,
-                                           generator,
-                                           inputFieldNames,
-                                           inputFieldTypes,
-                                           derivedFieldTypes,
-                                           derivedFieldExprs,
-                                           storageStructs,
-                                           initCode,
-                                           initPrefix + (("var",
-                                                          "denominator"),
-                                                         ),
-                                           initIndent,
-                                           fillCode,
-                                           fillPrefix + (("var",
-                                                          "denominator"),
-                                                         ),
-                                           fillIndent,
-                                           combineCode,
-                                           totalPrefix + (("var",
-                                                           "denominator"),
-                                                          ),
-                                           itemPrefix + (("var",
-                                                          "denominator"),
-                                                         ),
-                                           combineIndent,
-                                           jsonCode,
-                                           jsonPrefix + (("var",
-                                                          "denominator"),
-                                                         ),
-                                           jsonIndent,
-                                           weightVars,
-                                           weightVarStack,
-                                           tmpVarTypes,
-                                           False)
-
-        weightVars.append("weight_" + str(len(weightVars)))
-        weightVarStack = weightVarStack + (weightVars[-1],)
-        fillCode.append(" " * fillIndent +
-                        "{newweight} = (isnan({q})  ||  {q} <= 0.0) ? 0.0 : ({oldweight} * {q});".format(
-                            newweight=weightVarStack[-1], oldweight=weightVarStack[-2], q=normexpr))
-
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"numerator\\\": \");")
-        self.numerator._cudaGenerateCode(parser,
-                                         generator,
-                                         inputFieldNames,
-                                         inputFieldTypes,
-                                         derivedFieldTypes,
-                                         derivedFieldExprs,
-                                         storageStructs,
-                                         initCode,
-                                         initPrefix + (("var",
-                                                        "numerator"),
-                                                       ),
-                                         initIndent,
-                                         fillCode,
-                                         fillPrefix + (("var",
-                                                        "numerator"),
-                                                       ),
-                                         fillIndent,
-                                         combineCode,
-                                         totalPrefix + (("var",
-                                                         "numerator"),
-                                                        ),
-                                         itemPrefix + (("var",
-                                                        "numerator"),
-                                                       ),
-                                         combineIndent,
-                                         jsonCode,
-                                         jsonPrefix + (("var",
-                                                        "numerator"),
-                                                       ),
-                                         jsonIndent,
-                                         weightVars,
-                                         weightVarStack,
-                                         tmpVarTypes,
-                                         False)
-
-        if suppressName or self.quantity.name is None:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
-        else:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"name\\\": " +
-                            json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
-
-        storageStructs[self._c99StructName()] = """
-  typedef struct {{
-    float entries;
-    {1} denominator;
-    {1} numerator;
-  }} {0};
-""".format(self._c99StructName(), self.denominator._cudaStorageType())
-
-    def _cudaUnpackAndFill(self, data, bigendian, alignment):
-        format = "<f"
-        entries, = struct.unpack(format, data[:struct.calcsize(format)])
-        self.entries += entries
-        data = data[struct.calcsize(format):]
-
-        data = self.denominator._cudaUnpackAndFill(data, bigendian, alignment)
-        data = self.numerator._cudaUnpackAndFill(data, bigendian, alignment)
-        return data
-
     def _numpy(self, data, weights, shape):
         w = self.quantity(data)
         self._checkNPQuantity(w, shape)
@@ -410,6 +205,7 @@ class Fraction(Factory, Container):
         weights = self._makeNPWeights(weights, shape)
 
         import numpy
+
         w = w * weights
         w[numpy.isnan(w)] = 0.0
         w[w < 0.0] = 0.0
@@ -421,7 +217,9 @@ class Fraction(Factory, Container):
         self.entries += float(weights.sum())
 
     def _sparksql(self, jvm, converter):
-        return converter.Fraction(self.quantity.asSparkSQL(), self.numerator._sparksql(jvm, converter))
+        return converter.Fraction(
+            self.quantity.asSparkSQL(), self.numerator._sparksql(jvm, converter)
+        )
 
     @property
     def children(self):
@@ -437,20 +235,30 @@ class Fraction(Factory, Container):
         else:
             binsName = None
 
-        return maybeAdd({
-            "entries": floatToJson(self.entries),
-            "sub:type": self.numerator.name,
-            "numerator": self.numerator.toJsonFragment(True),
-            "denominator": self.denominator.toJsonFragment(True),
-        }, **{"name": None if suppressName else self.quantity.name,
-              "sub:name": binsName})
+        return maybeAdd(
+            {
+                "entries": floatToJson(self.entries),
+                "sub:type": self.numerator.name,
+                "numerator": self.numerator.toJsonFragment(True),
+                "denominator": self.denominator.toJsonFragment(True),
+            },
+            **{
+                "name": None if suppressName else self.quantity.name,
+                "sub:name": binsName,
+            },
+        )
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(
-                json.keys(), ["entries", "sub:type", "numerator", "denominator"], ["name", "sub:name"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
+            json.keys(),
+            ["entries", "sub:type", "numerator", "denominator"],
+            ["name", "sub:name"],
+        ):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
+                json["entries"], numbers.Real
+            ):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Fraction.entries")
@@ -488,9 +296,13 @@ class Fraction(Factory, Container):
         return "<Fraction values={0}>".format(self.numerator.name)
 
     def __eq__(self, other):
-        return isinstance(other, Fraction) and numeq(self.entries, other.entries) and \
-               self.quantity == other.quantity and self.numerator == other.numerator and \
-               self.denominator == other.denominator
+        return (
+            isinstance(other, Fraction)
+            and numeq(self.entries, other.entries)
+            and self.quantity == other.quantity
+            and self.numerator == other.numerator
+            and self.denominator == other.denominator
+        )
 
     def __ne__(self, other):
         return not self == other

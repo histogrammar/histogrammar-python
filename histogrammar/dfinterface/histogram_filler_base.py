@@ -26,7 +26,6 @@ from ..primitives.select import Select
 from ..primitives.sparselybin import SparselyBin
 from ..primitives.stack import Stack
 from ..primitives.sum import Sum
-
 from .filling_utils import check_column, normalize_dtype
 
 
@@ -229,10 +228,10 @@ class HistogramFillerBase(object):
         no_initial_features = len(self.features) == 0
 
         all_cols = (
-            list(cols_by_type["num"]) +
-            list(cols_by_type["dt"]) +
-            list(cols_by_type["bool"]) +
-            list(cols_by_type["str"])
+            list(cols_by_type["num"])
+            + list(cols_by_type["dt"])
+            + list(cols_by_type["bool"])
+            + list(cols_by_type["str"])
         )
 
         # 1. assign / figure out a time axis
@@ -414,7 +413,11 @@ class HistogramFillerBase(object):
                     self.var_dtype[col] = dt
 
                 # metadata indicates decimal
-                if hasattr(dt_col, 'metadata') and dt_col.metadata is not None and dt_col.metadata["decimal"]:
+                if (
+                    hasattr(dt_col, "metadata")
+                    and dt_col.metadata is not None
+                    and dt_col.metadata["decimal"]
+                ):
                     cols_by_type["decimal"].add(col)
 
                 if np.issubdtype(dt, np.integer):
@@ -511,8 +514,8 @@ class HistogramFillerBase(object):
             # numbers and timestamps are put in a sparse binned histogram
             if "binWidth" in specs or "bin_width" in specs:
                 hist = SparselyBin(
-                    binWidth=specs.get("binWidth", specs.get("bin_width", 1.)),
-                    origin=specs.get("origin", specs.get("bin_offset", 0.)),
+                    binWidth=specs.get("binWidth", specs.get("bin_width", 1.0)),
+                    origin=specs.get("origin", specs.get("bin_offset", 0.0)),
                     quantity=quant,
                     value=hist,
                 )
@@ -526,7 +529,7 @@ class HistogramFillerBase(object):
                 )
             elif "edges" in specs or "bin_edges" in specs:
                 hist = IrregularlyBin(
-                    edges=specs.get('edges', specs.get('bin_edges', [])),
+                    edges=specs.get("edges", specs.get("bin_edges", [])),
                     quantity=quant,
                     value=hist,
                 )
@@ -542,19 +545,19 @@ class HistogramFillerBase(object):
                 hist = Sum(quantity=quant)
             elif "centers" in specs or "bin_centers" in specs:
                 hist = CentrallyBin(
-                    centers=specs.get('centers', specs.get('bin_centers', [])),
+                    centers=specs.get("centers", specs.get("bin_centers", [])),
                     quantity=quant,
                     value=hist,
                 )
             elif "thresholds" in specs:
                 hist = Stack(
-                    thresholds=specs['thresholds'],
+                    thresholds=specs["thresholds"],
                     quantity=quant,
                     value=hist,
                 )
             elif "bag" in specs or "range" in specs:
                 hist = Bag(
-                    range=specs.get('range', 'N'),
+                    range=specs.get("range", "N"),
                     quantity=quant,
                 )
             elif "fraction" in specs:
@@ -571,7 +574,7 @@ class HistogramFillerBase(object):
                 raise RuntimeError("Do not know how to interpret bin specifications.")
         else:
             if not is_bool and ("bag" in specs or "range" in specs):
-                hist = Bag(range=specs.get('range', 'S'), quantity=quant)
+                hist = Bag(range=specs.get("range", "S"), quantity=quant)
             else:
                 # string and booleans are treated as categories
                 hist = Categorize(quantity=quant, value=hist)

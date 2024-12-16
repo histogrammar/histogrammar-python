@@ -47,11 +47,16 @@ documented = []
 for moduleName, module in modules.items():
     for objName in dir(module):
         obj = getattr(module, objName)
-        if not objName.startswith("_") and callable(obj) and obj.__module__ == moduleName:
+        if (
+            not objName.startswith("_")
+            and callable(obj)
+            and obj.__module__ == moduleName
+        ):
             print(objName, obj)
             documented.append(moduleName + "." + objName)
             if inspect.isclass(obj):
-                open("docs/" + moduleName + "." + objName + ".rst", "w").write(''':orphan:
+                open("docs/" + moduleName + "." + objName + ".rst", "w").write(
+                    """:orphan:
 
 {0}
 {1}
@@ -61,12 +66,21 @@ for moduleName, module in modules.items():
     :special-members: __init__, __add__
     :inherited-members:
     :show-inheritance:
-'''.format(moduleName + "." + objName, "=" * (len(moduleName) + len(objName) + 1)))
+""".format(
+                        moduleName + "." + objName,
+                        "=" * (len(moduleName) + len(objName) + 1),
+                    )
+                )
             else:
-                open("docs/" + moduleName + "." + objName + ".rst", "w").write(''':orphan:
+                open("docs/" + moduleName + "." + objName + ".rst", "w").write(
+                    """:orphan:
 
 {0}
 {1}
 
 .. autofunction:: {0}
-'''.format(moduleName + "." + objName, "=" * (len(moduleName) + len(objName) + 1)))
+""".format(
+                        moduleName + "." + objName,
+                        "=" * (len(moduleName) + len(objName) + 1),
+                    )
+                )

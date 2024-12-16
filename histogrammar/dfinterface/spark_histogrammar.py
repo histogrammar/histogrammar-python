@@ -6,16 +6,17 @@ https://github.com/KaveIO/Eskapade-Spark/blob/master/python/eskapadespark/links/
 All modifications copyright ING WBAA.
 """
 
-import histogrammar as hg
 import numpy as np
 from tqdm import tqdm
+
+import histogrammar as hg
 
 from .histogram_filler_base import HistogramFillerBase
 
 try:
     from pyspark.sql import DataFrame
-    from pyspark.sql.functions import approxCountDistinct
     from pyspark.sql import functions as f
+    from pyspark.sql.functions import approxCountDistinct
 except (ModuleNotFoundError, AttributeError):
     pass
 
@@ -203,9 +204,14 @@ class SparkHistogrammar(HistogramFillerBase):
         for col in cols_by_type["num"]:
             if len(idf.where(f.col(col).isNull()).limit(1).collect()) > 0:
                 self.logger.debug(
-                    'In numeric column "{col}" converting each None to NaN.'.format(col=col)
+                    'In numeric column "{col}" converting each None to NaN.'.format(
+                        col=col
+                    )
                 )
-                idf = idf.withColumn(col, f.when(f.col(col).isNotNull(), f.col(col)).otherwise(float('nan')))
+                idf = idf.withColumn(
+                    col,
+                    f.when(f.col(col).isNotNull(), f.col(col)).otherwise(float("nan")),
+                )
 
         return idf
 

@@ -19,6 +19,7 @@
 
 
 import warnings
+
 import numpy as np
 
 
@@ -91,10 +92,10 @@ def set_2dgrid(hist, xkeys, ykeys):
             i = xkeys.index(k)
             if hasattr(h, "bins"):
                 h_bins = dict(h.bins)
-                for l, g in h_bins.items():
-                    if l not in ykeys:
+                for li, g in h_bins.items():
+                    if li not in ykeys:
                         continue
-                    j = ykeys.index(l)
+                    j = ykeys.index(li)
                     grid[j, i] = g.entries
             elif hasattr(h, "values"):
                 for j, g in enumerate(h.values):
@@ -104,10 +105,10 @@ def set_2dgrid(hist, xkeys, ykeys):
         for i, h in enumerate(hist.values):
             if hasattr(h, "bins"):
                 h_bins = dict(h.bins)
-                for l, g in h_bins.items():
-                    if l not in ykeys:
+                for lj, g in h_bins.items():
+                    if lj not in ykeys:
                         continue
-                    j = ykeys.index(l)
+                    j = ykeys.index(lj)
                     grid[j, i] = g.entries
             elif hasattr(h, "values"):
                 for j, g in enumerate(h.values):
@@ -121,8 +122,6 @@ def get_2dgrid(hist):
     :param hist: input histogrammar histogram
     :return: x,y,grid of first two dimenstions of input histogram
     """
-    import numpy as np
-
     if hist.n_dim < 2:
         warnings.warn(
             "Input histogram only has {n} dimensions (<2). Returning empty grid.".format(

@@ -91,6 +91,11 @@ def pytest_configure():
     df["date"] = pd.to_datetime(df["date"])
 
     # Decimal type
-    df["amount"] = df["balance"].str.replace("$", "", regex=False).str.replace(",", "", regex=False).apply(Decimal)
+    df["amount"] = (
+        df["balance"]
+        .str.replace("$", "", regex=False)
+        .str.replace(",", "", regex=False)
+        .apply(Decimal)
+    )
 
     pytest.test_df = df

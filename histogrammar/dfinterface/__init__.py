@@ -21,14 +21,16 @@ from .addmethods import add_pandas_methods, add_sparksql_methods
 
 try:
     from pyspark.sql import DataFrame as sdf
+
     # add function to create histogrammar histograms
-    add_sparksql_methods(cls=sdf, prefix='hg_')
+    add_sparksql_methods(cls=sdf, prefix="hg_")
 except (ModuleNotFoundError, AttributeError):
     pass
 
 try:
     from pandas import DataFrame as pdf
+
     # add function to create histogrammar histograms
-    add_pandas_methods(cls=pdf, prefix='hg_')
+    add_pandas_methods(cls=pdf, prefix="hg_")
 except (ModuleNotFoundError, AttributeError):
     pass
