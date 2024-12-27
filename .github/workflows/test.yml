@@ -40,6 +40,11 @@ jobs:
             pip install ".[test,pandas,spark]"          
           fi
 
+      - name: Lint with pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files --show-diff-on-failure
+
       - name: Test with pytest
         run: |
           pytest tests
