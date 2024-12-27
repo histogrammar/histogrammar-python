@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
 
 import numpy as np
 
@@ -26,10 +25,9 @@ from histogrammar.util import xrange
 # 1d plotting of counts + generic 2d plotting of counts
 
 
-class HistogramMethods(object):
+class HistogramMethods:
     def plotmatplotlib(self, name=None, **kwargs):
-        """
-        name : title of the plot.
+        """name : title of the plot.
         kwargs :  `matplotlib.patches.Rectangle` properties.
 
         Returns a matplotlib.axes instance
@@ -57,10 +55,9 @@ class HistogramMethods(object):
         return ax
 
 
-class SparselyHistogramMethods(object):
+class SparselyHistogramMethods:
     def plotmatplotlib(self, name=None, **kwargs):
-        """
-        name : title of the plot.
+        """name : title of the plot.
         kwargs :  `matplotlib.patches.Rectangle` properties.
 
         Returns a matplotlib.axes instance
@@ -89,10 +86,9 @@ class SparselyHistogramMethods(object):
         return ax
 
 
-class IrregularlyHistogramMethods(object):
+class IrregularlyHistogramMethods:
     def plotmatplotlib(self, name=None, **kwargs):
-        """
-        name : title of the plot.
+        """name : title of the plot.
         kwargs :  `matplotlib.patches.Rectangle` properties.
 
         Returns a matplotlib.axes instance
@@ -120,10 +116,9 @@ class IrregularlyHistogramMethods(object):
         return ax
 
 
-class CentrallyHistogramMethods(object):
+class CentrallyHistogramMethods:
     def plotmatplotlib(self, name=None, **kwargs):
-        """
-        name : title of the plot.
+        """name : title of the plot.
         kwargs :  `matplotlib.patches.Rectangle` properties.
 
         Returns a matplotlib.axes instance
@@ -141,9 +136,7 @@ class CentrallyHistogramMethods(object):
 
         labels = self.bin_centers()
         values = self.bin_entries()
-        assert len(labels) == len(
-            values
-        ), "labels and values have different array lengths: %d vs %d." % (
+        assert len(labels) == len(values), "labels and values have different array lengths: %d vs %d." % (
             len(labels),
             len(values),
         )
@@ -172,10 +165,9 @@ class CentrallyHistogramMethods(object):
         return ax
 
 
-class CategorizeHistogramMethods(object):
+class CategorizeHistogramMethods:
     def plotmatplotlib(self, name=None, **kwargs):
-        """
-        name : title of the plot.
+        """name : title of the plot.
         kwargs :  `matplotlib.patches.Rectangle` properties.
 
         Returns a matplotlib.axes instance
@@ -193,9 +185,7 @@ class CategorizeHistogramMethods(object):
 
         labels = self.bin_labels()
         values = self.bin_entries()
-        assert len(labels) == len(
-            values
-        ), "labels and values have different array lengths: %d vs %d." % (
+        assert len(labels) == len(values), "labels and values have different array lengths: %d vs %d." % (
             len(labels),
             len(values),
         )
@@ -232,7 +222,7 @@ class CategorizeHistogramMethods(object):
 # 1d plotting of profiles
 
 
-class ProfileMethods(object):
+class ProfileMethods:
     def plotmatplotlib(self, name=None, **kwargs):
         """Plotting method for Bin of Average
           name : title of the plot.
@@ -257,7 +247,7 @@ class ProfileMethods(object):
         return ax
 
 
-class SparselyProfileMethods(object):
+class SparselyProfileMethods:
     def plotmatplotlib(self, name=None, **kwargs):
         """Plotting method for SparselyBin of Average
           name : title of the plot.
@@ -270,9 +260,7 @@ class SparselyProfileMethods(object):
         ax = plt.gca()
 
         xmins = np.arange(self.low, self.high, self.binWidth)
-        xmaxs = np.arange(
-            self.low + self.binWidth, self.high + self.binWidth, self.binWidth
-        )
+        xmaxs = np.arange(self.low + self.binWidth, self.high + self.binWidth, self.binWidth)
 
         means = np.nan * np.ones(xmaxs.shape)
 
@@ -290,7 +278,7 @@ class SparselyProfileMethods(object):
         return ax
 
 
-class ProfileErrMethods(object):
+class ProfileErrMethods:
     def plotmatplotlib(self, name=None, aspect=True, **kwargs):
         """Plotting method for Bin of Deviate
           name : title of the plot.
@@ -315,14 +303,8 @@ class ProfileErrMethods(object):
 
         if aspect is True:
             counts = [p.entries for p in self.values]
-            ymins = [
-                means[i] - np.sqrt(variances[i]) / np.sqrt(counts[i])
-                for i in range(num_bins)
-            ]
-            ymaxs = [
-                means[i] + np.sqrt(variances[i]) / np.sqrt(counts[i])
-                for i in range(num_bins)
-            ]
+            ymins = [means[i] - np.sqrt(variances[i]) / np.sqrt(counts[i]) for i in range(num_bins)]
+            ymaxs = [means[i] + np.sqrt(variances[i]) / np.sqrt(counts[i]) for i in range(num_bins)]
         else:
             ymins = [means[i] - np.sqrt(variances[i]) for i in range(num_bins)]
             ymaxs = [means[i] + np.sqrt(variances[i]) for i in range(num_bins)]
@@ -336,7 +318,7 @@ class ProfileErrMethods(object):
         return ax
 
 
-class SparselyProfileErrMethods(object):
+class SparselyProfileErrMethods:
     def plotmatplotlib(self, name=None, aspect=True, **kwargs):
         """Plotting method for"""
         import matplotlib.pyplot as plt
@@ -344,9 +326,7 @@ class SparselyProfileErrMethods(object):
         ax = plt.gca()
 
         xmins = np.arange(self.low, self.high, self.binWidth)
-        xmaxs = np.arange(
-            self.low + self.binWidth, self.high + self.binWidth, self.binWidth
-        )
+        xmaxs = np.arange(self.low + self.binWidth, self.high + self.binWidth, self.binWidth)
 
         means = np.nan * np.ones(xmaxs.shape)
         variances = np.nan * np.ones(xmaxs.shape)
@@ -369,14 +349,8 @@ class SparselyProfileErrMethods(object):
 
         bin_centers = (self.binWidth / 2.0) + xmins
         if aspect is True:
-            ymins = [
-                means[i] - np.sqrt(variances[i]) / np.sqrt(counts[i])
-                for i in xrange(len(means))
-            ]
-            ymaxs = [
-                means[i] + np.sqrt(variances[i]) / np.sqrt(counts[i])
-                for i in xrange(len(means))
-            ]
+            ymins = [means[i] - np.sqrt(variances[i]) / np.sqrt(counts[i]) for i in xrange(len(means))]
+            ymaxs = [means[i] + np.sqrt(variances[i]) / np.sqrt(counts[i]) for i in xrange(len(means))]
         else:
             ymins = [means[i] - np.sqrt(variances[i]) for i in xrange(len(means))]
             ymaxs = [means[i] + np.sqrt(variances[i]) for i in xrange(len(means))]
@@ -393,7 +367,7 @@ class SparselyProfileErrMethods(object):
 # other 1d/2d plotting
 
 
-class StackedHistogramMethods(object):
+class StackedHistogramMethods:
     def plotmatplotlib(self, name=None, **kwargs):
         """Plotting method for"""
         import matplotlib.pyplot as plt
@@ -415,7 +389,7 @@ class StackedHistogramMethods(object):
         return ax
 
 
-class PartitionedHistogramMethods(object):
+class PartitionedHistogramMethods:
     def plotmatplotlib(self, name=None, **kwargs):
         """Plotting method for"""
         import matplotlib.pyplot as plt
@@ -437,7 +411,7 @@ class PartitionedHistogramMethods(object):
         return ax
 
 
-class FractionedHistogramMethods(object):
+class FractionedHistogramMethods:
     def plotmatplotlib(self, name=None, **kwargs):
         """Plotting method for"""
         import matplotlib.pyplot as plt
@@ -445,10 +419,7 @@ class FractionedHistogramMethods(object):
         ax = plt.gca()
 
         if isinstance(self.numerator, HistogramMethods):
-            fracs = [
-                x[0].entries / float(x[1].entries)
-                for x in zip(self.numerator.values, self.denominator.values)
-            ]
+            fracs = [x[0].entries / float(x[1].entries) for x in zip(self.numerator.values, self.denominator.values)]
             xranges = [self.numerator.range(x) for x in self.numerator.indexes]
 
             xmins = [x[0] for x in xranges]
@@ -472,9 +443,7 @@ class FractionedHistogramMethods(object):
 
             for i in xrange(denominator.minBin, denominator.maxBin + 1):
                 if i in self.numerator.bins and i in self.denominator.bins:
-                    fracs[i - denominator.minBin] = (
-                        numerator.bins[i].entries / denominator.bins[i].entries
-                    )
+                    fracs[i - denominator.minBin] = numerator.bins[i].entries / denominator.bins[i].entries
             idx = np.isfinite(fracs)
             ax.hlines(fracs[idx], xmins[idx], xmaxs[idx], **kwargs)
 
@@ -489,7 +458,7 @@ class FractionedHistogramMethods(object):
 # specialized 2d plotting of counts
 
 
-class TwoDimensionallyHistogramMethods(object):
+class TwoDimensionallyHistogramMethods:
     def plotmatplotlib(self, name=None, **kwargs):
         """Plotting method for Bin of Bin of Count
           name : title of the plot.
@@ -581,7 +550,7 @@ class TwoDimensionallyHistogramMethods(object):
         return h_y
 
 
-class SparselyTwoDimensionallyHistogramMethods(object):
+class SparselyTwoDimensionallyHistogramMethods:
     def plotmatplotlib(self, name=None, **kwargs):
         """Plotting method for SparselyBin of SparselyBin of Count
           name : title of the plot.
@@ -675,9 +644,7 @@ class SparselyTwoDimensionallyHistogramMethods(object):
         try:
             ykey = list(self.bins.keys())[0]
         except BaseException:
-            raise KeyError(
-                "SparselyBin 2d hist is not filled. Cannot project on y-axis."
-            )
+            raise KeyError("SparselyBin 2d hist is not filled. Cannot project on y-axis.")
         ybin = self.bins[ykey]
         h_y = SparselyBin(
             binWidth=ybin.binWidth,
@@ -695,7 +662,7 @@ class SparselyTwoDimensionallyHistogramMethods(object):
         return h_y
 
 
-class IrregularlyTwoDimensionallyHistogramMethods(object):
+class IrregularlyTwoDimensionallyHistogramMethods:
     def plotmatplotlib(self, name=None, **kwargs):
         """Plotting method for Bin of Bin of Count
           name : title of the plot.
@@ -756,9 +723,7 @@ class IrregularlyTwoDimensionallyHistogramMethods(object):
         """
         from histogrammar import Count, IrregularlyBin
 
-        h_x = IrregularlyBin(
-            edges=self.edges[1:], quantity=self.quantity, value=Count()
-        )
+        h_x = IrregularlyBin(edges=self.edges[1:], quantity=self.quantity, value=Count())
         # loop over all counters and integrate over y (=j)
         for i, bi in enumerate(self.bins):
             h_x.bins[i][1].entries += sum(bj.entries for _, bj in bi[1].bins)
@@ -773,9 +738,7 @@ class IrregularlyTwoDimensionallyHistogramMethods(object):
         from histogrammar import Count, IrregularlyBin
 
         ybin = self.bins[0][1]
-        h_y = IrregularlyBin(
-            edges=ybin.edges[1:], quantity=ybin.quantity, value=Count()
-        )
+        h_y = IrregularlyBin(edges=ybin.edges[1:], quantity=ybin.quantity, value=Count())
         # loop over all counters and integrate over x (=i)
         for _, bi in self.bins:
             for j, bj in enumerate(bi.bins):

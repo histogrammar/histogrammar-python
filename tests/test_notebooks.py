@@ -7,7 +7,7 @@ from histogrammar.resources import notebook
 @pytest.fixture(scope="module")
 def nb_tester():
     """Test notebooks using pytest-notebook"""
-    nb_regression = NBRegressionFixture(
+    return NBRegressionFixture(
         diff_ignore=(
             "/metadata/language_info",
             "/cells/*/execution_count",
@@ -15,7 +15,6 @@ def nb_tester():
         ),
         exec_timeout=1800,
     )
-    return nb_regression
 
 
 def test_notebook_basic(nb_tester):

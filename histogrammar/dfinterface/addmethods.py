@@ -78,9 +78,7 @@ def add_methods(cls, hg, prefix="hg_"):
         overflow=hg_Count(),
         nanflow=hg_Count(),
     ):
-        return self.histogrammar(
-            hg_Bin(num, low, high, quantity, value, underflow, overflow, nanflow)
-        )
+        return self.histogrammar(hg_Bin(num, low, high, quantity, value, underflow, overflow, nanflow))
 
     def Categorize(self, quantity, value=hg_Count()):
         return self.histogrammar(hg_Categorize(quantity, value))
@@ -121,12 +119,8 @@ def add_methods(cls, hg, prefix="hg_"):
     def Select(self, quantity, cut=hg_Count()):
         return self.histogrammar(hg_Select(quantity, cut))
 
-    def SparselyBin(
-        self, binWidth, quantity, value=hg_Count(), nanflow=hg_Count(), origin=0.0
-    ):
-        return self.histogrammar(
-            hg_SparselyBin(binWidth, quantity, value, nanflow, origin)
-        )
+    def SparselyBin(self, binWidth, quantity, value=hg_Count(), nanflow=hg_Count(), origin=0.0):
+        return self.histogrammar(hg_SparselyBin(binWidth, quantity, value, nanflow, origin))
 
     def Stack(self, thresholds, quantity, value=hg_Count(), nanflow=hg_Count()):
         return self.histogrammar(hg_Stack(thresholds, quantity, value, nanflow))
@@ -145,43 +139,25 @@ def add_methods(cls, hg, prefix="hg_"):
         return self.histogrammar(hg_CategorizeHistogram(quantity))
 
     def Profile(self, num, low, high, binnedQuantity, averagedQuantity):
-        return self.histogrammar(
-            hg_Profile(num, low, high, binnedQuantity, averagedQuantity)
-        )
+        return self.histogrammar(hg_Profile(num, low, high, binnedQuantity, averagedQuantity))
 
     def SparselyProfile(self, binWidth, binnedQuantity, averagedQuantity, origin=0.0):
-        return self.histogrammar(
-            hg_SparselyProfile(binWidth, binnedQuantity, averagedQuantity, origin)
-        )
+        return self.histogrammar(hg_SparselyProfile(binWidth, binnedQuantity, averagedQuantity, origin))
 
     def ProfileErr(self, num, low, high, binnedQuantity, averagedQuantity):
+        return self.histogrammar(hg_ProfileErr(num, low, high, binnedQuantity, averagedQuantity))
+
+    def SparselyProfileErr(self, binWidth, binnedQuantity, averagedQuantity, origin=0.0):
+        return self.histogrammar(hg_SparselyProfileErr(binWidth, binnedQuantity, averagedQuantity, origin))
+
+    def TwoDimensionallyHistogram(self, xnum, xlow, xhigh, xquantity, ynum, ylow, yhigh, yquantity):
         return self.histogrammar(
-            hg_ProfileErr(num, low, high, binnedQuantity, averagedQuantity)
+            hg_TwoDimensionallyHistogram(xnum, xlow, xhigh, xquantity, ynum, ylow, yhigh, yquantity)
         )
 
-    def SparselyProfileErr(
-        self, binWidth, binnedQuantity, averagedQuantity, origin=0.0
-    ):
+    def TwoDimensionallySparselyHistogram(self, xbinWidth, xquantity, ybinWidth, yquantity, xorigin=0.0, yorigin=0.0):
         return self.histogrammar(
-            hg_SparselyProfileErr(binWidth, binnedQuantity, averagedQuantity, origin)
-        )
-
-    def TwoDimensionallyHistogram(
-        self, xnum, xlow, xhigh, xquantity, ynum, ylow, yhigh, yquantity
-    ):
-        return self.histogrammar(
-            hg_TwoDimensionallyHistogram(
-                xnum, xlow, xhigh, xquantity, ynum, ylow, yhigh, yquantity
-            )
-        )
-
-    def TwoDimensionallySparselyHistogram(
-        self, xbinWidth, xquantity, ybinWidth, yquantity, xorigin=0.0, yorigin=0.0
-    ):
-        return self.histogrammar(
-            hg_TwoDimensionallySparselyHistogram(
-                xbinWidth, xquantity, ybinWidth, yquantity, xorigin, yorigin
-            )
+            hg_TwoDimensionallySparselyHistogram(xbinWidth, xquantity, ybinWidth, yquantity, xorigin, yorigin)
         )
 
     if inspect.isclass(cls):
@@ -244,9 +220,7 @@ def add_methods(cls, hg, prefix="hg_"):
         setattr(cls, prefix + "Sum", types.MethodType(Sum, cls))
         setattr(cls, prefix + "make_histograms", types.MethodType(make_histograms, cls))
         setattr(cls, prefix + "Histogram", types.MethodType(Histogram, cls))
-        setattr(
-            cls, prefix + "SparselyHistogram", types.MethodType(SparselyHistogram, cls)
-        )
+        setattr(cls, prefix + "SparselyHistogram", types.MethodType(SparselyHistogram, cls))
         setattr(
             cls,
             prefix + "CategorizeHistogram",
@@ -284,9 +258,7 @@ def hg_fill_numpy(self, hist):
 
 def hg(self, h):
     # alternative for spark
-    converter = (
-        self._sc._jvm.org.dianahep.histogrammar.sparksql.pyspark.AggregatorConverter()
-    )
+    converter = self._sc._jvm.org.dianahep.histogrammar.sparksql.pyspark.AggregatorConverter()
     agg = h._sparksql(self._sc._jvm, converter)
     result = converter.histogrammar(self._jdf, agg)
     return Factory.fromJson(json.loads(result.toJsonString()))

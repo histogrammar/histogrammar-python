@@ -62,17 +62,17 @@ class Deviate(Factory, Container):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if not isinstance(mean, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("mean ({0}) must be a number".format(mean))
+            raise TypeError(f"mean ({mean}) must be a number")
         if not isinstance(variance, numbers.Real) and entries not in (
             "nan",
             "inf",
             "-inf",
         ):
-            raise TypeError("variance ({0}) must be a number".format(variance))
+            raise TypeError(f"variance ({variance}) must be a number")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
         out = Deviate(None)
         out.entries = float(entries)
         out.mean = float(mean)
@@ -95,13 +95,11 @@ class Deviate(Factory, Container):
             mean (float): the running mean, initially NaN.
             variance (float): the running variance, initially NaN.
         """
-        self.quantity = serializable(
-            identity(quantity) if isinstance(quantity, str) else quantity
-        )
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.entries = 0.0
         self.mean = float("nan")
         self.varianceTimesEntries = float("nan")
-        super(Deviate, self).__init__()
+        super().__init__()
         self.specialize()
 
     @property
@@ -109,8 +107,7 @@ class Deviate(Factory, Container):
         """Weighted variance of the quantity."""
         if self.entries == 0.0:
             return self.varianceTimesEntries
-        else:
-            return self.varianceTimesEntries / self.entries
+        return self.varianceTimesEntries / self.entries
 
     @variance.setter
     def variance(self, value):
@@ -132,24 +129,17 @@ class Deviate(Factory, Container):
                 out.mean = self.mean
                 out.varianceTimesEntries = self.varianceTimesEntries
             else:
-                out.mean = (self.entries * self.mean + other.entries * other.mean) / (
-                    self.entries + other.entries
-                )
+                out.mean = (self.entries * self.mean + other.entries * other.mean) / (self.entries + other.entries)
                 out.varianceTimesEntries = (
                     self.varianceTimesEntries
                     + other.varianceTimesEntries
                     + self.entries * self.mean * self.mean
                     + other.entries * other.mean * other.mean
-                    - 2.0
-                    * out.mean
-                    * (self.entries * self.mean + other.entries * other.mean)
+                    - 2.0 * out.mean * (self.entries * self.mean + other.entries * other.mean)
                     + out.mean * out.mean * out.entries
                 )
             return out.specialize()
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
@@ -163,12 +153,11 @@ class Deviate(Factory, Container):
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            out.mean = self.mean
-            out.varianceTimesEntries = factor * self.varianceTimesEntries
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        out.mean = self.mean
+        out.varianceTimesEntries = factor * self.varianceTimesEntries
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -181,9 +170,7 @@ class Deviate(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, numbers.Real):
-                raise TypeError(
-                    "function return value ({0}) must be boolean or number".format(q)
-                )
+                raise TypeError(f"function return value ({q}) must be boolean or number")
 
             # no possibility of exception from here on out (for rollback)
             if self.entries == 0.0:
@@ -275,12 +262,8 @@ class Deviate(Factory, Container):
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(
-            json.keys(), ["entries", "mean", "variance"], ["name"]
-        ):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "mean", "variance"], ["name"]):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Deviate.entries")
@@ -292,16 +275,12 @@ class Deviate(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Deviate.name")
 
-            if json["mean"] in ("nan", "inf", "-inf") or isinstance(
-                json["mean"], numbers.Real
-            ):
+            if json["mean"] in ("nan", "inf", "-inf") or isinstance(json["mean"], numbers.Real):
                 mean = float(json["mean"])
             else:
                 raise JsonFormatException(json["mean"], "Deviate.mean")
 
-            if json["variance"] in ("nan", "inf", "-inf") or isinstance(
-                json["variance"], numbers.Real
-            ):
+            if json["variance"] in ("nan", "inf", "-inf") or isinstance(json["variance"], numbers.Real):
                 variance = float(json["variance"])
             else:
                 raise JsonFormatException(json["variance"], "Deviate.variance")
@@ -310,11 +289,10 @@ class Deviate(Factory, Container):
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
-        else:
-            raise JsonFormatException(json, "Deviate")
+        raise JsonFormatException(json, "Deviate")
 
     def __repr__(self):
-        return "<Deviate mean={0} variance={1}>".format(self.mean, self.variance)
+        return f"<Deviate mean={self.mean} variance={self.variance}>"
 
     def __eq__(self, other):
         return (

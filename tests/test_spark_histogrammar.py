@@ -1,4 +1,4 @@
-from os.path import abspath, dirname, join
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -19,38 +19,30 @@ def get_spark():
     if not spark_found:
         return None
 
-    current_path = dirname(abspath(__file__))
+    current_path = Path(__file__).resolve().parent
 
     scala = "2.12" if int(pyspark_version[0]) >= 3 else "2.11"
-    hist_spark_jar = join(
-        current_path, f"jars/histogrammar-sparksql_{scala}-1.0.20.jar"
-    )
-    hist_jar = join(current_path, f"jars/histogrammar_{scala}-1.0.20.jar")
+    hist_spark_jar = current_path / f"jars/histogrammar-sparksql_{scala}-1.0.20.jar"
+    hist_jar = current_path / f"jars/histogrammar_{scala}-1.0.20.jar"
 
-    spark = (
+    return (
         SparkSession.builder.master("local")
         .appName("histogrammar-pytest")
         .config("spark.jars", f"{hist_spark_jar},{hist_jar}")
         .config("spark.sql.session.timeZone", "GMT")
         .getOrCreate()
     )
-    return spark
 
 
 @pytest.fixture
 def spark_co():
-    """
-    :return: Spark configuration
-    """
-    spark = get_spark()
-    return spark
+    """:return: Spark configuration"""
+    return get_spark()
 
 
 # @pytest.mark.spark
 @pytest.mark.skipif(not spark_found, reason="spark not found")
-@pytest.mark.filterwarnings(
-    "ignore:createDataFrame attempted Arrow optimization because"
-)
+@pytest.mark.filterwarnings("ignore:createDataFrame attempted Arrow optimization because")
 def test_get_histograms(spark_co):
     pytest.age["data"]["name"] = "'age'"
     pytest.company["data"]["name"] = "'company'"
@@ -110,9 +102,7 @@ def test_get_histograms(spark_co):
 
 # @pytest.mark.spark
 @pytest.mark.skipif(not spark_found, reason="spark not found")
-@pytest.mark.filterwarnings(
-    "ignore:createDataFrame attempted Arrow optimization because"
-)
+@pytest.mark.filterwarnings("ignore:createDataFrame attempted Arrow optimization because")
 def test_get_histograms_module(spark_co):
     pytest.age["data"]["name"] = "'age'"
     pytest.company["data"]["name"] = "'company'"
@@ -170,9 +160,7 @@ def test_get_histograms_module(spark_co):
 
 # @pytest.mark.spark
 @pytest.mark.skipif(not spark_found, reason="spark not found")
-@pytest.mark.filterwarnings(
-    "ignore:createDataFrame attempted Arrow optimization because"
-)
+@pytest.mark.filterwarnings("ignore:createDataFrame attempted Arrow optimization because")
 def test_get_histograms_timestamp(spark_co):
     from pyspark.sql.functions import to_timestamp
 
@@ -192,9 +180,7 @@ def test_get_histograms_timestamp(spark_co):
     ]
 
     df = pd.DataFrame(data_date, columns=["dt"])
-    sdf = spark.createDataFrame(df).withColumn(
-        "dt", to_timestamp("dt", "yyyy-MM-dd HH:mm:ss")
-    )
+    sdf = spark.createDataFrame(df).withColumn("dt", to_timestamp("dt", "yyyy-MM-dd HH:mm:ss"))
     expected = {
         "data": {
             "binWidth": 2592000000000000.0,
@@ -216,9 +202,7 @@ def test_get_histograms_timestamp(spark_co):
 
 # @pytest.mark.spark
 @pytest.mark.skipif(not spark_found, reason="spark not found")
-@pytest.mark.filterwarnings(
-    "ignore:createDataFrame attempted Arrow optimization because"
-)
+@pytest.mark.filterwarnings("ignore:createDataFrame attempted Arrow optimization because")
 def test_get_histograms_date(spark_co):
     from pyspark.sql.functions import to_date
 
@@ -260,9 +244,7 @@ def test_get_histograms_date(spark_co):
 
 # @pytest.mark.spark
 @pytest.mark.skipif(not spark_found, reason="spark not found")
-@pytest.mark.filterwarnings(
-    "ignore:createDataFrame attempted Arrow optimization because"
-)
+@pytest.mark.filterwarnings("ignore:createDataFrame attempted Arrow optimization because")
 def test_null_histograms(spark_co):
     spark = spark_co
 
@@ -276,9 +258,7 @@ def test_null_histograms(spark_co):
     columns = ["transaction", "isActive", "eyeColor", "t2"]
     sdf = spark.createDataFrame(data=data, schema=columns)
 
-    hists = make_histograms(
-        sdf, bin_specs={"transaction": {"num": 40, "low": 0, "high": 10}}
-    )
+    hists = make_histograms(sdf, bin_specs={"transaction": {"num": 40, "low": 0, "high": 10}})
 
     assert "transaction" in hists
     assert "isActive" in hists

@@ -28,7 +28,7 @@ from histogrammar.defs import (
 from histogrammar.util import basestring, floatToJson, hasKeys, inheritdoc, numeq
 
 
-class Collection(object):
+class Collection:
     pass
 
 
@@ -64,16 +64,11 @@ class Label(Factory, Container, Collection):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
-        if not all(
-            isinstance(k, basestring) and isinstance(v, Container)
-            for k, v in pairs.items()
-        ):
-            raise TypeError(
-                "pairs ({0}) must be a dict from strings to Containers".format(pairs)
-            )
+            raise TypeError(f"entries ({entries}) must be a number")
+        if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
+            raise TypeError(f"pairs ({pairs}) must be a dict from strings to Containers")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
 
         if pairsAsDict is None:
             pairsAsDict = {}
@@ -97,14 +92,9 @@ class Label(Factory, Container, Collection):
         Other Parameters:
             entries (float): the number of entries, initially 0.0.
         """
-        if not all(
-            isinstance(k, basestring) and isinstance(v, Container)
-            for k, v in pairs.items()
-        ):
-            raise TypeError(
-                "pairs ({0}) must be a dict from strings to Containers".format(pairs)
-            )
-        if any(not isinstance(x, basestring) for x in pairs.keys()):
+        if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
+            raise TypeError(f"pairs ({pairs}) must be a dict from strings to Containers")
+        if any(not isinstance(x, basestring) for x in pairs):
             raise ValueError("all Label keys must be strings")
         if len(pairs) < 1:
             raise ValueError("at least one pair required")
@@ -120,7 +110,7 @@ class Label(Factory, Container, Collection):
         self.entries = 0.0
         self.pairs = pairs
 
-        super(Label, self).__init__()
+        super().__init__()
         self.specialize()
 
     @property
@@ -147,8 +137,7 @@ class Label(Factory, Container, Collection):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.pairs[x]
-        else:
-            return self.pairs[x](*rest)
+        return self.pairs[x](*rest)
 
     def get(self, x):
         """Attempt to get key ``x``, returning ``None`` if it does not exist."""
@@ -160,33 +149,30 @@ class Label(Factory, Container, Collection):
 
     @inheritdoc(Container)
     def zero(self):
-        return Label(**dict((k, v.zero()) for k, v in self.pairs.items()))
+        return Label(**{k: v.zero() for k, v in self.pairs.items()})
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Label):
             if self.keySet != other.keySet:
                 raise ContainerException(
-                    "cannot add Labels because keys differ:\n    {0}\n    {1}".format(
+                    "cannot add Labels because keys differ:\n    {}\n    {}".format(
                         ", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))
                     )
                 )
 
-            out = Label(**dict((k, self(k) + other(k)) for k in self.keys))
+            out = Label(**{k: self(k) + other(k) for k in self.keys})
             out.entries = self.entries + other.entries
             return out.specialize()
 
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, Label):
             if self.keySet != other.keySet:
                 raise ContainerException(
-                    "cannot add Labels because keys differ:\n    {0}\n    {1}".format(
+                    "cannot add Labels because keys differ:\n    {}\n    {}".format(
                         ", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))
                     )
                 )
@@ -195,21 +181,17 @@ class Label(Factory, Container, Collection):
                 v = self(k)
                 v += other(k)
             return self
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            for k, v in self.pairs.items():
-                out.pairs[k] = v * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        for k, v in self.pairs.items():
+            out.pairs[k] = v * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -241,12 +223,7 @@ class Label(Factory, Container, Collection):
             self.entries += float(weights * shape[0])
 
     def _sparksql(self, jvm, converter):
-        return converter.Label(
-            [
-                jvm.scala.Tuple2(k, v._sparksql(jvm, converter))
-                for k, v in self.pairs.items()
-            ]
-        )
+        return converter.Label([jvm.scala.Tuple2(k, v._sparksql(jvm, converter)) for k, v in self.pairs.items()])
 
     @property
     def children(self):
@@ -258,18 +235,14 @@ class Label(Factory, Container, Collection):
         return {
             "entries": floatToJson(self.entries),
             "sub:type": self.values[0].name,
-            "data": dict((k, v.toJsonFragment(False)) for k, v in self.pairs.items()),
+            "data": {k: v.toJsonFragment(False) for k, v in self.pairs.items()},
         }
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(
-            json.keys(), ["entries", "sub:type", "data"]
-        ):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sub:type", "data"]):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Label.entries")
@@ -280,27 +253,19 @@ class Label(Factory, Container, Collection):
                 raise JsonFormatException(json, "Label.sub:type")
 
             if isinstance(json["data"], dict):
-                pairs = dict(
-                    (k, factory.fromJsonFragment(v, None))
-                    for k, v in json["data"].items()
-                )
+                pairs = {k: factory.fromJsonFragment(v, None) for k, v in json["data"].items()}
             else:
                 raise JsonFormatException(json, "Label.data")
 
             return Label.ed(entries, **pairs)
 
-        else:
-            raise JsonFormatException(json, "Label")
+        raise JsonFormatException(json, "Label")
 
     def __repr__(self):
-        return "<Label values={0} size={1}>".format(self.values[0].name, self.size)
+        return f"<Label values={self.values[0].name} size={self.size}>"
 
     def __eq__(self, other):
-        return (
-            isinstance(other, Label)
-            and numeq(self.entries, other.entries)
-            and self.pairs == other.pairs
-        )
+        return isinstance(other, Label) and numeq(self.entries, other.entries) and self.pairs == other.pairs
 
     def __ne__(self, other):
         return not self == other
@@ -345,16 +310,11 @@ class UntypedLabel(Factory, Container, Collection):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
-        if not all(
-            isinstance(k, basestring) and isinstance(v, Container)
-            for k, v in pairs.items()
-        ):
-            raise TypeError(
-                "pairs ({0}) must be a dict from strings to Containers".format(pairs)
-            )
+            raise TypeError(f"entries ({entries}) must be a number")
+        if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
+            raise TypeError(f"pairs ({pairs}) must be a dict from strings to Containers")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
 
         if pairsAsDict is None:
             pairsAsDict = {}
@@ -378,18 +338,13 @@ class UntypedLabel(Factory, Container, Collection):
         Other parameters:
             entries (float): the number of entries, initially 0.0.
         """
-        if not all(
-            isinstance(k, basestring) and isinstance(v, Container)
-            for k, v in pairs.items()
-        ):
-            raise TypeError(
-                "pairs ({0}) must be a dict from strings to Containers".format(pairs)
-            )
+        if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
+            raise TypeError(f"pairs ({pairs}) must be a dict from strings to Containers")
 
         self.entries = 0.0
         self.pairs = pairs
 
-        super(UntypedLabel, self).__init__()
+        super().__init__()
         self.specialize()
 
     @property
@@ -416,8 +371,7 @@ class UntypedLabel(Factory, Container, Collection):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.pairs[x]
-        else:
-            return self.pairs[x](*rest)
+        return self.pairs[x](*rest)
 
     def get(self, x):
         """Attempt to get key ``x``, returning ``None`` if it does not exist."""
@@ -429,33 +383,30 @@ class UntypedLabel(Factory, Container, Collection):
 
     @inheritdoc(Container)
     def zero(self):
-        return UntypedLabel(**dict((k, v.zero()) for k, v in self.pairs.items()))
+        return UntypedLabel(**{k: v.zero() for k, v in self.pairs.items()})
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, UntypedLabel):
             if self.keySet != other.keySet:
                 raise ContainerException(
-                    "cannot add UntypedLabels because keys differ:\n    {0}\n    {1}".format(
+                    "cannot add UntypedLabels because keys differ:\n    {}\n    {}".format(
                         ", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))
                     )
                 )
 
-            out = UntypedLabel(**dict((k, self(k) + other(k)) for k in self.keys))
+            out = UntypedLabel(**{k: self(k) + other(k) for k in self.keys})
             out.entries = self.entries + other.entries
             return out.specialize()
 
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, UntypedLabel):
             if self.keySet != other.keySet:
                 raise ContainerException(
-                    "cannot add UntypedLabels because keys differ:\n    {0}\n    {1}".format(
+                    "cannot add UntypedLabels because keys differ:\n    {}\n    {}".format(
                         ", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))
                     )
                 )
@@ -464,21 +415,17 @@ class UntypedLabel(Factory, Container, Collection):
                 v = self(k)
                 v += other(k)
             return self
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            for k, v in self.pairs.items():
-                out.pairs[k] = v * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        for k, v in self.pairs.items():
+            out.pairs[k] = v * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -510,12 +457,7 @@ class UntypedLabel(Factory, Container, Collection):
             self.entries += float(weights * shape[0])
 
     def _sparksql(self, jvm, converter):
-        return converter.UntypedLabel(
-            [
-                jvm.scala.Tuple2(k, v._sparksql(jvm, converter))
-                for k, v in self.pairs.items()
-            ]
-        )
+        return converter.UntypedLabel([jvm.scala.Tuple2(k, v._sparksql(jvm, converter)) for k, v in self.pairs.items()])
 
     @property
     def children(self):
@@ -526,19 +468,14 @@ class UntypedLabel(Factory, Container, Collection):
     def toJsonFragment(self, suppressName):
         return {
             "entries": floatToJson(self.entries),
-            "data": dict(
-                (k, {"type": v.name, "data": v.toJsonFragment(False)})
-                for k, v in self.pairs.items()
-            ),
+            "data": {k: {"type": v.name, "data": v.toJsonFragment(False)} for k, v in self.pairs.items()},
         }
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "UntypedLabel.entries")
@@ -551,25 +488,20 @@ class UntypedLabel(Factory, Container, Collection):
                         pairs[k] = factory.fromJsonFragment(v["data"], None)
 
                     else:
-                        raise JsonFormatException(k, "UntypedLabel.data {0}".format(v))
+                        raise JsonFormatException(k, f"UntypedLabel.data {v}")
 
             else:
                 raise JsonFormatException(json, "UntypedLabel.data")
 
             return UntypedLabel.ed(entries, **pairs).specialize()
 
-        else:
-            raise JsonFormatException(json, "UntypedLabel")
+        raise JsonFormatException(json, "UntypedLabel")
 
     def __repr__(self):
-        return "<UntypedLabel size={0}>".format(self.size)
+        return f"<UntypedLabel size={self.size}>"
 
     def __eq__(self, other):
-        return (
-            isinstance(other, UntypedLabel)
-            and numeq(self.entries, other.entries)
-            and self.pairs == other.pairs
-        )
+        return isinstance(other, UntypedLabel) and numeq(self.entries, other.entries) and self.pairs == other.pairs
 
     def __ne__(self, other):
         return not self == other
@@ -621,11 +553,11 @@ class Index(Factory, Container, Collection):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if not all(isinstance(v, Container) for v in values):
-            raise TypeError("values ({0}) must be a list of Containers".format(values))
+            raise TypeError(f"values ({values}) must be a list of Containers")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
 
         out = Index(*values)
         out.entries = float(entries)
@@ -646,7 +578,7 @@ class Index(Factory, Container, Collection):
             entries (float): the number of entries, initially 0.0.
         """
         if not all(isinstance(v, Container) for v in values):
-            raise TypeError("values ({0}) must be a list of Containers".format(values))
+            raise TypeError(f"values ({values}) must be a list of Containers")
         if len(values) < 1:
             raise ContainerException("at least one value required")
         contentType = values[0].name
@@ -660,7 +592,7 @@ class Index(Factory, Container, Collection):
         self.entries = 0.0
         self.values = values
 
-        super(Index, self).__init__()
+        super().__init__()
         self.specialize()
 
     @property
@@ -676,22 +608,19 @@ class Index(Factory, Container, Collection):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.values[i]
-        else:
-            return self.values[i](*rest)
+        return self.values[i](*rest)
 
     def get(self, i):
         """Attempt to get index ``i``, returning ``None`` if it does not exist."""
         if i < 0 or i >= len(self.values):
             return None
-        else:
-            return self.values[i]
+        return self.values[i]
 
     def getOrElse(self, i, default):
         """Attempt to get index ``i``, returning an alternative if it does not exist."""
         if i < 0 or i >= len(self.values):
             return default
-        else:
-            return self.values[i]
+        return self.values[i]
 
     @inheritdoc(Container)
     def zero(self):
@@ -702,46 +631,35 @@ class Index(Factory, Container, Collection):
         if isinstance(other, Index):
             if self.size != other.size:
                 raise ContainerException(
-                    "cannot add Indexes because they have different sizes: ({0} vs {1})".format(
-                        self.size, other.size
-                    )
+                    f"cannot add Indexes because they have different sizes: ({self.size} vs {other.size})"
                 )
 
             out = Index(*[x + y for x, y in zip(self.values, other.values)])
             out.entries = self.entries + other.entries
             return out.specialize()
 
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, Index):
             if self.size != other.size:
                 raise ContainerException(
-                    "cannot add Indexes because they have different sizes: ({0} vs {1})".format(
-                        self.size, other.size
-                    )
+                    f"cannot add Indexes because they have different sizes: ({self.size} vs {other.size})"
                 )
             self.entries += other.entries
             for x, y in zip(self.values, other.values):
-                x += y
+                x += y  # noqa: PLW2901
             return self
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = Index(*[x * factor for x in self.values])
-            out.entries = factor * self.entries
-            return out.specialize()
+        out = Index(*[x * factor for x in self.values])
+        out.entries = factor * self.entries
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -791,12 +709,8 @@ class Index(Factory, Container, Collection):
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(
-            json.keys(), ["entries", "sub:type", "data"]
-        ):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sub:type", "data"]):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Index.entries")
@@ -813,18 +727,13 @@ class Index(Factory, Container, Collection):
 
             return Index.ed(entries, *values).specialize()
 
-        else:
-            raise JsonFormatException(json, "Index")
+        raise JsonFormatException(json, "Index")
 
     def __repr__(self):
-        return "<Index values={0} size={1}>".format(self.values[0].name, self.size)
+        return f"<Index values={self.values[0].name} size={self.size}>"
 
     def __eq__(self, other):
-        return (
-            isinstance(other, Index)
-            and numeq(self.entries, other.entries)
-            and self.values == other.values
-        )
+        return isinstance(other, Index) and numeq(self.entries, other.entries) and self.values == other.values
 
     def __ne__(self, other):
         return not self == other
@@ -890,11 +799,11 @@ class Branch(Factory, Container, Collection):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if not all(isinstance(v, Container) for v in values):
-            raise TypeError("values ({0}) must be a list of Containers".format(values))
+            raise TypeError(f"values ({values}) must be a list of Containers")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
 
         out = Branch(*values)
         out.entries = float(entries)
@@ -915,7 +824,7 @@ class Branch(Factory, Container, Collection):
             entries (float): the number of entries, initially 0.0.
         """
         if not all(isinstance(v, Container) for v in values):
-            raise TypeError("values ({0}) must be a list of Containers".format(values))
+            raise TypeError(f"values ({values}) must be a list of Containers")
         if len(values) < 1:
             raise ValueError("at least one value required")
 
@@ -925,7 +834,7 @@ class Branch(Factory, Container, Collection):
         for i, x in enumerate(values):
             setattr(self, "i" + str(i), x)
 
-        super(Branch, self).__init__()
+        super().__init__()
         self.specialize()
 
     @property
@@ -941,22 +850,19 @@ class Branch(Factory, Container, Collection):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.values[i]
-        else:
-            return self.values[i](*rest)
+        return self.values[i](*rest)
 
     def get(self, i):
         """Attempt to get index ``i``, returning ``None`` if it does not exist."""
         if i < 0 or i >= len(self.values):
             return None
-        else:
-            return self.values[i]
+        return self.values[i]
 
     def getOrElse(self, i, default):
         """Attempt to get index ``i``, returning an alternative if it does not exist."""
         if i < 0 or i >= len(self.values):
             return default
-        else:
-            return self.values[i]
+        return self.values[i]
 
     @inheritdoc(Container)
     def zero(self):
@@ -967,46 +873,35 @@ class Branch(Factory, Container, Collection):
         if isinstance(other, Branch):
             if self.size != other.size:
                 raise ContainerException(
-                    "cannot add Branches because they have different sizes: ({0} vs {1})".format(
-                        self.size, other.size
-                    )
+                    f"cannot add Branches because they have different sizes: ({self.size} vs {other.size})"
                 )
 
             out = Branch(*[x + y for x, y in zip(self.values, other.values)])
             out.entries = self.entries + other.entries
             return out.specialize()
 
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, Branch):
             if self.size != other.size:
                 raise ContainerException(
-                    "cannot add Branches because they have different sizes: ({0} vs {1})".format(
-                        self.size, other.size
-                    )
+                    f"cannot add Branches because they have different sizes: ({self.size} vs {other.size})"
                 )
             self.entries += other.entries
             for x, y in zip(self.values, other.values):
-                x += y
+                x += y  # noqa: PLW2901
             return self
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = Branch(*[x * factor for x in self.values])
-            out.entries = factor * self.entries
-            return out.specialize()
+        out = Branch(*[x * factor for x in self.values])
+        out.entries = factor * self.entries
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -1049,18 +944,14 @@ class Branch(Factory, Container, Collection):
     def toJsonFragment(self, suppressName):
         return {
             "entries": floatToJson(self.entries),
-            "data": [
-                {"type": x.name, "data": x.toJsonFragment(False)} for x in self.values
-            ],
+            "data": [{"type": x.name, "data": x.toJsonFragment(False)} for x in self.values],
         }
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
         if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "data"]):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Branch.entries")
@@ -1072,9 +963,7 @@ class Branch(Factory, Container, Collection):
                         if isinstance(x["type"], basestring):
                             factory = Factory.registered[x["type"]]
                         else:
-                            raise JsonFormatException(
-                                x, "Branch.data {0} type".format(i)
-                            )
+                            raise JsonFormatException(x, f"Branch.data {i} type")
                         values.append(factory.fromJsonFragment(x["data"], None))
 
             else:
@@ -1082,20 +971,13 @@ class Branch(Factory, Container, Collection):
 
             return Branch.ed(entries, *values)
 
-        else:
-            raise JsonFormatException(json, "Branch")
+        raise JsonFormatException(json, "Branch")
 
     def __repr__(self):
-        return "<Branch {0}>".format(
-            " ".join("i" + str(i) + "=" + v.name for i, v in enumerate(self.values))
-        )
+        return "<Branch {}>".format(" ".join("i" + str(i) + "=" + v.name for i, v in enumerate(self.values)))
 
     def __eq__(self, other):
-        return (
-            isinstance(other, Branch)
-            and numeq(self.entries, other.entries)
-            and self.values == other.values
-        )
+        return isinstance(other, Branch) and numeq(self.entries, other.entries) and self.values == other.values
 
     def __ne__(self, other):
         return not self == other

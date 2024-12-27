@@ -16,6 +16,7 @@
 
 import importlib
 import inspect
+from pathlib import Path
 
 modules = [
     "histogrammar.defs",
@@ -47,15 +48,12 @@ documented = []
 for moduleName, module in modules.items():
     for objName in dir(module):
         obj = getattr(module, objName)
-        if (
-            not objName.startswith("_")
-            and callable(obj)
-            and obj.__module__ == moduleName
-        ):
+        if not objName.startswith("_") and callable(obj) and obj.__module__ == moduleName:
             print(objName, obj)
             documented.append(moduleName + "." + objName)
+            path = Path("docs/" + moduleName + "." + objName + ".rst")
             if inspect.isclass(obj):
-                open("docs/" + moduleName + "." + objName + ".rst", "w").write(
+                path.write_text(
                     """:orphan:
 
 {0}
@@ -72,7 +70,7 @@ for moduleName, module in modules.items():
                     )
                 )
             else:
-                open("docs/" + moduleName + "." + objName + ".rst", "w").write(
+                path.write_text(
                     """:orphan:
 
 {0}

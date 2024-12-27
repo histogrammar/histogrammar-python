@@ -61,9 +61,9 @@ class Count(Factory, Container):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
         out = Count()
         out.entries = float(entries)
         return out
@@ -84,7 +84,7 @@ class Count(Factory, Container):
         """
         self.entries = 0.0
         self.transform = serializable(transform)
-        super(Count, self).__init__()
+        super().__init__()
 
     @inheritdoc(Container)
     def zero(self):
@@ -96,20 +96,14 @@ class Count(Factory, Container):
             out = Count(self.transform)
             out.entries = self.entries + other.entries
             return out
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, Count):
             self.entries += other.entries
             return self
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
@@ -118,24 +112,19 @@ class Count(Factory, Container):
             or not callable(self.transform.expr)
             or (
                 hasattr(self.transform.expr, "func_code")
-                and self.transform.expr.func_code.co_code
-                != identity.expr.func_code.co_code
+                and self.transform.expr.func_code.co_code != identity.expr.func_code.co_code
             )
             or (
                 hasattr(self.transform.expr, "__code__")
-                and self.transform.expr.__code__.co_code
-                != identity.expr.__code__.co_code
+                and self.transform.expr.__code__.co_code != identity.expr.__code__.co_code
             )
         ):
-            raise ContainerException(
-                "Cannot scalar-multiply Count with a non-identity transform."
-            )
-        elif math.isnan(factor) or factor <= 0.0:
+            raise ContainerException("Cannot scalar-multiply Count with a non-identity transform.")
+        if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            return out
+        out = self.zero()
+        out.entries = factor * self.entries
+        return out
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -148,9 +137,7 @@ class Count(Factory, Container):
         if weight > 0.0:
             t = self.transform(weight)
             if not isinstance(t, numbers.Real):
-                raise TypeError(
-                    "function return value ({0}) must be boolean or number".format(t)
-                )
+                raise TypeError(f"function return value ({t}) must be boolean or number")
 
             # no possibility of exception from here on out (for rollback)
             self.entries += t
@@ -188,9 +175,7 @@ class Count(Factory, Container):
                 self.entries += self.transform(weights)
 
         else:
-            raise ValueError(
-                "cannot use Numpy to fill an isolated Count (unless the weights are given as an array)"
-            )
+            raise ValueError("cannot use Numpy to fill an isolated Count (unless the weights are given as an array)")
 
     def _sparksql(self, jvm, converter):
         return converter.Count()  # TODO: handle transform
@@ -209,18 +194,13 @@ class Count(Factory, Container):
     def fromJsonFragment(json, nameFromParent):
         if json in ("nan", "inf", "-inf") or isinstance(json, numbers.Real):
             return Count.ed(float(json))
-        else:
-            raise JsonFormatException(json, "Count")
+        raise JsonFormatException(json, "Count")
 
     def __repr__(self):
-        return "<Count {0}>".format(self.entries)
+        return f"<Count {self.entries}>"
 
     def __eq__(self, other):
-        return (
-            isinstance(other, Count)
-            and numeq(self.entries, other.entries)
-            and self.transform == other.transform
-        )
+        return isinstance(other, Count) and numeq(self.entries, other.entries) and self.transform == other.transform
 
     def __ne__(self, other):
         return not self == other

@@ -83,23 +83,12 @@ def to_str(val):
     """
     if isinstance(val, str):
         return val
-    elif isinstance(val, pd.Series):
+    if isinstance(val, pd.Series):
         # Note: at this point, data type of pd.series has already been inferred as being of type object (mixed)
         return val.astype(str).values
-    elif hasattr(val, "__iter__"):
-        return np.asarray(
-            list(
-                map(
-                    lambda s: (
-                        s
-                        if isinstance(s, str)
-                        else str(s) if hasattr(s, "__str__") else ""
-                    ),
-                    val,
-                )
-            )
-        )
-    elif hasattr(val, "__str__"):
+    if hasattr(val, "__iter__"):
+        return np.asarray([(s if isinstance(s, str) else str(s) if hasattr(s, "__str__") else "") for s in val])
+    if hasattr(val, "__str__"):
         return str(val)
     return "None"
 
@@ -113,13 +102,11 @@ def only_str(val):
     """
     if isinstance(val, str):
         return val
-    elif isinstance(val, pd.Series):
+    if isinstance(val, pd.Series):
         # at this point, data type of pd.series has already been inferred as *to be* 'string'
         dtype = np.dtype(val.dtype).type
-        return (
-            val.values if dtype in [str, np.str_, np.bytes_] else val.astype(str).values
-        )
-    elif hasattr(val, "__iter__"):
+        return val.values if dtype in [str, np.str_, np.bytes_] else val.astype(str).values
+    if hasattr(val, "__iter__"):
         return np.asarray([s if isinstance(s, str) else "None" for s in val])
     return "None"
 
@@ -133,12 +120,10 @@ def only_bool(val):
     """
     if isinstance(val, (np.bool_, bool)):
         return val
-    elif isinstance(val, pd.Series) and val.dtype in [np.bool_, bool]:
+    if isinstance(val, pd.Series) and val.dtype in [np.bool_, bool]:
         return val.values
-    elif hasattr(val, "__iter__") and not isinstance(val, str):
-        return np.asarray(
-            [s if isinstance(s, (np.bool_, bool)) else "NaN" for s in val]
-        )
+    if hasattr(val, "__iter__") and not isinstance(val, str):
+        return np.asarray([s if isinstance(s, (np.bool_, bool)) else "NaN" for s in val])
     return "NaN"
 
 
@@ -151,12 +136,10 @@ def only_int(val):
     """
     if isinstance(val, (np.int64, int)):
         return val
-    elif isinstance(val, pd.Series) and val.dtype in [np.int64, int]:
+    if isinstance(val, pd.Series) and val.dtype in [np.int64, int]:
         return val.values
-    elif hasattr(val, "__iter__") and not isinstance(val, str):
-        return np.asarray(
-            [s if isinstance(s, (np.int64, int)) else np.nan for s in val]
-        )
+    if hasattr(val, "__iter__") and not isinstance(val, str):
+        return np.asarray([s if isinstance(s, (np.int64, int)) else np.nan for s in val])
     return np.nan
 
 
@@ -169,12 +152,10 @@ def only_float(val):
     """
     if isinstance(val, (np.float64, float)):
         return val
-    elif isinstance(val, pd.Series) and val.dtype in [np.float64, float]:
+    if isinstance(val, pd.Series) and val.dtype in [np.float64, float]:
         return val.values
-    elif hasattr(val, "__iter__") and not isinstance(val, str):
-        return np.asarray(
-            [s if isinstance(s, (np.float64, float)) else np.nan for s in val]
-        )
+    if hasattr(val, "__iter__") and not isinstance(val, str):
+        return np.asarray([s if isinstance(s, (np.float64, float)) else np.nan for s in val])
     return np.nan
 
 
@@ -209,8 +190,7 @@ def value_to_bin_index(val, **kwargs):
         # NOTE this notation also works for timestamps
         bin_width = kwargs.get("binWidth", kwargs.get("bin_width", 1))
         bin_offset = kwargs.get("origin", kwargs.get("bin_offset", 0))
-        bin_index = int(np.floor((val - bin_offset) / bin_width))
-        return bin_index
+        return int(np.floor((val - bin_offset) / bin_width))
     except BaseException:
         pass
     return val

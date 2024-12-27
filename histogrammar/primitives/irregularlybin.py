@@ -69,7 +69,7 @@ class IrregularlyBin(Factory, Container):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if not isinstance(bins, (list, tuple)) and not all(
             isinstance(v, (list, tuple))
             and len(v) == 2
@@ -77,13 +77,11 @@ class IrregularlyBin(Factory, Container):
             and isinstance(v[1], Container)
             for v in bins
         ):
-            raise TypeError(
-                "bins ({0}) must be a list of number, Container pairs".format(bins)
-            )
+            raise TypeError(f"bins ({bins}) must be a list of number, Container pairs")
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
+            raise TypeError(f"nanflow ({nanflow}) must be a Container")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
 
         out = IrregularlyBin(bins, None, None, nanflow)
         out.entries = float(entries)
@@ -110,27 +108,21 @@ class IrregularlyBin(Factory, Container):
             bins (list of float, :doc:`Container <histogrammar.defs.Container>` pairs): the ``N + 1`` thresholds and
                 sub-aggregators. (The first threshold is minus infinity; the rest are the ones specified by ``edges``).
         """
-        if not isinstance(edges, (list, tuple)) and not all(
-            isinstance(v, numbers.Real) for v in edges
-        ):
-            raise TypeError("edges ({0}) must be a list of numbers".format(edges))
+        if not isinstance(edges, (list, tuple)) and not all(isinstance(v, numbers.Real) for v in edges):
+            raise TypeError(f"edges ({edges}) must be a list of numbers")
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({0}) must be None or a Container".format(value))
+            raise TypeError(f"value ({value}) must be None or a Container")
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
+            raise TypeError(f"nanflow ({nanflow}) must be a Container")
 
         self.entries = 0.0
-        self.quantity = serializable(
-            identity(quantity) if isinstance(quantity, str) else quantity
-        )
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         if value is None:
             self.bins = tuple(edges)
         else:
-            self.bins = tuple(
-                (float(x), value.zero()) for x in (float("-inf"),) + tuple(edges)
-            )
+            self.bins = tuple((float(x), value.zero()) for x in (float("-inf"),) + tuple(edges))
         self.nanflow = nanflow.copy()
-        super(IrregularlyBin, self).__init__()
+        super().__init__()
         self.specialize()
 
     @property
@@ -156,20 +148,17 @@ class IrregularlyBin(Factory, Container):
     def _lower_index(self, x):
         """Find lower index of bin corresponding to ``x``."""
         edges = self.edges
-        idx = max(0, bisect.bisect(edges, x) - 1)
-        return idx
+        return max(0, bisect.bisect(edges, x) - 1)
 
     def _upper_index(self, x):
         """Find upper index of bin corresponding to ``x``."""
         edges = self.edges
         if x in edges:
             return max(0, edges.index(x) - 1)
-        idx = max(0, bisect.bisect(edges, x) - 1)
-        return idx
+        return max(0, bisect.bisect(edges, x) - 1)
 
     def num_bins(self, low=None, high=None):
-        """
-        Returns number of bins of a given (sub-)range
+        """Returns number of bins of a given (sub-)range
 
         Possible to set range with low and high params
 
@@ -182,11 +171,8 @@ class IrregularlyBin(Factory, Container):
         if low is None and high is None:
             return len(self.bins)
         # catch weird cases
-        elif low is not None and high is not None:
-            if low > high:
-                raise RuntimeError(
-                    "low {low} greater than high {high}".format(low=low, high=high)
-                )
+        if low is not None and high is not None and low > high:
+            raise RuntimeError(f"low {low} greater than high {high}")
         # lowest, highest edge reset
         if low is None:
             low = -np.inf
@@ -198,8 +184,7 @@ class IrregularlyBin(Factory, Container):
         return hidx - lidx + 1
 
     def bin_entries(self, low=None, high=None, xvalues=[]):
-        """
-        Returns bin values
+        """Returns bin values
 
         Possible to set range with low and high params, and list of selected x-values
 
@@ -213,11 +198,9 @@ class IrregularlyBin(Factory, Container):
         if low is None and high is None and len(xvalues) == 0:
             return np.array([b[1].entries for b in self.bins])
         # catch weird cases
-        elif low is not None and high is not None and len(xvalues) == 0:
+        if low is not None and high is not None and len(xvalues) == 0:
             if low > high:
-                raise RuntimeError(
-                    "low {low} greater than high {high}".format(low=low, high=high)
-                )
+                raise RuntimeError(f"low {low} greater than high {high}")
         # entries at request list of x-values
         elif len(xvalues) > 0:
             return np.array([(self.bins[self.index(x)])[1].entries for x in xvalues])
@@ -232,8 +215,7 @@ class IrregularlyBin(Factory, Container):
         return np.array([(self.bins[i])[1].entries for i in range(lidx, hidx + 1)])
 
     def bin_edges(self, low=None, high=None):
-        """
-        Returns bin edges
+        """Returns bin edges
 
         :param low: lower edge of range, default is None
         :param high: higher edge of range, default is None
@@ -242,9 +224,7 @@ class IrregularlyBin(Factory, Container):
         """
         # catch weird cases
         if low is not None and high is not None and low > high:
-            raise RuntimeError(
-                "low {low} greater than high {high}".format(low=low, high=high)
-            )
+            raise RuntimeError(f"low {low} greater than high {high}")
         # lowest, highest edge reset
         if low is None:
             low = -np.inf
@@ -257,8 +237,7 @@ class IrregularlyBin(Factory, Container):
         return all_edges[lidx : hidx + 2]
 
     def bin_centers(self, low=None, high=None):
-        """
-        Returns bin centers
+        """Returns bin centers
 
         :param low: lower edge of range, default is None
         :param high: higher edge of range, default is None
@@ -266,13 +245,10 @@ class IrregularlyBin(Factory, Container):
         :rtype: numpy.array
         """
         bin_edges = self.bin_edges(low, high)
-        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-        return bin_centers
+        return (bin_edges[:-1] + bin_edges[1:]) / 2
 
     def bin_width(self):
-        """
-        Returns bin widths
-        """
+        """Returns bin widths"""
         edges = self.edges[1:]  # cut out -inf
         return np.diff(edges)
 
@@ -287,8 +263,7 @@ class IrregularlyBin(Factory, Container):
         bin_centers = self.bin_centers()
         # if two max elements are equal, this will return the element with the lowest index.
         max_idx = max(enumerate(bin_entries), key=lambda x: x[1])[0]
-        bc = bin_centers[max_idx]
-        return bc
+        return bin_centers[max_idx]
 
     @inheritdoc(Container)
     def zero(self):
@@ -303,9 +278,7 @@ class IrregularlyBin(Factory, Container):
     def __add__(self, other):
         if isinstance(other, IrregularlyBin):
             if self.thresholds != other.thresholds:
-                raise ContainerException(
-                    "cannot add IrregularlyBin because cut thresholds differ"
-                )
+                raise ContainerException("cannot add IrregularlyBin because cut thresholds differ")
 
             out = IrregularlyBin(
                 [(k1, v1 + v2) for ((k1, v1), (k2, v2)) in zip(self.bins, other.bins)],
@@ -316,38 +289,29 @@ class IrregularlyBin(Factory, Container):
             out.entries = self.entries + other.entries
             return out.specialize()
 
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, IrregularlyBin):
             if self.thresholds != other.thresholds:
-                raise ContainerException(
-                    "cannot add IrregularlyBin because cut thresholds differ"
-                )
+                raise ContainerException("cannot add IrregularlyBin because cut thresholds differ")
             self.entries += other.entries
             for (k1, v1), (k2, v2) in zip(self.bins, other.bins):
-                v1 += v2
+                v1 += v2  # noqa: PLW2901
             self.nanflow += other.nanflow
             return self
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            out.bins = [(c, v * factor) for (c, v) in self.bins]
-            out.nanflow = self.nanflow * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        out.bins = [(c, v * factor) for (c, v) in self.bins]
+        out.nanflow = self.nanflow * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -360,16 +324,12 @@ class IrregularlyBin(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, numbers.Real):
-                raise TypeError(
-                    "function return value ({0}) must be boolean or number".format(q)
-                )
+                raise TypeError(f"function return value ({q}) must be boolean or number")
 
             if math.isnan(q):
                 self.nanflow.fill(datum, weight)
             else:
-                for (low, sub), (high, _) in zip(
-                    self.bins, self.bins[1:] + ((float("nan"), None),)
-                ):
+                for (low, sub), (high, _) in zip(self.bins, self.bins[1:] + ((float("nan"), None),)):
                     if q >= low and not q >= high:
                         sub.fill(datum, weight)
                         break
@@ -401,9 +361,7 @@ class IrregularlyBin(Factory, Container):
         selection = np.empty(q.shape, dtype=bool)
         selection2 = np.empty(q.shape, dtype=bool)
         subweights = weights.copy()
-        for (low, sub), (high, _) in zip(
-            self.bins, self.bins[1:] + ((float("nan"), None),)
-        ):
+        for (low, sub), (high, _) in zip(self.bins, self.bins[1:] + ((float("nan"), None),)):
             np.greater_equal(q, low, selection)
             np.greater_equal(q, high, selection2)
             np.bitwise_not(selection2, selection2)
@@ -445,8 +403,7 @@ class IrregularlyBin(Factory, Container):
                 "entries": floatToJson(self.entries),
                 "bins:type": self.bins[0][1].name,
                 "bins": [
-                    {"atleast": floatToJson(atleast), "data": sub.toJsonFragment(True)}
-                    for atleast, sub in self.bins
+                    {"atleast": floatToJson(atleast), "data": sub.toJsonFragment(True)} for atleast, sub in self.bins
                 ],
                 "nanflow:type": self.nanflow.name,
                 "nanflow": self.nanflow.toJsonFragment(False),
@@ -465,9 +422,7 @@ class IrregularlyBin(Factory, Container):
             ["entries", "bins:type", "bins", "nanflow:type", "nanflow"],
             ["name", "bins:name"],
         ):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "IrregularlyBin.entries")
@@ -500,17 +455,13 @@ class IrregularlyBin(Factory, Container):
             if isinstance(json["bins"], list):
                 bins = []
                 for i, elementPair in enumerate(json["bins"]):
-                    if isinstance(elementPair, dict) and hasKeys(
-                        elementPair.keys(), ["atleast", "data"]
-                    ):
+                    if isinstance(elementPair, dict) and hasKeys(elementPair.keys(), ["atleast", "data"]):
                         if elementPair["atleast"] not in (
                             "nan",
                             "inf",
                             "-inf",
                         ) and not isinstance(elementPair["atleast"], numbers.Real):
-                            raise JsonFormatException(
-                                json, "IrregularlyBin.bins {0} atleast".format(i)
-                            )
+                            raise JsonFormatException(json, f"IrregularlyBin.bins {i} atleast")
 
                         bins.append(
                             (
@@ -520,22 +471,18 @@ class IrregularlyBin(Factory, Container):
                         )
 
                     else:
-                        raise JsonFormatException(
-                            json, "IrregularlyBin.bins {0}".format(i)
-                        )
+                        raise JsonFormatException(json, f"IrregularlyBin.bins {i}")
 
                 out = IrregularlyBin.ed(entries, bins, nanflow)
                 out.quantity.name = nameFromParent if name is None else name
                 return out.specialize()
 
-            else:
-                raise JsonFormatException(json, "IrregularlyBin.bins")
+            raise JsonFormatException(json, "IrregularlyBin.bins")
 
-        else:
-            raise JsonFormatException(json, "IrregularlyBin")
+        raise JsonFormatException(json, "IrregularlyBin")
 
     def __repr__(self):
-        return "<IrregularlyBin values={0} thresholds=({1}) nanflow={2}>".format(
+        return "<IrregularlyBin values={} thresholds=({}) nanflow={}>".format(
             self.bins[0][1].name,
             ", ".join([str(x) for x in self.thresholds]),
             self.nanflow.name,
@@ -546,10 +493,7 @@ class IrregularlyBin(Factory, Container):
             isinstance(other, IrregularlyBin)
             and numeq(self.entries, other.entries)
             and self.quantity == other.quantity
-            and all(
-                numeq(c1, c2) and v1 == v2
-                for (c1, v1), (c2, v2) in zip(self.bins, other.bins)
-            )
+            and all(numeq(c1, c2) and v1 == v2 for (c1, v1), (c2, v2) in zip(self.bins, other.bins))
             and self.nanflow == other.nanflow
         )
 

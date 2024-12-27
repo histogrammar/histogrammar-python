@@ -57,11 +57,11 @@ class Minimize(Factory, Container):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if not isinstance(min, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("min ({0}) must be a number".format(min))
+            raise TypeError(f"min ({min}) must be a number")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
         out = Minimize(None)
         out.entries = float(entries)
         out.min = float(min)
@@ -82,12 +82,10 @@ class Minimize(Factory, Container):
             entries (float): the number of entries, initially 0.0. #
             min (float): the lowest value of the quantity observed, initially NaN.
         """
-        self.quantity = serializable(
-            identity(quantity) if isinstance(quantity, str) else quantity
-        )
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.entries = 0.0
         self.min = float("nan")
-        super(Minimize, self).__init__()
+        super().__init__()
         self.specialize()
 
     @inheritdoc(Container)
@@ -101,10 +99,7 @@ class Minimize(Factory, Container):
             out.entries = self.entries + other.entries
             out.min = minplus(self.min, other.min)
             return out.specialize()
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
@@ -117,11 +112,10 @@ class Minimize(Factory, Container):
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            out.min = self.min
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        out.min = self.min
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -139,9 +133,7 @@ class Minimize(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, numbers.Real):
-                raise TypeError(
-                    "function return value ({0}) must be boolean or number".format(q)
-                )
+                raise TypeError(f"function return value ({q}) must be boolean or number")
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
@@ -165,9 +157,8 @@ class Minimize(Factory, Container):
         if math.isnan(self.min):
             if q.shape[0] > 0:
                 self.min = float(q.min())
-        else:
-            if q.shape[0] > 0:
-                self.min = min(self.min, float(q.min()))
+        elif q.shape[0] > 0:
+            self.min = min(self.min, float(q.min()))
 
     def _sparksql(self, jvm, converter):
         return converter.Minimize(self.quantity.asSparkSQL())
@@ -182,12 +173,8 @@ class Minimize(Factory, Container):
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(
-            json.keys(), ["entries", "min"], ["name"]
-        ):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "min"], ["name"]):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Minimize.entries")
@@ -199,9 +186,7 @@ class Minimize(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Minimize.name")
 
-            if json["min"] in ("nan", "inf", "-inf") or isinstance(
-                json["min"], numbers.Real
-            ):
+            if json["min"] in ("nan", "inf", "-inf") or isinstance(json["min"], numbers.Real):
                 min = float(json["min"])
             else:
                 raise JsonFormatException(json["min"], "Minimize.min")
@@ -210,11 +195,10 @@ class Minimize(Factory, Container):
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
-        else:
-            raise JsonFormatException(json, "Minimize")
+        raise JsonFormatException(json, "Minimize")
 
     def __repr__(self):
-        return "<Minimize min={0}>".format(self.min)
+        return f"<Minimize min={self.min}>"
 
     def __eq__(self, other):
         return (
@@ -254,11 +238,11 @@ class Maximize(Factory, Container):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if not isinstance(max, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("max ({0}) must be a number".format(max))
+            raise TypeError(f"max ({max}) must be a number")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
         out = Maximize(None)
         out.entries = float(entries)
         out.max = float(max)
@@ -279,12 +263,10 @@ class Maximize(Factory, Container):
             entries (float): the number of entries, initially 0.0.
             max (float): the highest value of the quantity observed, initially NaN.
         """
-        self.quantity = serializable(
-            identity(quantity) if isinstance(quantity, str) else quantity
-        )
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.entries = 0.0
         self.max = float("nan")
-        super(Maximize, self).__init__()
+        super().__init__()
         self.specialize()
 
     @inheritdoc(Container)
@@ -298,10 +280,7 @@ class Maximize(Factory, Container):
             out.entries = self.entries + other.entries
             out.max = maxplus(self.max, other.max)
             return out.specialize()
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
@@ -314,11 +293,10 @@ class Maximize(Factory, Container):
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            out.max = self.max
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        out.max = self.max
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -331,9 +309,7 @@ class Maximize(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, numbers.Real):
-                raise TypeError(
-                    "function return value ({0}) must be boolean or number".format(q)
-                )
+                raise TypeError(f"function return value ({q}) must be boolean or number")
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
@@ -357,9 +333,8 @@ class Maximize(Factory, Container):
         if math.isnan(self.max):
             if q.shape[0] > 0:
                 self.max = float(q.max())
-        else:
-            if q.shape[0] > 0:
-                self.max = max(self.max, float(q.max()))
+        elif q.shape[0] > 0:
+            self.max = max(self.max, float(q.max()))
 
     def _sparksql(self, jvm, converter):
         return converter.Maximize(self.quantity.asSparkSQL())
@@ -379,12 +354,8 @@ class Maximize(Factory, Container):
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(
-            json.keys(), ["entries", "max"], ["name"]
-        ):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "max"], ["name"]):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Maximize.entries")
@@ -396,9 +367,7 @@ class Maximize(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Maximize.name")
 
-            if json["max"] in ("nan", "inf", "-inf") or isinstance(
-                json["max"], numbers.Real
-            ):
+            if json["max"] in ("nan", "inf", "-inf") or isinstance(json["max"], numbers.Real):
                 max = float(json["max"])
             else:
                 raise JsonFormatException(json["max"], "Maximize.max")
@@ -407,11 +376,10 @@ class Maximize(Factory, Container):
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
-        else:
-            raise JsonFormatException(json, "Maximize")
+        raise JsonFormatException(json, "Maximize")
 
     def __repr__(self):
-        return "<Maximize max={0}>".format(self.max)
+        return f"<Maximize max={self.max}>"
 
     def __eq__(self, other):
         return (

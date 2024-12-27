@@ -15,7 +15,6 @@
 # limitations under the License.
 
 # "Public" methods; what we want to attach to the Histogram as a mix-in.
-from __future__ import absolute_import
 
 import math
 
@@ -23,7 +22,7 @@ import math
 # from histogrammar.util import *
 
 
-class HistogramMethods(object):
+class HistogramMethods:
     def plotbokeh(
         self,
         glyphType="line",
@@ -34,7 +33,6 @@ class HistogramMethods(object):
         fillAlpha=0.1,
         lineDash="solid",
     ):
-
         # glyphs
         # data
         from bokeh.models import ColumnDataSource
@@ -47,7 +45,7 @@ class HistogramMethods(object):
         hi = self.high
         num = self.num
         bin_width = (hi - lo) / num
-        x = list()
+        x = []
         center = lo
         for _ in range(num):
             x.append(center + bin_width / 2)
@@ -55,7 +53,7 @@ class HistogramMethods(object):
         y = self.numericalValues
         ci = [2.0 * v for v in self.confidenceIntervalValues()]
 
-        source = ColumnDataSource(data=dict(x=x, y=y, ci=ci))
+        source = ColumnDataSource(data={"x": x, "y": y, "ci": ci})
 
         glyph = None
         if glyphType == "square":
@@ -131,7 +129,7 @@ class HistogramMethods(object):
         elif glyphType == "histogram":
             h = y
             y = [yy / 2 for yy in y]
-            source = ColumnDataSource(dict(x=x, y=y, h=h))
+            source = ColumnDataSource({"x": x, "y": y, "h": h})
             glyph = Rect(
                 x="x",
                 y="y",
@@ -154,7 +152,7 @@ class HistogramMethods(object):
         return GlyphRenderer(glyph=glyph, data_source=source)
 
 
-class SparselyHistogramMethods(object):
+class SparselyHistogramMethods:
     def plotbokeh(
         self,
         glyphType="line",
@@ -165,7 +163,6 @@ class SparselyHistogramMethods(object):
         fillAlpha=0.1,
         lineDash="solid",
     ):
-
         # glyphs
         # data
         from bokeh.models import ColumnDataSource
@@ -178,14 +175,14 @@ class SparselyHistogramMethods(object):
         hi = self.high
         num = self.numFilled
         bin_width = (hi - lo) / num
-        x = list()
+        x = []
         center = lo
         for _ in range(num):
             x.append(center + bin_width / 2)
             center += bin_width
         y = [v.entries for _, v in sorted(self.bins.items())]
 
-        source = ColumnDataSource(data=dict(x=x, y=y))
+        source = ColumnDataSource(data={"x": x, "y": y})
 
         glyph = None
         if glyphType == "square":
@@ -250,7 +247,7 @@ class SparselyHistogramMethods(object):
             )
         elif glyphType == "errors":
             ci = [2.0 * v for v in self.confidenceIntervalValues()]
-            source = ColumnDataSource(data=dict(x=x, y=y, ci=ci))
+            source = ColumnDataSource(data={"x": x, "y": y, "ci": ci})
             glyph = Rect(
                 x="x",
                 y="y",
@@ -263,7 +260,7 @@ class SparselyHistogramMethods(object):
         elif glyphType == "histogram":
             h = y
             y = [yy / 2 for yy in y]
-            source = ColumnDataSource(dict(x=x, y=y, h=h))
+            source = ColumnDataSource({"x": x, "y": y, "h": h})
             glyph = Rect(
                 x="x",
                 y="y",
@@ -286,19 +283,19 @@ class SparselyHistogramMethods(object):
         return GlyphRenderer(glyph=glyph, data_source=source)
 
 
-class CategorizeHistogramMethods(object):
+class CategorizeHistogramMethods:
     pass
 
 
-class IrregularlyHistogramMethods(object):
+class IrregularlyHistogramMethods:
     pass
 
 
-class CentrallyHistogramMethods(object):
+class CentrallyHistogramMethods:
     pass
 
 
-class ProfileMethods(object):
+class ProfileMethods:
     def plotbokeh(
         self,
         glyphType="line",
@@ -309,7 +306,6 @@ class ProfileMethods(object):
         fillAlpha=0.1,
         lineDash="solid",
     ):
-
         # glyphs
         # data
         from bokeh.models import ColumnDataSource
@@ -322,8 +318,8 @@ class ProfileMethods(object):
         hi = self.high
         num = self.num
         bin_width = (hi - lo) / num
-        x = list()
-        y = list()
+        x = []
+        y = []
         center = lo
         for v in self.values:
             if not math.isnan(v.mean):
@@ -331,7 +327,7 @@ class ProfileMethods(object):
                 x.append(center + bin_width / 2)
                 center += bin_width
 
-        source = ColumnDataSource(data=dict(x=x, y=y))
+        source = ColumnDataSource(data={"x": x, "y": y})
 
         glyph = None
         if glyphType == "square":
@@ -388,7 +384,7 @@ class ProfileMethods(object):
             w = [bin_width for _ in x]
             h = y
             y = [yy / 2 for yy in y]
-            source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
+            source = ColumnDataSource({"x": x, "y": y, "w": w, "h": h})
             glyph = Rect(
                 x="x",
                 y="y",
@@ -411,11 +407,11 @@ class ProfileMethods(object):
         return GlyphRenderer(glyph=glyph, data_source=source)
 
 
-class SparselyProfileMethods(object):
+class SparselyProfileMethods:
     pass
 
 
-class ProfileErrMethods(object):
+class ProfileErrMethods:
     def plotbokeh(
         self,
         glyphType="line",
@@ -426,7 +422,6 @@ class ProfileErrMethods(object):
         fillAlpha=0.1,
         lineDash="solid",
     ):
-
         # glyphs
         from math import sqrt
 
@@ -441,8 +436,8 @@ class ProfileErrMethods(object):
         hi = self.high
         num = self.num
         bin_width = (hi - lo) / num
-        x = list()
-        y = list()
+        x = []
+        y = []
         center = lo
         for v in self.values:
             if not math.isnan(v.mean):
@@ -450,7 +445,7 @@ class ProfileErrMethods(object):
                 x.append(center + bin_width / 2)
                 center += bin_width
 
-        source = ColumnDataSource(data=dict(x=x, y=y))
+        source = ColumnDataSource(data={"x": x, "y": y})
 
         glyph = None
         if glyphType == "square":
@@ -505,11 +500,8 @@ class ProfileErrMethods(object):
             )
         elif glyphType == "errors":
             w = [bin_width for _ in x]
-            h = [
-                sqrt(v.variance / v.entries) if v.entries > 0 else 0.0
-                for v in self.values
-            ]
-            source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
+            h = [sqrt(v.variance / v.entries) if v.entries > 0 else 0.0 for v in self.values]
+            source = ColumnDataSource({"x": x, "y": y, "w": w, "h": h})
             glyph = Rect(
                 x="x",
                 y="y",
@@ -523,7 +515,7 @@ class ProfileErrMethods(object):
             w = [bin_width for _ in x]
             h = y
             y = [yy / 2 for yy in y]
-            source = ColumnDataSource(dict(x=x, y=y, w=w, h=h))
+            source = ColumnDataSource({"x": x, "y": y, "w": w, "h": h})
             glyph = Rect(
                 x="x",
                 y="y",
@@ -546,11 +538,11 @@ class ProfileErrMethods(object):
         return GlyphRenderer(glyph=glyph, data_source=source)
 
 
-class SparselyProfileErrMethods(object):
+class SparselyProfileErrMethods:
     pass
 
 
-class StackedHistogramMethods(object):
+class StackedHistogramMethods:
     nMaxStacked = 10
     glyphTypeDefaults = ["circle"] * nMaxStacked
     glyphSizeDefaults = [1] * nMaxStacked
@@ -580,7 +572,7 @@ class StackedHistogramMethods(object):
         assert len(fillAlphas) >= nChildren
         assert len(lineDashes) >= nChildren
 
-        stackedGlyphs = list()
+        stackedGlyphs = []
         # for ichild, p in enumerate(self.children,start=1):
         for ichild in range(nChildren):
             stackedGlyphs.append(
@@ -598,32 +590,31 @@ class StackedHistogramMethods(object):
         return stackedGlyphs
 
 
-class PartitionedHistogramMethods(object):
+class PartitionedHistogramMethods:
     pass
 
 
-class FractionedHistogramMethods(object):
+class FractionedHistogramMethods:
     pass
 
 
-class TwoDimensionallyHistogramMethods(object):
+class TwoDimensionallyHistogramMethods:
     pass
 
 
-class SparselyTwoDimensionallyHistogramMethods(object):
+class SparselyTwoDimensionallyHistogramMethods:
     pass
 
 
-class IrregularlyTwoDimensionallyHistogramMethods(object):
+class IrregularlyTwoDimensionallyHistogramMethods:
     pass
 
 
-class CentrallyTwoDimensionallyHistogramMethods(object):
+class CentrallyTwoDimensionallyHistogramMethods:
     pass
 
 
 def plot(xLabel="x", yLabel="y", *args):
-
     from bokeh.models import DataRange1d, LinearAxis, PanTool, Plot, WheelZoomTool
 
     xdr = DataRange1d()
@@ -631,7 +622,7 @@ def plot(xLabel="x", yLabel="y", *args):
 
     plot = Plot(x_range=xdr, y_range=ydr, min_border=80)
 
-    extra = list()
+    extra = []
     if not isinstance(xLabel, str) and not isinstance(yLabel, str):
         extra.append(xLabel)
         extra.append(yLabel)

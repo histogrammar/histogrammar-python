@@ -58,11 +58,11 @@ class Sum(Factory, Container):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if not isinstance(sum, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("sum ({0}) must be a number".format(sum))
+            raise TypeError(f"sum ({sum}) must be a number")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
         out = Sum(None)
         out.entries = float(entries)
         out.sum = float(sum)
@@ -83,12 +83,10 @@ class Sum(Factory, Container):
             entries (float): the number of entries, initially 0.0.
             sum (float): the running sum, initially 0.0.
         """
-        self.quantity = serializable(
-            identity(quantity) if isinstance(quantity, str) else quantity
-        )
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.entries = 0.0
         self.sum = 0.0
-        super(Sum, self).__init__()
+        super().__init__()
         self.specialize()
 
     @inheritdoc(Container)
@@ -102,10 +100,7 @@ class Sum(Factory, Container):
             out.entries = self.entries + other.entries
             out.sum = self.sum + other.sum
             return out.specialize()
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
@@ -117,11 +112,10 @@ class Sum(Factory, Container):
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            out.sum = factor * self.sum
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        out.sum = factor * self.sum
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -134,9 +128,7 @@ class Sum(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, numbers.Real):
-                raise TypeError(
-                    "function return value ({0}) must be boolean or number".format(q)
-                )
+                raise TypeError(f"function return value ({q}) must be boolean or number")
 
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
@@ -180,12 +172,8 @@ class Sum(Factory, Container):
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(
-            json.keys(), ["entries", "sum"], ["name"]
-        ):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sum"], ["name"]):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json["entries"], "Sum.entries")
@@ -197,9 +185,7 @@ class Sum(Factory, Container):
             else:
                 raise JsonFormatException(json["name"], "Sum.name")
 
-            if json["sum"] in ("nan", "inf", "-inf") or isinstance(
-                json["sum"], numbers.Real
-            ):
+            if json["sum"] in ("nan", "inf", "-inf") or isinstance(json["sum"], numbers.Real):
                 sum = float(json["sum"])
             else:
                 raise JsonFormatException(json["sum"], "Sum.sum")
@@ -208,11 +194,10 @@ class Sum(Factory, Container):
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
-        else:
-            raise JsonFormatException(json, "Sum")
+        raise JsonFormatException(json, "Sum")
 
     def __repr__(self):
-        return "<Sum sum={0}>".format(self.sum)
+        return f"<Sum sum={self.sum}>"
 
     def __eq__(self, other):
         return (

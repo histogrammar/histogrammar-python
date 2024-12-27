@@ -66,11 +66,11 @@ class Select(Factory, Container):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if not isinstance(cut, Container):
-            raise TypeError("cut ({0}) must be a Container".format(cut))
+            raise TypeError(f"cut ({cut}) must be a Container")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
         out = Select(None, cut)
         out.entries = float(entries)
         return out.specialize()
@@ -84,10 +84,9 @@ class Select(Factory, Container):
         """Pass on searches for custom methods to the ``value``, so that Limit becomes effectively invisible."""
         if attr.startswith("__") and attr.endswith("__"):
             return getattr(Select, attr)
-        elif attr not in self.__dict__ and hasattr(self.__dict__["cut"], attr):
+        if attr not in self.__dict__ and hasattr(self.__dict__["cut"], attr):
             return getattr(self.__dict__["cut"], attr)
-        else:
-            return self.__dict__[attr]
+        return self.__dict__[attr]
 
     def __init__(self, quantity=identity, cut=Count()):
         """Create a Select that is capable of being filled and added.
@@ -102,13 +101,11 @@ class Select(Factory, Container):
             entries (float): the number of entries, initially 0.0.
         """
         if not isinstance(cut, Container):
-            raise TypeError("cut ({0}) must be a Container".format(cut))
+            raise TypeError(f"cut ({cut}) must be a Container")
         self.entries = 0.0
-        self.quantity = serializable(
-            identity(quantity) if isinstance(quantity, str) else quantity
-        )
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.cut = cut
-        super(Select, self).__init__()
+        super().__init__()
         self.specialize()
 
     def fractionPassing(self):
@@ -125,10 +122,7 @@ class Select(Factory, Container):
             out = Select(self.quantity, self.cut + other.cut)
             out.entries = self.entries + other.entries
             return out.specialize()
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
@@ -136,20 +130,16 @@ class Select(Factory, Container):
             self.entries += other.entries
             self.cut += other.cut
             return self
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            out.cut = self.cut * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        out.cut = self.cut * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -162,9 +152,7 @@ class Select(Factory, Container):
         if weight > 0.0:
             w = self.quantity(datum)
             if not isinstance(w, numbers.Real):
-                raise TypeError(
-                    "function return value ({0}) must be boolean or number".format(w)
-                )
+                raise TypeError(f"function return value ({w}) must be boolean or number")
             w *= weight
 
             if w > 0.0:
@@ -190,9 +178,7 @@ class Select(Factory, Container):
         self.entries += float(weights.sum())
 
     def _sparksql(self, jvm, converter):
-        return converter.Select(
-            self.quantity.asSparkSQL(), self.cut._sparksql(jvm, converter)
-        )
+        return converter.Select(self.quantity.asSparkSQL(), self.cut._sparksql(jvm, converter))
 
     @property
     def children(self):
@@ -213,12 +199,8 @@ class Select(Factory, Container):
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(
-            json.keys(), ["entries", "sub:type", "data"], ["name"]
-        ):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+        if isinstance(json, dict) and hasKeys(json.keys(), ["entries", "sub:type", "data"], ["name"]):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Select.entries")
@@ -241,18 +223,13 @@ class Select(Factory, Container):
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
-        else:
-            raise JsonFormatException(json, "Select")
+        raise JsonFormatException(json, "Select")
 
     def __repr__(self):
-        return "<Select cut={0}>".format(self.cut.name)
+        return f"<Select cut={self.cut.name}>"
 
     def __eq__(self, other):
-        return (
-            isinstance(other, Select)
-            and numeq(self.entries, other.entries)
-            and self.cut == other.cut
-        )
+        return isinstance(other, Select) and numeq(self.entries, other.entries) and self.cut == other.cut
 
     def __ne__(self, other):
         return not self == other

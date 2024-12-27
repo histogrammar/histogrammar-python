@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Histogrammar documentation build configuration file.
 #
@@ -317,13 +316,8 @@ def linkcode_resolve(domain, info):
     fileName = info["module"].replace(".", "/")
 
     try:
-        lineNumber = inspect.getsourcelines(
-            getattr(importlib.import_module(info["module"]), info["fullname"])
-        )[1]
+        lineNumber = inspect.getsourcelines(getattr(importlib.import_module(info["module"]), info["fullname"]))[1]
     except:  # noqa: E722
         return None
     else:
-        return (
-            "https://github.com/histogrammar/histogrammar-python/blob/%s/%s.py#L%d"
-            % (release, fileName, lineNumber)
-        )
+        return "https://github.com/histogrammar/histogrammar-python/blob/%s/%s.py#L%d" % (release, fileName, lineNumber)

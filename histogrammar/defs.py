@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import json as jsonlib
+from pathlib import Path
 
 import numpy
 
@@ -30,19 +31,17 @@ class InvalidJsonException(Exception):
     """Exception type for strings that cannot be parsed because they are not proper JSON."""
 
     def __init__(self, message):
-        super(InvalidJsonException, self).__init__("invalid JSON: {0}".format(message))
+        super().__init__(f"invalid JSON: {message}")
 
 
 class JsonFormatException(Exception):
     """Exception type for unexpected JSON structure, thrown by ``fromJson`` methods."""
 
     def __init__(self, x, context):
-        super(JsonFormatException, self).__init__(
-            "wrong JSON format for {0}: {1}".format(context, jsonlib.dumps(x))
-        )
+        super().__init__(f"wrong JSON format for {context}: {jsonlib.dumps(x)}")
 
 
-class Factory(object):
+class Factory:
     """Interface for a container factory, always named as imperative verbs, such as "Count" and "Bin".
 
     Each factory has:
@@ -108,7 +107,8 @@ class Factory(object):
 
     @staticmethod
     def fromJsonFile(fileName):
-        return Factory.fromJson(jsonlib.load(open(fileName)))
+        path = Path(fileName)
+        return Factory.fromJson(jsonlib.load(path.open()))
 
     @staticmethod
     def fromJsonString(json):
@@ -121,16 +121,11 @@ class Factory(object):
         if isinstance(json, basestring):
             json = jsonlib.loads(json)
 
-        if (
-            isinstance(json, dict)
-            and "type" in json
-            and "data" in json
-            and "version" in json
-        ):
+        if isinstance(json, dict) and "type" in json and "data" in json and "version" in json:
             if isinstance(json["version"], basestring):
                 if not histogrammar.version.compatible(json["version"]):
                     raise ContainerException(
-                        "cannot read a Histogrammar {0} document with histogrammar-python version {1}".format(
+                        "cannot read a Histogrammar {} document with histogrammar-python version {}".format(
                             json["version"], histogrammar.version.version
                         )
                     )
@@ -145,17 +140,15 @@ class Factory(object):
             if name not in Factory.registered:
                 raise JsonFormatException(
                     json,
-                    "unrecognized container (is it a custom container "
-                    "that hasn't been registered?): {0}".format(name),
+                    "unrecognized container (is it a custom container " f"that hasn't been registered?): {name}",
                 )
 
             return Factory.registered[name].fromJsonFragment(json["data"], None)
 
-        else:
-            raise JsonFormatException(json, "Factory")
+        raise JsonFormatException(json, "Factory")
 
 
-class Container(object):
+class Container:
     """Interface for classes that contain aggregated data, such as "Count" or "Bin".
 
     Containers are monoids: they have a neutral element (``zero``) and an associative operator (``+``).
@@ -243,18 +236,15 @@ class Container(object):
             if memo is None:
                 memo = set()
             if any(x is self for x in memo):
-                raise ContainerException(
-                    "cannot fill a tree that contains the same aggregator twice: {0}".format(
-                        self
-                    )
-                )
+                raise ContainerException(f"cannot fill a tree that contains the same aggregator twice: {self}")
             memo.add(self)
             for child in self.children:
                 child._checkForCrossReferences(memo)
             self._checkedForCrossReferences = True
 
     def toJsonFile(self, fileName):
-        return jsonlib.dump(self.toJson(), open(fileName, "w"))
+        path = Path(fileName)
+        return jsonlib.dump(self.toJson(), path.open(mode="w"))
 
     def toJsonString(self):
         return jsonlib.dumps(self.toJson())
@@ -304,13 +294,10 @@ class Container(object):
     def _makeNPWeights(self, weights, shape):
         if isinstance(weights, numpy.ndarray):
             return weights
-        else:
-            return weights * numpy.ones(shape, dtype=numpy.float64)
+        return weights * numpy.ones(shape, dtype=numpy.float64)
 
     def fillsparksql(self, df):
-        converter = (
-            df._sc._jvm.org.dianahep.histogrammar.sparksql.pyspark.AggregatorConverter()
-        )
+        converter = df._sc._jvm.org.dianahep.histogrammar.sparksql.pyspark.AggregatorConverter()
         agg = self._sparksql(df._sc._jvm, converter)
         result = converter.histogrammar(df._jdf, agg)
         delta = Factory.fromJson(jsonlib.loads(result.toJsonString()))

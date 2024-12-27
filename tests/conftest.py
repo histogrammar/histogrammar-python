@@ -1,6 +1,6 @@
 from decimal import Decimal
 from json import load
-from os.path import dirname
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -10,8 +10,7 @@ from histogrammar import resources
 
 
 def get_comparer_data():
-
-    test_comparer_df = dict()
+    test_comparer_df = {}
     df = pd.DataFrame(
         data={
             "mae": [0.1, 0.11, 0.12, 0.2, 0.09],
@@ -50,52 +49,47 @@ def pytest_configure():
     pytest.test_comparer_df = get_comparer_data()
     pytest.test_ref_comparer_df = get_ref_comparer_data()
 
-    parent_path = dirname(__file__)
-    TEMPLATE_PATH = f"{parent_path}/resources"
+    parent_path = Path(__file__).parent
+    TEMPLATE_PATH = parent_path / "resources"
     CSV_FILE = "test.csv.gz"
 
-    with open("{}/{}".format(TEMPLATE_PATH, "age.json")) as f:
+    with (TEMPLATE_PATH / "age.json").open() as f:
         pytest.age = load(f)
 
-    with open("{}/{}".format(TEMPLATE_PATH, "company.json")) as f:
+    with (TEMPLATE_PATH / "company.json").open() as f:
         pytest.company = load(f)
 
-    with open("{}/{}".format(TEMPLATE_PATH, "date.json")) as f:
+    with (TEMPLATE_PATH / "date.json").open() as f:
         pytest.date = load(f)
 
-    with open("{}/{}".format(TEMPLATE_PATH, "eyesColor.json")) as f:
+    with (TEMPLATE_PATH / "eyesColor.json").open() as f:
         pytest.eyesColor = load(f)
 
-    with open("{}/{}".format(TEMPLATE_PATH, "gender.json")) as f:
+    with (TEMPLATE_PATH / "gender.json").open() as f:
         pytest.gender = load(f)
 
-    with open("{}/{}".format(TEMPLATE_PATH, "isActive.json")) as f:
+    with (TEMPLATE_PATH / "isActive.json").open() as f:
         pytest.isActive = load(f)
 
-    with open("{}/{}".format(TEMPLATE_PATH, "isActive_age.json")) as f:
+    with (TEMPLATE_PATH / "isActive_age.json").open() as f:
         pytest.isActive_age = load(f)
 
-    with open("{}/{}".format(TEMPLATE_PATH, "latitude.json")) as f:
+    with (TEMPLATE_PATH / "latitude.json").open() as f:
         pytest.latitude = load(f)
 
-    with open("{}/{}".format(TEMPLATE_PATH, "longitude.json")) as f:
+    with (TEMPLATE_PATH / "longitude.json").open() as f:
         pytest.longitude = load(f)
 
-    with open("{}/{}".format(TEMPLATE_PATH, "latitude_longitude.json")) as f:
+    with (TEMPLATE_PATH / "latitude_longitude.json").open() as f:
         pytest.latitude_longitude = load(f)
 
-    with open("{}/{}".format(TEMPLATE_PATH, "transaction.json")) as f:
+    with (TEMPLATE_PATH / "transaction.json").open() as f:
         pytest.transaction = load(f)
 
     df = pd.read_csv(resources.data(CSV_FILE))
     df["date"] = pd.to_datetime(df["date"])
 
     # Decimal type
-    df["amount"] = (
-        df["balance"]
-        .str.replace("$", "", regex=False)
-        .str.replace(",", "", regex=False)
-        .apply(Decimal)
-    )
+    df["amount"] = df["balance"].str.replace("$", "", regex=False).str.replace(",", "", regex=False).apply(Decimal)
 
     pytest.test_df = df

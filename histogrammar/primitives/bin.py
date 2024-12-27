@@ -81,33 +81,29 @@ class Bin(Factory, Container):
             nanflow (:doc:`Container <histogrammar.defs.Container>`): is the filled nanflow bin.
         """
         if not isinstance(low, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("low ({0}) must be a number".format(low))
+            raise TypeError(f"low ({low}) must be a number")
         if not isinstance(high, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("high ({0}) must be a number".format(high))
+            raise TypeError(f"high ({high}) must be a number")
         if not isinstance(entries, numbers.Real) and entries not in (
             "nan",
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
-        if not isinstance(values, (list, tuple)) and not all(
-            isinstance(v, Container) for v in values
-        ):
-            raise TypeError("values ({0}) must be a list of Containers".format(values))
+            raise TypeError(f"entries ({entries}) must be a number")
+        if not isinstance(values, (list, tuple)) and not all(isinstance(v, Container) for v in values):
+            raise TypeError(f"values ({values}) must be a list of Containers")
         if not isinstance(underflow, Container):
-            raise TypeError("underflow ({0}) must be a Container".format(underflow))
+            raise TypeError(f"underflow ({underflow}) must be a Container")
         if not isinstance(overflow, Container):
-            raise TypeError("overflow ({0}) must be a Container".format(overflow))
+            raise TypeError(f"overflow ({overflow}) must be a Container")
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
+            raise TypeError(f"nanflow ({nanflow}) must be a Container")
         if low >= high:
-            raise ValueError("low ({0}) must be less than high ({1})".format(low, high))
+            raise ValueError(f"low ({low}) must be less than high ({high})")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
         if len(values) < 1:
-            raise ValueError(
-                "values ({0}) must have at least one element".format(values)
-            )
+            raise ValueError(f"values ({values}) must have at least one element")
 
         out = Bin(
             len(values),
@@ -172,30 +168,28 @@ class Bin(Factory, Container):
         """
 
         if not isinstance(num, (int, long)):
-            raise TypeError("num ({0}) must be an integer".format(num))
+            raise TypeError(f"num ({num}) must be an integer")
         if not isinstance(low, numbers.Real):
-            raise TypeError("low ({0}) must be a number".format(low))
+            raise TypeError(f"low ({low}) must be a number")
         if not isinstance(high, numbers.Real):
-            raise TypeError("high ({0}) must be a number".format(high))
+            raise TypeError(f"high ({high}) must be a number")
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({0}) must be a Container".format(value))
+            raise TypeError(f"value ({value}) must be a Container")
         if not isinstance(underflow, Container):
-            raise TypeError("underflow ({0}) must be a Container".format(underflow))
+            raise TypeError(f"underflow ({underflow}) must be a Container")
         if not isinstance(overflow, Container):
-            raise TypeError("overflow ({0}) must be a Container".format(overflow))
+            raise TypeError(f"overflow ({overflow}) must be a Container")
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
+            raise TypeError(f"nanflow ({nanflow}) must be a Container")
         if num < 1:
-            raise ValueError("num ({0}) must be least one".format(num))
+            raise ValueError(f"num ({num}) must be least one")
         if low >= high:
-            raise ValueError("low ({0}) must be less than high ({1})".format(low, high))
+            raise ValueError(f"low ({low}) must be less than high ({high})")
 
         self.entries = 0.0
         self.low = float(low)
         self.high = float(high)
-        self.quantity = serializable(
-            identity(quantity) if isinstance(quantity, str) else quantity
-        )
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         if value is None:
             self.values = [None] * num
             self.contentType = "Count"
@@ -205,7 +199,7 @@ class Bin(Factory, Container):
         self.underflow = underflow.copy()
         self.overflow = overflow.copy()
         self.nanflow = nanflow.copy()
-        super(Bin, self).__init__()
+        super().__init__()
         self.specialize()
 
     def ascii(self):
@@ -238,11 +232,11 @@ class Bin(Factory, Container):
             ranges[i] = "[" + str(self.range(i))[1:]
             i += 1
 
-        printedValues = ["{0:<.4g}".format(v) for v in values]
+        printedValues = [f"{v:<.4g}" for v in values]
         printedValuesWidth = max(len(x) for x in printedValues)
-        formatter = "{0:<14} {1:<%s} {2:<65}" % printedValuesWidth
+        formatter = f"{{0:<14}} {{1:<{printedValuesWidth}}} {{2:<65}}"
 
-        print(" " * printedValuesWidth + "{0:>16}{1:>65}".format(minimum, maximum))
+        print(" " * printedValuesWidth + f"{minimum:>16}{maximum:>65}")
         print(" " * (16 + printedValuesWidth) + "+" + "-" * 62 + "+")
 
         i = 0
@@ -292,27 +286,15 @@ class Bin(Factory, Container):
     def __add__(self, other):
         if isinstance(other, Bin):
             if self.low != other.low:
-                raise ContainerException(
-                    "cannot add Bins because low differs ({0} vs {1})".format(
-                        self.low, other.low
-                    )
-                )
+                raise ContainerException(f"cannot add Bins because low differs ({self.low} vs {other.low})")
             if self.high != other.high:
-                raise ContainerException(
-                    "cannot add Bins because high differs ({0} vs {1})".format(
-                        self.high, other.high
-                    )
-                )
+                raise ContainerException(f"cannot add Bins because high differs ({self.high} vs {other.high})")
             if len(self.values) != len(other.values):
                 raise ContainerException(
-                    "cannot add Bins because nubmer of values differs ({0} vs {1})".format(
-                        len(self.values), len(other.values)
-                    )
+                    f"cannot add Bins because nubmer of values differs ({len(self.values)} vs {len(other.values)})"
                 )
             if len(self.values) == 0:
-                raise ContainerException(
-                    "cannot add Bins because number of values is zero"
-                )
+                raise ContainerException("cannot add Bins because number of values is zero")
 
             out = Bin(
                 len(self.values),
@@ -328,61 +310,42 @@ class Bin(Factory, Container):
             out.values = [x + y for x, y in zip(self.values, other.values)]
             return out.specialize()
 
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, Bin):
             if self.low != other.low:
-                raise ContainerException(
-                    "cannot add Bins because low differs ({0} vs {1})".format(
-                        self.low, other.low
-                    )
-                )
+                raise ContainerException(f"cannot add Bins because low differs ({self.low} vs {other.low})")
             if self.high != other.high:
-                raise ContainerException(
-                    "cannot add Bins because high differs ({0} vs {1})".format(
-                        self.high, other.high
-                    )
-                )
+                raise ContainerException(f"cannot add Bins because high differs ({self.high} vs {other.high})")
             if len(self.values) != len(other.values):
                 raise ContainerException(
-                    "cannot add Bins because nubmer of values differs ({0} vs {1})".format(
-                        len(self.values), len(other.values)
-                    )
+                    f"cannot add Bins because nubmer of values differs ({len(self.values)} vs {len(other.values)})"
                 )
             if len(self.values) == 0:
-                raise ContainerException(
-                    "cannot add Bins because number of values is zero"
-                )
+                raise ContainerException("cannot add Bins because number of values is zero")
             self.entries += other.entries
-            for x, y in zip(self.values, other.values):
-                x += y
+            for i in range(len(self.values)):
+                self.values[i] += other.values[i]
             self.underflow += other.underflow
             self.overflow += other.overflow
             self.nanflow += other.nanflow
             return self
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            for i, v in enumerate(self.values):
-                out.values[i] = v * factor
-            out.overflow = self.overflow * factor
-            out.underflow = self.underflow * factor
-            out.nanflow = self.nanflow * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        for i, v in enumerate(self.values):
+            out.values[i] = v * factor
+        out.overflow = self.overflow * factor
+        out.underflow = self.underflow * factor
+        out.nanflow = self.nanflow * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -400,8 +363,7 @@ class Bin(Factory, Container):
         """
         if self.under(x) or self.over(x) or self.nan(x):
             return -1
-        else:
-            return int(math.floor(self.num * (x - self.low) / (self.high - self.low)))
+        return int(math.floor(self.num * (x - self.low) / (self.high - self.low)))
 
     def under(self, x):
         """Return ``true`` iff ``x`` is in the underflow region (less than ``low``)."""
@@ -434,9 +396,7 @@ class Bin(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, numbers.Real):
-                raise TypeError(
-                    "function return value ({0}) must be boolean or number".format(q)
-                )
+                raise TypeError(f"function return value ({q}) must be boolean or number")
 
             if self.under(q):
                 self.underflow.fill(datum, weight)
@@ -481,10 +441,7 @@ class Bin(Factory, Container):
         self.overflow._numpy(data, subweights, shape)
 
         if (
-            all(
-                isinstance(value, Count) and value.transform is identity
-                for value in self.values
-            )
+            all(isinstance(value, Count) and value.transform is identity for value in self.values)
             and np.all(np.isfinite(q))
             and np.all(np.isfinite(weights))
         ):
@@ -579,23 +536,17 @@ class Bin(Factory, Container):
             ],
             ["name", "values:name"],
         ):
-            if json["low"] in ("nan", "inf", "-inf") or isinstance(
-                json["low"], numbers.Real
-            ):
+            if json["low"] in ("nan", "inf", "-inf") or isinstance(json["low"], numbers.Real):
                 low = float(json["low"])
             else:
                 raise JsonFormatException(json, "Bin.low")
 
-            if json["high"] in ("nan", "inf", "-inf") or isinstance(
-                json["high"], numbers.Real
-            ):
+            if json["high"] in ("nan", "inf", "-inf") or isinstance(json["high"], numbers.Real):
                 high = float(json["high"])
             else:
                 raise JsonFormatException(json, "Bin.high")
 
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Bin.entries")
@@ -618,10 +569,7 @@ class Bin(Factory, Container):
             else:
                 raise JsonFormatException(json["values:name"], "Bin.values:name")
             if isinstance(json["values"], list):
-                values = [
-                    valuesFactory.fromJsonFragment(x, valuesName)
-                    for x in json["values"]
-                ]
+                values = [valuesFactory.fromJsonFragment(x, valuesName) for x in json["values"]]
             else:
                 raise JsonFormatException(json, "Bin.values")
 
@@ -647,18 +595,12 @@ class Bin(Factory, Container):
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
-        else:
-            raise JsonFormatException(json, "Bin")
+        raise JsonFormatException(json, "Bin")
 
     def __repr__(self):
-        return "<Bin num={0} low={1} high={2} values={3} underflow={4} overflow={5} nanflow={6}>".format(
-            len(self.values),
-            self.low,
-            self.high,
-            self.values[0].name,
-            self.underflow.name,
-            self.overflow.name,
-            self.nanflow.name,
+        return (
+            f"<Bin num={len(self.values)} low={self.low} high={self.high} values={self.values[0].name}"
+            f" underflow={self.underflow.name} overflow={self.overflow.name} nanflow={self.nanflow.name}>"
         )
 
     def __eq__(self, other):
@@ -702,8 +644,7 @@ class Bin(Factory, Container):
         return self.num
 
     def num_bins(self, low=None, high=None):
-        """
-        Returns number of bins of a given (sub-)range
+        """Returns number of bins of a given (sub-)range
 
         Possible to set range with low and high params
 
@@ -716,11 +657,9 @@ class Bin(Factory, Container):
         if low is None and high is None:
             return len(self.values)
         # catch weird cases
-        elif low is not None and high is not None:
+        if low is not None and high is not None:
             if low > high:
-                raise RuntimeError(
-                    "low {low} greater than high {high}".format(low=low, high=high)
-                )
+                raise RuntimeError(f"low {low} greater than high {high}")
             if low < self.low and high < self.low:
                 # note: all these data end up in the underflow bin, with no real index
                 return 0
@@ -742,18 +681,14 @@ class Bin(Factory, Container):
                 maxBin -= 1
             high = self.low + self.bin_width() * (maxBin + 1)
         # number of bins. use np.round to correct for machine level rounding errors
-        num_bins = int(np.round((high - low) / self.bin_width()))
-        return num_bins
+        return int(np.round((high - low) / self.bin_width()))
 
     def bin_width(self):
-        """
-        Returns bin width
-        """
+        """Returns bin width"""
         return (self.high - self.low) / len(self.values)
 
     def bin_entries(self, low=None, high=None, xvalues=[]):
-        """
-        Returns bin values
+        """Returns bin values
 
         Possible to set range with low and high params, and list of selected x-values
 
@@ -767,11 +702,9 @@ class Bin(Factory, Container):
         if low is None and high is None and len(xvalues) == 0:
             return np.array([x.entries for x in self.values])
         # catch weird cases
-        elif low is not None and high is not None and len(xvalues) == 0:
+        if low is not None and high is not None and len(xvalues) == 0:
             if low > high:
-                raise RuntimeError(
-                    "low {low} greater than high {high}".format(low=low, high=high)
-                )
+                raise RuntimeError(f"low {low} greater than high {high}")
             if low < self.low and high < self.low:
                 # note: all these data end up in the underflow bin
                 return np.array([])
@@ -780,16 +713,11 @@ class Bin(Factory, Container):
                 return np.array([])
         # entries at request list of x-values
         elif len(xvalues) > 0:
-            entries = [
-                self.values[self.bin(x)].entries if self.bin(x) in self.indexes else 0.0
-                for x in xvalues
-            ]
+            entries = [self.values[self.bin(x)].entries if self.bin(x) in self.indexes else 0.0 for x in xvalues]
             return np.array(entries)
         # lowest edge
-        if low is None or low < self.low:
-            minBin = 0
-        else:  # low >= self.low and low < self.high
-            minBin = self.bin(low)
+        # low >= self.low and low < self.high
+        minBin = 0 if low is None or low < self.low else self.bin(low)
         # highest edge
         if high is None or high >= self.high:
             maxBin = len(self.values) - 1
@@ -800,8 +728,7 @@ class Bin(Factory, Container):
         return np.array([self.values[i].entries for i in range(minBin, maxBin + 1)])
 
     def bin_edges(self, low=None, high=None):
-        """
-        Returns bin edges
+        """Returns bin edges
 
         :param low: lower edge of range, default is None
         :param high: higher edge of range, default is None
@@ -813,11 +740,9 @@ class Bin(Factory, Container):
         if low is None and high is None:
             return np.linspace(self.low, self.high, num_bins + 1)
         # catch weird cases
-        elif low is not None and high is not None:
+        if low is not None and high is not None:
             if low > high:
-                raise RuntimeError(
-                    "low {low} greater than high {high}".format(low=low, high=high)
-                )
+                raise RuntimeError(f"low {low} greater than high {high}")
             if low < self.low and high < self.low:
                 # note: all these data end up in the underflow bin
                 return np.linspace(self.low, self.low, num_bins + 1)
@@ -840,12 +765,10 @@ class Bin(Factory, Container):
             high = self.low + self.bin_width() * (maxBin + 1)
         # new low and high values reset, so redo num_bins
         num_bins = self.num_bins(low + np.finfo(float).eps, high - np.finfo(float).eps)
-        edges = np.linspace(low, high, num_bins + 1)
-        return edges
+        return np.linspace(low, high, num_bins + 1)
 
     def bin_centers(self, low=None, high=None):
-        """
-        Returns bin centers
+        """Returns bin centers
 
         :param low: lower edge of range, default is None
         :param high: higher edge of range, default is None
@@ -857,11 +780,9 @@ class Bin(Factory, Container):
             bw = self.bin_width()
             return np.arange(self.low + bw / 2.0, self.high + bw / 2.0, bw)
         # catch weird cases
-        elif low is not None and high is not None:
+        if low is not None and high is not None:
             if low > high:
-                raise RuntimeError(
-                    "low {low} greater than high {high}".format(low=low, high=high)
-                )
+                raise RuntimeError(f"low {low} greater than high {high}")
             if low < self.low and high < self.low:
                 # note: all these data end up in the underflow bin
                 return np.array([])
@@ -869,10 +790,8 @@ class Bin(Factory, Container):
                 # note: all these data end up in the overflow bin
                 return np.array([])
         # lowest edge
-        if low is None or low < self.low:
-            minBin = 0
-        else:  # low >= self.low and low < self.high
-            minBin = self.bin(low)
+        # low >= self.low and low < self.high
+        minBin = 0 if low is None or low < self.low else self.bin(low)
         # highest edge
         if high is None or high >= self.high:
             maxBin = len(self.values) - 1
@@ -881,15 +800,10 @@ class Bin(Factory, Container):
             if np.isclose(high, self.low + self.bin_width() * maxBin):
                 maxBin -= 1
 
-        return (
-            self.low
-            + (np.linspace(minBin, maxBin, maxBin - minBin + 1) + 0.5)
-            * self.bin_width()
-        )
+        return self.low + (np.linspace(minBin, maxBin, maxBin - minBin + 1) + 0.5) * self.bin_width()
 
     def _center_from_key(self, idx):
-        xc = (idx + 0.5) * self.bin_width() + self.low
-        return xc
+        return (idx + 0.5) * self.bin_width() + self.low
 
     @property
     def mpv(self):
@@ -899,8 +813,7 @@ class Bin(Factory, Container):
 
         # if two max elements are equal, this will return the element with the lowest index.
         max_idx = max(enumerate(bin_entries), key=lambda x: x[1])[0]
-        bc = bin_centers[max_idx]
-        return bc
+        return bin_centers[max_idx]
 
 
 # extra properties: number of dimensions and datatypes of sub-hists

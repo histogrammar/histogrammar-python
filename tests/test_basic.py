@@ -49,7 +49,7 @@ util.absoluteTolerance = tolerance
 class TestBasic(unittest.TestCase):
     simple = [3.4, 2.2, -1.8, 0.0, 7.3, -4.7, 1.6, 0.0, -3.0, -1.7]
 
-    class Struct(object):
+    class Struct:
         def __init__(self, x, y, z, w):
             self.bool = x
             self.int = y
@@ -57,9 +57,7 @@ class TestBasic(unittest.TestCase):
             self.string = w
 
         def __repr__(self):
-            return "Struct({}, {}, {}, {})".format(
-                self.bool, self.int, self.double, self.string
-            )
+            return f"Struct({self.bool}, {self.int}, {self.double}, {self.string})"
 
     struct = [
         Struct(True, -2, 3.4, "one"),
@@ -82,57 +80,42 @@ class TestBasic(unittest.TestCase):
     def mean(x):
         if len(x) == 0:
             return float("nan")
-        else:
-            return sum(x) / len(x)
+        return sum(x) / len(x)
 
     @staticmethod
     def meanWeighted(x, w):
         if not any(_ > 0.0 for _ in w):
             return float("nan")
-        else:
-            w = list(w)
-            return sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(
-                _ for _ in w if _ > 0.0
-            )
+        w = list(w)
+        return sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0)
 
     @staticmethod
     def variance(x):
         if len(x) == 0:
             return 0.0
-        else:
-            return sum(math.pow(_, 2) for _ in x) / len(x) - math.pow(
-                sum(x) / len(x), 2
-            )
+        return sum(math.pow(_, 2) for _ in x) / len(x) - math.pow(sum(x) / len(x), 2)
 
     @staticmethod
     def varianceWeighted(x, w):
         if not any(_ > 0.0 for _ in w):
             return 0.0
-        else:
-            w = list(w)
-            return sum(xi**2 * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(
-                _ for _ in w if _ > 0.0
-            ) - math.pow(
-                sum(xi * max(wi, 0.0) for xi, wi in zip(x, w))
-                / sum(_ for _ in w if _ > 0.0),
-                2,
-            )
+        w = list(w)
+        return sum(xi**2 * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0) - math.pow(
+            sum(xi * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ for _ in w if _ > 0.0),
+            2,
+        )
 
     @staticmethod
     def mae(x):
         if len(x) == 0:
             return 0.0
-        else:
-            return sum(map(abs, x)) / len(x)
+        return sum(map(abs, x)) / len(x)
 
     @staticmethod
     def maeWeighted(x, w):
         if not any(_ > 0.0 for _ in w):
             return 0.0
-        else:
-            return sum(abs(xi) * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(
-                _ > 0.0 for _ in w
-            )
+        return sum(abs(xi) * max(wi, 0.0) for xi, wi in zip(x, w)) / sum(_ > 0.0 for _ in w)
 
     def checkScaling(self, x):
         self.assertEqual(x * 0, x.zero())
@@ -242,12 +225,8 @@ class TestBasic(unittest.TestCase):
             for _ in right:
                 rightCounting.fill(_)
 
-            self.assertEqual(
-                leftCounting.cut.entries, len(list(filter(lambda x: x > 0.0, left)))
-            )
-            self.assertEqual(
-                rightCounting.cut.entries, len(list(filter(lambda x: x > 0.0, right)))
-            )
+            self.assertEqual(leftCounting.cut.entries, len(list(filter(lambda x: x > 0.0, left))))
+            self.assertEqual(rightCounting.cut.entries, len(list(filter(lambda x: x > 0.0, right))))
 
             finalResult = leftCounting + rightCounting
 
@@ -301,18 +280,12 @@ class TestBasic(unittest.TestCase):
             for _ in right:
                 rightSumming.fill(_)
 
-            self.assertAlmostEqual(
-                leftSumming.cut.sum, sum(_.double for _ in left if _.bool)
-            )
-            self.assertAlmostEqual(
-                rightSumming.cut.sum, sum(_.double for _ in right if _.bool)
-            )
+            self.assertAlmostEqual(leftSumming.cut.sum, sum(_.double for _ in left if _.bool))
+            self.assertAlmostEqual(rightSumming.cut.sum, sum(_.double for _ in right if _.bool))
 
             finalResult = leftSumming + rightSumming
 
-            self.assertAlmostEqual(
-                finalResult.cut.sum, sum(_.double for _ in self.struct if _.bool)
-            )
+            self.assertAlmostEqual(finalResult.cut.sum, sum(_.double for _ in self.struct if _.bool))
 
             self.checkScaling(leftSumming)
             self.checkScaling(leftSumming.toImmutable())
@@ -332,12 +305,8 @@ class TestBasic(unittest.TestCase):
             for _ in right:
                 rightSumming.fill(_)
 
-            self.assertAlmostEqual(
-                leftSumming.cut.sum, sum(_.double * _.int for _ in left if _.int > 0)
-            )
-            self.assertAlmostEqual(
-                rightSumming.cut.sum, sum(_.double * _.int for _ in right if _.int > 0)
-            )
+            self.assertAlmostEqual(leftSumming.cut.sum, sum(_.double * _.int for _ in left if _.int > 0))
+            self.assertAlmostEqual(rightSumming.cut.sum, sum(_.double * _.int for _ in right if _.int > 0))
 
             finalResult = leftSumming + rightSumming
 
@@ -389,12 +358,8 @@ class TestBasic(unittest.TestCase):
             for _ in right:
                 rightSumming.fill(_)
 
-            self.assertAlmostEqual(
-                leftSumming.cut.sum, sum(_.double + 1 for _ in left if not _.bool)
-            )
-            self.assertAlmostEqual(
-                rightSumming.cut.sum, sum(_.double + 1 for _ in right if not _.bool)
-            )
+            self.assertAlmostEqual(leftSumming.cut.sum, sum(_.double + 1 for _ in left if not _.bool))
+            self.assertAlmostEqual(rightSumming.cut.sum, sum(_.double + 1 for _ in right if not _.bool))
 
             finalResult = leftSumming + rightSumming
 
@@ -519,7 +484,6 @@ class TestBasic(unittest.TestCase):
 
     def testAverageWithWeightingFactor(self):
         for i in xrange(11):
-
             left, right = self.struct[:i], self.struct[i:]
 
             leftAveraging = Select(lambda x: x.int, Average(lambda x: x.double))
@@ -530,24 +494,24 @@ class TestBasic(unittest.TestCase):
             for _ in right:
                 rightAveraging.fill(_)
 
-            if sum(map(lambda _: _.int if _.int > 0.0 else 0.0, left)) == 0.0:
+            if sum(max(0.0, _.int) for _ in left) == 0.0:
                 self.assertTrue(math.isnan(leftAveraging.cut.mean))
             else:
                 self.assertAlmostEqual(
                     leftAveraging.cut.mean,
                     self.meanWeighted(
-                        list(map(lambda _: _.double, left)),
-                        list(map(lambda _: _.int, left)),
+                        [_.double for _ in left],
+                        [_.int for _ in left],
                     ),
                 )
-            if sum(map(lambda _: _.int if _.int > 0.0 else 0.0, right)) == 0.0:
+            if sum(max(0.0, _.int) for _ in right) == 0.0:
                 self.assertTrue(math.isnan(rightAveraging.cut.mean))
             else:
                 self.assertAlmostEqual(
                     rightAveraging.cut.mean,
                     self.meanWeighted(
-                        list(map(lambda _: _.double, right)),
-                        list(map(lambda _: _.int, right)),
+                        [_.double for _ in right],
+                        [_.int for _ in right],
                     ),
                 )
 
@@ -556,8 +520,8 @@ class TestBasic(unittest.TestCase):
             self.assertAlmostEqual(
                 finalResult.cut.mean,
                 self.meanWeighted(
-                    list(map(lambda _: _.double, self.struct)),
-                    list(map(lambda _: _.int, self.struct)),
+                    [_.double for _ in self.struct],
+                    [_.int for _ in self.struct],
                 ),
             )
 
@@ -668,41 +632,41 @@ class TestBasic(unittest.TestCase):
             for _ in right:
                 rightDeviating.fill(_)
 
-            if sum(map(lambda _: _.int if _.int > 0.0 else 0.0, left)) == 0.0:
+            if sum(max(0.0, _.int) for _ in left) == 0.0:
                 self.assertTrue(math.isnan(leftDeviating.cut.mean))
                 self.assertTrue(math.isnan(leftDeviating.cut.variance))
             else:
                 self.assertAlmostEqual(
                     leftDeviating.cut.mean,
                     self.meanWeighted(
-                        list(map(lambda _: _.double, left)),
-                        list(map(lambda _: _.int, left)),
+                        [_.double for _ in left],
+                        [_.int for _ in left],
                     ),
                 )
                 self.assertAlmostEqual(
                     leftDeviating.cut.variance,
                     self.varianceWeighted(
-                        list(map(lambda _: _.double, left)),
-                        list(map(lambda _: _.int, left)),
+                        [_.double for _ in left],
+                        [_.int for _ in left],
                     ),
                 )
 
-            if sum(map(lambda _: _.int if _.int > 0.0 else 0.0, right)) == 0.0:
+            if sum(max(0.0, _.int) for _ in right) == 0.0:
                 self.assertTrue(math.isnan(rightDeviating.cut.mean))
                 self.assertTrue(math.isnan(rightDeviating.cut.variance))
             else:
                 self.assertAlmostEqual(
                     rightDeviating.cut.mean,
                     self.meanWeighted(
-                        list(map(lambda _: _.double, right)),
-                        list(map(lambda _: _.int, right)),
+                        [_.double for _ in right],
+                        [_.int for _ in right],
                     ),
                 )
                 self.assertAlmostEqual(
                     rightDeviating.cut.variance,
                     self.varianceWeighted(
-                        list(map(lambda _: _.double, right)),
-                        list(map(lambda _: _.int, right)),
+                        [_.double for _ in right],
+                        [_.int for _ in right],
                     ),
                 )
 
@@ -711,8 +675,8 @@ class TestBasic(unittest.TestCase):
             self.assertAlmostEqual(
                 finalResult.cut.variance,
                 self.varianceWeighted(
-                    list(map(lambda _: _.double, self.struct)),
-                    list(map(lambda _: _.int, self.struct)),
+                    [_.double for _ in self.struct],
+                    [_.int for _ in self.struct],
                 ),
             )
 
@@ -832,9 +796,7 @@ class TestBasic(unittest.TestCase):
         three = Bag(lambda x: x.string[0], "S")
         for _ in self.struct:
             three.fill(_)
-        self.assertEqual(
-            three.values, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0}
-        )
+        self.assertEqual(three.values, {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0})
 
         self.checkScaling(one)
         self.checkScaling(one.toImmutable())
@@ -858,9 +820,7 @@ class TestBasic(unittest.TestCase):
         one = Bin(5, -3.0, 7.0, named("xaxis", lambda x: x))
         for _ in self.simple:
             one.fill(_)
-        self.assertEqual(
-            list(map(lambda _: _.entries, one.values)), [3.0, 2.0, 2.0, 1.0, 0.0]
-        )
+        self.assertEqual([_.entries for _ in one.values], [3.0, 2.0, 2.0, 1.0, 0.0])
         self.assertEqual(one.underflow.entries, 1.0)
         self.assertEqual(one.overflow.entries, 1.0)
         self.assertEqual(one.nanflow.entries, 0.0)
@@ -869,9 +829,7 @@ class TestBasic(unittest.TestCase):
         for _ in self.struct:
             two.fill(_)
 
-        self.assertEqual(
-            list(map(lambda _: _.entries, two.cut.values)), [2.0, 1.0, 1.0, 1.0, 0.0]
-        )
+        self.assertEqual([_.entries for _ in two.cut.values], [2.0, 1.0, 1.0, 1.0, 0.0])
         self.assertEqual(two.cut.underflow.entries, 0.0)
         self.assertEqual(two.cut.overflow.entries, 0.0)
         self.assertEqual(two.cut.nanflow.entries, 0.0)
@@ -900,9 +858,7 @@ class TestBasic(unittest.TestCase):
         )
         for _ in self.simple:
             one.fill(_)
-        self.assertEqual(
-            list(map(lambda _: _.sum, one.values)), [30.0, 20.0, 20.0, 10.0, 0.0]
-        )
+        self.assertEqual([_.sum for _ in one.values], [30.0, 20.0, 20.0, 10.0, 0.0])
         self.assertEqual(one.underflow.sum, 10.0)
         self.assertEqual(one.overflow.sum, 10.0)
         self.assertEqual(one.nanflow.sum, 0.0)
@@ -923,9 +879,7 @@ class TestBasic(unittest.TestCase):
         for _ in self.struct:
             two.fill(_)
 
-        self.assertEqual(
-            list(map(lambda _: _.sum, two.cut.values)), [20.0, 10.0, 10.0, 10.0, 0.0]
-        )
+        self.assertEqual([_.sum for _ in two.cut.values], [20.0, 10.0, 10.0, 10.0, 0.0])
         self.assertEqual(two.cut.underflow.sum, 0.0)
         self.assertEqual(two.cut.overflow.sum, 0.0)
         self.assertEqual(two.cut.nanflow.sum, 0.0)
@@ -972,10 +926,10 @@ class TestBasic(unittest.TestCase):
 
     def testPlotHistogram(self):
         one = HistogramCut(5, -3.0, 7.0, lambda x: x)
-        map(lambda _: one.fill(_), self.simple)
+        (one.fill(_) for _ in self.simple)
 
         two = HistogramCut(5, -3.0, 7.0, lambda x: x.double, lambda x: x.bool)
-        map(lambda _: two.fill(_), self.struct)
+        (two.fill(_) for _ in self.struct)
 
         try:
             if sys.version_info[0] == 2 and sys.version_info[1] == 6:
@@ -992,7 +946,7 @@ class TestBasic(unittest.TestCase):
 
     def testPlotProfileErr(self):
         one = ProfileErr(5, -3.0, 7.0, lambda x: x, lambda x: x)
-        map(lambda _: one.fill(_), self.simple)
+        (one.fill(_) for _ in self.simple)
 
         try:
             if sys.version_info[0] == 2 and sys.version_info[1] == 6:
@@ -1011,7 +965,7 @@ class TestBasic(unittest.TestCase):
         two = Histogram(5, -3.0, 7.0, lambda x: x)
 
         labeling = Label(one=one, two=two)
-        map(lambda _: labeling.fill(_), self.simple)
+        (labeling.fill(_) for _ in self.simple)
 
         try:
             if sys.version_info[0] == 2 and sys.version_info[1] == 6:
@@ -1057,9 +1011,7 @@ class TestBasic(unittest.TestCase):
         self.checkPickle(one)
         self.checkName(one)
 
-        two = SparselyBin(
-            1.0, named("something", lambda x: x), Sum(named("elsie", lambda x: x))
-        )
+        two = SparselyBin(1.0, named("something", lambda x: x), Sum(named("elsie", lambda x: x)))
         for _ in self.simple:
             two.fill(_)
 
@@ -1096,9 +1048,7 @@ class TestBasic(unittest.TestCase):
     # CentrallyBin
 
     def testCentrallyBin(self):
-        one = CentrallyBin(
-            [-3.0, -1.0, 0.0, 1.0, 3.0, 10.0], named("something", lambda x: x)
-        )
+        one = CentrallyBin([-3.0, -1.0, 0.0, 1.0, 3.0, 10.0], named("something", lambda x: x))
         self.assertEqual(one.center(1.5), 1.0)
         self.assertEqual(one.neighbors(1.0), (0.0, 3.0))
         self.assertEqual(one.neighbors(10.0), (3.0, None))
@@ -1150,9 +1100,7 @@ class TestBasic(unittest.TestCase):
         self.checkName(fracking)
 
     def testFractionSum(self):
-        fracking = Fraction(
-            named("something", lambda x: x > 0.0), Sum(named("elsie", lambda x: x))
-        )
+        fracking = Fraction(named("something", lambda x: x > 0.0), Sum(named("elsie", lambda x: x)))
         for _ in self.simple:
             fracking.fill(_)
 
@@ -1171,9 +1119,7 @@ class TestBasic(unittest.TestCase):
             fracking.fill(_)
 
         self.assertEqual(fracking.numerator.numericalValues, [0.0, 0.0, 2.0, 1.0, 0.0])
-        self.assertEqual(
-            fracking.denominator.numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0]
-        )
+        self.assertEqual(fracking.denominator.numericalValues, [3.0, 2.0, 2.0, 1.0, 0.0])
 
         self.checkScaling(fracking)
         self.checkScaling(fracking.toImmutable())
@@ -1184,9 +1130,7 @@ class TestBasic(unittest.TestCase):
     # Stack
 
     def testStack(self):
-        stacking = Stack(
-            [0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count()
-        )
+        stacking = Stack([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count())
         for _ in self.simple:
             stacking.fill(_)
 
@@ -1238,9 +1182,7 @@ class TestBasic(unittest.TestCase):
     # IrregularlyBin
 
     def testIrregularlyBin(self):
-        partitioning = IrregularlyBin(
-            [0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count()
-        )
+        partitioning = IrregularlyBin([0.0, 2.0, 4.0, 6.0, 8.0], named("something", lambda x: x), Count())
         for _ in self.simple:
             partitioning.fill(_)
 
@@ -1288,7 +1230,7 @@ class TestBasic(unittest.TestCase):
             categorizing.fill(_)
 
         self.assertEqual(
-            dict((k, v.entries) for k, v in categorizing.binsMap.items()),
+            {k: v.entries for k, v in categorizing.binsMap.items()},
             {"n": 1.0, "e": 1.0, "t": 3.0, "s": 2.0, "f": 2.0, "o": 1.0},
         )
 

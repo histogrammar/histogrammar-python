@@ -65,9 +65,7 @@ def test_make_histograms():
         "latitude": {"binWidth": 5, "origin": 0},
     }
 
-    current_hists = make_histograms(
-        pytest.test_df, features=features, binning="unit", bin_specs=bin_specs
-    )
+    current_hists = make_histograms(pytest.test_df, features=features, binning="unit", bin_specs=bin_specs)
 
     assert current_hists["age"].toJson() == pytest.age
     assert current_hists["company"].toJson() == pytest.company
@@ -98,8 +96,8 @@ def test_make_histograms_no_time_axis():
     h = hists["date"]
     assert h.binWidth == pytest.approx(751582381944448.0)
     for cols in features:
-        cols = cols.split(":")
-        assert len(cols) == 1
+        cols_arr = cols.split(":")
+        assert len(cols_arr) == 1
     for f, bs in bin_specs.items():
         assert isinstance(bs, dict)
     assert "age" in bin_specs
@@ -126,8 +124,8 @@ def test_make_histograms_with_time_axis():
     h = hists["date:age"]
     assert h.binWidth == pytest.approx(751582381944448.0)
     for cols in features:
-        cols = cols.split(":")
-        assert len(cols) == 2 and cols[0] == "date"
+        cols_arr = cols.split(":")
+        assert len(cols_arr) == 2 and cols_arr[0] == "date"
     for f, bs in bin_specs.items():
         assert len(bs) == 2
     assert "date:age" in bin_specs
@@ -164,7 +162,6 @@ def test_make_histograms_with_time_axis():
 
 
 def test_make_histograms_unit_binning():
-
     hists, features, bin_specs, time_axis, var_dtype = make_histograms(
         pytest.test_df, binning="unit", time_axis="", ret_specs=True
     )
@@ -178,8 +175,8 @@ def test_make_histograms_unit_binning():
     h = hists["date"]
     assert h.binWidth == 2592000000000000
     for cols in features:
-        cols = cols.split(":")
-        assert len(cols) == 1
+        cols_arr = cols.split(":")
+        assert len(cols_arr) == 1
     for f, bs in bin_specs.items():
         assert isinstance(bs, dict)
     assert "age" in hists
@@ -189,7 +186,6 @@ def test_make_histograms_unit_binning():
 
 
 def test_get_histograms_module():
-
     pandas_filler = PandasHistogrammar(
         features=[
             "date",
@@ -246,9 +242,7 @@ def test_null_histograms():
     df = pd.DataFrame(d)
     df["bar"] = df["bar"].astype("category")
 
-    hists = make_histograms(
-        df, bin_specs={"transaction": {"num": 40, "low": 0, "high": 10}}
-    )
+    hists = make_histograms(df, bin_specs={"transaction": {"num": 40, "low": 0, "high": 10}})
 
     assert "transaction" in hists
     assert "isActive" in hists

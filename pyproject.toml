@@ -76,3 +76,36 @@ build_command = "pip install build && python -m build"
 
 [tool.setuptools.dynamic]
 version = { attr = "histogrammar.version.version" }
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = [
+    "E", # pyflakes `E`
+    "W", # pyflakes `W`
+    "I", # isort
+    "UP", # pyupgrade
+    "D212", # pydocstyle
+    "D411", # pydocstyle
+    "C4", # flake8-comprehensions
+    "FA", # flake8-future-annotations
+    "PIE", # flake8-pie
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
+    "PTH", # flake8-use-pathlib
+    "PL", # pylint
+    "FURB", # refurb
+]
+ignore = [
+    "EM102", # f string in exception
+    "PLR0913", # Too many arguments in function definition
+    "PLR2004", # Magic value used in comparison
+    "PLR1722", # Use `sys.exit()` instead of `exit`
+    "PLR0915", # Too many statements (61 > 50)
+    "UP038", # Use `X | Y` in `isinstance` call instead of `(X, Y)`
+    "TCH003", # Move standard library import
+    "TCH002", # Move third-party import `airflow.models.param.Param`
+    "PLR0912", # Too many branches
+]

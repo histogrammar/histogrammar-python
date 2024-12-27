@@ -75,34 +75,27 @@ class SparselyBin(Factory, Container):
             origin (float): the left edge of the bin whose index is zero.
         """
         if not isinstance(binWidth, numbers.Real):
-            raise TypeError("binWidth ({0}) must be a number".format(binWidth))
+            raise TypeError(f"binWidth ({binWidth}) must be a number")
         if not isinstance(entries, numbers.Real) and entries not in (
             "nan",
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if not isinstance(contentType, basestring):
-            raise TypeError("contentType ({0}) must be a string".format(contentType))
+            raise TypeError(f"contentType ({contentType}) must be a string")
         if not isinstance(bins, dict) or not all(
-            isinstance(k, (int, long)) and isinstance(v, Container)
-            for k, v in bins.items()
+            isinstance(k, (int, long)) and isinstance(v, Container) for k, v in bins.items()
         ):
-            raise TypeError(
-                "bins ({0}) must be a map from 64-bit integers to Containers".format(
-                    bins
-                )
-            )
+            raise TypeError(f"bins ({bins}) must be a map from 64-bit integers to Containers")
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
+            raise TypeError(f"nanflow ({nanflow}) must be a Container")
         if not isinstance(origin, numbers.Real):
-            raise TypeError("origin ({0}) must be a number".format(origin))
+            raise TypeError(f"origin ({origin}) must be a number")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
         if binWidth <= 0.0:
-            raise ValueError(
-                "binWidth ({0}) must be greater than zero".format(binWidth)
-            )
+            raise ValueError(f"binWidth ({binWidth}) must be greater than zero")
 
         out = SparselyBin(binWidth, None, None, nanflow, origin)
         out.entries = float(entries)
@@ -115,9 +108,7 @@ class SparselyBin(Factory, Container):
         """Synonym for ``__init__``."""
         return SparselyBin(binWidth, quantity, value, nanflow, origin)
 
-    def __init__(
-        self, binWidth, quantity=identity, value=Count(), nanflow=Count(), origin=0.0
-    ):
+    def __init__(self, binWidth, quantity=identity, value=Count(), nanflow=Count(), origin=0.0):
         """Create a SparselyBin that is capable of being filled and added.
 
         Parameters:
@@ -134,23 +125,19 @@ class SparselyBin(Factory, Container):
                 fill with values when their `entries` become non-zero.
         """
         if not isinstance(binWidth, numbers.Real):
-            raise TypeError("binWidth ({0}) must be a number".format(binWidth))
+            raise TypeError(f"binWidth ({binWidth}) must be a number")
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({0}) must be a Container".format(value))
+            raise TypeError(f"value ({value}) must be a Container")
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
+            raise TypeError(f"nanflow ({nanflow}) must be a Container")
         if not isinstance(origin, numbers.Real):
-            raise TypeError("origin ({0}) must be a number".format(origin))
+            raise TypeError(f"origin ({origin}) must be a number")
         if binWidth <= 0.0:
-            raise ValueError(
-                "binWidth ({0}) must be greater than zero".format(binWidth)
-            )
+            raise ValueError(f"binWidth ({binWidth}) must be greater than zero")
 
         self.binWidth = float(binWidth)
         self.entries = 0.0
-        self.quantity = serializable(
-            identity(quantity) if isinstance(quantity, str) else quantity
-        )
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.value = value
         if value is not None:
             self.contentType = value.name
@@ -159,14 +146,12 @@ class SparselyBin(Factory, Container):
         self.bins = {}
         self.nanflow = nanflow.copy()
         self.origin = float(origin)
-        super(SparselyBin, self).__init__()
+        super().__init__()
         self.specialize()
 
     def histogram(self):
         """Return a plain histogram by converting all sub-aggregator values into Counts"""
-        out = SparselyBin(
-            self.binWidth, self.quantity, Count(), self.nanflow.copy(), self.origin
-        )
+        out = SparselyBin(self.binWidth, self.quantity, Count(), self.nanflow.copy(), self.origin)
         out.entries = float(self.entries)
         out.contentType = "Count"
         for i, v in self.bins.items():
@@ -175,24 +160,18 @@ class SparselyBin(Factory, Container):
 
     @inheritdoc(Container)
     def zero(self):
-        return SparselyBin(
-            self.binWidth, self.quantity, self.value, self.nanflow.zero(), self.origin
-        )
+        return SparselyBin(self.binWidth, self.quantity, self.value, self.nanflow.zero(), self.origin)
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, SparselyBin):
             if self.binWidth != other.binWidth:
                 raise ContainerException(
-                    "cannot add SparselyBins because binWidth differs ({0} vs {1})".format(
-                        self.binWidth, other.binWidth
-                    )
+                    f"cannot add SparselyBins because binWidth differs ({self.binWidth} vs {other.binWidth})"
                 )
             if self.origin != other.origin:
                 raise ContainerException(
-                    "cannot add SparselyBins because origin differs ({0} vs {1})".format(
-                        self.origin, other.origin
-                    )
+                    f"cannot add SparselyBins because origin differs ({self.origin} vs {other.origin})"
                 )
 
             out = SparselyBin(
@@ -211,25 +190,18 @@ class SparselyBin(Factory, Container):
                     out.bins[i] = v
             return out.specialize()
 
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, SparselyBin):
             if self.binWidth != other.binWidth:
                 raise ContainerException(
-                    "cannot add SparselyBins because binWidth differs ({0} vs {1})".format(
-                        self.binWidth, other.binWidth
-                    )
+                    f"cannot add SparselyBins because binWidth differs ({self.binWidth} vs {other.binWidth})"
                 )
             if self.origin != other.origin:
                 raise ContainerException(
-                    "cannot add SparselyBins because origin differs ({0} vs {1})".format(
-                        self.origin, other.origin
-                    )
+                    f"cannot add SparselyBins because origin differs ({self.origin} vs {other.origin})"
                 )
             self.entries += other.entries
             for i, v in other.bins.items():
@@ -239,22 +211,18 @@ class SparselyBin(Factory, Container):
                     self.bins[i] = v.copy()
             self.nanflow += other.nanflow
             return self
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            out.bins = dict((c, v * factor) for (c, v) in self.bins.items())
-            out.value = self.value.copy() if self.value is not None else None
-            out.nanflow = self.nanflow * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        out.bins = {c: v * factor for (c, v) in self.bins.items()}
+        out.value = self.value.copy() if self.value is not None else None
+        out.nanflow = self.nanflow * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -270,40 +238,35 @@ class SparselyBin(Factory, Container):
         """The number of bins between the first non-empty one (inclusive) and the last non-empty one (exclusive)."""
         if len(self.bins) == 0:
             return 0
-        else:
-            return 1 + self.maxBin - self.minBin
+        return 1 + self.maxBin - self.minBin
 
     @property
     def minBin(self):
         """The first non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
-        else:
-            return min(self.bins.keys())
+        return min(self.bins.keys())
 
     @property
     def maxBin(self):
         """The last non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
-        else:
-            return max(self.bins.keys())
+        return max(self.bins.keys())
 
     @property
     def low(self):
         """The low edge of the first non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
-        else:
-            return self.minBin * self.binWidth + self.origin
+        return self.minBin * self.binWidth + self.origin
 
     @property
     def high(self):
         """The high edge of the last non-empty bin or None if no values have been accumulated."""
         if len(self.bins) == 0:
             return None
-        else:
-            return (self.maxBin + 1) * self.binWidth + self.origin
+        return (self.maxBin + 1) * self.binWidth + self.origin
 
     def at(self, index):
         """Extract the container at a given index, if it exists."""
@@ -354,14 +317,12 @@ class SparselyBin(Factory, Container):
         """
         if self.nan(x):
             return LONG_NAN
-        else:
-            softbin = (x - self.origin) / self.binWidth
-            if softbin <= LONG_MINUSINF:
-                return LONG_MINUSINF
-            elif softbin >= LONG_PLUSINF:
-                return LONG_PLUSINF
-            else:
-                return int(math.floor(softbin))
+        softbin = (x - self.origin) / self.binWidth
+        if softbin <= LONG_MINUSINF:
+            return LONG_MINUSINF
+        if softbin >= LONG_PLUSINF:
+            return LONG_PLUSINF
+        return int(math.floor(softbin))
 
     def nan(self, x):
         """Return ``true`` iff ``x`` is in the nanflow region (equal to ``NaN``)."""
@@ -374,9 +335,7 @@ class SparselyBin(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, numbers.Real):
-                raise TypeError(
-                    "function return value ({0}) must be boolean or number".format(q)
-                )
+                raise TypeError(f"function return value ({q}) must be boolean or number")
 
             if self.nan(q):
                 self.nanflow.fill(datum, weight)
@@ -392,9 +351,12 @@ class SparselyBin(Factory, Container):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)
 
-        if isinstance(weights, (float, int)) and weights == 1:
-            all_weights_one = True
-        elif isinstance(weights, np.ndarray) and np.all(weights == 1):
+        if (
+            isinstance(weights, (float, int))
+            and weights == 1
+            or isinstance(weights, np.ndarray)
+            and np.all(weights == 1)
+        ):
             all_weights_one = True
         else:
             all_weights_one = False
@@ -460,9 +422,7 @@ class SparselyBin(Factory, Container):
                     else:
                         # in practice passing on sliced arrays is faster for multi-dim histograms
                         np.equal(q, index, selection)
-                        self.bins[index]._numpy(
-                            data[selection], subweights[selection], [np.sum(selection)]
-                        )
+                        self.bins[index]._numpy(data[selection], subweights[selection], [np.sum(selection)])
 
         # no possibility of exception from here on out (for rollback)
         self.entries += float(newentries)
@@ -512,9 +472,7 @@ class SparselyBin(Factory, Container):
                 "binWidth": floatToJson(self.binWidth),
                 "entries": floatToJson(self.entries),
                 "bins:type": bins_type,
-                "bins": dict(
-                    (str(i), v.toJsonFragment(True)) for i, v in self.bins.items()
-                ),
+                "bins": {str(i): v.toJsonFragment(True) for i, v in self.bins.items()},
                 "nanflow:type": self.nanflow.name,
                 "nanflow": self.nanflow.toJsonFragment(False),
                 "origin": self.origin,
@@ -541,16 +499,12 @@ class SparselyBin(Factory, Container):
             ],
             ["name", "bins:name"],
         ):
-            if json["binWidth"] in ("nan", "inf", "-inf") or isinstance(
-                json["binWidth"], numbers.Real
-            ):
+            if json["binWidth"] in ("nan", "inf", "-inf") or isinstance(json["binWidth"], numbers.Real):
                 binWidth = float(json["binWidth"])
             else:
                 raise JsonFormatException(json, "SparselyBin.binWidth")
 
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "SparselyBin.entries")
@@ -577,14 +531,9 @@ class SparselyBin(Factory, Container):
                     try:
                         int(i)
                     except ValueError:
-                        raise JsonFormatException(
-                            i, "SparselyBin.bins key must be an integer"
-                        )
+                        raise JsonFormatException(i, "SparselyBin.bins key must be an integer")
 
-                bins = dict(
-                    (int(i), binsFactory.fromJsonFragment(v, binsName))
-                    for i, v in json["bins"].items()
-                )
+                bins = {int(i): binsFactory.fromJsonFragment(v, binsName) for i, v in json["bins"].items()}
 
             else:
                 raise JsonFormatException(json, "SparselyBin.bins")
@@ -595,21 +544,16 @@ class SparselyBin(Factory, Container):
                 raise JsonFormatException(json, "Bin.nanflow:type")
             nanflow = nanflowFactory.fromJsonFragment(json["nanflow"], None)
 
-            if json["origin"] in ("nan", "inf", "-inf") or isinstance(
-                json["origin"], numbers.Real
-            ):
+            if json["origin"] in ("nan", "inf", "-inf") or isinstance(json["origin"], numbers.Real):
                 origin = json["origin"]
             else:
                 raise JsonFormatException(json, "SparselyBin.origin")
 
-            out = SparselyBin.ed(
-                binWidth, entries, json["bins:type"], bins, nanflow, origin
-            )
+            out = SparselyBin.ed(binWidth, entries, json["bins:type"], bins, nanflow, origin)
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
-        else:
-            raise JsonFormatException(json, "SparselyBin")
+        raise JsonFormatException(json, "SparselyBin")
 
     def __repr__(self):
         if self.bins is None:
@@ -622,11 +566,8 @@ class SparselyBin(Factory, Container):
             contentType = self.contentType
         else:  # revert to default
             contentType = "Count"
-        return "<SparselyBin binWidth={0} bins={1} nanflow={2}>".format(
-            self.binWidth,
-            self.value.name if self.value is not None else contentType,
-            self.nanflow.name,
-        )
+        bins = self.value.name if self.value is not None else contentType
+        return f"<SparselyBin binWidth={self.binWidth} bins={bins} nanflow={self.nanflow.name}>"
 
     def __eq__(self, other):
         return (
@@ -664,17 +605,12 @@ class SparselyBin(Factory, Container):
         :returns: (minBin, maxBin, numBins, minBinLeftEdge, maxBinRightEdge)
         """
         if low is not None and high is not None and low > high:
-            raise RuntimeError(
-                "low {low} greater than high {high}".format(low=low, high=high)
-            )
+            raise RuntimeError(f"low {low} greater than high {high}")
         # sparse hist not filled
         if self.minBin is None or self.maxBin is None:
             return 0, -1, 0, self.origin, self.origin + 1
 
-        if low is None:
-            minBin = self.minBin
-        else:
-            minBin = self.bin(low)
+        minBin = self.minBin if low is None else self.bin(low)
         if high is None:
             maxBin = self.maxBin
         else:
@@ -687,8 +623,7 @@ class SparselyBin(Factory, Container):
         return minBin, maxBin, numBins, minBinLeftEdge, maxBinRightEdge
 
     def num_bins(self, low=None, high=None):
-        """
-        Returns number of bins from low to high, including unfilled
+        """Returns number of bins from low to high, including unfilled
 
         Possible to set range with low and high params
 
@@ -701,14 +636,11 @@ class SparselyBin(Factory, Container):
         return numBins
 
     def bin_width(self):
-        """
-        Returns bin width
-        """
+        """Returns bin width"""
         return self.binWidth
 
     def bin_edges(self, low=None, high=None):
-        """
-        Returns bin_edges
+        """Returns bin_edges
 
         Possible to set range with low and high params
 
@@ -721,8 +653,7 @@ class SparselyBin(Factory, Container):
         return np.linspace(minBinLeftEdge, maxBinRightEdge, numBins + 1)
 
     def bin_entries(self, low=None, high=None, xvalues=None):
-        """
-        Returns bin values
+        """Returns bin values
 
         Possible to set range with low and high params or dedicated x-values
 
@@ -733,21 +664,14 @@ class SparselyBin(Factory, Container):
         :rtype: numpy.array
         """
         if xvalues is not None and len(xvalues) > 0:
-            entries = [
-                self.bins[self.bin(x)].entries if self.bin(x) in self.bins else 0.0
-                for x in xvalues
-            ]
+            entries = [self.bins[self.bin(x)].entries if self.bin(x) in self.bins else 0.0 for x in xvalues]
             return np.array(entries)
         minBin, maxBin, _, _, _ = self._bin_range(low, high)
-        entries = [
-            self.bins[i].entries if i in self.bins else 0.0
-            for i in range(minBin, maxBin + 1)
-        ]
+        entries = [self.bins[i].entries if i in self.bins else 0.0 for i in range(minBin, maxBin + 1)]
         return np.array(entries)
 
     def bin_centers(self, low=None, high=None):
-        """
-        Returns bin centers
+        """Returns bin centers
 
         Possible to set range with low and high params
 
@@ -767,12 +691,10 @@ class SparselyBin(Factory, Container):
 
         # if two max elements are equal, this will return the element with the lowest index.
         max_idx = max(enumerate(bin_entries), key=lambda x: x[1])[0]
-        bc = bin_centers[max_idx]
-        return bc
+        return bin_centers[max_idx]
 
     def _center_from_key(self, bin_key):
-        xc = (bin_key + 0.5) * self.binWidth + self.origin
-        return xc
+        return (bin_key + 0.5) * self.binWidth + self.origin
 
 
 # extra properties: number of dimensions and datatypes of sub-hists

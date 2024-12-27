@@ -27,12 +27,10 @@ from histogrammar import notebooks, test_data
 _DATA = {_.name: _ for _ in resources.files(test_data).iterdir()}
 
 # Tutorial notebooks
-_NOTEBOOK = {
-    p.name: p for p in resources.files(notebooks).iterdir() if p.suffix == ".ipynb"
-}
+_NOTEBOOK = {p.name: p for p in resources.files(notebooks).iterdir() if p.suffix == ".ipynb"}
 
 # Resource types
-_RESOURCES = dict(data=_DATA, notebook=_NOTEBOOK)
+_RESOURCES = {"data": _DATA, "notebook": _NOTEBOOK}
 
 
 def _resource(resource_type, name: str) -> str:
@@ -49,11 +47,7 @@ def _resource(resource_type, name: str) -> str:
     if full_path and full_path.exists():
         return str(full_path)
 
-    raise FileNotFoundError(
-        'Could not find {resource_type} "{name!s}"! Does it exist?'.format(
-            resource_type=resource_type, name=name
-        )
-    )
+    raise FileNotFoundError(f'Could not find {resource_type} "{name!s}"! Does it exist?')
 
 
 def data(name: str) -> str:

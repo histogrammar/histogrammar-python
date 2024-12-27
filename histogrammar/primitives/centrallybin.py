@@ -63,7 +63,7 @@ class CentrallyBin(Factory, Container):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if not isinstance(bins, (list, tuple)) and not all(
             isinstance(v, (list, tuple))
             and len(v) == 2
@@ -71,13 +71,11 @@ class CentrallyBin(Factory, Container):
             and isinstance(v[1], Container)
             for v in bins
         ):
-            raise TypeError(
-                "bins ({0}) must be a list of number, Container pairs".format(bins)
-            )
+            raise TypeError(f"bins ({bins}) must be a list of number, Container pairs")
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
+            raise TypeError(f"nanflow ({nanflow}) must be a Container")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
         out = CentrallyBin(bins, None, None, nanflow)
         out.entries = float(entries)
         out.bins = bins
@@ -111,19 +109,13 @@ class CentrallyBin(Factory, Container):
             and isinstance(v[1], Container)
             for v in centers
         ):
-            raise TypeError(
-                "centers ({0}) must be a list of number, Container pairs".format(
-                    centers
-                )
-            )
+            raise TypeError(f"centers ({centers}) must be a list of number, Container pairs")
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({0}) must be None or a Container".format(value))
+            raise TypeError(f"value ({value}) must be None or a Container")
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
+            raise TypeError(f"nanflow ({nanflow}) must be a Container")
         if len(centers) < 2:
-            raise ValueError(
-                "number of centers ({0}) must be at least two".format(len(centers))
-            )
+            raise ValueError(f"number of centers ({len(centers)}) must be at least two")
 
         self.entries = 0.0
         if value is None:
@@ -131,20 +123,16 @@ class CentrallyBin(Factory, Container):
         else:
             self.bins = [(float(x), value.zero()) for x in sorted(centers)]
 
-        self.quantity = serializable(
-            identity(quantity) if isinstance(quantity, str) else quantity
-        )
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.value = value
         self.nanflow = nanflow.copy()
 
-        super(CentrallyBin, self).__init__()
+        super().__init__()
         self.specialize()
 
     def histogram(self):
         """Return a plain histogram by converting all sub-aggregator values into Counts"""
-        out = CentrallyBin(
-            [c for c, v in self.bins], self.quantity, Count(), self.nanflow.copy()
-        )
+        out = CentrallyBin([c for c, v in self.bins], self.quantity, Count(), self.nanflow.copy())
         out.entries = self.entries
         for i, v in self.bins:
             out.bins[i] = Count.ed(v.entries)
@@ -175,9 +163,9 @@ class CentrallyBin(Factory, Container):
             if greater:
                 if x < (thisCenter + nextCenter) / 2.0:
                     return index
-            else:
-                if x <= (thisCenter + nextCenter) / 2.0:
-                    return index
+            elif x <= (thisCenter + nextCenter) / 2.0:
+                return index
+        return None
 
     def _lower_index(self, x):
         return self.index(x)
@@ -201,25 +189,21 @@ class CentrallyBin(Factory, Container):
         """Find the lower and upper neighbors of a bin (given by exact bin center)."""
         closestIndex = self.index(center)
         if self.bins[closestIndex][0] != center:
-            raise TypeError(
-                "position {0} is not the exact center of a bin".format(center)
-            )
-        elif closestIndex == 0:
+            raise TypeError(f"position {center} is not the exact center of a bin")
+        if closestIndex == 0:
             return None, self.bins[closestIndex + 1][0]
-        elif closestIndex == len(self.bins) - 1:
+        if closestIndex == len(self.bins) - 1:
             return self.bins[closestIndex - 1][0], None
-        else:
-            return self.bins[closestIndex - 1][0], self.bins[closestIndex + 1][0]
+        return self.bins[closestIndex - 1][0], self.bins[closestIndex + 1][0]
 
     def range(self, center):
         """Get the low and high edge of a bin (given by exact bin center)."""
         below, above = self.neighbors(center)  # is never None, None
         if below is None:
             return float("-inf"), (center + above) / 2.0
-        elif above is None:
+        if above is None:
             return (below + center) / 2.0, float("inf")
-        else:
-            return (below + center) / 2.0, (above + center) / 2.0
+        return (below + center) / 2.0, (above + center) / 2.0
 
     @property
     def n_bins(self):
@@ -227,8 +211,7 @@ class CentrallyBin(Factory, Container):
         return len(self.bins)
 
     def num_bins(self, low=None, high=None):
-        """
-        Returns number of bins of a given (sub-)range
+        """Returns number of bins of a given (sub-)range
 
         Possible to set range with low and high params
 
@@ -241,11 +224,8 @@ class CentrallyBin(Factory, Container):
         if low is None and high is None:
             return len(self.bins)
         # catch weird cases
-        elif low is not None and high is not None:
-            if low > high:
-                raise RuntimeError(
-                    "low {low} greater than high {high}".format(low=low, high=high)
-                )
+        if low is not None and high is not None and low > high:
+            raise RuntimeError(f"low {low} greater than high {high}")
         # lowest, highest edge reset
         if low is None:
             low = float("-inf")
@@ -257,8 +237,7 @@ class CentrallyBin(Factory, Container):
         return hidx - lidx + 1
 
     def bin_entries(self, low=None, high=None, xvalues=[]):
-        """
-        Returns bin values
+        """Returns bin values
 
         Possible to set range with low and high params, and list of selected x-values
 
@@ -272,11 +251,9 @@ class CentrallyBin(Factory, Container):
         if low is None and high is None and len(xvalues) == 0:
             return np.array([b[1].entries for b in self.bins])
         # catch weird cases
-        elif low is not None and high is not None and len(xvalues) == 0:
+        if low is not None and high is not None and len(xvalues) == 0:
             if low > high:
-                raise RuntimeError(
-                    "low {low} greater than high {high}".format(low=low, high=high)
-                )
+                raise RuntimeError(f"low {low} greater than high {high}")
         # entries at request list of x-values
         elif len(xvalues) > 0:
             return np.array([(self.bins[self.index(x)])[1].entries for x in xvalues])
@@ -291,8 +268,7 @@ class CentrallyBin(Factory, Container):
         return np.array([(self.bins[i])[1].entries for i in xrange(lidx, hidx + 1)])
 
     def bin_edges(self, low=None, high=None):
-        """
-        Returns bin edges
+        """Returns bin edges
 
         :param low: lower edge of range, default is None
         :param high: higher edge of range, default is None
@@ -301,9 +277,7 @@ class CentrallyBin(Factory, Container):
         """
         # catch weird cases
         if low is not None and high is not None and low > high:
-            raise RuntimeError(
-                "low {low} greater than high {high}".format(low=low, high=high)
-            )
+            raise RuntimeError(f"low {low} greater than high {high}")
         # lowest, highest edge reset
         if low is None:
             low = float("-inf")
@@ -313,15 +287,11 @@ class CentrallyBin(Factory, Container):
         lidx = self._lower_index(low)
         hidx = self._upper_index(high)
         lowest_edge = self.range(self.center(low))[0]
-        upper_edges = np.array(
-            [self.range(c)[1] for c in self.centers[lidx : hidx + 1]]
-        )
-        bin_edges = np.concatenate([[lowest_edge], upper_edges])
-        return bin_edges
+        upper_edges = np.array([self.range(c)[1] for c in self.centers[lidx : hidx + 1]])
+        return np.concatenate([[lowest_edge], upper_edges])
 
     def bin_centers(self, low=None, high=None):
-        """
-        Returns bin centers
+        """Returns bin centers
 
         :param low: lower edge of range, default is None
         :param high: higher edge of range, default is None
@@ -330,9 +300,7 @@ class CentrallyBin(Factory, Container):
         """
         # catch weird cases
         if low is not None and high is not None and low > high:
-            raise RuntimeError(
-                "low {low} greater than high {high}".format(low=low, high=high)
-            )
+            raise RuntimeError(f"low {low} greater than high {high}")
         # lowest, highest edge reset
         if low is None:
             low = -np.inf
@@ -352,22 +320,17 @@ class CentrallyBin(Factory, Container):
         bin_entries = self.bin_entries()
         # if two max elements are equal, this will return the element with the lowest index.
         max_idx = max(enumerate(bin_entries), key=lambda x: x[1])[0]
-        bc = self.centers[max_idx]
-        return bc
+        return self.centers[max_idx]
 
     @inheritdoc(Container)
     def zero(self):
-        return CentrallyBin(
-            [c for c, v in self.bins], self.quantity, self.value, self.nanflow.zero()
-        )
+        return CentrallyBin([c for c, v in self.bins], self.quantity, self.value, self.nanflow.zero())
 
     @inheritdoc(Container)
     def __add__(self, other):
         if self.centers != other.centers:
             raise ContainerException(
-                "cannot add CentrallyBin because centers are different:\n    {0}\nvs\n    {1}".format(
-                    self.centers, other.centers
-                )
+                f"cannot add CentrallyBin because centers are different:\n    {self.centers}\nvs\n    {other.centers}"
             )
 
         newbins = [(c1, v1 + v2) for (c1, v1), (_, v2) in zip(self.bins, other.bins)]
@@ -386,13 +349,11 @@ class CentrallyBin(Factory, Container):
     def __iadd__(self, other):
         if self.centers != other.centers:
             raise ContainerException(
-                "cannot add CentrallyBin because centers are different:\n    {0}\nvs\n    {1}".format(
-                    self.centers, other.centers
-                )
+                f"cannot add CentrallyBin because centers are different:\n    {self.centers}\nvs\n    {other.centers}"
             )
         self.entries += other.entries
         for (c1, v1), (_, v2) in zip(self.bins, other.bins):
-            v1 += v2
+            v1 += v2  # noqa: PLW2901
         self.nanflow += other.nanflow
         return self
 
@@ -400,12 +361,11 @@ class CentrallyBin(Factory, Container):
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            out.bins = [(c, v * factor) for (c, v) in self.bins]
-            out.nanflow = self.nanflow * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        out.bins = [(c, v * factor) for (c, v) in self.bins]
+        out.nanflow = self.nanflow * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -418,9 +378,7 @@ class CentrallyBin(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, numbers.Real):
-                raise TypeError(
-                    "function return value ({0}) must be boolean or number".format(q)
-                )
+                raise TypeError(f"function return value ({q}) must be boolean or number")
 
             if self.nan(q):
                 self.nanflow.fill(datum, weight)
@@ -455,14 +413,10 @@ class CentrallyBin(Factory, Container):
             and np.all(np.isfinite(q))
             and np.all(np.isfinite(weights))
         ):
-
             h, _ = np.histogram(
                 q,
                 [float("-inf")]
-                + [
-                    (c1 + c2) / 2.0
-                    for (c1, v1), (c2, v2) in zip(self.bins[:-1], self.bins[1:])
-                ]
+                + [(c1 + c2) / 2.0 for (c1, v1), (c2, v2) in zip(self.bins[:-1], self.bins[1:])]
                 + [float("inf")],
                 weights=weights,
             )
@@ -523,10 +477,7 @@ class CentrallyBin(Factory, Container):
             {
                 "entries": floatToJson(self.entries),
                 "bins:type": self.bins[0][1].name,
-                "bins": [
-                    {"center": floatToJson(c), "data": v.toJsonFragment(True)}
-                    for c, v in self.bins
-                ],
+                "bins": [{"center": floatToJson(c), "data": v.toJsonFragment(True)} for c, v in self.bins],
                 "nanflow:type": self.nanflow.name,
                 "nanflow": self.nanflow.toJsonFragment(False),
             },
@@ -544,9 +495,7 @@ class CentrallyBin(Factory, Container):
             ["entries", "bins:type", "bins", "nanflow:type", "nanflow"],
             ["name", "bins:name"],
         ):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "CentrallyBin.entries")
@@ -571,17 +520,13 @@ class CentrallyBin(Factory, Container):
             if isinstance(json["bins"], list):
                 bins = []
                 for i, binpair in enumerate(json["bins"]):
-                    if isinstance(binpair, dict) and hasKeys(
-                        binpair.keys(), ["center", "data"]
-                    ):
-                        if binpair["center"] in ("nan", "inf", "-inf") or isinstance(
-                            binpair["center"], numbers.Real
-                        ):
+                    if isinstance(binpair, dict) and hasKeys(binpair.keys(), ["center", "data"]):
+                        if binpair["center"] in ("nan", "inf", "-inf") or isinstance(binpair["center"], numbers.Real):
                             center = float(binpair["center"])
                         else:
                             JsonFormatException(
                                 binpair["center"],
-                                "CentrallyBin.bins {0} center".format(i),
+                                f"CentrallyBin.bins {i} center",
                             )
 
                         bins.append(
@@ -592,9 +537,7 @@ class CentrallyBin(Factory, Container):
                         )
 
                     else:
-                        raise JsonFormatException(
-                            binpair, "CentrallyBin.bins {0}".format(i)
-                        )
+                        raise JsonFormatException(binpair, f"CentrallyBin.bins {i}")
 
             if isinstance(json["nanflow:type"], basestring):
                 nanflowFactory = Factory.registered[json["nanflow:type"]]
@@ -606,13 +549,10 @@ class CentrallyBin(Factory, Container):
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
-        else:
-            raise JsonFormatException(json, "CentrallyBin")
+        raise JsonFormatException(json, "CentrallyBin")
 
     def __repr__(self):
-        return "<CentrallyBin bins={0} size={1} nanflow={2}>".format(
-            self.bins[0][1].name, len(self.bins), self.nanflow.name
-        )
+        return f"<CentrallyBin bins={self.bins[0][1].name} size={len(self.bins)} nanflow={self.nanflow.name}>"
 
     def __eq__(self, other):
         return (

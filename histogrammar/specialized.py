@@ -18,16 +18,18 @@ import histogrammar.plot.bokeh as plotbokeh
 import histogrammar.plot.matplotlib as plotmpl
 
 # moved to convenience.py, but imported for backward compatibility
-from histogrammar.convenience import CategorizeHistogram  # noqa: F401
-from histogrammar.convenience import Histogram  # noqa: F401
-from histogrammar.convenience import HistogramCut  # noqa: F401
-from histogrammar.convenience import Profile  # noqa: F401
-from histogrammar.convenience import ProfileErr  # noqa: F401
-from histogrammar.convenience import SparselyHistogram  # noqa: F401
-from histogrammar.convenience import SparselyProfile  # noqa: F401
-from histogrammar.convenience import SparselyProfileErr  # noqa: F401
-from histogrammar.convenience import TwoDimensionallyHistogram  # noqa: F401
-from histogrammar.convenience import TwoDimensionallySparselyHistogram  # noqa: F401
+from histogrammar.convenience import (
+    CategorizeHistogram,  # noqa: F401
+    Histogram,  # noqa: F401
+    HistogramCut,  # noqa: F401
+    Profile,  # noqa: F401
+    ProfileErr,  # noqa: F401
+    SparselyHistogram,  # noqa: F401
+    SparselyProfile,  # noqa: F401
+    SparselyProfileErr,  # noqa: F401
+    TwoDimensionallyHistogram,  # noqa: F401
+    TwoDimensionallySparselyHistogram,  # noqa: F401
+)
 from histogrammar.primitives.average import Average
 from histogrammar.primitives.bin import Bin
 from histogrammar.primitives.categorize import Categorize
@@ -80,12 +82,10 @@ class HistogramMethods(Bin, plotbokeh.HistogramMethods, plotmpl.HistogramMethods
     def confidenceIntervalValues(self, absz=1.0):
         from math import sqrt
 
-        return map(lambda v: absz * sqrt(v), self.numericalValues)
+        return (absz * sqrt(v) for v in self.numericalValues)
 
 
-class SparselyHistogramMethods(
-    SparselyBin, plotbokeh.SparselyHistogramMethods, plotmpl.SparselyHistogramMethods
-):
+class SparselyHistogramMethods(SparselyBin, plotbokeh.SparselyHistogramMethods, plotmpl.SparselyHistogramMethods):
     """Methods that are implicitly added to container combinations that look like sparsely binned histograms."""
 
     @property
@@ -99,14 +99,10 @@ class SparselyHistogramMethods(
     def confidenceIntervalValues(self, absz=1.0):
         from math import sqrt
 
-        return map(
-            lambda v: absz * sqrt(v), [v.entries for _, v in sorted(self.bins.items())]
-        )
+        return (absz * sqrt(v) for v in [v.entries for _, v in sorted(self.bins.items())])
 
 
-class CategorizeHistogramMethods(
-    Categorize, plotbokeh.CategorizeHistogramMethods, plotmpl.CategorizeHistogramMethods
-):
+class CategorizeHistogramMethods(Categorize, plotbokeh.CategorizeHistogramMethods, plotmpl.CategorizeHistogramMethods):
     """Methods that are implicitly added to container combinations that look like categorical histograms."""
 
     @property
@@ -177,9 +173,7 @@ class SparselyTwoDimensionallyHistogramMethods(
         return SparselyBin
 
 
-class IrregularlyTwoDimensionallyHistogramMethods(
-    IrregularlyBin, plotmpl.IrregularlyTwoDimensionallyHistogramMethods
-):
+class IrregularlyTwoDimensionallyHistogramMethods(IrregularlyBin, plotmpl.IrregularlyTwoDimensionallyHistogramMethods):
     """Convenience function for creating a sparsely binned, two-dimensional histogram."""
 
     @property
@@ -226,9 +220,7 @@ class ProfileMethods(Bin, plotbokeh.ProfileMethods, plotmpl.ProfileMethods):
         return self.nanflow.entries
 
 
-class SparselyProfileMethods(
-    SparselyBin, plotbokeh.SparselyProfileMethods, plotmpl.SparselyProfileMethods
-):
+class SparselyProfileMethods(SparselyBin, plotbokeh.SparselyProfileMethods, plotmpl.SparselyProfileMethods):
     '''Methods that are implicitly added to container combinations that look like a sparsely
     binned physicist's "profile plot."'''
 
@@ -278,9 +270,7 @@ class ProfileErrMethods(Bin, plotbokeh.ProfileErrMethods, plotmpl.ProfileErrMeth
         return self.nanflow.entries
 
 
-class SparselyProfileErrMethods(
-    SparselyBin, plotbokeh.SparselyProfileErrMethods, plotmpl.SparselyProfileErrMethods
-):
+class SparselyProfileErrMethods(SparselyBin, plotbokeh.SparselyProfileErrMethods, plotmpl.SparselyProfileErrMethods):
     '''Methods that are implicitly added to container combinations that look like a sparsely binned profile plot."'''
 
     @property
@@ -295,9 +285,7 @@ class SparselyProfileErrMethods(
 # other 1d/2d plotting
 
 
-class StackedHistogramMethods(
-    Stack, plotbokeh.StackedHistogramMethods, plotmpl.StackedHistogramMethods
-):
+class StackedHistogramMethods(Stack, plotbokeh.StackedHistogramMethods, plotmpl.StackedHistogramMethods):
     """Methods that are implicitly added to container combinations that look like stacked histograms."""
 
     @property
@@ -325,9 +313,7 @@ class PartitionedHistogramMethods(
         return IrregularlyBin
 
 
-class FractionedHistogramMethods(
-    Fraction, plotbokeh.FractionedHistogramMethods, plotmpl.FractionedHistogramMethods
-):
+class FractionedHistogramMethods(Fraction, plotbokeh.FractionedHistogramMethods, plotmpl.FractionedHistogramMethods):
     """Methods that are implicitly added to container combinations that look like fractioned histograms."""
 
     @property
@@ -353,8 +339,7 @@ def addImplicitMethods(container):
     """
     # specialized 2d plotting of counts
     if isinstance(container, Bin) and all(
-        isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values)
-        for v in container.values
+        isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for v in container.values
     ):
         container.__class__ = TwoDimensionallyHistogramMethods
 
@@ -371,16 +356,12 @@ def addImplicitMethods(container):
         container.__class__ = SparselyTwoDimensionallyHistogramMethods
 
     elif isinstance(container, IrregularlyBin) and all(
-        isinstance(v, IrregularlyBin)
-        and all(isinstance(vv, Count) for _j, vv in v.bins)
-        for _i, v in container.bins
+        isinstance(v, IrregularlyBin) and all(isinstance(vv, Count) for _j, vv in v.bins) for _i, v in container.bins
     ):
         container.__class__ = IrregularlyTwoDimensionallyHistogramMethods
 
     # 1d plotting of profiles
-    elif isinstance(container, Bin) and all(
-        isinstance(v, Average) for v in container.values
-    ):
+    elif isinstance(container, Bin) and all(isinstance(v, Average) for v in container.values):
         container.__class__ = ProfileMethods
 
     elif (
@@ -390,9 +371,7 @@ def addImplicitMethods(container):
     ):
         container.__class__ = SparselyProfileMethods
 
-    elif isinstance(container, Bin) and all(
-        isinstance(v, Deviate) for v in container.values
-    ):
+    elif isinstance(container, Bin) and all(isinstance(v, Deviate) for v in container.values):
         container.__class__ = ProfileErrMethods
 
     elif (
@@ -404,14 +383,9 @@ def addImplicitMethods(container):
 
     # other 1d/2d plotting
     elif isinstance(container, Stack) and (
-        all(
-            isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values)
-            for c, v in container.bins
-        )
+        all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.bins)
         or all(
-            isinstance(v, Select)
-            and isinstance(v.cut, Bin)
-            and all(isinstance(vv, Count) for vv in v.cut.values)
+            isinstance(v, Select) and isinstance(v.cut, Bin) and all(isinstance(vv, Count) for vv in v.cut.values)
             for c, v in container.bins
         )
         or all(
@@ -431,14 +405,9 @@ def addImplicitMethods(container):
         container.__class__ = StackedHistogramMethods
 
     elif isinstance(container, IrregularlyBin) and (
-        all(
-            isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values)
-            for c, v in container.bins
-        )
+        all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.bins)
         or all(
-            isinstance(v, Select)
-            and isinstance(v.cut, Bin)
-            and all(isinstance(vv, Count) for vv in v.cut.values)
+            isinstance(v, Select) and isinstance(v.cut, Bin) and all(isinstance(vv, Count) for vv in v.cut.values)
             for c, v in container.bins
         )
         or all(
@@ -458,10 +427,7 @@ def addImplicitMethods(container):
         container.__class__ = PartitionedHistogramMethods
 
     elif isinstance(container, Fraction) and (
-        (
-            isinstance(container.denominator, Bin)
-            and all(isinstance(v, Count) for v in container.denominator.values)
-        )
+        (isinstance(container.denominator, Bin) and all(isinstance(v, Count) for v in container.denominator.values))
         or (
             isinstance(container.denominator, Select)
             and isinstance(container.denominator.cut, Bin)
@@ -476,32 +442,22 @@ def addImplicitMethods(container):
             isinstance(container.denominator, Select)
             and isinstance(container.denominator.cut, SparselyBin)
             and container.denominator.cut.contentType == "Count"
-            and all(
-                isinstance(v, Count) for v in container.denominator.cut.bins.values()
-            )
+            and all(isinstance(v, Count) for v in container.denominator.cut.bins.values())
         )
     ):
         container.__class__ = FractionedHistogramMethods
 
     # 1d plotting of counts + generic 2d plotting of counts
-    elif isinstance(container, Bin) and all(
-        isinstance(v, COMMON_PLOT_TYPES) for v in container.values
-    ):
+    elif isinstance(container, Bin) and all(isinstance(v, COMMON_PLOT_TYPES) for v in container.values):
         container.__class__ = HistogramMethods
 
-    elif isinstance(container, SparselyBin) and all(
-        isinstance(v, COMMON_PLOT_TYPES) for v in container.bins.values()
-    ):
+    elif isinstance(container, SparselyBin) and all(isinstance(v, COMMON_PLOT_TYPES) for v in container.bins.values()):
         container.__class__ = SparselyHistogramMethods
 
-    elif isinstance(container, Categorize) and all(
-        isinstance(v, COMMON_PLOT_TYPES) for v in container.bins.values()
-    ):
+    elif isinstance(container, Categorize) and all(isinstance(v, COMMON_PLOT_TYPES) for v in container.bins.values()):
         container.__class__ = CategorizeHistogramMethods
 
-    elif isinstance(container, IrregularlyBin) and all(
-        isinstance(v, COMMON_PLOT_TYPES) for _, v in container.bins
-    ):
+    elif isinstance(container, IrregularlyBin) and all(isinstance(v, COMMON_PLOT_TYPES) for _, v in container.bins):
         container.__class__ = IrregularlyHistogramMethods
 
     elif (

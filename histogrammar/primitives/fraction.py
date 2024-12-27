@@ -66,13 +66,13 @@ class Fraction(Factory, Container):
             "inf",
             "-inf",
         ):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"entries ({entries}) must be a number")
         if not isinstance(numerator, Container):
-            raise TypeError("numerator ({0}) must be a Container".format(numerator))
+            raise TypeError(f"numerator ({numerator}) must be a Container")
         if not isinstance(denominator, Container):
-            raise TypeError("denominator ({0}) must be a Container".format(denominator))
+            raise TypeError(f"denominator ({denominator}) must be a Container")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
 
         out = Fraction(None, None)
         out.entries = float(entries)
@@ -101,15 +101,13 @@ class Fraction(Factory, Container):
             denominator (:doc:`Container <histogrammar.defs.Container>`): the sub-aggregator of all entries.
         """
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({0}) must be None or a Container".format(value))
+            raise TypeError(f"value ({value}) must be None or a Container")
         self.entries = 0.0
-        self.quantity = serializable(
-            identity(quantity) if isinstance(quantity, str) else quantity
-        )
+        self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         if value is not None:
             self.numerator = value.zero()
             self.denominator = value.zero()
-        super(Fraction, self).__init__()
+        super().__init__()
         self.specialize()
 
     @staticmethod
@@ -124,9 +122,9 @@ class Fraction(Factory, Container):
         binning/bounds/etc.
         """
         if not isinstance(numerator, Container):
-            raise TypeError("numerator ({0}) must be a Container".format(numerator))
+            raise TypeError(f"numerator ({numerator}) must be a Container")
         if not isinstance(denominator, Container):
-            raise TypeError("denominator ({0}) must be a Container".format(denominator))
+            raise TypeError(f"denominator ({denominator}) must be a Container")
         # check for compatibility
         numerator + denominator
         # return object
@@ -147,10 +145,7 @@ class Fraction(Factory, Container):
             out.numerator = self.numerator + other.numerator
             out.denominator = self.denominator + other.denominator
             return out.specialize()
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
@@ -159,21 +154,17 @@ class Fraction(Factory, Container):
             self.numerator += other.numerator
             self.denominator += other.denominator
             return self
-        else:
-            raise ContainerException(
-                "cannot add {0} and {1}".format(self.name, other.name)
-            )
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            out.numerator = self.numerator * factor
-            out.denominator = self.denominator * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        out.numerator = self.numerator * factor
+        out.denominator = self.denominator * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -186,9 +177,7 @@ class Fraction(Factory, Container):
         if weight > 0.0:
             w = self.quantity(datum)
             if not isinstance(w, numbers.Real):
-                raise TypeError(
-                    "function return value ({0}) must be boolean or number".format(w)
-                )
+                raise TypeError(f"function return value ({w}) must be boolean or number")
             w *= weight
 
             self.denominator.fill(datum, weight)
@@ -217,9 +206,7 @@ class Fraction(Factory, Container):
         self.entries += float(weights.sum())
 
     def _sparksql(self, jvm, converter):
-        return converter.Fraction(
-            self.quantity.asSparkSQL(), self.numerator._sparksql(jvm, converter)
-        )
+        return converter.Fraction(self.quantity.asSparkSQL(), self.numerator._sparksql(jvm, converter))
 
     @property
     def children(self):
@@ -256,9 +243,7 @@ class Fraction(Factory, Container):
             ["entries", "sub:type", "numerator", "denominator"],
             ["name", "sub:name"],
         ):
-            if json["entries"] in ("nan", "inf", "-inf") or isinstance(
-                json["entries"], numbers.Real
-            ):
+            if json["entries"] in ("nan", "inf", "-inf") or isinstance(json["entries"], numbers.Real):
                 entries = float(json["entries"])
             else:
                 raise JsonFormatException(json, "Fraction.entries")
@@ -289,11 +274,10 @@ class Fraction(Factory, Container):
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
-        else:
-            raise JsonFormatException(json, "Fraction")
+        raise JsonFormatException(json, "Fraction")
 
     def __repr__(self):
-        return "<Fraction values={0}>".format(self.numerator.name)
+        return f"<Fraction values={self.numerator.name}>"
 
     def __eq__(self, other):
         return (

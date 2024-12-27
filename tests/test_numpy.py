@@ -20,6 +20,7 @@ import random
 import sys
 import time
 import unittest
+from contextlib import suppress
 
 import numpy as np
 
@@ -48,7 +49,7 @@ util.relativeTolerance = tolerance
 util.absoluteTolerance = tolerance
 
 
-class Pandas(object):
+class Pandas:
     def __enter__(self):
         try:
             import pandas  # noqa
@@ -58,10 +59,8 @@ class Pandas(object):
             return None
 
     def __exit__(self, exc_type, exc_value, traceback):
-        try:
+        with suppress(ImportError):
             import pandas  # noqa
-        except ImportError:
-            pass
 
 
 def makeSamples(SIZE, HOLES):
@@ -248,15 +247,11 @@ class TestNumpy(unittest.TestCase):
                     & np.bitwise_not(np.isnan(npdata2[key]))
                 )
                 if np.any(diff):
-                    raise AssertionError(
-                        "npdata has been modified:\n{0}\n{1}\n{2}\n{3} vs {4}".format(
-                            npdata[key],
-                            npdata2[key],
-                            np.nonzero(diff),
-                            npdata[key][np.nonzero(diff)[0][0]],
-                            npdata2[key][np.nonzero(diff)[0][0]],
-                        )
+                    msg = (
+                        f"npdata has been modified:\n{npdata[key]}\n{npdata2[key]}\n{np.nonzero(diff)}\n"
+                        f"{npdata[key][np.nonzero(diff)[0][0]]} vs {npdata2[key][np.nonzero(diff)[0][0]]}"
                     )
+                    raise AssertionError(msg)
 
         hnp2.fill.numpy(npdata)
         hnp3.fill.numpy(npdata)
@@ -268,22 +263,16 @@ class TestNumpy(unittest.TestCase):
 
         startTime = time.time()
         for d in pydata:
-            if isinstance(d, np.str_):
-                d = str(d)
-            else:
-                d = float(d)
-            hpy.fill(d)
+            dv = str(d) if isinstance(d, np.str_) else float(d)
+            hpy.fill(dv)
         pyTime = time.time() - startTime
         # protect against zero time.
         pyTime = max(pyTime, 1e-10)
 
         for h in [hpy2, hpy3, hpy3]:
             for d in pydata:
-                if isinstance(d, np.str_):
-                    d = str(d)
-                else:
-                    d = float(d)
-                h.fill(d)
+                dv = str(d) if isinstance(d, np.str_) else float(d)
+                h.fill(dv)
 
         assert (hpy + hpy) == hpy3
         assert (hpy + hpy2) == hpy3
@@ -295,20 +284,14 @@ class TestNumpy(unittest.TestCase):
         hpyj = json.dumps(hpy.toJson(), sort_keys=True)
 
         if Factory.fromJson(hnp.toJson()) != Factory.fromJson(hpy.toJson()):
-            raise AssertionError("\n numpy: {0}\npython: {1}".format(hnpj, hpyj))
-        else:
-            sys.stderr.write(
-                "{0:45s} | numpy: {1:.3f}ms python: {2:.3f}ms = {3:g}X speedup\n".format(
-                    name,
-                    numpyTime * 1000,
-                    pyTime * 1000,
-                    self.twosigfigs(pyTime / numpyTime),
-                )
-            )
-
-        assert Factory.fromJson((hnp + hnp2).toJson()) == Factory.fromJson(
-            (hpy + hpy2).toJson()
+            raise AssertionError(f"\n numpy: {hnpj}\npython: {hpyj}")
+        msg = (
+            f"{name:45s} | numpy: {numpyTime * 1000:.3f}ms python: {pyTime * 1000:.3f}"
+            f"ms = {self.twosigfigs(pyTime / numpyTime):g}X speedup\n"
         )
+        sys.stderr.write(msg)
+
+        assert Factory.fromJson((hnp + hnp2).toJson()) == Factory.fromJson((hpy + hpy2).toJson())
         assert Factory.fromJson(hnp3.toJson()) == Factory.fromJson(hpy3.toJson())
 
     # Warmup: apparently, Numpy does some dynamic optimization that needs to warm up...
@@ -443,21 +426,21 @@ class TestNumpy(unittest.TestCase):
         sys.stderr.write("\n")
         for bins in [10, 100]:
             self.compare(
-                "Bin ({0} bins) no data".format(bins),
+                f"Bin ({bins} bins) no data",
                 Bin(bins, -3.0, 3.0, lambda x: x["empty"]),
                 self.data,
                 Bin(bins, -3.0, 3.0, lambda x: x),
                 self.empty,
             )
             self.compare(
-                "Bin ({0} bins) noholes".format(bins),
+                f"Bin ({bins} bins) noholes",
                 Bin(bins, -3.0, 3.0, lambda x: x["noholes"]),
                 self.data,
                 Bin(bins, -3.0, 3.0, lambda x: x),
                 self.noholes,
             )
             self.compare(
-                "Bin ({0} bins) holes".format(bins),
+                f"Bin ({bins} bins) holes",
                 Bin(bins, -3.0, 3.0, lambda x: x["withholes"]),
                 self.data,
                 Bin(bins, -3.0, 3.0, lambda x: x),
@@ -468,14 +451,14 @@ class TestNumpy(unittest.TestCase):
         sys.stderr.write("\n")
         for bins in [10, 100]:
             self.compare(
-                "BinTrans ({0} bins) no data".format(bins),
+                f"BinTrans ({bins} bins) no data",
                 Bin(bins, -3.0, 3.0, lambda x: x["empty"], Count(lambda x: 0.5 * x)),
                 self.data,
                 Bin(bins, -3.0, 3.0, lambda x: x, Count(lambda x: 0.5 * x)),
                 self.empty,
             )
             self.compare(
-                "BinTrans ({0} bins) noholes".format(bins),
+                f"BinTrans ({bins} bins) noholes",
                 Bin(
                     bins,
                     -3.0,
@@ -488,7 +471,7 @@ class TestNumpy(unittest.TestCase):
                 self.noholes,
             )
             self.compare(
-                "BinTrans ({0} bins) holes".format(bins),
+                f"BinTrans ({bins} bins) holes",
                 Bin(
                     bins,
                     -3.0,
@@ -505,7 +488,7 @@ class TestNumpy(unittest.TestCase):
         sys.stderr.write("\n")
         for bins in [10, 100]:
             self.compare(
-                "BinAverage ({0} bins) no data".format(bins),
+                f"BinAverage ({bins} bins) no data",
                 Bin(
                     bins,
                     -3.0,
@@ -518,7 +501,7 @@ class TestNumpy(unittest.TestCase):
                 self.empty,
             )
             self.compare(
-                "BinAverage ({0} bins) noholes".format(bins),
+                f"BinAverage ({bins} bins) noholes",
                 Bin(
                     bins,
                     -3.0,
@@ -531,7 +514,7 @@ class TestNumpy(unittest.TestCase):
                 self.noholes,
             )
             self.compare(
-                "BinAverage ({0} bins) holes".format(bins),
+                f"BinAverage ({bins} bins) holes",
                 Bin(
                     bins,
                     -3.0,
@@ -548,7 +531,7 @@ class TestNumpy(unittest.TestCase):
         sys.stderr.write("\n")
         for bins in [10, 100]:
             self.compare(
-                "BinDeviate ({0} bins) no data".format(bins),
+                f"BinDeviate ({bins} bins) no data",
                 Bin(
                     bins,
                     -3.0,
@@ -561,7 +544,7 @@ class TestNumpy(unittest.TestCase):
                 self.empty,
             )
             self.compare(
-                "BinDeviate ({0} bins) noholes".format(bins),
+                f"BinDeviate ({bins} bins) noholes",
                 Bin(
                     bins,
                     -3.0,
@@ -574,7 +557,7 @@ class TestNumpy(unittest.TestCase):
                 self.noholes,
             )
             self.compare(
-                "BinDeviate ({0} bins) holes".format(bins),
+                f"BinDeviate ({bins} bins) holes",
                 Bin(
                     bins,
                     -3.0,
@@ -653,9 +636,7 @@ class TestNumpy(unittest.TestCase):
         )
         self.compare(
             "SparselyBinAverage holes",
-            SparselyBin(
-                0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])
-            ),
+            SparselyBin(0.1, lambda x: x["withholes"], Average(lambda x: x["withholes"])),
             self.data,
             SparselyBin(0.1, lambda x: x, Average(lambda x: x)),
             self.withholes,
@@ -679,9 +660,7 @@ class TestNumpy(unittest.TestCase):
         )
         self.compare(
             "SparselyBinDeviate holes",
-            SparselyBin(
-                0.1, lambda x: x["withholes"], Deviate(lambda x: x["withholes"])
-            ),
+            SparselyBin(0.1, lambda x: x["withholes"], Deviate(lambda x: x["withholes"])),
             self.data,
             SparselyBin(0.1, lambda x: x, Deviate(lambda x: x)),
             self.withholes,
@@ -749,18 +728,14 @@ class TestNumpy(unittest.TestCase):
         )
         self.compare(
             "CentrallyBinAverage noholes",
-            CentrallyBin(
-                centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])
-            ),
+            CentrallyBin(centers, lambda x: x["noholes"], Average(lambda x: x["noholes"])),
             self.data,
             CentrallyBin(centers, lambda x: x, Average(lambda x: x)),
             self.noholes,
         )
         self.compare(
             "CentrallyBinAverage holes",
-            CentrallyBin(
-                centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])
-            ),
+            CentrallyBin(centers, lambda x: x["withholes"], Average(lambda x: x["withholes"])),
             self.data,
             CentrallyBin(centers, lambda x: x, Average(lambda x: x)),
             self.withholes,
@@ -778,18 +753,14 @@ class TestNumpy(unittest.TestCase):
         )
         self.compare(
             "CentrallyBinDeviate noholes",
-            CentrallyBin(
-                centers, lambda x: x["noholes"], Deviate(lambda x: x["noholes"])
-            ),
+            CentrallyBin(centers, lambda x: x["noholes"], Deviate(lambda x: x["noholes"])),
             self.data,
             CentrallyBin(centers, lambda x: x, Deviate(lambda x: x)),
             self.noholes,
         )
         self.compare(
             "CentrallyBinDeviate holes",
-            CentrallyBin(
-                centers, lambda x: x["withholes"], Deviate(lambda x: x["withholes"])
-            ),
+            CentrallyBin(centers, lambda x: x["withholes"], Deviate(lambda x: x["withholes"])),
             self.data,
             CentrallyBin(centers, lambda x: x, Deviate(lambda x: x)),
             self.withholes,
@@ -863,9 +834,7 @@ class TestNumpy(unittest.TestCase):
         )
         self.compare(
             "FractionBin noholes",
-            Fraction(
-                lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])
-            ),
+            Fraction(lambda x: x["noholes"], Bin(100, -3.0, 3.0, lambda x: x["noholes"])),
             self.data,
             Fraction(lambda x: x, Bin(100, -3.0, 3.0, lambda x: x)),
             self.noholes,
@@ -1143,9 +1112,7 @@ class TestPandas(unittest.TestCase):
 
             assert hist1.datatype == str
             np.testing.assert_array_equal(hist2.datatype, [np.number, str])
-            np.testing.assert_array_equal(
-                hist3.datatype, [np.datetime64, np.number, str]
-            )
+            np.testing.assert_array_equal(hist3.datatype, [np.datetime64, np.number, str])
 
     def test_n_bins(self):
         """Test getting the number of allocated bins"""
@@ -1247,9 +1214,7 @@ class TestPandas(unittest.TestCase):
 
             df, hist1, hist2, hist3 = get_test_histograms1()
 
-            np.testing.assert_array_equal(
-                hist1.bin_labels(), ["foo1", "foo2", "foo3", "foo4", "foo5"]
-            )
+            np.testing.assert_array_equal(hist1.bin_labels(), ["foo1", "foo2", "foo3", "foo4", "foo5"])
 
     def test_bin_centers(self):
         """Test getting assigned bin-centers for Bin and SparselyBin histograms"""
@@ -1273,32 +1238,18 @@ class TestPandas(unittest.TestCase):
             hist4.fill.numpy(df1)
             hist5.fill.numpy(df2)
 
-            np.testing.assert_array_equal(
-                hist2.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5]
-            )
-            np.testing.assert_array_equal(
-                hist3.bin_centers(), [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
-            )
+            np.testing.assert_array_equal(hist2.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5])
+            np.testing.assert_array_equal(hist3.bin_centers(), [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5])
             np.testing.assert_array_equal(
                 hist2.bin_centers(low=5, high=15),
                 [5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5],
             )
-            np.testing.assert_array_equal(
-                hist3.bin_centers(), [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
-            )
-            np.testing.assert_array_equal(
-                hist3.bin_centers(low=2.1, high=5.6), [2.5, 3.5, 4.5, 5.5]
-            )
+            np.testing.assert_array_equal(hist3.bin_centers(), [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5])
+            np.testing.assert_array_equal(hist3.bin_centers(low=2.1, high=5.6), [2.5, 3.5, 4.5, 5.5])
 
-            np.testing.assert_array_equal(
-                hist4.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
-            )
-            np.testing.assert_array_equal(
-                hist5.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
-            )
-            np.testing.assert_array_equal(
-                hist4.bin_centers(low=5, high=15), [5.5, 6.5, 7.5, 8.5, 9.5]
-            )
+            np.testing.assert_array_equal(hist4.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5])
+            np.testing.assert_array_equal(hist5.bin_centers(), [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5])
+            np.testing.assert_array_equal(hist4.bin_centers(low=5, high=15), [5.5, 6.5, 7.5, 8.5, 9.5])
             np.testing.assert_array_equal(
                 hist5.bin_centers(low=2.1, high=9.1),
                 [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5],
@@ -1347,35 +1298,17 @@ class TestPandas(unittest.TestCase):
             centers = hist4.bin_centers()
 
             np.testing.assert_array_equal(hist0.bin_entries(), [2.0, 2.0, 3.0, 3.0])
-            np.testing.assert_array_equal(
-                hist1.bin_entries(), [1.0, 2.0, 1.0, 1.0, 3.0, 1.0, 1.0]
-            )
-            np.testing.assert_array_equal(
-                hist0.bin_entries(labels=labels1), [2.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-            )
-            np.testing.assert_array_equal(
-                hist1.bin_entries(labels=labels0), [0.0, 1.0, 2.0, 0.0]
-            )
+            np.testing.assert_array_equal(hist1.bin_entries(), [1.0, 2.0, 1.0, 1.0, 3.0, 1.0, 1.0])
+            np.testing.assert_array_equal(hist0.bin_entries(labels=labels1), [2.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+            np.testing.assert_array_equal(hist1.bin_entries(labels=labels0), [0.0, 1.0, 2.0, 0.0])
 
-            np.testing.assert_array_equal(
-                hist2.bin_entries(), [1.0, 4.0, 2.0, 2.0, 1.0]
-            )
-            np.testing.assert_array_equal(
-                hist3.bin_entries(), [1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 1.0]
-            )
-            np.testing.assert_array_equal(
-                hist4.bin_entries(), [1.0, 4.0, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-            )
-            np.testing.assert_array_equal(
-                hist5.bin_entries(), [0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 1.0, 0.0]
-            )
+            np.testing.assert_array_equal(hist2.bin_entries(), [1.0, 4.0, 2.0, 2.0, 1.0])
+            np.testing.assert_array_equal(hist3.bin_entries(), [1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 1.0])
+            np.testing.assert_array_equal(hist4.bin_entries(), [1.0, 4.0, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+            np.testing.assert_array_equal(hist5.bin_entries(), [0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 1.0, 0.0])
 
-            np.testing.assert_array_equal(
-                hist2.bin_entries(xvalues=centers3), [2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0]
-            )
-            np.testing.assert_array_equal(
-                hist3.bin_entries(xvalues=centers2), [0.0, 0.0, 1.0, 1.0, 2.0]
-            )
+            np.testing.assert_array_equal(hist2.bin_entries(xvalues=centers3), [2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0])
+            np.testing.assert_array_equal(hist3.bin_entries(xvalues=centers2), [0.0, 0.0, 1.0, 1.0, 2.0])
             np.testing.assert_array_equal(
                 hist2.bin_entries(xvalues=centers),
                 [1.0, 4.0, 2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -1389,16 +1322,12 @@ class TestPandas(unittest.TestCase):
                 hist2.bin_entries(low=2.1, high=11.9),
                 [2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             )
-            np.testing.assert_array_equal(
-                hist3.bin_entries(low=1.1, high=5.4), [0.0, 1.0, 1.0, 2.0, 2.0]
-            )
+            np.testing.assert_array_equal(hist3.bin_entries(low=1.1, high=5.4), [0.0, 1.0, 1.0, 2.0, 2.0])
             np.testing.assert_array_equal(
                 hist4.bin_entries(low=2.1, high=11.9),
                 [2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             )
-            np.testing.assert_array_equal(
-                hist5.bin_entries(low=1.1, high=5.4), [0.0, 1.0, 1.0, 2.0, 2.0]
-            )
+            np.testing.assert_array_equal(hist5.bin_entries(low=1.1, high=5.4), [0.0, 1.0, 1.0, 2.0, 2.0])
 
     def test_bin_edges(self):
         """Test getting the bin edges for requested ranges"""
@@ -1423,12 +1352,8 @@ class TestPandas(unittest.TestCase):
             hist4.fill.numpy(df1)
             hist5.fill.numpy(df2)
 
-            np.testing.assert_array_equal(
-                hist2.bin_edges(), [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
-            )
-            np.testing.assert_array_equal(
-                hist3.bin_edges(), [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-            )
+            np.testing.assert_array_equal(hist2.bin_edges(), [0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
+            np.testing.assert_array_equal(hist3.bin_edges(), [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])
             np.testing.assert_array_equal(
                 hist4.bin_edges(),
                 [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
@@ -1442,16 +1367,12 @@ class TestPandas(unittest.TestCase):
                 hist2.bin_edges(low=2.1, high=11.9),
                 [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0],
             )
-            np.testing.assert_array_equal(
-                hist3.bin_edges(low=1.1, high=6), [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
-            )
+            np.testing.assert_array_equal(hist3.bin_edges(low=1.1, high=6), [1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
             np.testing.assert_array_equal(
                 hist4.bin_edges(low=2.1, high=11.9),
                 [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
             )
-            np.testing.assert_array_equal(
-                hist5.bin_edges(low=1.1, high=5.4), [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
-            )
+            np.testing.assert_array_equal(hist5.bin_edges(low=1.1, high=5.4), [1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
 
             assert len(hist6.bin_edges()) == 202
             assert len(hist6.bin_edges(low=0.2089, high=0.9333)) == 147
@@ -1487,12 +1408,8 @@ class TestPandas(unittest.TestCase):
         h.fillnumpy([-5, 5, 5, 50, 10, 100, 1000, 50, 50])
 
         np.testing.assert_array_equal(h.bin_entries(), [1.0, 2.0, 1.0, 0.0, 3.0, 2.0])
-        np.testing.assert_array_equal(
-            h.bin_edges(), [float("-inf"), 0.0, 10.0, 20.0, 40.0, 100.0, float("inf")]
-        )
-        np.testing.assert_array_equal(
-            h.bin_centers(), [float("-inf"), 5.0, 15.0, 30.0, 70.0, float("inf")]
-        )
+        np.testing.assert_array_equal(h.bin_edges(), [float("-inf"), 0.0, 10.0, 20.0, 40.0, 100.0, float("inf")])
+        np.testing.assert_array_equal(h.bin_centers(), [float("-inf"), 5.0, 15.0, 30.0, 70.0, float("inf")])
         assert h.num_bins() == 6
         assert h.n_bins == 6
         np.testing.assert_almost_equal(h.mpv, 70.0)
@@ -1503,12 +1420,8 @@ class TestPandas(unittest.TestCase):
         assert h.num_bins(10, 40) == 2
 
         np.testing.assert_array_equal(h.bin_entries(5, 110), [2.0, 1.0, 0.0, 3.0, 2.0])
-        np.testing.assert_array_equal(
-            h.bin_edges(5, 110), [0.0, 10.0, 20.0, 40.0, 100.0, float("inf")]
-        )
-        np.testing.assert_array_equal(
-            h.bin_centers(5, 110), [5.0, 15.0, 30.0, 70.0, float("inf")]
-        )
+        np.testing.assert_array_equal(h.bin_edges(5, 110), [0.0, 10.0, 20.0, 40.0, 100.0, float("inf")])
+        np.testing.assert_array_equal(h.bin_centers(5, 110), [5.0, 15.0, 30.0, 70.0, float("inf")])
         assert h.num_bins(5, 110) == 5
 
     def test_centrally(self):
@@ -1517,9 +1430,7 @@ class TestPandas(unittest.TestCase):
         h.fillnumpy([-5, 5, 5, 50, 10, 100, 1000, 50, 50])
 
         np.testing.assert_array_equal(h.bin_entries(), [1.0, 3.0, 0.0, 3.0, 2.0])
-        np.testing.assert_array_equal(
-            h.bin_edges(), [float("-inf"), 5.0, 15.0, 30.0, 70.0, float("inf")]
-        )
+        np.testing.assert_array_equal(h.bin_edges(), [float("-inf"), 5.0, 15.0, 30.0, 70.0, float("inf")])
         np.testing.assert_array_equal(h.bin_centers(), [0.0, 10.0, 20.0, 40.0, 100.0])
         assert h.num_bins() == 5
         assert h.n_bins == 5
@@ -1536,8 +1447,6 @@ class TestPandas(unittest.TestCase):
         assert h.num_bins(5, 70) == 3
 
         np.testing.assert_array_equal(h.bin_entries(5, 110), [3.0, 0.0, 3.0, 2.0])
-        np.testing.assert_array_equal(
-            h.bin_edges(5, 110), [5.0, 15.0, 30.0, 70.0, float("inf")]
-        )
+        np.testing.assert_array_equal(h.bin_edges(5, 110), [5.0, 15.0, 30.0, 70.0, float("inf")])
         np.testing.assert_array_equal(h.bin_centers(5, 110), [10.0, 20.0, 40.0, 100.0])
         assert h.num_bins(5, 110) == 4

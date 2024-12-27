@@ -32,11 +32,7 @@ def prepare_2dgrid(hist):
     :return: two comma-separated lists of unique x and y keys
     """
     if hist.n_dim < 2:
-        warnings.warn(
-            "Input histogram only has {n} dimensions (<2). Returning empty lists.".format(
-                n=hist.n_dim
-            )
-        )
+        warnings.warn(f"Input histogram only has {hist.n_dim} dimensions (<2). Returning empty lists.")
         return [], []
 
     xkeys = set()
@@ -76,11 +72,7 @@ def set_2dgrid(hist, xkeys, ykeys):
     grid = np.zeros((len(ykeys), len(xkeys)))
 
     if hist.n_dim < 2:
-        warnings.warn(
-            "Input histogram only has {n} dimensions (<2). Returning original grid.".format(
-                n=hist.n_dim
-            )
-        )
+        warnings.warn(f"Input histogram only has {hist.n_dim} dimensions (<2). Returning original grid.")
         return grid
 
     # SparselyBin, Categorize, IrregularlyBin, CentrallyBin
@@ -123,11 +115,7 @@ def get_2dgrid(hist):
     :return: x,y,grid of first two dimenstions of input histogram
     """
     if hist.n_dim < 2:
-        warnings.warn(
-            "Input histogram only has {n} dimensions (<2). Returning empty grid.".format(
-                n=hist.n_dim
-            )
-        )
+        warnings.warn(f"Input histogram only has {hist.n_dim} dimensions (<2). Returning empty grid.")
         return np.zeros((0, 0))
 
     xkeys, ykeys = prepare_2dgrid(hist)
@@ -140,8 +128,7 @@ def get_2dgrid(hist):
 
 
 def get_x_labels(hist, xkeys):
-    xlabels = [str(hist._center_from_key(key)) for key in xkeys]
-    return xlabels
+    return [str(hist._center_from_key(key)) for key in xkeys]
 
 
 def get_y_labels(hist, ykeys):
@@ -152,8 +139,7 @@ def get_y_labels(hist, ykeys):
     # Bin
     elif hasattr(hist, "values"):
         h = hist.values[0]
-    ylabels = [str(h._center_from_key(key)) for key in ykeys]
-    return ylabels
+    return [str(h._center_from_key(key)) for key in ykeys]
 
 
 def prepare2Dsparse(sparse):
