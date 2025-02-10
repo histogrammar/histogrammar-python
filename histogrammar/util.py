@@ -14,18 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
 import marshal
 import math
 import types
-import sys
 
-import histogrammar.pycparser.c_ast
+import numpy as np
+
+import histogrammar
 
 # Definitions for python 2/3 compatibility
-if sys.version_info[0] > 2:
-    basestring = str
-    xrange = range
-    long = int
+basestring = str
+xrange = range
+long = int
 
 
 def inheritdoc(cls):
@@ -33,17 +34,17 @@ def inheritdoc(cls):
         if fn.__name__ in cls.__dict__:
             fn.__doc__ = cls.__dict__[fn.__name__].__doc__
         return fn
+
     return _fn
 
 
 # attach sub-methods to the fill and plot methods
 
-class FillMethod(object):
+
+class FillMethod:
     def __init__(self, container, fill):
         self.container = container
         self.fill = fill
-        self.root = container.fillroot
-        self.pycuda = container.fillpycuda
         self.numpy = container.fillnumpy
         self.sparksql = container.fillsparksql
 
@@ -51,26 +52,19 @@ class FillMethod(object):
         return self.fill(*args, **kwds)
 
 
-class PlotMethod(object):
+class PlotMethod:
     def __init__(self, container, plot):
         self.container = container
         self.plot = plot
 
-        try:
-            self.root = container.plotroot
-        except (AttributeError, KeyError):
-            pass
-        try:
+        with contextlib.suppress(AttributeError, KeyError):
             self.bokeh = container.plotbokeh
-        except (AttributeError, KeyError):
-            pass
-        try:
+        with contextlib.suppress(AttributeError, KeyError):
             self.matplotlib = container.plotmatplotlib
-        except (AttributeError, KeyError):
-            pass
 
     def __call__(self, *args, **kwds):
         return self.plot(*args, **kwds)
+
 
 # handling key set comparisons with optional keys
 
@@ -90,12 +84,12 @@ def maybeAdd(json, **pairs):
     """Adds key-value pairs to a dict for JSON if the value is not None."""
     if len(pairs) == 0:
         return json
-    else:
-        out = dict(json)
-        for k, v in pairs.items():
-            if v is not None:
-                out[k] = v
-        return out
+    out = dict(json)
+    for k, v in pairs.items():
+        if v is not None:
+            out[k] = v
+    return out
+
 
 # inexact floating point and NaN handling
 
@@ -117,51 +111,46 @@ def numeq(x, y):
     Python's math.isclose algorithm is applied for non-NaNs:
 
         ``abs(x - y) <= max(relativeTolerance * max(abs(x), abs(y)), absoluteTolerance)``
-   """
+    """
     if math.isnan(x) and math.isnan(y):
         return True
-    elif math.isinf(x) and math.isinf(y):
+    if math.isinf(x) and math.isinf(y):
         return (x > 0.0) == (y > 0.0)
-    elif relativeTolerance > 0.0 and absoluteTolerance > 0.0:
+    if relativeTolerance > 0.0 and absoluteTolerance > 0.0:
         return abs(x - y) <= max(relativeTolerance * max(abs(x), abs(y)), absoluteTolerance)
-    elif relativeTolerance > 0.0:
+    if relativeTolerance > 0.0:
         return abs(x - y) <= relativeTolerance * max(abs(x), abs(y))
-    elif absoluteTolerance > 0.0:
+    if absoluteTolerance > 0.0:
         return abs(x - y) <= absoluteTolerance
-    else:
-        return x == y
+    return x == y
 
 
 def minplus(x, y):
     """Rule for finding the minimum of two numbers
 
-    Given the Histogrammar convention of representing the minimum of no data to be nan."""
+    Given the Histogrammar convention of representing the minimum of no data to be nan.
+    """
     if math.isnan(x) and math.isnan(y):
         return float("nan")
-    elif math.isnan(x):
+    if math.isnan(x):
         return y
-    elif math.isnan(y):
+    if math.isnan(y) or x < y:
         return x
-    elif x < y:
-        return x
-    else:
-        return y
+    return y
 
 
 def maxplus(x, y):
     """Rule for finding the maximum of two numbers
 
-    Given the Histogrammar convention of representing the maximum of no data to be nan."""
+    Given the Histogrammar convention of representing the maximum of no data to be nan.
+    """
     if math.isnan(x) and math.isnan(y):
         return float("nan")
-    elif math.isnan(x):
+    if math.isnan(x):
         return y
-    elif math.isnan(y):
+    if math.isnan(y) or x > y:
         return x
-    elif x > y:
-        return x
-    else:
-        return y
+    return y
 
 
 def floatOrNan(x):
@@ -172,8 +161,7 @@ def floatOrNan(x):
     x = float(x)
     if math.isnan(x):
         return "nan"
-    else:
-        return x
+    return x
 
 
 def floatToJson(x):
@@ -183,25 +171,23 @@ def floatToJson(x):
     in the JSON (without quotes)."""
     if x in ("nan", "inf", "-inf"):
         return x
-    elif math.isnan(x):
+    if math.isnan(x):
         return "nan"
-    elif math.isinf(x) and x > 0.0:
+    if math.isinf(x) and x > 0.0:
         return "inf"
-    elif math.isinf(x):
+    if math.isinf(x):
         return "-inf"
-    else:
-        return x
+    return x
 
 
 def floatToC99(x):
     if math.isnan(x):
         return "NAN"
-    elif math.isinf(x) and x > 0.0:
+    if math.isinf(x) and x > 0.0:
         return "INFINITY"
-    elif math.isinf(x):
+    if math.isinf(x):
         return "-INFINITY"
-    else:
-        return str(x)
+    return str(x)
 
 
 def rangeToJson(x):
@@ -212,15 +198,15 @@ def rangeToJson(x):
     in the JSON (without quotes)."""
     if isinstance(x, basestring):
         return x
-    elif isinstance(x, (list, tuple)):
+    if isinstance(x, (list, tuple)):
         return [floatToJson(xi) for xi in x]
-    else:
-        return floatToJson(x)
+    return floatToJson(x)
+
 
 # function tools
 
 
-class UserFcn(object):
+class UserFcn:
     """Base trait for user functions.
 
     All functions passed to Histogrammar primitives get wrapped as UserFcn objects.
@@ -252,11 +238,7 @@ class UserFcn(object):
         else:
             self.name = name
 
-        if expr is None:
-            ok = True
-        elif isinstance(expr, basestring):
-            ok = True
-        elif isinstance(expr, types.FunctionType):
+        if expr is None or isinstance(expr, (basestring, types.FunctionType)):
             ok = True
         else:
             try:
@@ -264,23 +246,21 @@ class UserFcn(object):
             except ImportError:
                 ok = False
             else:
-                if isinstance(expr, Column):
-                    if self.name is None:
-                        self.name = str(expr)[7:-1]
+                if isinstance(expr, Column) and self.name is None:
+                    self.name = str(expr)[7:-1]
                 ok = True
         if not ok:
-            raise TypeError("quantity ({0}) must be a string, function, or SparkSQL Column".format(expr))
+            raise TypeError(f"quantity ({expr}) must be a string, function, or SparkSQL Column")
 
         if name is not None and not isinstance(name, basestring):
-            raise TypeError(
-                "function name must be a string, not {0} (perhaps your arguments are reversed)".format(name))
+            raise TypeError(f"function name must be a string, not {name} (perhaps your arguments are reversed)")
 
     def asSparkSQL(self):
         from pyspark.sql.column import Column
+
         if isinstance(self.expr, Column):
             return self.expr._jc
-        else:
-            raise TypeError("UserFcn is not a SparkSQL Column: " + repr(self))
+        raise TypeError("UserFcn is not a SparkSQL Column: " + repr(self))
 
     def __call__(self, *args, **kwds):
         if not hasattr(self, "fcn"):
@@ -294,10 +274,6 @@ class UserFcn(object):
                 varname = [None]
 
                 try:
-                    import numpy
-                except ImportError:
-                    numpy = None
-                try:
                     import pandas
                 except ImportError:
                     pandas = None
@@ -309,39 +285,36 @@ class UserFcn(object):
                     context.update(math.__dict__)
 
                     # if you have Numpy, include numpy.* functions
-                    if numpy is not None:
-                        context["numpy"] = numpy
-                        context["np"] = numpy
-                        major = int(numpy.__version__.split('.')[0])
-                        npcore = numpy._core if major > 1 else numpy.core
+                    context["numpy"] = np
+                    context["np"] = np
+                    major = int(np.__version__.split(".")[0])
+                    npcore = np._core if major > 1 else np.core
 
                     # if the datum is a dict, override the namespace with its dict keys
-                    if isinstance(datum, dict):                # if it's a dict
-                        context.update(datum)                  # use its items as variables
+                    if isinstance(datum, dict):  # if it's a dict
+                        context.update(datum)  # use its items as variables
 
                     # if the datum is a Numpy record array, override the namespace with its field names
-                    elif numpy is not None and isinstance(datum, npcore.records.recarray):
-                        context.update(dict((n, datum[n]) for n in datum.dtype.names))
+                    elif isinstance(datum, npcore.records.recarray):
+                        context.update({n: datum[n] for n in datum.dtype.names})
 
                     # if the datum is a Pandas DataFrame, override the namespace with its column names
                     elif pandas is not None and isinstance(datum, pandas.core.frame.DataFrame):
-                        context.update(dict((n, datum[n].values) for n in datum.columns))
+                        context.update({n: datum[n].values for n in datum.columns})
 
                     else:
                         try:
-                            context.update(datum.__dict__)     # try to use its attributes as variables
+                            context.update(datum.__dict__)  # try to use its attributes as variables
                         except AttributeError:
-                            v, = varname                       # otherwise, use the one and only variable
-                            if v is None:                      # as the object (only discover it once)
+                            (v,) = varname  # otherwise, use the one and only variable
+                            if v is None:  # as the object (only discover it once)
                                 v = set(c.co_names) - set(context.keys())
                                 if len(v) > 1:
                                     raise NameError(
                                         "more than one unrecognized variable names in single-argument "
-                                        "function: {0}".format(set(c.co_names) - set(context.keys())))
-                                elif len(v) == 0:
-                                    v = None
-                                else:
-                                    v = list(v)[0]
+                                        f"function: {set(c.co_names) - set(context.keys())}"
+                                    )
+                                v = None if len(v) == 0 else list(v)[0]
 
                                 varname[0] = v
 
@@ -363,7 +336,7 @@ class UserFcn(object):
                 else:
                     if isinstance(self.expr, Column):
                         raise TypeError("cannot use SparkSQL Column with the normal fill method; use fill.sparksql")
-                raise TypeError("unrecognized type for function: {0}".format(type(self.expr)))
+                raise TypeError(f"unrecognized type for function: {type(self.expr)}")
 
         return self.fcn(*args, **kwds)
 
@@ -371,17 +344,25 @@ class UserFcn(object):
         if isinstance(self.expr, basestring) or self.expr is None:
             return (deserializeString, (self.__class__, self.expr, self.name))
 
-        elif isinstance(self.expr, types.FunctionType):
-            refs = dict((n, self.expr.__globals__[n])
-                        for n in self.expr.__code__.co_names if n in self.expr.__globals__)
-            return (deserializeFunction, (self.__class__, marshal.dumps(self.expr.__code__), self.expr.__name__,
-                                          self.expr.__defaults__, self.expr.__closure__, refs, self.name))
+        if isinstance(self.expr, types.FunctionType):
+            refs = {n: self.expr.__globals__[n] for n in self.expr.__code__.co_names if n in self.expr.__globals__}
+            return (
+                deserializeFunction,
+                (
+                    self.__class__,
+                    marshal.dumps(self.expr.__code__),
+                    self.expr.__name__,
+                    self.expr.__defaults__,
+                    self.expr.__closure__,
+                    refs,
+                    self.name,
+                ),
+            )
 
-        else:
-            raise TypeError("unrecognized type for function: {0}".format(type(self.expr)))
+        raise TypeError(f"unrecognized type for function: {type(self.expr)}")
 
     def __repr__(self):
-        return "UserFcn({0}, {1})".format(self.expr, self.name)
+        return f"UserFcn({self.expr}, {self.name})"
 
     def __eq__(self, other):
         out = isinstance(other, UserFcn) and self.name == other.name
@@ -396,8 +377,7 @@ class UserFcn(object):
     def __hash__(self):
         if isinstance(self.expr, types.FunctionType):
             return hash((None, self.expr.__code__.co_code, self.name))
-        else:
-            return hash((self.expr, self.name))
+        return hash((self.expr, self.name))
 
 
 class CachedFcn(UserFcn):
@@ -416,31 +396,30 @@ class CachedFcn(UserFcn):
         f(4.56)   # computes the function again at a new point
     """
 
-    try:
-        import numpy
-        np = numpy
-    except ImportError:
-        np = None
-
     def __call__(self, *args, **kwds):
-        if hasattr(self, "lastArgs") and \
-           len(args) == len(self.lastArgs) and \
-           (all(x is y for x, y in zip(args, self.lastArgs)) or
-            (self.np is not None and all(self.np.array_equal(x, y) for x, y in zip(args, self.lastArgs))) or
-            (self.np is None and all(x == y for x, y in zip(args, self.lastArgs)))) and \
-           set(kwds.keys()) == set(self.lastKwds.keys()) and \
-           (all(kwds[k] is self.lastKwds[k] for k in kwds) or
-            (self.np is not None and all(self.np.array_equal(kwds[k], self.lastKwds[k]) for k in kwds)) or
-                (self.np is None and all(kwds[k] == self.lastKwds[k] for k in kwds))):
+        if (
+            hasattr(self, "lastArgs")
+            and len(args) == len(self.lastArgs)
+            and (
+                all(x is y for x, y in zip(args, self.lastArgs))
+                or (self.np is not None and all(self.np.array_equal(x, y) for x, y in zip(args, self.lastArgs)))
+                or (self.np is None and all(x == y for x, y in zip(args, self.lastArgs)))
+            )
+            and set(kwds.keys()) == set(self.lastKwds.keys())
+            and (
+                all(kwds[k] is self.lastKwds[k] for k in kwds)
+                or (self.np is not None and all(self.np.array_equal(kwds[k], self.lastKwds[k]) for k in kwds))
+                or (self.np is None and all(kwds[k] == self.lastKwds[k] for k in kwds))
+            )
+        ):
             return self.lastReturn
-        else:
-            self.lastArgs = args
-            self.lastKwds = kwds
-            self.lastReturn = super(CachedFcn, self).__call__(*args, **kwds)
-            return self.lastReturn
+        self.lastArgs = args
+        self.lastKwds = kwds
+        self.lastReturn = super().__call__(*args, **kwds)
+        return self.lastReturn
 
     def __repr__(self):
-        return "CachedFcn({0}, {1})".format(self.expr, self.name)
+        return f"CachedFcn({self.expr}, {self.name})"
 
 
 def deserializeString(cls, expr, name):
@@ -470,8 +449,7 @@ def serializable(fcn):
     """
     if isinstance(fcn, UserFcn):
         return fcn
-    else:
-        return UserFcn(fcn)
+    return UserFcn(fcn)
 
 
 def cached(fcn):
@@ -492,10 +470,9 @@ def cached(fcn):
 
     if isinstance(fcn, CachedFcn):
         return fcn
-    elif isinstance(fcn, UserFcn):
+    if isinstance(fcn, UserFcn):
         return CachedFcn(fcn.expr, fcn.name)
-    else:
-        return CachedFcn(fcn)
+    return CachedFcn(fcn)
 
 
 def named(name, fcn):
@@ -507,13 +484,12 @@ def named(name, fcn):
     commutes with histogrammar.util.cached and histogrammar.util.serializable (they can be applied in any order).
     """
     if isinstance(fcn, UserFcn) and fcn.name is not None:
-        raise ValueError("two names applied to the same function: {0} and {1}".format(fcn.name, name))
-    elif isinstance(fcn, CachedFcn):
+        raise ValueError(f"two names applied to the same function: {fcn.name} and {name}")
+    if isinstance(fcn, CachedFcn):
         return CachedFcn(fcn.expr, name)
-    elif isinstance(fcn, UserFcn):
+    if isinstance(fcn, UserFcn):
         return UserFcn(fcn.expr, name)
-    else:
-        return UserFcn(fcn, name)
+    return UserFcn(fcn, name)
 
 
 def get_n_dim(hist, itr=0):
@@ -523,14 +499,20 @@ def get_n_dim(hist, itr=0):
     :rtype: int
     """
     # no sub-histogram possible for these:
-    if not isinstance(hist, histogrammar.Container):
+    if not isinstance(hist, histogrammar.Container) or isinstance(hist, histogrammar.Count):
         return 0
-    elif isinstance(hist, histogrammar.Count):
-        return 0
-    elif isinstance(hist, histogrammar.Bag):
+    if isinstance(hist, histogrammar.Bag):
         return hist.dimension if hist.dimension > 0 else 1
-    elif isinstance(hist, (histogrammar.Maximize, histogrammar.Minimize, histogrammar.Average,
-                           histogrammar.Deviate, histogrammar.Sum)):
+    if isinstance(
+        hist,
+        (
+            histogrammar.Maximize,
+            histogrammar.Minimize,
+            histogrammar.Average,
+            histogrammar.Deviate,
+            histogrammar.Sum,
+        ),
+    ):
         return 1 if itr == 0 else 0
     # histogram has a sub-histogram. Extract it and recurse dimension
     sub_hist = _get_sub_hist(hist)
@@ -546,18 +528,23 @@ def get_datatype(hist, itr=0):
     :returns: list with datatypes of all dimenensions of the histogram
     :rtype: list
     """
-    import numpy as np
     # no sub-histogram possible for these:
-    if not isinstance(hist, histogrammar.Container):
+    if not isinstance(hist, histogrammar.Container) or isinstance(hist, histogrammar.Count):
         return []
-    elif isinstance(hist, histogrammar.Count):
-        return []
-    elif isinstance(hist, histogrammar.Bag):
+    if isinstance(hist, histogrammar.Bag):
         if hist.dimension > 0:
             return [np.number] * hist.dimension
-        return [str] if hist.range == 'S' else [np.number]
-    elif isinstance(hist, (histogrammar.Maximize, histogrammar.Minimize, histogrammar.Average,
-                           histogrammar.Deviate, histogrammar.Sum)):
+        return [str] if hist.range == "S" else [np.number]
+    if isinstance(
+        hist,
+        (
+            histogrammar.Maximize,
+            histogrammar.Minimize,
+            histogrammar.Average,
+            histogrammar.Deviate,
+            histogrammar.Sum,
+        ),
+    ):
         # return if data type has already been determined from parent histogram
         if itr > 0:
             return []
@@ -660,15 +647,13 @@ def _is_probable_timestamp(value, DATE_LOW=5e16, DATE_HIGH=9.9e18):
     :param value: input value
     :return: True if timestamp
     """
-    import numpy as np
     # HACK: making an educated guess for timestamp
     # large numbers (time in ns since 1970) used to determine if float corresponds to a timestamp
     # DATE_LOW = 5e16     = 1971-08-02 16:53:20 in nanosec
     # DATE_HIGH = 9.9e18  = 2260-1-1 in nanosec
-
     # timestamp is in ns since 1970, so a huge number.
     is_ts = False
-    if isinstance(value, (np.number,float,int)) and not np.isnan(value):
+    if isinstance(value, (np.number, float, int)) and not np.isnan(value):
         is_ts = DATE_LOW < value < DATE_HIGH
     return is_ts
 
@@ -698,7 +683,7 @@ def datatype(self):  # noqa
     if isinstance(datatype, list):
         if len(datatype) == 1:
             return datatype[0]
-        elif len(datatype) == 0:
+        if len(datatype) == 0:
             return type(None)
     return datatype
 
@@ -709,11 +694,7 @@ def get_hist_props(hist):
     :param hist: input histogram
     :returns dict: Column properties
     """
-    import numpy as np
-
-    var_type = (
-        hist.datatype if not isinstance(hist.datatype, list) else hist.datatype[0]
-    )
+    var_type = hist.datatype if not isinstance(hist.datatype, list) else hist.datatype[0]
     npdtype = np.dtype(var_type)
 
     # determine data-type categories
@@ -722,9 +703,7 @@ def get_hist_props(hist):
     is_num = is_ts or isinstance(npdtype.type(), np.number)
     is_bool = isinstance(npdtype.type(), np.bool_)
 
-    return dict(
-        dtype=npdtype, is_num=is_num, is_int=is_int, is_ts=is_ts, is_bool=is_bool
-    )
+    return {"dtype": npdtype, "is_num": is_num, "is_int": is_int, "is_ts": is_ts, "is_bool": is_bool}
 
 
 def dumper(obj):
@@ -746,9 +725,8 @@ def dumper(obj):
     """
     if hasattr(obj, "toJSON"):
         return obj.toJSON()
-    elif hasattr(obj, "toJson"):
+    if hasattr(obj, "toJson"):
         return obj.toJson()
-    elif hasattr(obj, "__dict__"):
+    if hasattr(obj, "__dict__"):
         return obj.__dict__
-    else:
-        raise RuntimeError(f"Do not know how to serialize object type {type(obj)}")
+    raise RuntimeError(f"Do not know how to serialize object type {type(obj)}")

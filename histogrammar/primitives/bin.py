@@ -14,16 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import math
 import numbers
-import struct
 
-from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
-from histogrammar.util import n_dim, datatype, serializable, inheritdoc, maybeAdd, floatToJson, hasKeys, numeq, \
-    xrange, long, basestring
+import numpy as np
 
+from histogrammar.defs import (
+    Container,
+    ContainerException,
+    Factory,
+    JsonFormatException,
+    identity,
+)
 from histogrammar.primitives.count import Count
+from histogrammar.util import (
+    basestring,
+    datatype,
+    floatToJson,
+    hasKeys,
+    inheritdoc,
+    long,
+    maybeAdd,
+    n_dim,
+    numeq,
+    serializable,
+)
 
 
 class Bin(Factory, Container):
@@ -66,39 +81,70 @@ class Bin(Factory, Container):
             nanflow (:doc:`Container <histogrammar.defs.Container>`): is the filled nanflow bin.
         """
         if not isinstance(low, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("low ({0}) must be a number".format(low))
+            raise TypeError(f"low ({low}) must be a number")
         if not isinstance(high, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("high ({0}) must be a number".format(high))
-        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+            raise TypeError(f"high ({high}) must be a number")
+        if not isinstance(entries, numbers.Real) and entries not in (
+            "nan",
+            "inf",
+            "-inf",
+        ):
+            raise TypeError(f"entries ({entries}) must be a number")
         if not isinstance(values, (list, tuple)) and not all(isinstance(v, Container) for v in values):
-            raise TypeError("values ({0}) must be a list of Containers".format(values))
+            raise TypeError(f"values ({values}) must be a list of Containers")
         if not isinstance(underflow, Container):
-            raise TypeError("underflow ({0}) must be a Container".format(underflow))
+            raise TypeError(f"underflow ({underflow}) must be a Container")
         if not isinstance(overflow, Container):
-            raise TypeError("overflow ({0}) must be a Container".format(overflow))
+            raise TypeError(f"overflow ({overflow}) must be a Container")
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
+            raise TypeError(f"nanflow ({nanflow}) must be a Container")
         if low >= high:
-            raise ValueError("low ({0}) must be less than high ({1})".format(low, high))
+            raise ValueError(f"low ({low}) must be less than high ({high})")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
         if len(values) < 1:
-            raise ValueError("values ({0}) must have at least one element".format(values))
+            raise ValueError(f"values ({values}) must have at least one element")
 
-        out = Bin(len(values), float(low), float(high), None, None, underflow, overflow, nanflow)
+        out = Bin(
+            len(values),
+            float(low),
+            float(high),
+            None,
+            None,
+            underflow,
+            overflow,
+            nanflow,
+        )
         out.entries = float(entries)
         out.values = values
         out.contentType = values[0].name
         return out.specialize()
 
     @staticmethod
-    def ing(num, low, high, quantity, value=Count(), underflow=Count(), overflow=Count(), nanflow=Count()):
+    def ing(
+        num,
+        low,
+        high,
+        quantity,
+        value=Count(),
+        underflow=Count(),
+        overflow=Count(),
+        nanflow=Count(),
+    ):
         """Synonym for ``__init__``."""
         return Bin(num, low, high, quantity, value, underflow, overflow, nanflow)
 
-    def __init__(self, num, low, high, quantity=identity, value=Count(),
-                 underflow=Count(), overflow=Count(), nanflow=Count()):
+    def __init__(
+        self,
+        num,
+        low,
+        high,
+        quantity=identity,
+        value=Count(),
+        underflow=Count(),
+        overflow=Count(),
+        nanflow=Count(),
+    ):
         """Create a Bin that is capable of being filled and added.
 
         Parameters:
@@ -122,23 +168,23 @@ class Bin(Factory, Container):
         """
 
         if not isinstance(num, (int, long)):
-            raise TypeError("num ({0}) must be an integer".format(num))
+            raise TypeError(f"num ({num}) must be an integer")
         if not isinstance(low, numbers.Real):
-            raise TypeError("low ({0}) must be a number".format(low))
+            raise TypeError(f"low ({low}) must be a number")
         if not isinstance(high, numbers.Real):
-            raise TypeError("high ({0}) must be a number".format(high))
+            raise TypeError(f"high ({high}) must be a number")
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({0}) must be a Container".format(value))
+            raise TypeError(f"value ({value}) must be a Container")
         if not isinstance(underflow, Container):
-            raise TypeError("underflow ({0}) must be a Container".format(underflow))
+            raise TypeError(f"underflow ({underflow}) must be a Container")
         if not isinstance(overflow, Container):
-            raise TypeError("overflow ({0}) must be a Container".format(overflow))
+            raise TypeError(f"overflow ({overflow}) must be a Container")
         if not isinstance(nanflow, Container):
-            raise TypeError("nanflow ({0}) must be a Container".format(nanflow))
+            raise TypeError(f"nanflow ({nanflow}) must be a Container")
         if num < 1:
-            raise ValueError("num ({0}) must be least one".format(num))
+            raise ValueError(f"num ({num}) must be least one")
         if low >= high:
-            raise ValueError("low ({0}) must be less than high ({1})".format(low, high))
+            raise ValueError(f"low ({low}) must be less than high ({high})")
 
         self.entries = 0.0
         self.low = float(low)
@@ -153,7 +199,7 @@ class Bin(Factory, Container):
         self.underflow = underflow.copy()
         self.overflow = overflow.copy()
         self.nanflow = nanflow.copy()
-        super(Bin, self).__init__()
+        super().__init__()
         self.specialize()
 
     def ascii(self):
@@ -176,7 +222,7 @@ class Bin(Factory, Container):
         dots = [None] * length
         i = 0
         while i < length:
-            dots[i] = int(round((values[i] - minimum)*prop))
+            dots[i] = int(round((values[i] - minimum) * prop))
             i += 1
 
         # Get range of values corresponding to each bin
@@ -186,24 +232,38 @@ class Bin(Factory, Container):
             ranges[i] = "[" + str(self.range(i))[1:]
             i += 1
 
-        printedValues = ["{0:<.4g}".format(v) for v in values]
+        printedValues = [f"{v:<.4g}" for v in values]
         printedValuesWidth = max(len(x) for x in printedValues)
-        formatter = "{0:<14} {1:<%s} {2:<65}" % printedValuesWidth
+        formatter = f"{{0:<14}} {{1:<{printedValuesWidth}}} {{2:<65}}"
 
-        print(" " * printedValuesWidth + "{0:>16}{1:>65}".format(minimum, maximum))
+        print(" " * printedValuesWidth + f"{minimum:>16}{maximum:>65}")
         print(" " * (16 + printedValuesWidth) + "+" + "-" * 62 + "+")
 
         i = 0
         while i < length:
-            print(formatter.format(ranges[i], printedValues[i], "|" + "*" * dots[i] + " " * (62 - dots[i]) + "|"))
+            print(
+                formatter.format(
+                    ranges[i],
+                    printedValues[i],
+                    "|" + "*" * dots[i] + " " * (62 - dots[i]) + "|",
+                )
+            )
             i += 1
 
         print(" " * (16 + printedValuesWidth) + "+" + "-" * 62 + "+")
 
     def histogram(self):
         """Return a plain histogram by converting all sub-aggregator values into Counts"""
-        out = Bin(len(self.values), self.low, self.high, self.quantity, None,
-                  self.underflow.copy(), self.overflow.copy(), self.nanflow.copy())
+        out = Bin(
+            len(self.values),
+            self.low,
+            self.high,
+            self.quantity,
+            None,
+            self.underflow.copy(),
+            self.overflow.copy(),
+            self.nanflow.copy(),
+        )
         out.entries = float(self.entries)
         for i, v in enumerate(self.values):
             out.values[i] = Count.ed(v.entries)
@@ -211,76 +271,81 @@ class Bin(Factory, Container):
 
     @inheritdoc(Container)
     def zero(self):
-        return Bin(len(self.values), self.low, self.high, self.quantity, self.values[0].zero(), self.underflow.zero(),
-                   self.overflow.zero(), self.nanflow.zero())
+        return Bin(
+            len(self.values),
+            self.low,
+            self.high,
+            self.quantity,
+            self.values[0].zero(),
+            self.underflow.zero(),
+            self.overflow.zero(),
+            self.nanflow.zero(),
+        )
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Bin):
             if self.low != other.low:
-                raise ContainerException("cannot add Bins because low differs ({0} vs {1})".format(self.low, other.low))
+                raise ContainerException(f"cannot add Bins because low differs ({self.low} vs {other.low})")
             if self.high != other.high:
-                raise ContainerException(
-                    "cannot add Bins because high differs ({0} vs {1})".format(
-                        self.high, other.high))
+                raise ContainerException(f"cannot add Bins because high differs ({self.high} vs {other.high})")
             if len(self.values) != len(other.values):
-                raise ContainerException("cannot add Bins because nubmer of values differs ({0} vs {1})".format(
-                    len(self.values), len(other.values)))
+                raise ContainerException(
+                    f"cannot add Bins because nubmer of values differs ({len(self.values)} vs {len(other.values)})"
+                )
             if len(self.values) == 0:
                 raise ContainerException("cannot add Bins because number of values is zero")
 
-            out = Bin(len(self.values),
-                      self.low,
-                      self.high,
-                      self.quantity,
-                      self.values[0],
-                      self.underflow + other.underflow,
-                      self.overflow + other.overflow,
-                      self.nanflow + other.nanflow)
+            out = Bin(
+                len(self.values),
+                self.low,
+                self.high,
+                self.quantity,
+                self.values[0],
+                self.underflow + other.underflow,
+                self.overflow + other.overflow,
+                self.nanflow + other.nanflow,
+            )
             out.entries = self.entries + other.entries
             out.values = [x + y for x, y in zip(self.values, other.values)]
             return out.specialize()
 
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, Bin):
             if self.low != other.low:
-                raise ContainerException("cannot add Bins because low differs ({0} vs {1})".format(self.low, other.low))
+                raise ContainerException(f"cannot add Bins because low differs ({self.low} vs {other.low})")
             if self.high != other.high:
-                raise ContainerException(
-                    "cannot add Bins because high differs ({0} vs {1})".format(
-                        self.high, other.high))
+                raise ContainerException(f"cannot add Bins because high differs ({self.high} vs {other.high})")
             if len(self.values) != len(other.values):
-                raise ContainerException("cannot add Bins because nubmer of values differs ({0} vs {1})".format(
-                    len(self.values), len(other.values)))
+                raise ContainerException(
+                    f"cannot add Bins because nubmer of values differs ({len(self.values)} vs {len(other.values)})"
+                )
             if len(self.values) == 0:
                 raise ContainerException("cannot add Bins because number of values is zero")
             self.entries += other.entries
-            for x, y in zip(self.values, other.values):
-                x += y
+            for i in range(len(self.values)):
+                self.values[i] += other.values[i]
             self.underflow += other.underflow
             self.overflow += other.overflow
             self.nanflow += other.nanflow
             return self
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            for i, v in enumerate(self.values):
-                out.values[i] = v * factor
-            out.overflow = self.overflow * factor
-            out.underflow = self.underflow * factor
-            out.nanflow = self.nanflow * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        for i, v in enumerate(self.values):
+            out.values[i] = v * factor
+        out.overflow = self.overflow * factor
+        out.underflow = self.underflow * factor
+        out.nanflow = self.nanflow * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -298,8 +363,7 @@ class Bin(Factory, Container):
         """
         if self.under(x) or self.over(x) or self.nan(x):
             return -1
-        else:
-            return int(math.floor(self.num * (x - self.low) / (self.high - self.low)))
+        return int(math.floor(self.num * (x - self.low) / (self.high - self.low)))
 
     def under(self, x):
         """Return ``true`` iff ``x`` is in the underflow region (less than ``low``)."""
@@ -320,8 +384,10 @@ class Bin(Factory, Container):
 
     def range(self, index):
         """Get the low and high edge of a bin (given by index number)."""
-        return ((self.high - self.low) * index / self.num + self.low,
-                (self.high - self.low) * (index + 1) / self.num + self.low)
+        return (
+            (self.high - self.low) * index / self.num + self.low,
+            (self.high - self.low) * (index + 1) / self.num + self.low,
+        )
 
     @inheritdoc(Container)
     def fill(self, datum, weight=1.0):
@@ -330,7 +396,7 @@ class Bin(Factory, Container):
         if weight > 0.0:
             q = self.quantity(datum)
             if not isinstance(q, numbers.Real):
-                raise TypeError("function return value ({0}) must be boolean or number".format(q))
+                raise TypeError(f"function return value ({q}) must be boolean or number")
 
             if self.under(q):
                 self.underflow.fill(datum, weight)
@@ -344,438 +410,6 @@ class Bin(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                                     derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode,
-                                     fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
-
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        normexpr = self._c99QuantityExpr(
-            parser,
-            generator,
-            inputFieldNames,
-            inputFieldTypes,
-            derivedFieldTypes,
-            derivedFieldExprs,
-            None)
-
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
-                        ".entries += " + weightVarStack[-1] + ";")
-
-        fillCode.append(" " * fillIndent + "if (std::isnan({0})) {{".format(normexpr))
-        self.nanflow._c99GenerateCode(parser,
-                                      generator,
-                                      inputFieldNames,
-                                      inputFieldTypes,
-                                      derivedFieldTypes,
-                                      derivedFieldExprs,
-                                      storageStructs,
-                                      initCode,
-                                      initPrefix + (("var",
-                                                     "nanflow"),
-                                                    ),
-                                      initIndent,
-                                      fillCode,
-                                      fillPrefix + (("var",
-                                                     "nanflow"),
-                                                    ),
-                                      fillIndent + 2,
-                                      weightVars,
-                                      weightVarStack,
-                                      tmpVarTypes)
-        fillCode.append(" " * fillIndent + "}")
-
-        fillCode.append(" " * fillIndent + "else if ({0} < {1}) {{".format(normexpr, self.low))
-        self.underflow._c99GenerateCode(parser,
-                                        generator,
-                                        inputFieldNames,
-                                        inputFieldTypes,
-                                        derivedFieldTypes,
-                                        derivedFieldExprs,
-                                        storageStructs,
-                                        initCode,
-                                        initPrefix + (("var",
-                                                       "underflow"),
-                                                      ),
-                                        initIndent,
-                                        fillCode,
-                                        fillPrefix + (("var",
-                                                       "underflow"),
-                                                      ),
-                                        fillIndent + 2,
-                                        weightVars,
-                                        weightVarStack,
-                                        tmpVarTypes)
-        fillCode.append(" " * fillIndent + "}")
-
-        fillCode.append(" " * fillIndent + "else if ({0} >= {1}) {{".format(normexpr, self.high))
-        self.overflow._c99GenerateCode(parser,
-                                       generator,
-                                       inputFieldNames,
-                                       inputFieldTypes,
-                                       derivedFieldTypes,
-                                       derivedFieldExprs,
-                                       storageStructs,
-                                       initCode,
-                                       initPrefix + (("var",
-                                                      "overflow"),
-                                                     ),
-                                       initIndent,
-                                       fillCode,
-                                       fillPrefix + (("var",
-                                                      "overflow"),
-                                                     ),
-                                       fillIndent + 2,
-                                       weightVars,
-                                       weightVarStack,
-                                       tmpVarTypes)
-        fillCode.append(" " * fillIndent + "}")
-
-        fillCode.append(" " * fillIndent + "else {")
-
-        bin = "bin_" + str(len(tmpVarTypes))
-        tmpVarTypes[bin] = "int"
-        initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
-
-        fillCode.append(" " * (fillIndent + 2) +
-                        "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low,
-                                                                 len(self.values)/(self.high - self.low)))
-
-        self.values[0]._c99GenerateCode(parser,
-                                        generator,
-                                        inputFieldNames,
-                                        inputFieldTypes,
-                                        derivedFieldTypes,
-                                        derivedFieldExprs,
-                                        storageStructs,
-                                        initCode,
-                                        initPrefix + (("var",
-                                                       "values"),
-                                                      ("index",
-                                                       bin)),
-                                        initIndent + 2,
-                                        fillCode,
-                                        fillPrefix + (("var",
-                                                       "values"),
-                                                      ("index",
-                                                       bin)),
-                                        fillIndent + 2,
-                                        weightVars,
-                                        weightVarStack,
-                                        tmpVarTypes)
-
-        initCode.append(" " * initIndent + "}")
-        fillCode.append(" " * fillIndent + "}")
-
-        storageStructs[self._c99StructName()] = """
-  typedef struct {{
-    double entries;
-    {3} underflow;
-    {4} overflow;
-    {5} nanflow;
-    {1} values[{2}];
-    {1}& getValues(int i) {{ return values[i]; }}
-  }} {0};
-""".format(self._c99StructName(), self.values[0]._c99StorageType(), len(self.values), self.underflow._c99StorageType(),
-           self.overflow._c99StorageType(), self.nanflow._c99StorageType())
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefix(filler, *extractorPrefix)
-        self.entries += obj.entries
-        for i in xrange(len(self.values)):
-            self.values[i]._clingUpdate(obj, ("func", ["getValues", i]))
-        self.underflow._clingUpdate(obj, ("var", "underflow"))
-        self.overflow._clingUpdate(obj, ("var", "overflow"))
-        self.nanflow._clingUpdate(obj, ("var", "nanflow"))
-
-    def _c99StructName(self):
-        return "Bn" + str(len(self.values)) + self.values[0]._c99StructName(
-        ) + self.underflow._c99StructName() + self.overflow._c99StructName() + self.nanflow._c99StructName()
-
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                          derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                          fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix,
-                          jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
-        normexpr = self._cudaQuantityExpr(
-            parser,
-            generator,
-            inputFieldNames,
-            inputFieldTypes,
-            derivedFieldTypes,
-            derivedFieldExprs,
-            None)
-
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
-        fillCode.append(" " * fillIndent +
-                        "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " + weightVarStack[-1] + ");")
-        combineCode.append(
-            " " *
-            combineIndent +
-            "atomicAdd(&" +
-            self._c99ExpandPrefix(
-                *
-                totalPrefix) +
-            ".entries, " +
-            self._c99ExpandPrefix(
-                *
-                itemPrefix) +
-            ".entries);")
-        jsonCode.append(" " *
-                        jsonIndent +
-                        "fprintf(out, \"{\\\"low\\\": " +
-                        str(self.low) +
-                        ", \\\"high\\\": " +
-                        str(self.high) +
-                        ", \\\"entries\\\": \");")
-        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
-
-        fillCode.append(" " * fillIndent + "if (isnan({0})) {{".format(normexpr))
-        jsonCode.append(
-            " " *
-            jsonIndent +
-            "fprintf(out, \", \\\"nanflow:type\\\": \\\"" +
-            self.nanflow.name +
-            "\\\"\");")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"nanflow\\\": \");")
-        self.nanflow._cudaGenerateCode(parser,
-                                       generator,
-                                       inputFieldNames,
-                                       inputFieldTypes,
-                                       derivedFieldTypes,
-                                       derivedFieldExprs,
-                                       storageStructs,
-                                       initCode,
-                                       initPrefix + (("var",
-                                                      "nanflow"),
-                                                     ),
-                                       initIndent + 2,
-                                       fillCode,
-                                       fillPrefix + (("var",
-                                                      "nanflow"),
-                                                     ),
-                                       fillIndent + 2,
-                                       combineCode,
-                                       totalPrefix + (("var",
-                                                       "nanflow"),
-                                                      ),
-                                       itemPrefix + (("var",
-                                                      "nanflow"),
-                                                     ),
-                                       combineIndent,
-                                       jsonCode,
-                                       jsonPrefix + (("var",
-                                                      "nanflow"),
-                                                     ),
-                                       jsonIndent,
-                                       weightVars,
-                                       weightVarStack,
-                                       tmpVarTypes,
-                                       False)
-        fillCode.append(" " * fillIndent + "}")
-
-        fillCode.append(" " * fillIndent + "else if ({0} < {1}) {{".format(normexpr, self.low))
-        jsonCode.append(
-            " " *
-            jsonIndent +
-            "fprintf(out, \", \\\"underflow:type\\\": \\\"" +
-            self.underflow.name +
-            "\\\"\");")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"underflow\\\": \");")
-        self.underflow._cudaGenerateCode(parser,
-                                         generator,
-                                         inputFieldNames,
-                                         inputFieldTypes,
-                                         derivedFieldTypes,
-                                         derivedFieldExprs,
-                                         storageStructs,
-                                         initCode,
-                                         initPrefix + (("var",
-                                                        "underflow"),
-                                                       ),
-                                         initIndent + 2,
-                                         fillCode,
-                                         fillPrefix + (("var",
-                                                        "underflow"),
-                                                       ),
-                                         fillIndent + 2,
-                                         combineCode,
-                                         totalPrefix + (("var",
-                                                         "underflow"),
-                                                        ),
-                                         itemPrefix + (("var",
-                                                        "underflow"),
-                                                       ),
-                                         combineIndent,
-                                         jsonCode,
-                                         jsonPrefix + (("var",
-                                                        "underflow"),
-                                                       ),
-                                         jsonIndent,
-                                         weightVars,
-                                         weightVarStack,
-                                         tmpVarTypes,
-                                         False)
-        fillCode.append(" " * fillIndent + "}")
-
-        fillCode.append(" " * fillIndent + "else if ({0} >= {1}) {{".format(normexpr, self.high))
-        jsonCode.append(
-            " " *
-            jsonIndent +
-            "fprintf(out, \", \\\"overflow:type\\\": \\\"" +
-            self.overflow.name +
-            "\\\"\");")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"overflow\\\": \");")
-        self.overflow._cudaGenerateCode(parser,
-                                        generator,
-                                        inputFieldNames,
-                                        inputFieldTypes,
-                                        derivedFieldTypes,
-                                        derivedFieldExprs,
-                                        storageStructs,
-                                        initCode,
-                                        initPrefix + (("var",
-                                                       "overflow"),
-                                                      ),
-                                        initIndent + 2,
-                                        fillCode,
-                                        fillPrefix + (("var",
-                                                       "overflow"),
-                                                      ),
-                                        fillIndent + 2,
-                                        combineCode,
-                                        totalPrefix + (("var",
-                                                        "overflow"),
-                                                       ),
-                                        itemPrefix + (("var",
-                                                       "overflow"),
-                                                      ),
-                                        combineIndent,
-                                        jsonCode,
-                                        jsonPrefix + (("var",
-                                                       "overflow"),
-                                                      ),
-                                        jsonIndent,
-                                        weightVars,
-                                        weightVarStack,
-                                        tmpVarTypes,
-                                        False)
-        fillCode.append(" " * fillIndent + "}")
-
-        fillCode.append(" " * fillIndent + "else {")
-
-        bin = "bin_" + str(len(tmpVarTypes))
-        tmpVarTypes[bin] = "int"
-
-        initCode.append(" " * initIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
-
-        fillCode.append(" " * (fillIndent + 2) +
-                        "{0} = floor(({1} - {2}) * {3});".format(bin, normexpr, self.low,
-                                                                 len(self.values)/(self.high - self.low)))
-
-        combineCode.append(" " * combineIndent + "for ({0} = 0;  {0} < {1}; ++{0}) {{".format(bin, len(self.values)))
-
-        jsonCode.append(
-            " " *
-            jsonIndent +
-            "fprintf(out, \", \\\"values:type\\\": \\\"" +
-            self.values[0].name +
-            "\\\"\");")
-        if hasattr(self.values[0], "quantity") and self.values[0].quantity.name is not None:
-            jsonCode.append(
-                " " *
-                jsonIndent +
-                "fprintf(out, \", \\\"values:name\\\": \\\"" +
-                self.values[0].quantity.name +
-                "\\\"\");")
-        jsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"values\\\": [\");")
-        jsonCode.append(" " * jsonIndent + "for ({0} = 0;  {0} < {1};  ++{0}) {{".format(bin, len(self.values)))
-        self.values[0]._cudaGenerateCode(parser,
-                                         generator,
-                                         inputFieldNames,
-                                         inputFieldTypes,
-                                         derivedFieldTypes,
-                                         derivedFieldExprs,
-                                         storageStructs,
-                                         initCode,
-                                         initPrefix + (("var",
-                                                        "values"),
-                                                       ("index",
-                                                        bin)),
-                                         initIndent + 2,
-                                         fillCode,
-                                         fillPrefix + (("var",
-                                                        "values"),
-                                                       ("index",
-                                                        bin)),
-                                         fillIndent + 2,
-                                         combineCode,
-                                         totalPrefix + (("var",
-                                                         "values"),
-                                                        ("index",
-                                                         bin)),
-                                         itemPrefix + (("var",
-                                                        "values"),
-                                                       ("index",
-                                                        bin)),
-                                         combineIndent + 2,
-                                         jsonCode,
-                                         jsonPrefix + (("var",
-                                                        "values"),
-                                                       ("index",
-                                                        bin)),
-                                         jsonIndent + 2,
-                                         weightVars,
-                                         weightVarStack,
-                                         tmpVarTypes,
-                                         True)
-
-        initCode.append(" " * initIndent + "}")
-
-        fillCode.append(" " * fillIndent + "}")
-
-        combineCode.append(" " * combineIndent + "}")
-
-        jsonCode.append(" " * jsonIndent + "  if ({0} != {1})".format(bin, len(self.values) - 1))
-        jsonCode.append(" " * jsonIndent + "    fprintf(out, \", \");")
-        jsonCode.append(" " * jsonIndent + "}")
-
-        if suppressName or self.quantity.name is None:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \"]}\");")
-        else:
-            jsonCode.append(" " * jsonIndent + "fprintf(out, \"], \\\"name\\\": " +
-                            json.dumps(json.dumps(self.quantity.name))[1:-1] + "}\");")
-
-        storageStructs[self._c99StructName()] = """
-  typedef struct {{
-    float entries;
-    {3} underflow;
-    {4} overflow;
-    {5} nanflow;
-    {1} values[{2}];
-  }} {0};
-""".format(self._c99StructName(), self.values[0]._cudaStorageType(), len(self.values),
-           self.underflow._cudaStorageType(), self.overflow._cudaStorageType(), self.nanflow._cudaStorageType())
-
-    def _cudaUnpackAndFill(self, data, bigendian, alignment):
-        format = "<f"
-        entries, = struct.unpack(format, data[:struct.calcsize(format)])
-        self.entries += entries
-        data = data[struct.calcsize(format):]
-
-        data = self.underflow._cudaUnpackAndFill(data, bigendian, alignment)
-        data = self.overflow._cudaUnpackAndFill(data, bigendian, alignment)
-        data = self.nanflow._cudaUnpackAndFill(data, bigendian, alignment)
-
-        for value in self.values:
-            data = value._cudaUnpackAndFill(data, bigendian, alignment)
-
-        return data
-
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         self._checkNPQuantity(q, shape)
@@ -783,51 +417,52 @@ class Bin(Factory, Container):
         weights = self._makeNPWeights(weights, shape)
         newentries = weights.sum()
 
-        import numpy
-
-        selection = numpy.isnan(q)
-        numpy.bitwise_not(selection, selection)
+        selection = np.isnan(q)
+        np.bitwise_not(selection, selection)
         subweights = weights.copy()
         subweights[selection] = 0.0
         self.nanflow._numpy(data, subweights, shape)
 
         # avoid nan warning in calculations by flinging the nans elsewhere
-        numpy.bitwise_not(selection, selection)
-        q = numpy.array(q, dtype=numpy.float64)
+        np.bitwise_not(selection, selection)
+        q = np.array(q, dtype=np.float64)
         q[selection] = self.high
         weights = weights.copy()
         weights[selection] = 0.0
 
-        numpy.greater_equal(q, self.low, selection)
+        np.greater_equal(q, self.low, selection)
         subweights[:] = weights
         subweights[selection] = 0.0
         self.underflow._numpy(data, subweights, shape)
 
-        numpy.less(q, self.high, selection)
+        np.less(q, self.high, selection)
         subweights[:] = weights
         subweights[selection] = 0.0
         self.overflow._numpy(data, subweights, shape)
 
-        if all(isinstance(value, Count) and value.transform is identity for value in self.values) and numpy.all(
-                numpy.isfinite(q)) and numpy.all(numpy.isfinite(weights)):
+        if (
+            all(isinstance(value, Count) and value.transform is identity for value in self.values)
+            and np.all(np.isfinite(q))
+            and np.all(np.isfinite(weights))
+        ):
             # Numpy defines histograms as including the upper edge of the last bin only, so drop that
             weights[q == self.high] == 0.0
 
-            h, _ = numpy.histogram(q, self.num, (self.low, self.high), weights=weights)
+            h, _ = np.histogram(q, self.num, (self.low, self.high), weights=weights)
 
             for hi, value in zip(h, self.values):
                 value.fill(None, float(hi))
 
         else:
-            q = numpy.array(q, dtype=numpy.float64)
-            numpy.subtract(q, self.low, q)
-            numpy.multiply(q, self.num, q)
-            numpy.divide(q, self.high - self.low, q)
-            numpy.floor(q, q)
-            q = numpy.array(q, dtype=int)
+            q = np.array(q, dtype=np.float64)
+            np.subtract(q, self.low, q)
+            np.multiply(q, self.num, q)
+            np.divide(q, self.high - self.low, q)
+            np.floor(q, q)
+            q = np.array(q, dtype=int)
 
             for index, value in enumerate(self.values):
-                numpy.not_equal(q, index, selection)
+                np.not_equal(q, index, selection)
                 subweights[:] = weights
                 subweights[selection] = 0.0
                 value._numpy(data, subweights, shape)
@@ -836,9 +471,16 @@ class Bin(Factory, Container):
         self.entries += float(newentries)
 
     def _sparksql(self, jvm, converter):
-        return converter.Bin(len(self.values), self.low, self.high, self.quantity.asSparkSQL(),
-                             self.values[0]._sparksql(jvm, converter), self.underflow._sparksql(jvm, converter),
-                             self.overflow._sparksql(jvm, converter), self.nanflow._sparksql(jvm, converter))
+        return converter.Bin(
+            len(self.values),
+            self.low,
+            self.high,
+            self.quantity.asSparkSQL(),
+            self.values[0]._sparksql(jvm, converter),
+            self.underflow._sparksql(jvm, converter),
+            self.overflow._sparksql(jvm, converter),
+            self.nanflow._sparksql(jvm, converter),
+        )
 
     @property
     def children(self):
@@ -854,27 +496,46 @@ class Bin(Factory, Container):
         else:
             binsName = None
 
-        return maybeAdd({
-            "low": floatToJson(self.low),
-            "high": floatToJson(self.high),
-            "entries": floatToJson(self.entries),
-            "values:type": self.values[0].name,
-            "values": [x.toJsonFragment(True) for x in self.values],
-            "underflow:type": self.underflow.name,
-            "underflow": self.underflow.toJsonFragment(False),
-            "overflow:type": self.overflow.name,
-            "overflow": self.overflow.toJsonFragment(False),
-            "nanflow:type": self.nanflow.name,
-            "nanflow": self.nanflow.toJsonFragment(False),
-        }, **{"name": None if suppressName else self.quantity.name,
-              "values:name": binsName})
+        return maybeAdd(
+            {
+                "low": floatToJson(self.low),
+                "high": floatToJson(self.high),
+                "entries": floatToJson(self.entries),
+                "values:type": self.values[0].name,
+                "values": [x.toJsonFragment(True) for x in self.values],
+                "underflow:type": self.underflow.name,
+                "underflow": self.underflow.toJsonFragment(False),
+                "overflow:type": self.overflow.name,
+                "overflow": self.overflow.toJsonFragment(False),
+                "nanflow:type": self.nanflow.name,
+                "nanflow": self.nanflow.toJsonFragment(False),
+            },
+            **{
+                "name": None if suppressName else self.quantity.name,
+                "values:name": binsName,
+            },
+        )
 
     @staticmethod
     @inheritdoc(Factory)
     def fromJsonFragment(json, nameFromParent):
-        if isinstance(json, dict) and hasKeys(json.keys(), ["low", "high", "entries", "values:type", "values",
-                                                            "underflow:type", "underflow", "overflow:type", "overflow",
-                                                            "nanflow:type", "nanflow"], ["name", "values:name"]):
+        if isinstance(json, dict) and hasKeys(
+            json.keys(),
+            [
+                "low",
+                "high",
+                "entries",
+                "values:type",
+                "values",
+                "underflow:type",
+                "underflow",
+                "overflow:type",
+                "overflow",
+                "nanflow:type",
+                "nanflow",
+            ],
+            ["name", "values:name"],
+        ):
             if json["low"] in ("nan", "inf", "-inf") or isinstance(json["low"], numbers.Real):
                 low = float(json["low"])
             else:
@@ -934,40 +595,56 @@ class Bin(Factory, Container):
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
-        else:
-            raise JsonFormatException(json, "Bin")
+        raise JsonFormatException(json, "Bin")
 
     def __repr__(self):
-        return "<Bin num={0} low={1} high={2} values={3} underflow={4} overflow={5} nanflow={6}>".format(
-            len(self.values), self.low, self.high, self.values[0].name, self.underflow.name, self.overflow.name,
-            self.nanflow.name)
+        return (
+            f"<Bin num={len(self.values)} low={self.low} high={self.high} values={self.values[0].name}"
+            f" underflow={self.underflow.name} overflow={self.overflow.name} nanflow={self.nanflow.name}>"
+        )
 
     def __eq__(self, other):
-        return isinstance(other, Bin) and numeq(self.low, other.low) and numeq(self.high, other.high) and \
-               self.quantity == other.quantity and numeq(self.entries, other.entries) and \
-               self.values == other.values and self.underflow == other.underflow and \
-               self.overflow == other.overflow and self.nanflow == other.nanflow
+        return (
+            isinstance(other, Bin)
+            and numeq(self.low, other.low)
+            and numeq(self.high, other.high)
+            and self.quantity == other.quantity
+            and numeq(self.entries, other.entries)
+            and self.values == other.values
+            and self.underflow == other.underflow
+            and self.overflow == other.overflow
+            and self.nanflow == other.nanflow
+        )
 
     def __ne__(self, other):
         return not self == other
 
     def __hash__(self):
-        return hash((self.low, self.high, self.quantity, self.entries, tuple(
-            self.values), self.underflow, self.overflow, self.nanflow))
+        return hash(
+            (
+                self.low,
+                self.high,
+                self.quantity,
+                self.entries,
+                tuple(self.values),
+                self.underflow,
+                self.overflow,
+                self.nanflow,
+            )
+        )
 
     @property
     def size(self):
-        """Get number of bins, consistent with SparselyBin and Categorize """
+        """Get number of bins, consistent with SparselyBin and Categorize"""
         return self.num
 
     @property
     def n_bins(self):
-        """Get number of bins, consistent with SparselyBin and Categorize """
+        """Get number of bins, consistent with SparselyBin and Categorize"""
         return self.num
 
     def num_bins(self, low=None, high=None):
-        """
-        Returns number of bins of a given (sub-)range
+        """Returns number of bins of a given (sub-)range
 
         Possible to set range with low and high params
 
@@ -976,14 +653,13 @@ class Bin(Factory, Container):
         :returns: number of bins in range
         :rtype: int
         """
-        import numpy as np
         # trivial cases first
         if low is None and high is None:
             return len(self.values)
         # catch weird cases
-        elif low is not None and high is not None:
+        if low is not None and high is not None:
             if low > high:
-                raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
+                raise RuntimeError(f"low {low} greater than high {high}")
             if low < self.low and high < self.low:
                 # note: all these data end up in the underflow bin, with no real index
                 return 0
@@ -1005,18 +681,14 @@ class Bin(Factory, Container):
                 maxBin -= 1
             high = self.low + self.bin_width() * (maxBin + 1)
         # number of bins. use np.round to correct for machine level rounding errors
-        num_bins = int(np.round((high - low) / self.bin_width()))
-        return num_bins
+        return int(np.round((high - low) / self.bin_width()))
 
     def bin_width(self):
-        """
-        Returns bin width
-        """
+        """Returns bin width"""
         return (self.high - self.low) / len(self.values)
 
     def bin_entries(self, low=None, high=None, xvalues=[]):
-        """
-        Returns bin values
+        """Returns bin values
 
         Possible to set range with low and high params, and list of selected x-values
 
@@ -1026,14 +698,13 @@ class Bin(Factory, Container):
         :returns: numpy array with numbers of entries for selected bins
         :rtype: numpy.array
         """
-        import numpy as np
         # trivial case
         if low is None and high is None and len(xvalues) == 0:
             return np.array([x.entries for x in self.values])
         # catch weird cases
-        elif low is not None and high is not None and len(xvalues) == 0:
+        if low is not None and high is not None and len(xvalues) == 0:
             if low > high:
-                raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
+                raise RuntimeError(f"low {low} greater than high {high}")
             if low < self.low and high < self.low:
                 # note: all these data end up in the underflow bin
                 return np.array([])
@@ -1045,10 +716,8 @@ class Bin(Factory, Container):
             entries = [self.values[self.bin(x)].entries if self.bin(x) in self.indexes else 0.0 for x in xvalues]
             return np.array(entries)
         # lowest edge
-        if low is None or low < self.low:
-            minBin = 0
-        else:  # low >= self.low and low < self.high
-            minBin = self.bin(low)
+        # low >= self.low and low < self.high
+        minBin = 0 if low is None or low < self.low else self.bin(low)
         # highest edge
         if high is None or high >= self.high:
             maxBin = len(self.values) - 1
@@ -1059,23 +728,21 @@ class Bin(Factory, Container):
         return np.array([self.values[i].entries for i in range(minBin, maxBin + 1)])
 
     def bin_edges(self, low=None, high=None):
-        """
-        Returns bin edges
+        """Returns bin edges
 
         :param low: lower edge of range, default is None
         :param high: higher edge of range, default is None
         :returns: numpy array with bin edges for selected range
         :rtype: numpy.array
         """
-        import numpy as np
         num_bins = self.num_bins(low, high)
         # trivial cases first
         if low is None and high is None:
             return np.linspace(self.low, self.high, num_bins + 1)
         # catch weird cases
-        elif low is not None and high is not None:
+        if low is not None and high is not None:
             if low > high:
-                raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
+                raise RuntimeError(f"low {low} greater than high {high}")
             if low < self.low and high < self.low:
                 # note: all these data end up in the underflow bin
                 return np.linspace(self.low, self.low, num_bins + 1)
@@ -1098,27 +765,24 @@ class Bin(Factory, Container):
             high = self.low + self.bin_width() * (maxBin + 1)
         # new low and high values reset, so redo num_bins
         num_bins = self.num_bins(low + np.finfo(float).eps, high - np.finfo(float).eps)
-        edges = np.linspace(low, high, num_bins + 1)
-        return edges
+        return np.linspace(low, high, num_bins + 1)
 
     def bin_centers(self, low=None, high=None):
-        """
-        Returns bin centers
+        """Returns bin centers
 
         :param low: lower edge of range, default is None
         :param high: higher edge of range, default is None
         :returns: numpy array with bin centers for selected range
         :rtype: numpy.array
         """
-        import numpy as np
         # trivial case
         if low is None and high is None:
             bw = self.bin_width()
-            return np.arange(self.low + bw / 2., self.high + bw / 2., bw)
+            return np.arange(self.low + bw / 2.0, self.high + bw / 2.0, bw)
         # catch weird cases
-        elif low is not None and high is not None:
+        if low is not None and high is not None:
             if low > high:
-                raise RuntimeError('low {low} greater than high {high}'.format(low=low, high=high))
+                raise RuntimeError(f"low {low} greater than high {high}")
             if low < self.low and high < self.low:
                 # note: all these data end up in the underflow bin
                 return np.array([])
@@ -1126,10 +790,8 @@ class Bin(Factory, Container):
                 # note: all these data end up in the overflow bin
                 return np.array([])
         # lowest edge
-        if low is None or low < self.low:
-            minBin = 0
-        else:  # low >= self.low and low < self.high
-            minBin = self.bin(low)
+        # low >= self.low and low < self.high
+        minBin = 0 if low is None or low < self.low else self.bin(low)
         # highest edge
         if high is None or high >= self.high:
             maxBin = len(self.values) - 1
@@ -1141,20 +803,17 @@ class Bin(Factory, Container):
         return self.low + (np.linspace(minBin, maxBin, maxBin - minBin + 1) + 0.5) * self.bin_width()
 
     def _center_from_key(self, idx):
-        xc = (idx + 0.5) * self.bin_width() + self.low
-        return xc
+        return (idx + 0.5) * self.bin_width() + self.low
 
     @property
     def mpv(self):
-        """Return bin-center of most probable value
-        """
+        """Return bin-center of most probable value"""
         bin_entries = self.bin_entries()
         bin_centers = self.bin_centers()
 
         # if two max elements are equal, this will return the element with the lowest index.
         max_idx = max(enumerate(bin_entries), key=lambda x: x[1])[0]
-        bc = bin_centers[max_idx]
-        return bc
+        return bin_centers[max_idx]
 
 
 # extra properties: number of dimensions and datatypes of sub-hists

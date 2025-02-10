@@ -1,21 +1,21 @@
-"""
-Copyright Eskapade:
+"""Copyright Eskapade:
 License Apache-2: https://github.com/KaveIO/Eskapade-Core/blob/master/LICENSE
 Reference link:
 https://github.com/KaveIO/Eskapade-Spark/blob/master/python/eskapadespark/links/spark_histogrammar_filler.py
 All modifications copyright ING WBAA.
 """
 
-import histogrammar as hg
 import numpy as np
 from tqdm import tqdm
+
+import histogrammar as hg
 
 from .histogram_filler_base import HistogramFillerBase
 
 try:
     from pyspark.sql import DataFrame
-    from pyspark.sql.functions import approxCountDistinct
     from pyspark.sql import functions as f
+    from pyspark.sql.functions import approxCountDistinct
 except (ModuleNotFoundError, AttributeError):
     pass
 
@@ -106,8 +106,7 @@ class SparkHistogrammar(HistogramFillerBase):
             max_nunique,
         )
         self._unit_timestamp_specs = {
-            k: float(self._unit_timestamp_specs[k])
-            for i, k in enumerate(self._unit_timestamp_specs)
+            k: float(self._unit_timestamp_specs[k]) for i, k in enumerate(self._unit_timestamp_specs)
         }
 
     def assert_dataframe(self, df):
@@ -117,7 +116,7 @@ class SparkHistogrammar(HistogramFillerBase):
         """
         if not isinstance(df, DataFrame):
             raise TypeError("retrieved object not of type Spark DataFrame")
-        assert not len(df.head(1)) == 0, "input dataframe is empty"
+        assert len(df.head(1)) != 0, "input dataframe is empty"
         return df
 
     def get_features(self, df):
@@ -137,8 +136,7 @@ class SparkHistogrammar(HistogramFillerBase):
         if len(columns) == 0:
             return {}
         qsl = df.approxQuantile(columns, quantiles, 0.25)
-        qd = {c: qs for c, qs in zip(columns, qsl)}
-        return qd
+        return dict(zip(columns, qsl))
 
     def get_nunique(self, df, columns=[]):
         """return dict with number of unique entries for given columns
@@ -189,11 +187,7 @@ class SparkHistogrammar(HistogramFillerBase):
         # timestamp variables are converted here to ns since 1970-1-1
         # histogrammar does not (yet) support long integers, so convert timestamps to float
         for col in cols_by_type["dt"]:
-            self.logger.debug(
-                'Converting column "{col}" of type "{type}" to nanosec.'.format(
-                    col=col, type=self.var_dtype[col]
-                )
-            )
+            self.logger.debug(f'Converting column "{col}" of type "{self.var_dtype[col]}" to nanosec.')
             # first cast to timestamp (in case column is stored as date)
             to_ns = f.col(col).cast("timestamp").cast("float") * 1e9
             idf = idf.withColumn(col, to_ns)
@@ -202,10 +196,11 @@ class SparkHistogrammar(HistogramFillerBase):
         # in columns that have them, replace by nones by nans
         for col in cols_by_type["num"]:
             if len(idf.where(f.col(col).isNull()).limit(1).collect()) > 0:
-                self.logger.debug(
-                    'In numeric column "{col}" converting each None to NaN.'.format(col=col)
+                self.logger.debug(f'In numeric column "{col}" converting each None to NaN.')
+                idf = idf.withColumn(
+                    col,
+                    f.when(f.col(col).isNotNull(), f.col(col)).otherwise(float("nan")),
                 )
-                idf = idf.withColumn(col, f.when(f.col(col).isNotNull(), f.col(col)).otherwise(float('nan')))
 
         return idf
 
@@ -241,9 +236,7 @@ class SparkHistogrammar(HistogramFillerBase):
         :param idf: input data frame used for filling histogram
         """
         for cols in tqdm(self.features, ncols=100):
-            self.logger.debug(
-                'Processing feature "{cols}".'.format(cols=":".join(cols))
-            )
+            self.logger.debug('Processing feature "{cols}".'.format(cols=":".join(cols)))
             self.fill_histogram(idf, cols)
 
     def fill_histogram(self, idf, features):

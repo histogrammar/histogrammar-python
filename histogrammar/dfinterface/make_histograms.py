@@ -34,16 +34,15 @@ from ..primitives.count import Count
 from ..primitives.deviate import Deviate
 from ..primitives.fraction import Fraction
 from ..primitives.irregularlybin import IrregularlyBin
-from ..primitives.minmax import Minimize, Maximize
+from ..primitives.minmax import Maximize, Minimize
 from ..primitives.select import Select
 from ..primitives.sparselybin import SparselyBin
 from ..primitives.stack import Stack
 from ..primitives.sum import Sum
-
+from ..util import _get_sub_hist
+from .filling_utils import normalize_dtype
 from .pandas_histogrammar import PandasHistogrammar
 from .spark_histogrammar import SparkHistogrammar
-from .filling_utils import normalize_dtype
-from ..util import _get_sub_hist
 
 logger = logging.getLogger()
 
@@ -54,8 +53,8 @@ def make_histograms(
     binning="auto",
     bin_specs=None,
     time_axis="",
-    time_width='30d',
-    time_offset='2010-01-04',
+    time_width="30d",
+    time_offset="2010-01-04",
     var_dtype=None,
     ret_specs=False,
     nbins_1d=40,
@@ -125,15 +124,9 @@ def make_histograms(
     :return: dict of created histogrammar histograms
     """
     # basic checks on presence of time_axis
-    if (not isinstance(time_axis, (str, bool))) or (
-        isinstance(time_axis, bool) and not time_axis
-    ):
+    if (not isinstance(time_axis, (str, bool))) or (isinstance(time_axis, bool) and not time_axis):
         raise TypeError("time_axis needs to be a string, or a bool set to True")
-    if (
-        isinstance(time_axis, str) and
-        len(time_axis) > 0 and
-        time_axis not in df.columns
-    ):
+    if isinstance(time_axis, str) and len(time_axis) > 0 and time_axis not in df.columns:
         raise ValueError(f'time_axis "{time_axis}" not found in columns of dataframe.')
     if isinstance(time_axis, bool):
         time_axes = get_time_axes(df)
@@ -142,20 +135,16 @@ def make_histograms(
             time_axis = time_axes[0]
             logger.info(f'Time-axis automatically set to "{time_axis}"')
         elif num == 0:
-            raise RuntimeError(
-                "No obvious time-axes found. Cannot generate stability report."
-            )
+            raise RuntimeError("No obvious time-axes found. Cannot generate stability report.")
         else:
-            raise RuntimeError(
-                f"Found {num} time-axes: {time_axes}. Set *one* time_axis manually!"
-            )
+            raise RuntimeError(f"Found {num} time-axes: {time_axes}. Set *one* time_axis manually!")
 
     # if time_axis present, interpret time_width and time_offset
     if (
-        isinstance(time_axis, str) and
-        len(time_axis) > 0 and
-        isinstance(time_width, (str, int, float)) and
-        isinstance(time_offset, (str, int, float))
+        isinstance(time_axis, str)
+        and len(time_axis) > 0
+        and isinstance(time_width, (str, int, float))
+        and isinstance(time_offset, (str, int, float))
     ):
         if not isinstance(bin_specs, (type(None), dict)):
             raise RuntimeError("bin_specs object is not a dictionary")
@@ -168,9 +157,7 @@ def make_histograms(
             }
             bin_specs[time_axis] = time_specs
         else:
-            warnings.warn(
-                f'time-axis "{time_axis}" already found in binning specifications. not overwriting.'
-            )
+            warnings.warn(f'time-axis "{time_axis}" already found in binning specifications. not overwriting.')
 
     cls = PandasHistogrammar if isinstance(df, pd.DataFrame) else SparkHistogrammar
     hist_filler = cls(
@@ -211,7 +198,7 @@ def get_data_type(df, col):
         # spark conversions to numpy or python equivalent
         if dt == "string":
             dt = "str"
-        elif dt == "timestamp" or dt == "date":
+        elif dt in ("timestamp", "date"):
             dt = np.datetime64
         elif dt == "boolean":
             dt = bool
@@ -229,11 +216,7 @@ def get_time_axes(df):
     :param df: input dataframe (pandas or spark)
     :return: list of time-axis columns
     """
-    return [
-        c
-        for c in df.columns
-        if np.issubdtype(normalize_dtype(get_data_type(df, c)), np.datetime64)
-    ]
+    return [c for c in df.columns if np.issubdtype(normalize_dtype(get_data_type(df, c)), np.datetime64)]
 
 
 def has_one_time_axis(df):
@@ -270,33 +253,33 @@ def _get_bin_specs(h):
     if isinstance(h, Categorize):
         bin_specs.append({})
     elif isinstance(h, Bin):
-        bin_specs.append(dict(num=h.num, low=h.low, high=h.high))
+        bin_specs.append({"num": h.num, "low": h.low, "high": h.high})
     elif isinstance(h, SparselyBin):
-        bin_specs.append(dict(binWidth=h.binWidth, origin=h.origin))
+        bin_specs.append({"binWidth": h.binWidth, "origin": h.origin})
     elif isinstance(h, IrregularlyBin):
-        bin_specs.append(dict(edges=h.edges[1:]))  # ignore -inf
+        bin_specs.append({"edges": h.edges[1:]})  # ignore -inf
     elif isinstance(h, CentrallyBin):
-        bin_specs.append(dict(centers=h.centers))
+        bin_specs.append({"centers": h.centers})
     elif isinstance(h, Stack):
-        bin_specs.append(dict(thresholds=h.thresholds[1:]))  # ignore -inf
+        bin_specs.append({"thresholds": h.thresholds[1:]})  # ignore -inf
     elif isinstance(h, Maximize):
-        bin_specs.append(dict(maximize=True))
+        bin_specs.append({"maximize": True})
     elif isinstance(h, Minimize):
-        bin_specs.append(dict(minimize=True))
+        bin_specs.append({"minimize": True})
     elif isinstance(h, Average):
-        bin_specs.append(dict(average=True))
+        bin_specs.append({"average": True})
     elif isinstance(h, Deviate):
-        bin_specs.append(dict(deviate=True))
+        bin_specs.append({"deviate": True})
     elif isinstance(h, Sum):
-        bin_specs.append(dict(sum=True))
+        bin_specs.append({"sum": True})
     elif isinstance(h, Bag):
-        bin_specs.append(dict(bag=True, range=h.range))
+        bin_specs.append({"bag": True, "range": h.range})
     elif isinstance(h, Sum):
-        bin_specs.append(dict(sum=True))
+        bin_specs.append({"sum": True})
     elif isinstance(h, Fraction):
-        bin_specs.append(dict(fraction=True))
+        bin_specs.append({"fraction": True})
     elif isinstance(h, Select):
-        bin_specs.append(dict(cut=True))
+        bin_specs.append({"cut": True})
 
     # histogram may have a sub-histogram. Extract it and recurse
     hist = _get_sub_hist(h)
@@ -316,7 +299,7 @@ def _match_first_key(skip_first_axis=None, feature=""):
     rest_key = ":".join(karr[1:])
     if isinstance(skip_first_axis, bool):
         return skip_first_axis, rest_key if skip_first_axis else feature
-    elif isinstance(skip_first_axis, str) and len(skip_first_axis) > 0:
+    if isinstance(skip_first_axis, str) and len(skip_first_axis) > 0:
         match = begin == skip_first_axis
         return match, rest_key if match else feature
     return False, feature

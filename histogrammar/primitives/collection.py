@@ -14,293 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import math
 import numbers
-import struct
 
-from histogrammar.defs import Container, Factory, JsonFormatException, ContainerException
-from histogrammar.util import inheritdoc, floatToJson, hasKeys, numeq, basestring, xrange
+import numpy
+
+from histogrammar.defs import (
+    Container,
+    ContainerException,
+    Factory,
+    JsonFormatException,
+)
+from histogrammar.util import basestring, floatToJson, hasKeys, inheritdoc, numeq
 
 
-class Collection(object):
-    def _c99CanonicalOrder(self, items):
-        return sorted((v._c99StructName(), k, v) for k, v in items)
-
-    def _c99StructName(self):
-        letter = self.name[0]
-        out = [letter, "_"]
-        last = None
-        count = 0
-        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
-            if s != last:
-                if last is not None:
-                    out.append(str(count))
-                    out.append("_")
-                out.append(s)
-                count = 0
-            count += 1
-            last = s
-        out.extend([str(count), "_", letter.lower()])
-        return "".join(out)
-
-    def _c99Struct(self):
-        out = ["""
-  typedef struct {
-    """]
-        last = None
-        count = 0
-        n = 0
-        lastN = 0
-        lastType = 0
-        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
-            if s != last:
-                if last is not None:
-                    out.append("[{0}];\n    ".format(count))
-                    out.append("{0}& getSub{1}(int i) {{ return sub{1}[i]; }}\n    ".format(lastType, lastN))
-                out.append("{0} sub{1}".format(s, n))
-                lastType = s
-                lastN = n
-                n += 1
-                count = 0
-            count += 1
-            last = s
-        out.append(
-            """[{0}];\n    {1}& getSub{2}(int i) {{ return sub{2}[i]; }}\n    double entries;\n  }} {3};""".format(
-                count,
-                lastType,
-                lastN,
-                self._c99StructName()))
-        return "".join(out)
-
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                                     derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode,
-                                     fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
-
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        last = None
-        n = 0
-        i = 0
-        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
-            if last is not None and s != last:
-                n += 1
-                i = 0
-            v._c99GenerateCode(parser,
-                               generator,
-                               inputFieldNames,
-                               inputFieldTypes,
-                               derivedFieldTypes,
-                               derivedFieldExprs,
-                               storageStructs,
-                               initCode,
-                               initPrefix + (("var",
-                                              "sub" + str(n)),
-                                             ("index",
-                                              i)),
-                               initIndent,
-                               fillCode,
-                               fillPrefix + (("var",
-                                              "sub" + str(n)),
-                                             ("index",
-                                              i)),
-                               fillIndent,
-                               weightVars,
-                               weightVarStack,
-                               tmpVarTypes)
-            i += 1
-            last = s
-
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
-                        ".entries += " + weightVarStack[-1] + ";")
-
-        storageStructs[self._c99StructName()] = self._c99Struct()
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefix(filler, *extractorPrefix)
-        self.entries += obj.entries
-        last = None
-        n = 0
-        i = 0
-        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
-            if last is not None and s != last:
-                n += 1
-                i = 0
-            v._clingUpdate(obj, ("func", ["getSub" + str(n), i]))
-            i += 1
-            last = s
-
-    def _cudaStruct(self):
-        out = ["""
-  typedef struct {
-    """]
-        last = None
-        n = 0
-        count = 0
-        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
-            if s != last:
-                if last is not None:
-                    out.append("[{0}];\n    ".format(count))
-                out.append("{0} sub{1}".format(s, n))
-                n += 1
-                count = 0
-            count += 1
-            last = s
-        out.append("""[{0}];\n    float entries;\n  }} {1};""".format(count, self._c99StructName()))
-        return "".join(out)
-
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                          derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                          fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix,
-                          jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
-        tmpJsonCode = []
-
-        if isinstance(self, (Label, Index)):
-            tmpJsonCode.append(
-                " " *
-                jsonIndent +
-                "fprintf(out, \"{\\\"sub:type\\\": \\\"" +
-                self.values[0].name +
-                "\\\", \\\"data\\\": \");")
-        else:
-            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\\\"data\\\": \");")
-
-        if isinstance(self, (Label, UntypedLabel)):
-            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"{\");")
-        else:
-            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"[\");")
-
-        if isinstance(self, Branch):
-            rightOrder = {}
-            lastJsonCode = len(tmpJsonCode)
-
-        last = None
-        n = 0
-        i = 0
-        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
-            if not isinstance(self, Branch) and last is not None:
-                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \", \");")
-            if isinstance(self, (Label, UntypedLabel)):
-                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"" + json.dumps(json.dumps(k))[1:-1] + ": \");")
-            if isinstance(self, (UntypedLabel, Branch)):
-                tmpJsonCode.append(
-                    " " *
-                    jsonIndent +
-                    "fprintf(out, \"{\\\"type\\\": \\\"" +
-                    v.name +
-                    "\\\", \\\"data\\\": \");")
-
-            if last is not None and s != last:
-                n += 1
-                i = 0
-            v._cudaGenerateCode(parser,
-                                generator,
-                                inputFieldNames,
-                                inputFieldTypes,
-                                derivedFieldTypes,
-                                derivedFieldExprs,
-                                storageStructs,
-                                initCode,
-                                initPrefix + (("var",
-                                               "sub" + str(n)),
-                                              ("index",
-                                               i)),
-                                initIndent,
-                                fillCode,
-                                fillPrefix + (("var",
-                                               "sub" + str(n)),
-                                              ("index",
-                                               i)),
-                                fillIndent,
-                                combineCode,
-                                totalPrefix + (("var",
-                                                "sub" + str(n)),
-                                               ("index",
-                                                i)),
-                                itemPrefix + (("var",
-                                               "sub" + str(n)),
-                                              ("index",
-                                               i)),
-                                combineIndent,
-                                tmpJsonCode,
-                                jsonPrefix + (("var",
-                                               "sub" + str(n)),
-                                              ("index",
-                                               i)),
-                                jsonIndent,
-                                weightVars,
-                                weightVarStack,
-                                tmpVarTypes,
-                                suppressName)
-
-            i += 1
-            last = s
-
-            if isinstance(self, (UntypedLabel, Branch)):
-                tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
-
-            if isinstance(self, Branch):
-                rightOrder[k] = tmpJsonCode[lastJsonCode:]
-                tmpJsonCode = tmpJsonCode[:lastJsonCode]
-
-        if isinstance(self, Branch):
-            for k in xrange(len(rightOrder)):
-                if k != 0:
-                    tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \", \");")
-                tmpJsonCode.extend(rightOrder[k])
-
-        if isinstance(self, (Label, UntypedLabel)):
-            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
-        else:
-            tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"]\");")
-
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0f;")
-        fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) + ".entries, " +
-                        weightVarStack[-1] + ");")
-        combineCode.append(
-            " " *
-            combineIndent +
-            "atomicAdd(&" +
-            self._c99ExpandPrefix(
-                *
-                totalPrefix) +
-            ".entries, " +
-            self._c99ExpandPrefix(
-                *
-                itemPrefix) +
-            ".entries);")
-        tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \", \\\"entries\\\": \");")
-        tmpJsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ".entries);")
-        tmpJsonCode.append(" " * jsonIndent + "fprintf(out, \"}\");")
-
-        jsonCode.extend(tmpJsonCode)
-
-        storageStructs[self._c99StructName()] = self._cudaStruct()
-
-    def _cudaUnpackAndFill(self, data, bigendian, alignment):
-        last = None
-        n = 0
-        i = 0
-        for s, k, v in self._c99CanonicalOrder(self.pairs.items()):
-            if last is not None and s != last:
-                n += 1
-                i = 0
-            data = v._cudaUnpackAndFill(data, bigendian, alignment)
-            i += 1
-            last = s
-
-        format = "<f"
-        entries, = struct.unpack(format, data[:struct.calcsize(format)])
-        self.entries += entries
-        data = data[struct.calcsize(format):]
-        return data
-
-# Label
+class Collection:
+    pass
 
 
 class Label(Factory, Container, Collection):
@@ -320,6 +49,7 @@ class Label(Factory, Container, Collection):
 
     In strongly typed languages, the restriction to a single type allows nested objects to be extracted without casting.
     """
+
     @staticmethod
     def ed(entries, pairsAsDict=None, **pairs):
         """Create a Label that is only capable of being added.
@@ -329,12 +59,16 @@ class Label(Factory, Container, Collection):
             pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of
                 filled aggregators.
         """
-        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+        if not isinstance(entries, numbers.Real) and entries not in (
+            "nan",
+            "inf",
+            "-inf",
+        ):
+            raise TypeError(f"entries ({entries}) must be a number")
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
-            raise TypeError("pairs ({0}) must be a dict from strings to Containers".format(pairs))
+            raise TypeError(f"pairs ({pairs}) must be a dict from strings to Containers")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
 
         if pairsAsDict is None:
             pairsAsDict = {}
@@ -359,8 +93,8 @@ class Label(Factory, Container, Collection):
             entries (float): the number of entries, initially 0.0.
         """
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
-            raise TypeError("pairs ({0}) must be a dict from strings to Containers".format(pairs))
-        if any(not isinstance(x, basestring) for x in pairs.keys()):
+            raise TypeError(f"pairs ({pairs}) must be a dict from strings to Containers")
+        if any(not isinstance(x, basestring) for x in pairs):
             raise ValueError("all Label keys must be strings")
         if len(pairs) < 1:
             raise ValueError("at least one pair required")
@@ -376,7 +110,7 @@ class Label(Factory, Container, Collection):
         self.entries = 0.0
         self.pairs = pairs
 
-        super(Label, self).__init__()
+        super().__init__()
         self.specialize()
 
     @property
@@ -403,8 +137,7 @@ class Label(Factory, Container, Collection):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.pairs[x]
-        else:
-            return self.pairs[x](*rest)
+        return self.pairs[x](*rest)
 
     def get(self, x):
         """Attempt to get key ``x``, returning ``None`` if it does not exist."""
@@ -416,56 +149,49 @@ class Label(Factory, Container, Collection):
 
     @inheritdoc(Container)
     def zero(self):
-        return Label(**dict((k, v.zero()) for k, v in self.pairs.items()))
+        return Label(**{k: v.zero() for k, v in self.pairs.items()})
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, Label):
             if self.keySet != other.keySet:
                 raise ContainerException(
-                    "cannot add Labels because keys differ:\n    {0}\n    {1}".format(
-                        ", ".join(
-                            sorted(
-                                self.keys)), ", ".join(
-                            sorted(
-                                other.keys))))
+                    "cannot add Labels because keys differ:\n    {}\n    {}".format(
+                        ", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))
+                    )
+                )
 
-            out = Label(**dict((k, self(k) + other(k)) for k in self.keys))
+            out = Label(**{k: self(k) + other(k) for k in self.keys})
             out.entries = self.entries + other.entries
             return out.specialize()
 
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, Label):
             if self.keySet != other.keySet:
                 raise ContainerException(
-                    "cannot add Labels because keys differ:\n    {0}\n    {1}".format(
-                        ", ".join(
-                            sorted(
-                                self.keys)), ", ".join(
-                            sorted(
-                                other.keys))))
+                    "cannot add Labels because keys differ:\n    {}\n    {}".format(
+                        ", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))
+                    )
+                )
             self.entries += other.entries
             for k in self.keys:
                 v = self(k)
                 v += other(k)
             return self
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            for k, v in self.pairs.items():
-                out.pairs[k] = v * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        for k, v in self.pairs.items():
+            out.pairs[k] = v * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -491,7 +217,6 @@ class Label(Factory, Container, Collection):
             x._numpy(data, weights, shape)
 
         # no possibility of exception from here on out (for rollback)
-        import numpy
         if isinstance(weights, numpy.ndarray):
             self.entries += float(weights.sum())
         else:
@@ -507,10 +232,11 @@ class Label(Factory, Container, Collection):
 
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
-        return {"entries": floatToJson(self.entries),
-                "sub:type": self.values[0].name,
-                "data": dict((k, v.toJsonFragment(False)) for k, v in self.pairs.items())
-                }
+        return {
+            "entries": floatToJson(self.entries),
+            "sub:type": self.values[0].name,
+            "data": {k: v.toJsonFragment(False) for k, v in self.pairs.items()},
+        }
 
     @staticmethod
     @inheritdoc(Factory)
@@ -527,17 +253,16 @@ class Label(Factory, Container, Collection):
                 raise JsonFormatException(json, "Label.sub:type")
 
             if isinstance(json["data"], dict):
-                pairs = dict((k, factory.fromJsonFragment(v, None)) for k, v in json["data"].items())
+                pairs = {k: factory.fromJsonFragment(v, None) for k, v in json["data"].items()}
             else:
                 raise JsonFormatException(json, "Label.data")
 
             return Label.ed(entries, **pairs)
 
-        else:
-            raise JsonFormatException(json, "Label")
+        raise JsonFormatException(json, "Label")
 
     def __repr__(self):
-        return "<Label values={0} size={1}>".format(self.values[0].name, self.size)
+        return f"<Label values={self.values[0].name} size={self.size}>"
 
     def __eq__(self, other):
         return isinstance(other, Label) and numeq(self.entries, other.entries) and self.pairs == other.pairs
@@ -580,12 +305,16 @@ class UntypedLabel(Factory, Container, Collection):
             pairs (list of str, :doc:`Container <histogrammar.defs.Container>` pairs): the collection of filled
                 aggregators.
         """
-        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+        if not isinstance(entries, numbers.Real) and entries not in (
+            "nan",
+            "inf",
+            "-inf",
+        ):
+            raise TypeError(f"entries ({entries}) must be a number")
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
-            raise TypeError("pairs ({0}) must be a dict from strings to Containers".format(pairs))
+            raise TypeError(f"pairs ({pairs}) must be a dict from strings to Containers")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
 
         if pairsAsDict is None:
             pairsAsDict = {}
@@ -610,12 +339,12 @@ class UntypedLabel(Factory, Container, Collection):
             entries (float): the number of entries, initially 0.0.
         """
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in pairs.items()):
-            raise TypeError("pairs ({0}) must be a dict from strings to Containers".format(pairs))
+            raise TypeError(f"pairs ({pairs}) must be a dict from strings to Containers")
 
         self.entries = 0.0
         self.pairs = pairs
 
-        super(UntypedLabel, self).__init__()
+        super().__init__()
         self.specialize()
 
     @property
@@ -642,8 +371,7 @@ class UntypedLabel(Factory, Container, Collection):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.pairs[x]
-        else:
-            return self.pairs[x](*rest)
+        return self.pairs[x](*rest)
 
     def get(self, x):
         """Attempt to get key ``x``, returning ``None`` if it does not exist."""
@@ -655,56 +383,49 @@ class UntypedLabel(Factory, Container, Collection):
 
     @inheritdoc(Container)
     def zero(self):
-        return UntypedLabel(**dict((k, v.zero()) for k, v in self.pairs.items()))
+        return UntypedLabel(**{k: v.zero() for k, v in self.pairs.items()})
 
     @inheritdoc(Container)
     def __add__(self, other):
         if isinstance(other, UntypedLabel):
             if self.keySet != other.keySet:
                 raise ContainerException(
-                    "cannot add UntypedLabels because keys differ:\n    {0}\n    {1}".format(
-                        ", ".join(
-                            sorted(
-                                self.keys)), ", ".join(
-                            sorted(
-                                other.keys))))
+                    "cannot add UntypedLabels because keys differ:\n    {}\n    {}".format(
+                        ", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))
+                    )
+                )
 
-            out = UntypedLabel(**dict((k, self(k) + other(k)) for k in self.keys))
+            out = UntypedLabel(**{k: self(k) + other(k) for k in self.keys})
             out.entries = self.entries + other.entries
             return out.specialize()
 
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, UntypedLabel):
             if self.keySet != other.keySet:
                 raise ContainerException(
-                    "cannot add UntypedLabels because keys differ:\n    {0}\n    {1}".format(
-                        ", ".join(
-                            sorted(
-                                self.keys)), ", ".join(
-                            sorted(
-                                other.keys))))
+                    "cannot add UntypedLabels because keys differ:\n    {}\n    {}".format(
+                        ", ".join(sorted(self.keys)), ", ".join(sorted(other.keys))
+                    )
+                )
             self.entries += other.entries
             for k in self.keys:
                 v = self(k)
                 v += other(k)
             return self
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            for k, v in self.pairs.items():
-                out.pairs[k] = v * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        for k, v in self.pairs.items():
+            out.pairs[k] = v * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -730,7 +451,6 @@ class UntypedLabel(Factory, Container, Collection):
             x._numpy(data, weights, shape)
 
         # no possibility of exception from here on out (for rollback)
-        import numpy
         if isinstance(weights, numpy.ndarray):
             self.entries += float(weights.sum())
         else:
@@ -746,8 +466,10 @@ class UntypedLabel(Factory, Container, Collection):
 
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
-        return {"entries": floatToJson(self.entries),
-                "data": dict((k, {"type": v.name, "data": v.toJsonFragment(False)}) for k, v in self.pairs.items())}
+        return {
+            "entries": floatToJson(self.entries),
+            "data": {k: {"type": v.name, "data": v.toJsonFragment(False)} for k, v in self.pairs.items()},
+        }
 
     @staticmethod
     @inheritdoc(Factory)
@@ -766,18 +488,17 @@ class UntypedLabel(Factory, Container, Collection):
                         pairs[k] = factory.fromJsonFragment(v["data"], None)
 
                     else:
-                        raise JsonFormatException(k, "UntypedLabel.data {0}".format(v))
+                        raise JsonFormatException(k, f"UntypedLabel.data {v}")
 
             else:
                 raise JsonFormatException(json, "UntypedLabel.data")
 
             return UntypedLabel.ed(entries, **pairs).specialize()
 
-        else:
-            raise JsonFormatException(json, "UntypedLabel")
+        raise JsonFormatException(json, "UntypedLabel")
 
     def __repr__(self):
-        return "<UntypedLabel size={0}>".format(self.size)
+        return f"<UntypedLabel size={self.size}>"
 
     def __eq__(self, other):
         return isinstance(other, UntypedLabel) and numeq(self.entries, other.entries) and self.pairs == other.pairs
@@ -827,12 +548,16 @@ class Index(Factory, Container, Collection):
         if len(values) == 1 and isinstance(values[0], (list, tuple)):
             values = values[0]
 
-        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+        if not isinstance(entries, numbers.Real) and entries not in (
+            "nan",
+            "inf",
+            "-inf",
+        ):
+            raise TypeError(f"entries ({entries}) must be a number")
         if not all(isinstance(v, Container) for v in values):
-            raise TypeError("values ({0}) must be a list of Containers".format(values))
+            raise TypeError(f"values ({values}) must be a list of Containers")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
 
         out = Index(*values)
         out.entries = float(entries)
@@ -853,7 +578,7 @@ class Index(Factory, Container, Collection):
             entries (float): the number of entries, initially 0.0.
         """
         if not all(isinstance(v, Container) for v in values):
-            raise TypeError("values ({0}) must be a list of Containers".format(values))
+            raise TypeError(f"values ({values}) must be a list of Containers")
         if len(values) < 1:
             raise ContainerException("at least one value required")
         contentType = values[0].name
@@ -867,7 +592,7 @@ class Index(Factory, Container, Collection):
         self.entries = 0.0
         self.values = values
 
-        super(Index, self).__init__()
+        super().__init__()
         self.specialize()
 
     @property
@@ -883,22 +608,19 @@ class Index(Factory, Container, Collection):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.values[i]
-        else:
-            return self.values[i](*rest)
+        return self.values[i](*rest)
 
     def get(self, i):
         """Attempt to get index ``i``, returning ``None`` if it does not exist."""
         if i < 0 or i >= len(self.values):
             return None
-        else:
-            return self.values[i]
+        return self.values[i]
 
     def getOrElse(self, i, default):
         """Attempt to get index ``i``, returning an alternative if it does not exist."""
         if i < 0 or i >= len(self.values):
             return default
-        else:
-            return self.values[i]
+        return self.values[i]
 
     @inheritdoc(Container)
     def zero(self):
@@ -909,38 +631,35 @@ class Index(Factory, Container, Collection):
         if isinstance(other, Index):
             if self.size != other.size:
                 raise ContainerException(
-                    "cannot add Indexes because they have different sizes: ({0} vs {1})".format(
-                        self.size, other.size))
+                    f"cannot add Indexes because they have different sizes: ({self.size} vs {other.size})"
+                )
 
             out = Index(*[x + y for x, y in zip(self.values, other.values)])
             out.entries = self.entries + other.entries
             return out.specialize()
 
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, Index):
             if self.size != other.size:
                 raise ContainerException(
-                    "cannot add Indexes because they have different sizes: ({0} vs {1})".format(
-                        self.size, other.size))
+                    f"cannot add Indexes because they have different sizes: ({self.size} vs {other.size})"
+                )
             self.entries += other.entries
             for x, y in zip(self.values, other.values):
-                x += y
+                x += y  # noqa: PLW2901
             return self
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = Index(*[x * factor for x in self.values])
-            out.entries = factor * self.entries
-            return out.specialize()
+        out = Index(*[x * factor for x in self.values])
+        out.entries = factor * self.entries
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -966,7 +685,6 @@ class Index(Factory, Container, Collection):
             x._numpy(data, weights, shape)
 
         # no possibility of exception from here on out (for rollback)
-        import numpy
         if isinstance(weights, numpy.ndarray):
             self.entries += float(weights.sum())
         else:
@@ -982,9 +700,11 @@ class Index(Factory, Container, Collection):
 
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
-        return {"entries": floatToJson(self.entries),
-                "sub:type": self.values[0].name,
-                "data": [x.toJsonFragment(False) for x in self.values]}
+        return {
+            "entries": floatToJson(self.entries),
+            "sub:type": self.values[0].name,
+            "data": [x.toJsonFragment(False) for x in self.values],
+        }
 
     @staticmethod
     @inheritdoc(Factory)
@@ -1007,11 +727,10 @@ class Index(Factory, Container, Collection):
 
             return Index.ed(entries, *values).specialize()
 
-        else:
-            raise JsonFormatException(json, "Index")
+        raise JsonFormatException(json, "Index")
 
     def __repr__(self):
-        return "<Index values={0} size={1}>".format(self.values[0].name, self.size)
+        return f"<Index values={self.values[0].name} size={self.size}>"
 
     def __eq__(self, other):
         return isinstance(other, Index) and numeq(self.entries, other.entries) and self.values == other.values
@@ -1075,12 +794,16 @@ class Branch(Factory, Container, Collection):
         if len(values) == 1 and isinstance(values[0], (list, tuple)):
             values = values[0]
 
-        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+        if not isinstance(entries, numbers.Real) and entries not in (
+            "nan",
+            "inf",
+            "-inf",
+        ):
+            raise TypeError(f"entries ({entries}) must be a number")
         if not all(isinstance(v, Container) for v in values):
-            raise TypeError("values ({0}) must be a list of Containers".format(values))
+            raise TypeError(f"values ({values}) must be a list of Containers")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
 
         out = Branch(*values)
         out.entries = float(entries)
@@ -1101,7 +824,7 @@ class Branch(Factory, Container, Collection):
             entries (float): the number of entries, initially 0.0.
         """
         if not all(isinstance(v, Container) for v in values):
-            raise TypeError("values ({0}) must be a list of Containers".format(values))
+            raise TypeError(f"values ({values}) must be a list of Containers")
         if len(values) < 1:
             raise ValueError("at least one value required")
 
@@ -1111,7 +834,7 @@ class Branch(Factory, Container, Collection):
         for i, x in enumerate(values):
             setattr(self, "i" + str(i), x)
 
-        super(Branch, self).__init__()
+        super().__init__()
         self.specialize()
 
     @property
@@ -1127,22 +850,19 @@ class Branch(Factory, Container, Collection):
         """Attempt to get key ``index``, throwing an exception if it does not exist."""
         if len(rest) == 0:
             return self.values[i]
-        else:
-            return self.values[i](*rest)
+        return self.values[i](*rest)
 
     def get(self, i):
         """Attempt to get index ``i``, returning ``None`` if it does not exist."""
         if i < 0 or i >= len(self.values):
             return None
-        else:
-            return self.values[i]
+        return self.values[i]
 
     def getOrElse(self, i, default):
         """Attempt to get index ``i``, returning an alternative if it does not exist."""
         if i < 0 or i >= len(self.values):
             return default
-        else:
-            return self.values[i]
+        return self.values[i]
 
     @inheritdoc(Container)
     def zero(self):
@@ -1153,38 +873,35 @@ class Branch(Factory, Container, Collection):
         if isinstance(other, Branch):
             if self.size != other.size:
                 raise ContainerException(
-                    "cannot add Branches because they have different sizes: ({0} vs {1})".format(
-                        self.size, other.size))
+                    f"cannot add Branches because they have different sizes: ({self.size} vs {other.size})"
+                )
 
             out = Branch(*[x + y for x, y in zip(self.values, other.values)])
             out.entries = self.entries + other.entries
             return out.specialize()
 
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, Branch):
             if self.size != other.size:
                 raise ContainerException(
-                    "cannot add Branches because they have different sizes: ({0} vs {1})".format(
-                        self.size, other.size))
+                    f"cannot add Branches because they have different sizes: ({self.size} vs {other.size})"
+                )
             self.entries += other.entries
             for x, y in zip(self.values, other.values):
-                x += y
+                x += y  # noqa: PLW2901
             return self
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = Branch(*[x * factor for x in self.values])
-            out.entries = factor * self.entries
-            return out.specialize()
+        out = Branch(*[x * factor for x in self.values])
+        out.entries = factor * self.entries
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -1210,7 +927,6 @@ class Branch(Factory, Container, Collection):
             x._numpy(data, weights, shape)
 
         # no possibility of exception from here on out (for rollback)
-        import numpy
         if isinstance(weights, numpy.ndarray):
             self.entries += float(weights.sum())
         else:
@@ -1226,8 +942,10 @@ class Branch(Factory, Container, Collection):
 
     @inheritdoc(Container)
     def toJsonFragment(self, suppressName):
-        return {"entries": floatToJson(self.entries),
-                "data": [{"type": x.name, "data": x.toJsonFragment(False)} for x in self.values]}
+        return {
+            "entries": floatToJson(self.entries),
+            "data": [{"type": x.name, "data": x.toJsonFragment(False)} for x in self.values],
+        }
 
     @staticmethod
     @inheritdoc(Factory)
@@ -1245,7 +963,7 @@ class Branch(Factory, Container, Collection):
                         if isinstance(x["type"], basestring):
                             factory = Factory.registered[x["type"]]
                         else:
-                            raise JsonFormatException(x, "Branch.data {0} type".format(i))
+                            raise JsonFormatException(x, f"Branch.data {i} type")
                         values.append(factory.fromJsonFragment(x["data"], None))
 
             else:
@@ -1253,11 +971,10 @@ class Branch(Factory, Container, Collection):
 
             return Branch.ed(entries, *values)
 
-        else:
-            raise JsonFormatException(json, "Branch")
+        raise JsonFormatException(json, "Branch")
 
     def __repr__(self):
-        return "<Branch {0}>".format(" ".join("i" + str(i) + "=" + v.name for i, v in enumerate(self.values)))
+        return "<Branch {}>".format(" ".join("i" + str(i) + "=" + v.name for i, v in enumerate(self.values)))
 
     def __eq__(self, other):
         return isinstance(other, Branch) and numeq(self.entries, other.entries) and self.values == other.values

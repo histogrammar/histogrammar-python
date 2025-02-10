@@ -19,6 +19,7 @@
 
 
 import warnings
+
 import numpy as np
 
 
@@ -31,11 +32,7 @@ def prepare_2dgrid(hist):
     :return: two comma-separated lists of unique x and y keys
     """
     if hist.n_dim < 2:
-        warnings.warn(
-            "Input histogram only has {n} dimensions (<2). Returning empty lists.".format(
-                n=hist.n_dim
-            )
-        )
+        warnings.warn(f"Input histogram only has {hist.n_dim} dimensions (<2). Returning empty lists.")
         return [], []
 
     xkeys = set()
@@ -75,11 +72,7 @@ def set_2dgrid(hist, xkeys, ykeys):
     grid = np.zeros((len(ykeys), len(xkeys)))
 
     if hist.n_dim < 2:
-        warnings.warn(
-            "Input histogram only has {n} dimensions (<2). Returning original grid.".format(
-                n=hist.n_dim
-            )
-        )
+        warnings.warn(f"Input histogram only has {hist.n_dim} dimensions (<2). Returning original grid.")
         return grid
 
     # SparselyBin, Categorize, IrregularlyBin, CentrallyBin
@@ -91,10 +84,10 @@ def set_2dgrid(hist, xkeys, ykeys):
             i = xkeys.index(k)
             if hasattr(h, "bins"):
                 h_bins = dict(h.bins)
-                for l, g in h_bins.items():
-                    if l not in ykeys:
+                for li, g in h_bins.items():
+                    if li not in ykeys:
                         continue
-                    j = ykeys.index(l)
+                    j = ykeys.index(li)
                     grid[j, i] = g.entries
             elif hasattr(h, "values"):
                 for j, g in enumerate(h.values):
@@ -104,10 +97,10 @@ def set_2dgrid(hist, xkeys, ykeys):
         for i, h in enumerate(hist.values):
             if hasattr(h, "bins"):
                 h_bins = dict(h.bins)
-                for l, g in h_bins.items():
-                    if l not in ykeys:
+                for lj, g in h_bins.items():
+                    if lj not in ykeys:
                         continue
-                    j = ykeys.index(l)
+                    j = ykeys.index(lj)
                     grid[j, i] = g.entries
             elif hasattr(h, "values"):
                 for j, g in enumerate(h.values):
@@ -121,14 +114,8 @@ def get_2dgrid(hist):
     :param hist: input histogrammar histogram
     :return: x,y,grid of first two dimenstions of input histogram
     """
-    import numpy as np
-
     if hist.n_dim < 2:
-        warnings.warn(
-            "Input histogram only has {n} dimensions (<2). Returning empty grid.".format(
-                n=hist.n_dim
-            )
-        )
+        warnings.warn(f"Input histogram only has {hist.n_dim} dimensions (<2). Returning empty grid.")
         return np.zeros((0, 0))
 
     xkeys, ykeys = prepare_2dgrid(hist)
@@ -141,8 +128,7 @@ def get_2dgrid(hist):
 
 
 def get_x_labels(hist, xkeys):
-    xlabels = [str(hist._center_from_key(key)) for key in xkeys]
-    return xlabels
+    return [str(hist._center_from_key(key)) for key in xkeys]
 
 
 def get_y_labels(hist, ykeys):
@@ -153,8 +139,7 @@ def get_y_labels(hist, ykeys):
     # Bin
     elif hasattr(hist, "values"):
         h = hist.values[0]
-    ylabels = [str(h._center_from_key(key)) for key in ykeys]
-    return ylabels
+    return [str(h._center_from_key(key)) for key in ykeys]
 
 
 def prepare2Dsparse(sparse):

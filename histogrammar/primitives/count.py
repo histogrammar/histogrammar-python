@@ -16,10 +16,22 @@
 
 import math
 import numbers
-import struct
 
-from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
-from histogrammar.util import n_dim, datatype, serializable, inheritdoc, floatToJson, numeq
+from histogrammar.defs import (
+    Container,
+    ContainerException,
+    Factory,
+    JsonFormatException,
+    identity,
+)
+from histogrammar.util import (
+    datatype,
+    floatToJson,
+    inheritdoc,
+    n_dim,
+    numeq,
+    serializable,
+)
 
 
 class Count(Factory, Container):
@@ -44,10 +56,14 @@ class Count(Factory, Container):
         Parameters:
             entries (float): the number of entries.
         """
-        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+        if not isinstance(entries, numbers.Real) and entries not in (
+            "nan",
+            "inf",
+            "-inf",
+        ):
+            raise TypeError(f"entries ({entries}) must be a number")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
         out = Count()
         out.entries = float(entries)
         return out
@@ -68,7 +84,7 @@ class Count(Factory, Container):
         """
         self.entries = 0.0
         self.transform = serializable(transform)
-        super(Count, self).__init__()
+        super().__init__()
 
     @inheritdoc(Container)
     def zero(self):
@@ -80,32 +96,35 @@ class Count(Factory, Container):
             out = Count(self.transform)
             out.entries = self.entries + other.entries
             return out
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
         if isinstance(other, Count):
             self.entries += other.entries
             return self
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
-        if self.transform != identity or \
-           not callable(self.transform.expr) or \
-           (hasattr(self.transform.expr, "func_code") and
-            self.transform.expr.func_code.co_code != identity.expr.func_code.co_code) or \
-            (hasattr(self.transform.expr, "__code__") and
-             self.transform.expr.__code__.co_code != identity.expr.__code__.co_code):
+        if (
+            self.transform != identity
+            or not callable(self.transform.expr)
+            or (
+                hasattr(self.transform.expr, "func_code")
+                and self.transform.expr.func_code.co_code != identity.expr.func_code.co_code
+            )
+            or (
+                hasattr(self.transform.expr, "__code__")
+                and self.transform.expr.__code__.co_code != identity.expr.__code__.co_code
+            )
+        ):
             raise ContainerException("Cannot scalar-multiply Count with a non-identity transform.")
-        elif math.isnan(factor) or factor <= 0.0:
+        if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            return out
+        out = self.zero()
+        out.entries = factor * self.entries
+        return out
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -118,97 +137,14 @@ class Count(Factory, Container):
         if weight > 0.0:
             t = self.transform(weight)
             if not isinstance(t, numbers.Real):
-                raise TypeError("function return value ({0}) must be boolean or number".format(t))
+                raise TypeError(f"function return value ({t}) must be boolean or number")
 
             # no possibility of exception from here on out (for rollback)
             self.entries += t
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        return self._c99GenerateCode(parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                                     derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode,
-                                     fillPrefix, fillIndent, weightVars, weightVarStack, tmpVarTypes)
-
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + " = 0.0;")
-        if self.transform is not identity:
-            normexpr = self._c99QuantityExpr(parser,
-                                             generator,
-                                             inputFieldNames,
-                                             inputFieldTypes,
-                                             derivedFieldTypes,
-                                             derivedFieldExprs,
-                                             weightVarStack[-1])
-            fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + " += " + normexpr + ";")
-        else:
-            fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) + " += " + weightVarStack[-1] + ";")
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        self.entries += self._clingExpandPrefix(filler, *extractorPrefix)
-
-    def _c99StorageType(self):
-        return "double"
-
-    def _c99StructName(self):
-        return "Ct"
-
-    def _cudaGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                          derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                          fillIndent, combineCode, totalPrefix, itemPrefix, combineIndent, jsonCode, jsonPrefix,
-                          jsonIndent, weightVars, weightVarStack, tmpVarTypes, suppressName):
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + " = 0.0f;")
-
-        if self.transform is not identity:
-            normexpr = self._cudaQuantityExpr(parser,
-                                              generator,
-                                              inputFieldNames,
-                                              inputFieldTypes,
-                                              derivedFieldTypes,
-                                              derivedFieldExprs,
-                                              weightVarStack[-1])
-            fillCode.append(
-                " " *
-                fillIndent +
-                "atomicAdd(&" +
-                self._c99ExpandPrefix(
-                    *
-                    fillPrefix) +
-                ", " +
-                normexpr +
-                ");")
-        else:
-            fillCode.append(" " * fillIndent + "atomicAdd(&" + self._c99ExpandPrefix(*fillPrefix) +
-                            ", " + weightVarStack[-1] + ");")
-
-        combineCode.append(
-            " " *
-            combineIndent +
-            "atomicAdd(&" +
-            self._c99ExpandPrefix(
-                *
-                totalPrefix) +
-            ", " +
-            self._c99ExpandPrefix(
-                *
-                itemPrefix) +
-            ");")
-
-        jsonCode.append(" " * jsonIndent + "floatToJson(out, " + self._c99ExpandPrefix(*jsonPrefix) + ");")
-
-    def _cudaUnpackAndFill(self, data, bigendian, alignment):
-        format = "<f"
-        entries, = struct.unpack(format, data[:struct.calcsize(format)])
-        self.entries += entries
-        return data[struct.calcsize(format):]
-
-    def _cudaStorageType(self):
-        return "float"
-
     def _numpy(self, _, weights, shape):
         import numpy
+
         if isinstance(weights, numpy.ndarray):
             assert len(weights.shape) == 1
             if shape[0] is not None:
@@ -242,7 +178,7 @@ class Count(Factory, Container):
             raise ValueError("cannot use Numpy to fill an isolated Count (unless the weights are given as an array)")
 
     def _sparksql(self, jvm, converter):
-        return converter.Count()   # TODO: handle transform
+        return converter.Count()  # TODO: handle transform
 
     @property
     def children(self):
@@ -258,11 +194,10 @@ class Count(Factory, Container):
     def fromJsonFragment(json, nameFromParent):
         if json in ("nan", "inf", "-inf") or isinstance(json, numbers.Real):
             return Count.ed(float(json))
-        else:
-            raise JsonFormatException(json, "Count")
+        raise JsonFormatException(json, "Count")
 
     def __repr__(self):
-        return "<Count {0}>".format(self.entries)
+        return f"<Count {self.entries}>"
 
     def __eq__(self, other):
         return isinstance(other, Count) and numeq(self.entries, other.entries) and self.transform == other.transform

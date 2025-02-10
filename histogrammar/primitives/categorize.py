@@ -16,12 +16,28 @@
 
 import math
 import numbers
+
 import numpy as np
 
-from histogrammar.defs import Container, Factory, identity, JsonFormatException, ContainerException
-from histogrammar.util import n_dim, datatype, serializable, inheritdoc, maybeAdd, floatToJson, hasKeys, numeq, \
-    basestring
+from histogrammar.defs import (
+    Container,
+    ContainerException,
+    Factory,
+    JsonFormatException,
+    identity,
+)
 from histogrammar.primitives.count import Count
+from histogrammar.util import (
+    basestring,
+    datatype,
+    floatToJson,
+    hasKeys,
+    inheritdoc,
+    maybeAdd,
+    n_dim,
+    numeq,
+    serializable,
+)
 
 
 class Categorize(Factory, Container):
@@ -45,14 +61,18 @@ class Categorize(Factory, Container):
             `bins` is empty). bins (dict from str to :doc:`Container <histogrammar.defs.Container>`): the non-empty
             bin categories and their values.
         """
-        if not isinstance(entries, numbers.Real) and entries not in ("nan", "inf", "-inf"):
-            raise TypeError("entries ({0}) must be a number".format(entries))
+        if not isinstance(entries, numbers.Real) and entries not in (
+            "nan",
+            "inf",
+            "-inf",
+        ):
+            raise TypeError(f"entries ({entries}) must be a number")
         if not isinstance(contentType, basestring):
-            raise TypeError("contentType ({0}) must be a string".format(contentType))
+            raise TypeError(f"contentType ({contentType}) must be a string")
         if not all(isinstance(k, basestring) and isinstance(v, Container) for k, v in bins.items()):
-            raise TypeError("bins ({0}) must be a dict from strings to Containers".format(bins))
+            raise TypeError(f"bins ({bins}) must be a dict from strings to Containers")
         if entries < 0.0:
-            raise ValueError("entries ({0}) cannot be negative".format(entries))
+            raise ValueError(f"entries ({entries}) cannot be negative")
 
         out = Categorize(None, None)
         out.entries = float(entries)
@@ -82,7 +102,7 @@ class Categorize(Factory, Container):
             fill with values when their `entries` become non-zero.
         """
         if value is not None and not isinstance(value, Container):
-            raise TypeError("value ({0}) must be None or a Container".format(value))
+            raise TypeError(f"value ({value}) must be None or a Container")
         self.entries = 0.0
         self.quantity = serializable(identity(quantity) if isinstance(quantity, str) else quantity)
         self.value = value
@@ -91,7 +111,7 @@ class Categorize(Factory, Container):
             self.contentType = value.name
         else:
             self.contentType = "Count"
-        super(Categorize, self).__init__()
+        super().__init__()
         self.specialize()
 
     @property
@@ -150,8 +170,7 @@ class Categorize(Factory, Container):
                     out.bins[k] = other.bins[k].copy()
             return out.specialize()
 
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __iadd__(self, other):
@@ -163,19 +182,17 @@ class Categorize(Factory, Container):
                 elif k not in self.bins and k in other.bins:
                     self.bins[k] = other.bins[k].copy()
             return self
-        else:
-            raise ContainerException("cannot add {0} and {1}".format(self.name, other.name))
+        raise ContainerException(f"cannot add {self.name} and {other.name}")
 
     @inheritdoc(Container)
     def __mul__(self, factor):
         if math.isnan(factor) or factor <= 0.0:
             return self.zero()
-        else:
-            out = self.zero()
-            out.entries = factor * self.entries
-            for k, v in self.bins.items():
-                out.bins[k] = v * factor
-            return out.specialize()
+        out = self.zero()
+        out.entries = factor * self.entries
+        for k, v in self.bins.items():
+            out.bins[k] = v * factor
+        return out.specialize()
 
     @inheritdoc(Container)
     def __rmul__(self, factor):
@@ -190,9 +207,9 @@ class Categorize(Factory, Container):
             if isinstance(q, (basestring, bool)):
                 pass
             elif q is None or np.isnan(q):
-                q = 'NaN'
+                q = "NaN"
             if not isinstance(q, (basestring, bool)):
-                raise TypeError("function return value ({0}) must be a string or bool".format(q))
+                raise TypeError(f"function return value ({q}) must be a string or bool")
 
             if q not in self.bins:
                 self.bins[q] = self.value.zero()
@@ -201,92 +218,18 @@ class Categorize(Factory, Container):
             # no possibility of exception from here on out (for rollback)
             self.entries += weight
 
-    def _cppGenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        normexpr = self._c99QuantityExpr(
-            parser,
-            generator,
-            inputFieldNames,
-            inputFieldTypes,
-            derivedFieldTypes,
-            derivedFieldExprs,
-            None)
-
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".entries = 0.0;")
-        initCode.append(" " * initIndent + self._c99ExpandPrefix(*initPrefix) + ".bins.clear();")
-        fillCode.append(" " * fillIndent + self._c99ExpandPrefix(*fillPrefix) +
-                        ".entries += " + weightVarStack[-1] + ";")
-
-        value = "value_" + str(len(tmpVarTypes))
-        tmpVarTypes[value] = self.value._c99StorageType() + "*"
-
-        fillCode.append("""{indent}if ({bins}.find({q}) == {bins}.end())
-{indent}  {bins}[{q}] = {prototype};    // copy
-{indent}{value} = &({bins}[{q}]);    // reference""".format(
-            indent=" " * fillIndent,
-            q=normexpr,
-            value=value,
-            prototype=self._c99ExpandPrefix(*fillPrefix) + ".value",
-            bins=self._c99ExpandPrefix(*fillPrefix) + ".bins"))
-
-        self.value._c99GenerateCode(parser,
-                                    generator,
-                                    inputFieldNames,
-                                    inputFieldTypes,
-                                    derivedFieldTypes,
-                                    derivedFieldExprs,
-                                    storageStructs,
-                                    initCode,
-                                    initPrefix + (("var",
-                                                   "value"),
-                                                  ),
-                                    initIndent,
-                                    fillCode,
-                                    (("var",
-                                      "(*" + value + ")"),
-                                     ),
-                                    fillIndent,
-                                    weightVars,
-                                    weightVarStack,
-                                    tmpVarTypes)
-
-        storageStructs[self._c99StructName()] = """
-  typedef struct {{
-    double entries;
-    {1} value;
-    std::unordered_map<std::string, {1}> bins;
-    {1}& getValues(std::string i) {{ return bins[i]; }}
-  }} {0};
-""".format(self._c99StructName(), self.value._c99StorageType())
-
-    def _c99GenerateCode(self, parser, generator, inputFieldNames, inputFieldTypes, derivedFieldTypes,
-                         derivedFieldExprs, storageStructs, initCode, initPrefix, initIndent, fillCode, fillPrefix,
-                         fillIndent, weightVars, weightVarStack, tmpVarTypes):
-        raise NotImplementedError("no C99-compliant implementation of Categorize (only C++)")
-
-    def _clingUpdate(self, filler, *extractorPrefix):
-        obj = self._clingExpandPrefix(filler, *extractorPrefix)
-        self.entries += obj.entries
-
-        for i in obj.bins:
-            key = i.first
-            if key not in self.bins:
-                self.bins[key] = self.value.copy()
-            self.bins[key]._clingUpdate(obj, ("func", ["getValues", key]))
-
-    def _c99StructName(self):
-        return "Cz" + self.value._c99StructName()
-
     def _numpy(self, data, weights, shape):
         q = self.quantity(data)
         if isinstance(q, (list, tuple)):
             q = np.array(q)
         self._checkNPQuantity(q, shape)
 
-        if isinstance(weights, (float, int)) and weights == 1:
-            all_weights_one = True
-        elif isinstance(weights, np.ndarray) and np.all(weights == 1):
+        if (
+            isinstance(weights, (float, int))
+            and weights == 1
+            or isinstance(weights, np.ndarray)
+            and np.all(weights == 1)
+        ):
             all_weights_one = True
         else:
             all_weights_one = False
@@ -302,13 +245,14 @@ class Categorize(Factory, Container):
             uniques, counts = np.unique(q, return_counts=True)
 
             for c, x in zip(counts, uniques):
-                if isinstance(x, (basestring, bool)):
+                xval = x
+                if isinstance(xval, (basestring, bool)):
                     pass
-                elif x is None or np.isnan(x):
-                    x = 'NaN'
-                if x not in self.bins:
-                    self.bins[x] = self.value.zero()
-                self.bins[x]._numpy(None, c, [None])
+                elif xval is None or np.isnan(xval):
+                    xval = "NaN"
+                if xval not in self.bins:
+                    self.bins[xval] = self.value.zero()
+                self.bins[xval]._numpy(None, c, [None])
         else:
             # all other cases ...
             selection = np.empty(q.shape, dtype=bool)
@@ -316,18 +260,19 @@ class Categorize(Factory, Container):
 
             # no possibility of exception from here on out (for rollback)
             for i, x in enumerate(uniques):
-                if isinstance(x, (basestring, bool)):
+                xval = x
+                if isinstance(xval, (basestring, bool)):
                     pass
-                elif x is None or np.isnan(x):
-                    x = 'NaN'
-                if x not in self.bins:
-                    self.bins[x] = self.value.zero()
+                elif xval is None or np.isnan(xval):
+                    xval = "NaN"
+                if xval not in self.bins:
+                    self.bins[xval] = self.value.zero()
 
                 # passing on the full array seems faster for one- AND multi-dim histograms
                 np.not_equal(inverse, i, selection)
                 subweights[:] = weights
                 subweights[selection] = 0.0
-                self.bins[x]._numpy(data, subweights, shape)
+                self.bins[xval]._numpy(data, subweights, shape)
 
         self.entries += float(newentries)
 
@@ -365,14 +310,19 @@ class Categorize(Factory, Container):
         else:
             bins_type = self.contentType
 
-        return maybeAdd({
-            # for json serialization all keys need to be strings, else json libs throws TypeError
-            # e.g. boolean keys get converted to strings here
-            "entries": floatToJson(self.entries),
-            "bins:type": bins_type,
-            "bins": dict((str(k), v.toJsonFragment(True)) for k, v in self.bins.items()),
-        }, **{"name": None if suppressName else self.quantity.name,
-              "bins:name": binsName})
+        return maybeAdd(
+            {
+                # for json serialization all keys need to be strings, else json libs throws TypeError
+                # e.g. boolean keys get converted to strings here
+                "entries": floatToJson(self.entries),
+                "bins:type": bins_type,
+                "bins": {str(k): v.toJsonFragment(True) for k, v in self.bins.items()},
+            },
+            **{
+                "name": None if suppressName else self.quantity.name,
+                "bins:name": binsName,
+            },
+        )
 
     @staticmethod
     @inheritdoc(Factory)
@@ -404,7 +354,7 @@ class Categorize(Factory, Container):
                 raise JsonFormatException(json["bins:name"], "Categorize.bins:name")
 
             if isinstance(json["bins"], dict):
-                bins = dict((k, factory.fromJsonFragment(v, dataName)) for k, v in json["bins"].items())
+                bins = {k: factory.fromJsonFragment(v, dataName) for k, v in json["bins"].items()}
             else:
                 raise JsonFormatException(json, "Categorize.bins")
 
@@ -412,17 +362,19 @@ class Categorize(Factory, Container):
             out.quantity.name = nameFromParent if name is None else name
             return out.specialize()
 
-        else:
-            raise JsonFormatException(json, "Categorize")
+        raise JsonFormatException(json, "Categorize")
 
     def __repr__(self):
-        return "<Categorize values={0} size={1}".format(
-            self.values[0].name if self.size > 0 else self.value.name if self.value is not None else self.contentType,
-            self.size)
+        vals = self.values[0].name if self.size > 0 else self.value.name if self.value is not None else self.contentType
+        return f"<Categorize values={vals} size={self.size}"
 
     def __eq__(self, other):
-        return isinstance(other, Categorize) and numeq(
-            self.entries, other.entries) and self.quantity == other.quantity and self.bins == other.bins
+        return (
+            isinstance(other, Categorize)
+            and numeq(self.entries, other.entries)
+            and self.quantity == other.quantity
+            and self.bins == other.bins
+        )
 
     def __ne__(self, other):
         return not self == other
@@ -432,12 +384,11 @@ class Categorize(Factory, Container):
 
     @property
     def n_bins(self):
-        """Get number of bins, consistent with SparselyBin and Categorize """
+        """Get number of bins, consistent with SparselyBin and Categorize"""
         return self.size
 
     def bin_entries(self, labels=[]):
-        """
-        Returns bin values
+        """Returns bin values
 
         :param list labels: get entries for list of selected labels. When empty return for all labels found.
         :returns: array of bin-entries
@@ -449,8 +400,7 @@ class Categorize(Factory, Container):
         return np.array(entries)
 
     def bin_labels(self, max_length=-1):
-        """
-        Returns bin labels
+        """Returns bin labels
 
         :param int max_length: maximum length of a label. Default is full length.
         :returns: array of labels
@@ -466,13 +416,12 @@ class Categorize(Factory, Container):
                 if max_length > 0:
                     label = label[:max_length]
             except BaseException:
-                label = 'bin_%d' % i
+                label = "bin_%d" % i
             labels.append(label)
         return np.array(labels)
 
     def bin_centers(self, max_length=-1):
-        """
-        Returns bin labels
+        """Returns bin labels
 
         Compatible function call with Bin and SparselyBin
 
@@ -487,15 +436,13 @@ class Categorize(Factory, Container):
 
     @property
     def mpv(self):
-        """Return bin-label of most probable value
-        """
+        """Return bin-label of most probable value"""
         bin_entries = self.bin_entries()
         bin_labels = self.bin_labels()
 
         # if two max elements are equal, this will return the element with the lowest index.
         max_idx = max(enumerate(bin_entries), key=lambda x: x[1])[0]
-        bl = bin_labels[max_idx]
-        return bl
+        return bin_labels[max_idx]
 
 
 # extra properties: number of dimensions and datatypes of sub-hists

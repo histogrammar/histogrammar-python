@@ -14,40 +14,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import histogrammar.plot.root as plotroot
 import histogrammar.plot.bokeh as plotbokeh
 import histogrammar.plot.matplotlib as plotmpl
 
+# moved to convenience.py, but imported for backward compatibility
+from histogrammar.convenience import (
+    CategorizeHistogram,  # noqa: F401
+    Histogram,  # noqa: F401
+    HistogramCut,  # noqa: F401
+    Profile,  # noqa: F401
+    ProfileErr,  # noqa: F401
+    SparselyHistogram,  # noqa: F401
+    SparselyProfile,  # noqa: F401
+    SparselyProfileErr,  # noqa: F401
+    TwoDimensionallyHistogram,  # noqa: F401
+    TwoDimensionallySparselyHistogram,  # noqa: F401
+)
 from histogrammar.primitives.average import Average
 from histogrammar.primitives.bin import Bin
+from histogrammar.primitives.categorize import Categorize
+from histogrammar.primitives.centrallybin import CentrallyBin
 from histogrammar.primitives.count import Count
 from histogrammar.primitives.deviate import Deviate
 from histogrammar.primitives.fraction import Fraction
 from histogrammar.primitives.irregularlybin import IrregularlyBin
-from histogrammar.primitives.centrallybin import CentrallyBin
 from histogrammar.primitives.select import Select
 from histogrammar.primitives.sparselybin import SparselyBin
-from histogrammar.primitives.categorize import Categorize
 from histogrammar.primitives.stack import Stack
-
-# moved to convenience.py, but imported for backward compatibility
-from histogrammar.convenience import Histogram, HistogramCut  # noqa: F401
-from histogrammar.convenience import SparselyHistogram  # noqa: F401
-from histogrammar.convenience import CategorizeHistogram  # noqa: F401
-from histogrammar.convenience import Profile, SparselyProfile  # noqa: F401
-from histogrammar.convenience import ProfileErr, SparselyProfileErr  # noqa: F401
-from histogrammar.convenience import TwoDimensionallyHistogram  # noqa: F401
-from histogrammar.convenience import TwoDimensionallySparselyHistogram  # noqa: F401
 
 COMMON_PLOT_TYPES = (Count, Bin, SparselyBin, Categorize, IrregularlyBin, CentrallyBin)
 
 
 # 1d plotting of counts + generic 2d plotting of counts
 
-class HistogramMethods(Bin,
-                       plotroot.HistogramMethods,
-                       plotbokeh.HistogramMethods,
-                       plotmpl.HistogramMethods):
+
+class HistogramMethods(Bin, plotbokeh.HistogramMethods, plotmpl.HistogramMethods):
     """Methods that are implicitly added to container combinations that look like histograms."""
 
     @property
@@ -80,14 +81,11 @@ class HistogramMethods(Bin,
 
     def confidenceIntervalValues(self, absz=1.0):
         from math import sqrt
-        return map(lambda v: absz*sqrt(v), self.numericalValues)
+
+        return (absz * sqrt(v) for v in self.numericalValues)
 
 
-class SparselyHistogramMethods(SparselyBin,
-                               plotroot.SparselyHistogramMethods,
-                               plotbokeh.SparselyHistogramMethods,
-                               plotmpl.SparselyHistogramMethods):
-
+class SparselyHistogramMethods(SparselyBin, plotbokeh.SparselyHistogramMethods, plotmpl.SparselyHistogramMethods):
     """Methods that are implicitly added to container combinations that look like sparsely binned histograms."""
 
     @property
@@ -100,14 +98,11 @@ class SparselyHistogramMethods(SparselyBin,
 
     def confidenceIntervalValues(self, absz=1.0):
         from math import sqrt
-        return map(lambda v: absz * sqrt(v), [v.entries for _, v in sorted(self.bins.items())])
+
+        return (absz * sqrt(v) for v in [v.entries for _, v in sorted(self.bins.items())])
 
 
-class CategorizeHistogramMethods(Categorize,
-                                 plotroot.CategorizeHistogramMethods,
-                                 plotbokeh.CategorizeHistogramMethods,
-                                 plotmpl.CategorizeHistogramMethods):
-
+class CategorizeHistogramMethods(Categorize, plotbokeh.CategorizeHistogramMethods, plotmpl.CategorizeHistogramMethods):
     """Methods that are implicitly added to container combinations that look like categorical histograms."""
 
     @property
@@ -119,8 +114,7 @@ class CategorizeHistogramMethods(Categorize,
         return Categorize
 
 
-class IrregularlyHistogramMethods(IrregularlyBin,
-                                  plotmpl.IrregularlyHistogramMethods):
+class IrregularlyHistogramMethods(IrregularlyBin, plotmpl.IrregularlyHistogramMethods):
     """Methods that are implicitly added to container combinations that look like partitioned histograms."""
 
     @property
@@ -132,8 +126,7 @@ class IrregularlyHistogramMethods(IrregularlyBin,
         return IrregularlyBin
 
 
-class CentrallyHistogramMethods(CentrallyBin,
-                                plotmpl.CentrallyHistogramMethods):
+class CentrallyHistogramMethods(CentrallyBin, plotmpl.CentrallyHistogramMethods):
     """Methods that are implicitly added to containers that look like centrally histograms."""
 
     @property
@@ -147,10 +140,12 @@ class CentrallyHistogramMethods(CentrallyBin,
 
 # specialized 2d plotting of counts
 
-class TwoDimensionallyHistogramMethods(Bin,
-                                       plotroot.TwoDimensionallyHistogramMethods,
-                                       plotbokeh.TwoDimensionallyHistogramMethods,
-                                       plotmpl.TwoDimensionallyHistogramMethods):
+
+class TwoDimensionallyHistogramMethods(
+    Bin,
+    plotbokeh.TwoDimensionallyHistogramMethods,
+    plotmpl.TwoDimensionallyHistogramMethods,
+):
     """Convenience function for creating a conventional, two-dimensional histogram."""
 
     @property
@@ -162,10 +157,11 @@ class TwoDimensionallyHistogramMethods(Bin,
         return Bin
 
 
-class SparselyTwoDimensionallyHistogramMethods(SparselyBin,
-                                               plotroot.SparselyTwoDimensionallyHistogramMethods,
-                                               plotbokeh.SparselyTwoDimensionallyHistogramMethods,
-                                               plotmpl.SparselyTwoDimensionallyHistogramMethods):
+class SparselyTwoDimensionallyHistogramMethods(
+    SparselyBin,
+    plotbokeh.SparselyTwoDimensionallyHistogramMethods,
+    plotmpl.SparselyTwoDimensionallyHistogramMethods,
+):
     """Convenience function for creating a sparsely binned, two-dimensional histogram."""
 
     @property
@@ -177,8 +173,7 @@ class SparselyTwoDimensionallyHistogramMethods(SparselyBin,
         return SparselyBin
 
 
-class IrregularlyTwoDimensionallyHistogramMethods(IrregularlyBin,
-                                                  plotmpl.IrregularlyTwoDimensionallyHistogramMethods):
+class IrregularlyTwoDimensionallyHistogramMethods(IrregularlyBin, plotmpl.IrregularlyTwoDimensionallyHistogramMethods):
     """Convenience function for creating a sparsely binned, two-dimensional histogram."""
 
     @property
@@ -192,10 +187,8 @@ class IrregularlyTwoDimensionallyHistogramMethods(IrregularlyBin,
 
 # 1d plotting of profiles
 
-class ProfileMethods(Bin,
-                     plotroot.ProfileMethods,
-                     plotbokeh.ProfileMethods,
-                     plotmpl.ProfileMethods):
+
+class ProfileMethods(Bin, plotbokeh.ProfileMethods, plotmpl.ProfileMethods):
     '''Methods that are implicitly added to container combinations that look like a physicist's "profile plot."'''
 
     @property
@@ -227,10 +220,7 @@ class ProfileMethods(Bin,
         return self.nanflow.entries
 
 
-class SparselyProfileMethods(SparselyBin,
-                             plotroot.SparselyProfileMethods,
-                             plotbokeh.SparselyProfileMethods,
-                             plotmpl.SparselyProfileMethods):
+class SparselyProfileMethods(SparselyBin, plotbokeh.SparselyProfileMethods, plotmpl.SparselyProfileMethods):
     '''Methods that are implicitly added to container combinations that look like a sparsely
     binned physicist's "profile plot."'''
 
@@ -243,11 +233,7 @@ class SparselyProfileMethods(SparselyBin,
         return SparselyBin
 
 
-class ProfileErrMethods(Bin,
-                        plotroot.ProfileErrMethods,
-                        plotbokeh.ProfileErrMethods,
-                        plotmpl.ProfileErrMethods):
-
+class ProfileErrMethods(Bin, plotbokeh.ProfileErrMethods, plotmpl.ProfileErrMethods):
     '''Methods that are implicitly added to container combinations that look like a physicist's "profile plot."'''
 
     @property
@@ -284,10 +270,7 @@ class ProfileErrMethods(Bin,
         return self.nanflow.entries
 
 
-class SparselyProfileErrMethods(SparselyBin,
-                                plotroot.SparselyProfileErrMethods,
-                                plotbokeh.SparselyProfileErrMethods,
-                                plotmpl.SparselyProfileErrMethods):
+class SparselyProfileErrMethods(SparselyBin, plotbokeh.SparselyProfileErrMethods, plotmpl.SparselyProfileErrMethods):
     '''Methods that are implicitly added to container combinations that look like a sparsely binned profile plot."'''
 
     @property
@@ -301,10 +284,8 @@ class SparselyProfileErrMethods(SparselyBin,
 
 # other 1d/2d plotting
 
-class StackedHistogramMethods(Stack,
-                              plotroot.StackedHistogramMethods,
-                              plotbokeh.StackedHistogramMethods,
-                              plotmpl.StackedHistogramMethods):
+
+class StackedHistogramMethods(Stack, plotbokeh.StackedHistogramMethods, plotmpl.StackedHistogramMethods):
     """Methods that are implicitly added to container combinations that look like stacked histograms."""
 
     @property
@@ -316,10 +297,11 @@ class StackedHistogramMethods(Stack,
         return Stack
 
 
-class PartitionedHistogramMethods(IrregularlyBin,
-                                  plotroot.PartitionedHistogramMethods,
-                                  plotbokeh.PartitionedHistogramMethods,
-                                  plotmpl.PartitionedHistogramMethods):
+class PartitionedHistogramMethods(
+    IrregularlyBin,
+    plotbokeh.PartitionedHistogramMethods,
+    plotmpl.PartitionedHistogramMethods,
+):
     """Methods that are implicitly added to container combinations that look like partitioned histograms."""
 
     @property
@@ -331,10 +313,7 @@ class PartitionedHistogramMethods(IrregularlyBin,
         return IrregularlyBin
 
 
-class FractionedHistogramMethods(Fraction,
-                                 plotroot.FractionedHistogramMethods,
-                                 plotbokeh.FractionedHistogramMethods,
-                                 plotmpl.FractionedHistogramMethods):
+class FractionedHistogramMethods(Fraction, plotbokeh.FractionedHistogramMethods, plotmpl.FractionedHistogramMethods):
     """Methods that are implicitly added to container combinations that look like fractioned histograms."""
 
     @property
@@ -359,79 +338,113 @@ def addImplicitMethods(container):
     invoked and binds early, rather than late.
     """
     # specialized 2d plotting of counts
-    if isinstance(container, Bin) and all(isinstance(v, Bin) and all(isinstance(vv, Count)
-                                                                     for vv in v.values) for v in container.values):
+    if isinstance(container, Bin) and all(
+        isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for v in container.values
+    ):
         container.__class__ = TwoDimensionallyHistogramMethods
 
-    elif isinstance(container, SparselyBin) and container.contentType == "SparselyBin" and \
-            all(isinstance(v, SparselyBin) and v.contentType == "Count" and
-                all(isinstance(vv, Count) for vv in v.bins.values()) for v in container.bins.values()):
+    elif (
+        isinstance(container, SparselyBin)
+        and container.contentType == "SparselyBin"
+        and all(
+            isinstance(v, SparselyBin)
+            and v.contentType == "Count"
+            and all(isinstance(vv, Count) for vv in v.bins.values())
+            for v in container.bins.values()
+        )
+    ):
         container.__class__ = SparselyTwoDimensionallyHistogramMethods
 
-    elif isinstance(container, IrregularlyBin) and \
-            all(isinstance(v, IrregularlyBin) and all(isinstance(vv, Count)
-                                                      for _j, vv in v.bins) for _i, v in container.bins):
+    elif isinstance(container, IrregularlyBin) and all(
+        isinstance(v, IrregularlyBin) and all(isinstance(vv, Count) for _j, vv in v.bins) for _i, v in container.bins
+    ):
         container.__class__ = IrregularlyTwoDimensionallyHistogramMethods
 
     # 1d plotting of profiles
     elif isinstance(container, Bin) and all(isinstance(v, Average) for v in container.values):
         container.__class__ = ProfileMethods
 
-    elif isinstance(container, SparselyBin) and \
-            container.contentType == "Average" and \
-            all(isinstance(v, Average) for v in container.bins.values()):
+    elif (
+        isinstance(container, SparselyBin)
+        and container.contentType == "Average"
+        and all(isinstance(v, Average) for v in container.bins.values())
+    ):
         container.__class__ = SparselyProfileMethods
 
     elif isinstance(container, Bin) and all(isinstance(v, Deviate) for v in container.values):
         container.__class__ = ProfileErrMethods
 
-    elif isinstance(container, SparselyBin) and \
-            container.contentType == "Deviate" and \
-            all(isinstance(v, Deviate) for v in container.bins.values()):
+    elif (
+        isinstance(container, SparselyBin)
+        and container.contentType == "Deviate"
+        and all(isinstance(v, Deviate) for v in container.bins.values())
+    ):
         container.__class__ = SparselyProfileErrMethods
 
     # other 1d/2d plotting
     elif isinstance(container, Stack) and (
-            all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.bins) or
-            all(isinstance(v, Select) and
-                isinstance(v.cut, Bin) and
-                all(isinstance(vv, Count) for vv in v.cut.values) for c, v in container.bins) or
-            all(isinstance(v, SparselyBin) and
-                v.contentType == "Count" and
-                all(isinstance(vv, Count) for vv in v.bins.values()) for c, v in container.bins) or
-            all(isinstance(v, Select) and
-                isinstance(v.cut, SparselyBin) and
-                v.cut.contentType == "Count" and
-                all(isinstance(vv, Count) for vv in v.cut.bins.values()) for c, v in container.bins)):
+        all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.bins)
+        or all(
+            isinstance(v, Select) and isinstance(v.cut, Bin) and all(isinstance(vv, Count) for vv in v.cut.values)
+            for c, v in container.bins
+        )
+        or all(
+            isinstance(v, SparselyBin)
+            and v.contentType == "Count"
+            and all(isinstance(vv, Count) for vv in v.bins.values())
+            for c, v in container.bins
+        )
+        or all(
+            isinstance(v, Select)
+            and isinstance(v.cut, SparselyBin)
+            and v.cut.contentType == "Count"
+            and all(isinstance(vv, Count) for vv in v.cut.bins.values())
+            for c, v in container.bins
+        )
+    ):
         container.__class__ = StackedHistogramMethods
 
     elif isinstance(container, IrregularlyBin) and (
-            all(isinstance(v, Bin) and
-                all(isinstance(vv, Count) for vv in v.values) for c, v in container.bins) or
-            all(isinstance(v, Select) and isinstance(v.cut, Bin) and
-                all(isinstance(vv, Count) for vv in v.cut.values) for c, v in container.bins) or
-            all(isinstance(v, SparselyBin) and
-                v.contentType == "Count" and
-                all(isinstance(vv, Count) for vv in v.bins.values()) for c, v in container.bins) or
-            all(isinstance(v, Select) and
-                isinstance(v.cut, SparselyBin) and
-                v.cut.contentType == "Count" and
-                all(isinstance(vv, Count) for vv in v.cut.bins.values()) for c, v in container.bins)):
+        all(isinstance(v, Bin) and all(isinstance(vv, Count) for vv in v.values) for c, v in container.bins)
+        or all(
+            isinstance(v, Select) and isinstance(v.cut, Bin) and all(isinstance(vv, Count) for vv in v.cut.values)
+            for c, v in container.bins
+        )
+        or all(
+            isinstance(v, SparselyBin)
+            and v.contentType == "Count"
+            and all(isinstance(vv, Count) for vv in v.bins.values())
+            for c, v in container.bins
+        )
+        or all(
+            isinstance(v, Select)
+            and isinstance(v.cut, SparselyBin)
+            and v.cut.contentType == "Count"
+            and all(isinstance(vv, Count) for vv in v.cut.bins.values())
+            for c, v in container.bins
+        )
+    ):
         container.__class__ = PartitionedHistogramMethods
 
     elif isinstance(container, Fraction) and (
-        (isinstance(container.denominator, Bin) and
-         all(isinstance(v, Count) for v in container.denominator.values)) or
-        (isinstance(container.denominator, Select) and
-         isinstance(container.denominator.cut, Bin) and
-         all(isinstance(v, Count) for v in container.denominator.cut.values)) or
-        (isinstance(container.denominator, SparselyBin) and
-         container.denominator.contentType == "Count" and
-         all(isinstance(v, Count) for v in container.denominator.bins.values())) or
-            (isinstance(container.denominator, Select) and
-             isinstance(container.denominator.cut, SparselyBin) and
-             container.denominator.cut.contentType == "Count" and
-             all(isinstance(v, Count) for v in container.denominator.cut.bins.values()))):
+        (isinstance(container.denominator, Bin) and all(isinstance(v, Count) for v in container.denominator.values))
+        or (
+            isinstance(container.denominator, Select)
+            and isinstance(container.denominator.cut, Bin)
+            and all(isinstance(v, Count) for v in container.denominator.cut.values)
+        )
+        or (
+            isinstance(container.denominator, SparselyBin)
+            and container.denominator.contentType == "Count"
+            and all(isinstance(v, Count) for v in container.denominator.bins.values())
+        )
+        or (
+            isinstance(container.denominator, Select)
+            and isinstance(container.denominator.cut, SparselyBin)
+            and container.denominator.cut.contentType == "Count"
+            and all(isinstance(v, Count) for v in container.denominator.cut.bins.values())
+        )
+    ):
         container.__class__ = FractionedHistogramMethods
 
     # 1d plotting of counts + generic 2d plotting of counts
@@ -447,6 +460,9 @@ def addImplicitMethods(container):
     elif isinstance(container, IrregularlyBin) and all(isinstance(v, COMMON_PLOT_TYPES) for _, v in container.bins):
         container.__class__ = IrregularlyHistogramMethods
 
-    elif isinstance(container, CentrallyBin) and container.bins is not None and \
-            all(isinstance(v, COMMON_PLOT_TYPES) for _, v in container.bins):
+    elif (
+        isinstance(container, CentrallyBin)
+        and container.bins is not None
+        and all(isinstance(v, COMMON_PLOT_TYPES) for _, v in container.bins)
+    ):
         container.__class__ = CentrallyHistogramMethods

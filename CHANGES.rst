@@ -2,6 +2,10 @@
 Release notes
 =============
 
+Version 1.1.0, Dec 2024
+-----------------------
+* Removed all ROOT, cpp and cuda code, it was no longer supported.
+
 Version 1.0.34, Dec 2024
 ------------------------
 * Fix typo in build pipeline Python versions config list.
