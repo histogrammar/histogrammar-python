@@ -533,8 +533,8 @@ def get_datatype(hist, itr=0):
         return []
     if isinstance(hist, histogrammar.Bag):
         if hist.dimension > 0:
-            return [np.number] * hist.dimension
-        return [str] if hist.range == "S" else [np.number]
+            return [float] * hist.dimension
+        return [str] if hist.range == "S" else [float]
     if isinstance(
         hist,
         (
@@ -550,7 +550,7 @@ def get_datatype(hist, itr=0):
             return []
         # else: no parent histogram.
         # input datatype must be a number. Let's also make an educated guess if it's a converted timestamp
-        datatype = [np.number]
+        datatype = [float]
         if isinstance(hist, histogrammar.Maximize):
             value = hist.max
         elif isinstance(hist, histogrammar.Minimize):
@@ -582,7 +582,7 @@ def get_datatype(hist, itr=0):
     else:
         # input datatype must be a number.
         # let's make an educated guess if it's a converted timestamp
-        datatype = [np.number]
+        datatype = [float]
         if isinstance(hist, (histogrammar.Bin, histogrammar.SparselyBin)):
             values = [hist.low, hist.high]
         elif isinstance(hist, histogrammar.CentrallyBin):
