@@ -40,7 +40,7 @@ pandas = [
     "pandas"
 ]
 spark = [
-    "pyspark>=3.1; python_version <= '3.11'",
+    "pyspark<4; python_version <= '3.11'",
 ]
 test = [
     "ipykernel>=5.1.3",

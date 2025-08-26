@@ -2,6 +2,10 @@
 Release notes
 =============
 
+Version 1.1.1, Aug 2024
+-----------------------
+* Compatibility with numpy v2.3: converting np.number to a dtype no longer allowed.
+
 Version 1.1.0, Dec 2024
 -----------------------
 * Removed all ROOT, cpp and cuda code, it was no longer supported.
