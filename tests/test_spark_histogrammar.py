@@ -21,9 +21,18 @@ def get_spark():
 
     current_path = Path(__file__).resolve().parent
 
-    scala = "2.12" if int(pyspark_version[0]) >= 3 else "2.11"
-    hist_spark_jar = current_path / f"jars/histogrammar-sparksql_{scala}-1.0.20.jar"
-    hist_jar = current_path / f"jars/histogrammar_{scala}-1.0.20.jar"
+    if int(pyspark_version[0]) == 2:
+        scala = "2.11"
+        hg_version = "1.0.20"
+    elif int(pyspark_version[0]) == 3:
+        scala = "2.12"
+        hg_version = "1.0.20"
+    else:  # spark 4+
+        scala = "2.13"
+        hg_version = "1.0.30"
+
+    hist_spark_jar = current_path / f"jars/histogrammar-sparksql_{scala}-{hg_version}.jar"
+    hist_jar = current_path / f"jars/histogrammar_{scala}-{hg_version}.jar"
 
     return (
         SparkSession.builder.master("local")
