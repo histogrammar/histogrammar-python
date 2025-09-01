@@ -225,7 +225,7 @@ class SparkHistogrammar(HistogramFillerBase):
         for idx, col in enumerate(revcols):
             # histogram type depends on the data type
             dt = self.var_dtype[col]
-            quant = df[col]
+            quant = f.col(col)
             hist = self.get_hist_bin(hist, features, quant, col, dt)
 
         return hist

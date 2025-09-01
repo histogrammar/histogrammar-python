@@ -35,7 +35,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ "${{ matrix.numpy_version }}" = "numpy<2" ]; then
-            pip install ".[test,pandas,spark,test_numpy_pre2]"
+            pip install ".[test,pandas,test_spark_pre2,test_numpy_pre2]"
           else
             pip install ".[test,pandas,spark]"          
           fi

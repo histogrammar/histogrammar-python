@@ -247,7 +247,7 @@ class UserFcn:
                 ok = False
             else:
                 if isinstance(expr, Column) and self.name is None:
-                    self.name = str(expr)[7:-1]
+                    self.name = str(expr)[8:-2]
                 ok = True
         if not ok:
             raise TypeError(f"quantity ({expr}) must be a string, function, or SparkSQL Column")
