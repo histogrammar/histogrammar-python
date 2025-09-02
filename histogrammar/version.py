@@ -2,7 +2,7 @@
 
 import re
 
-version = "1.1.1"
+version = "1.1.2"
 
 
 def split_version_string(version_string: str) -> tuple[int, int]:

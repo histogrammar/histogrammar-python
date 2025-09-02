@@ -17,8 +17,8 @@ more quickly via Numpy commands, rather than Python for loops.
 
 This Python implementation of histogrammar been tested to guarantee compatibility with its Scala implementation.
 
-Latest Python release: v1.1.1 (Aug 2025).
-Latest update: Aug 2025.
+Latest Python release: v1.1.2 (Sep 2025).
+Latest update: Sep 2025.
 
 References
 ==========
@@ -38,19 +38,19 @@ Changes
 See Changes log `here <https://github.com/histogrammar/histogrammar-python/blob/master/CHANGES.rst>`_.
 
 
-Spark 3.X
----------
+Spark
+-----
 
-With Spark 3.X, based on Scala 2.12 or 2.13, make sure to pick up the correct histogrammar jar files:
+With Spark, make sure to pick up the correct histogrammar jar files. Spark 4.X is based on Scala 2.13; Spark 3.X is based on Scala 2.12 or 2.13.
 
 .. code-block:: python
 
-  spark = SparkSession.builder.config("spark.jars.packages", "io.github.histogrammar:histogrammar_2.12:1.0.30,io.github.histogrammar:histogrammar-sparksql_2.12:1.0.30").getOrCreate()
+  spark = SparkSession.builder.config("spark.jars.packages", "io.github.histogrammar:histogrammar_2.13:1.0.30,io.github.histogrammar:histogrammar-sparksql_2.13:1.0.30").getOrCreate()
 
 
-For Scala 2.13, in the string above simply replace "2.12" with "2.13".
+For Scala 2.12, in the string above simply replace "2.13" with "2.12".
 
-December, 2023
+September, 2025
 
 
 Example notebooks

@@ -21,9 +21,9 @@ def get_spark():
 
     current_path = Path(__file__).resolve().parent
 
-    scala = "2.12" if int(pyspark_version[0]) >= 3 else "2.11"
-    hist_spark_jar = current_path / f"jars/histogrammar-sparksql_{scala}-1.0.20.jar"
-    hist_jar = current_path / f"jars/histogrammar_{scala}-1.0.20.jar"
+    scala = "2.12" if int(pyspark_version[0]) == 3 else "2.13"
+    hist_spark_jar = current_path / f"jars/histogrammar-sparksql_{scala}-1.0.30.jar"
+    hist_jar = current_path / f"jars/histogrammar_{scala}-1.0.30.jar"
 
     return (
         SparkSession.builder.master("local")
@@ -44,16 +44,16 @@ def spark_co():
 @pytest.mark.skipif(not spark_found, reason="spark not found")
 @pytest.mark.filterwarnings("ignore:createDataFrame attempted Arrow optimization because")
 def test_get_histograms(spark_co):
-    pytest.age["data"]["name"] = "'age'"
-    pytest.company["data"]["name"] = "'company'"
-    pytest.eyesColor["data"]["name"] = "'eyeColor'"
-    pytest.gender["data"]["name"] = "'gender'"
-    pytest.isActive["data"]["name"] = "'isActive'"
-    pytest.latitude["data"]["name"] = "'latitude'"
-    pytest.longitude["data"]["name"] = "'longitude'"
-    pytest.transaction["data"]["name"] = "'transaction'"
+    pytest.age["data"]["name"] = "age"
+    pytest.company["data"]["name"] = "company"
+    pytest.eyesColor["data"]["name"] = "eyeColor"
+    pytest.gender["data"]["name"] = "gender"
+    pytest.isActive["data"]["name"] = "isActive"
+    pytest.latitude["data"]["name"] = "latitude"
+    pytest.longitude["data"]["name"] = "longitude"
+    pytest.transaction["data"]["name"] = "transaction"
 
-    pytest.latitude_longitude["data"]["name"] = "'latitude:longitude'"
+    pytest.latitude_longitude["data"]["name"] = "latitude:longitude"
     pytest.latitude_longitude["data"]["bins:name"] = "unit_func"
 
     spark = spark_co
@@ -104,15 +104,15 @@ def test_get_histograms(spark_co):
 @pytest.mark.skipif(not spark_found, reason="spark not found")
 @pytest.mark.filterwarnings("ignore:createDataFrame attempted Arrow optimization because")
 def test_get_histograms_module(spark_co):
-    pytest.age["data"]["name"] = "'age'"
-    pytest.company["data"]["name"] = "'company'"
-    pytest.eyesColor["data"]["name"] = "'eyeColor'"
-    pytest.gender["data"]["name"] = "'gender'"
-    pytest.isActive["data"]["name"] = "'isActive'"
-    pytest.latitude["data"]["name"] = "'latitude'"
-    pytest.longitude["data"]["name"] = "'longitude'"
+    pytest.age["data"]["name"] = "age"
+    pytest.company["data"]["name"] = "company"
+    pytest.eyesColor["data"]["name"] = "eyeColor"
+    pytest.gender["data"]["name"] = "gender"
+    pytest.isActive["data"]["name"] = "isActive"
+    pytest.latitude["data"]["name"] = "latitude"
+    pytest.longitude["data"]["name"] = "longitude"
 
-    pytest.latitude_longitude["data"]["name"] = "'latitude:longitude'"
+    pytest.latitude_longitude["data"]["name"] = "latitude:longitude"
     pytest.latitude_longitude["data"]["bins:name"] = "unit_func"
 
     spark = spark_co
@@ -187,7 +187,7 @@ def test_get_histograms_timestamp(spark_co):
             "bins": {"108": 9.0, "109": 1.0},
             "bins:type": "Count",
             "entries": 10.0,
-            "name": "'dt'",
+            "name": "dt",
             "nanflow": 0.0,
             "nanflow:type": "Count",
             "origin": 1.2625632e18,
@@ -229,7 +229,7 @@ def test_get_histograms_date(spark_co):
             "bins": {"108": 9.0, "109": 1.0},
             "bins:type": "Count",
             "entries": 10.0,
-            "name": "'dt'",
+            "name": "dt",
             "nanflow": 0.0,
             "nanflow:type": "Count",
             "origin": 1.2625632e18,
